@@ -1,4 +1,5 @@
 import { supabaseServer } from "@/lib/supabase/server";
+import MenuBrowser, { type MenuSection } from "./MenuBrowser";
 
 type RestaurantPageProps = {
   params: Promise<{
@@ -90,75 +91,24 @@ if (restaurantError || !restaurant) {
     );
   }
 
+  const menuSections: MenuSection[] = (sections || []).map((section) => ({
+    id: section.id,
+    name: section.name,
+    description: section.description,
+    sort_order: section.sort_order,
+    items: (section.menu_section_items || [])
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .flatMap((placement) => {
+        const item = placement.menu_items;
+        return Array.isArray(item) ? item : item ? [item] : [];
+      }),
+  }));
+
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>{restaurant.name}</h1>
-
-      <p>
-        Menu: {menu.name}
-      </p>
-
-      {sections?.map((section) => (
-        <section
-          key={section.id}
-          style={{
-            marginTop: "2rem",
-          }}
-        >
-          <h2>{section.name}</h2>
-
-          {section.description && (
-            <p>{section.description}</p>
-          )}
-
-          {section.menu_section_items
-            ?.sort(
-              (a, b) =>
-                a.sort_order -
-                b.sort_order
-            )
-            .map((placement) => {
-              const item =
-                placement.menu_items;
-
-              if (!item) {
-                return null;
-              }
-
-              return (
-                <article
-                  key={item.id}
-                  style={{
-                    marginTop: "1rem",
-                    padding: "1rem",
-                    border:
-                      "1px solid #ccc",
-                  }}
-                >
-                  <strong>
-                    {item.name}
-                  </strong>
-
-                  <div>
-                    $
-                    {(
-                      item.price_cents /
-                      100
-                    ).toFixed(2)}
-                  </div>
-
-                  {item.description && (
-                    <p>
-                      {
-                        item.description
-                      }
-                    </p>
-                  )}
-                </article>
-              );
-            })}
-        </section>
-      ))}
-    </main>
+    <MenuBrowser
+      currency={restaurant.currency}
+      sections={menuSections}
+      ariaLabel={`${restaurant.name} ${menu.name}`}
+    />
   );
 }
