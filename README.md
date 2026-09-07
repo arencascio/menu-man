@@ -1,5 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Menu imports
+
+Import a structured menu with the service-role key:
+
+```bash
+npm run import-menu -- --file ./menu.json --dry-run
+npm run import-menu -- --file ./menu.json
+```
+
+JSON uses `restaurantSlug`, `menuName`, and a `sections` array. Each section has `name`, `description`, `sortOrder`, and `items`. Each item has `name`, `description`, `priceCents`, `imageUrl`, and `sortOrder`.
+
+CSV uses one row per item placement with these headers:
+
+```text
+restaurantSlug,menuName,sectionName,sectionDescription,sectionSortOrder,itemName,itemDescription,priceCents,imageUrl,itemSortOrder
+```
+
+The importer validates the complete file before writing, preserves both ordering fields, and updates existing restaurant/menu/section/item/placement records instead of creating duplicates. It does not upload images.
+
 ## Getting Started
 
 First, run the development server:
