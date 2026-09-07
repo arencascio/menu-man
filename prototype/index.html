@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Menu Man Prototype</title>
+
+  <style>
+    :root {
+      --page-bg: #5b0000;
+      --card-bg: #ffffff;
+      --text: #171717;
+      --muted: #666666;
+      --section-bg: #fff8cf;
+      --accent: #b70000;
+      --gap: 22px;
+      --radius: 14px;
+      --content-width: 1440px;
+      --sticky-offset: 132px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page-bg);
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+      color: var(--text);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      width: min(
+        calc(100% - 32px),
+        var(--content-width)
+      );
+      margin: 0 auto;
+      padding: 28px 0 80px;
+    }
+
+    .sticky-controls {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      margin-bottom: 26px;
+      padding: 12px 0 14px;
+      background: var(--page-bg);
+    }
+
+    .menu-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .menu-controls button {
+      border: 0;
+      background: #111;
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .menu-controls button.active {
+      background: var(--accent);
+    }
+
+    .search-wrap {
+      margin: 0;
+    }
+
+    .search-wrap input {
+      width: min(100%, 440px);
+      padding: 13px 15px;
+      border: 0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .menu-controls button:focus-visible,
+    .search-wrap input:focus-visible,
+    .menu-card:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+      gap: var(--gap);
+      align-items: start;
+    }
+
+    .section-row {
+      grid-column: 1 / -1;
+      background: var(--section-bg);
+      padding: 18px 20px;
+      border-radius: 10px;
+      scroll-margin-top: var(--sticky-offset);
+    }
+
+    .section-row h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.05;
+    }
+
+    .section-row p {
+      margin: 7px 0 0;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #444;
+    }
+
+    .menu-card {
+      min-width: 0;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      scroll-margin-top: var(--sticky-offset);
+      transition:
+        transform 120ms ease,
+        box-shadow 120ms ease;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .menu-card-image {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      display: block;
+      object-fit: cover;
+      background: #ddd;
+    }
+
+    .menu-card-body {
+      padding: 12px 14px 14px;
+    }
+
+    .menu-card-topline {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .menu-card-title {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.22;
+      font-weight: 700;
+    }
+
+    .menu-card-price {
+      margin: 0;
+      flex-shrink: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .menu-card-description {
+      display: none;
+      margin: 12px 0 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .menu-card-close {
+      display: none;
+      margin-top: 14px;
+      font-size: 12px;
+      text-align: right;
+      color: var(--muted);
+    }
+
+    .menu-card.expanded {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns:
+        minmax(280px, 1.15fr)
+        minmax(280px, 1fr);
+    }
+
+    .menu-card.expanded:hover {
+      transform: none;
+    }
+
+    .menu-card.expanded
+    .menu-card-image {
+      aspect-ratio: 16 / 10;
+      height: 100%;
+      min-height: 320px;
+    }
+
+    .menu-card.expanded
+    .menu-card-body {
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .menu-card.expanded
+    .menu-card-title {
+      font-size: 28px;
+    }
+
+    .menu-card.expanded
+    .menu-card-price {
+      font-size: 22px;
+    }
+
+    .menu-card.expanded
+    .menu-card-description {
+      display: block;
+    }
+
+    .menu-card.expanded
+    .menu-card-close {
+      display: block;
+    }
+
+    @media (min-width: 761px) {
+      .menu-card.expanded {
+        height: clamp(320px, 32vw, 420px);
+      }
+
+      .menu-card.expanded
+      .menu-card-image {
+        min-height: 0;
+      }
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 32px 20px;
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (min-width: 1280px) {
+      .menu-grid {
+        grid-template-columns:
+          repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(
+          calc(100% - 20px),
+          var(--content-width)
+        );
+        padding-top: 18px;
+      }
+
+      .menu-controls {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .menu-controls::-webkit-scrollbar {
+        display: none;
+      }
+
+      .menu-controls button {
+        flex: 0 0 auto;
+        padding: 9px 13px;
+        font-size: 13px;
+      }
+
+      .search-wrap input {
+        width: 100%;
+      }
+
+      .menu-grid {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+        gap: 16px 10px;
+      }
+
+      .section-row {
+        padding: 14px 15px;
+      }
+
+      .section-row h2 {
+        font-size: 22px;
+      }
+
+      .section-row p {
+        font-size: 13px;
+      }
+
+      .menu-card {
+        border-radius: 10px;
+      }
+
+      .menu-card-image {
+        aspect-ratio: 1 / 1;
+      }
+
+      .menu-card-body {
+        padding: 9px 8px 10px;
+      }
+
+      .menu-card-title {
+        font-size: 14px;
+      }
+
+      .menu-card-price {
+        font-size: 14px;
+      }
+
+      .menu-card.expanded {
+        grid-column: 1 / -1;
+        display: block;
+      }
+
+      .menu-card.expanded
+      .menu-card-image {
+        aspect-ratio: 4 / 3;
+        min-height: 0;
+        height: auto;
+      }
+
+      .menu-card.expanded
+      .menu-card-body {
+        padding: 16px;
+      }
+
+      .menu-card.expanded
+      .menu-card-title {
+        font-size: 20px;
+      }
+
+      .menu-card.expanded
+      .menu-card-price {
+        font-size: 18px;
+      }
+
+      .menu-card-description {
+        font-size: 14px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .menu-card {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="page">
+
+    <div id="stickyControls" class="sticky-controls">
+      <nav class="menu-controls" aria-label="Menu categories">
+        <button type="button" class="active" data-group="all">
+          Full Menu
+        </button>
+
+        <button type="button" data-group="tacos">
+          Tacos
+        </button>
+
+        <button type="button" data-group="burritos">
+          Burritos
+        </button>
+
+        <button type="button" data-group="breakfast">
+          Breakfast
+        </button>
+
+        <button type="button" data-group="drinks">
+          Drinks
+        </button>
+      </nav>
+
+      <div class="search-wrap">
+        <input
+          id="menuSearch"
+          type="search"
+          placeholder="Search the menu..."
+          aria-label="Search the menu"
+        />
+      </div>
+    </div>
+
+    <section
+      id="menuGrid"
+      class="menu-grid"
+      aria-label="Restaurant menu"
+    ></section>
+
+  </main>
+
+  <script>
+    const menuData = [
+      {
+        type: "section",
+        group: "tacos",
+        title: "Tacos",
+        description:
+          "Full-sized tacos stuffed with meat and toppings."
+      },
+
+      {
+        type: "item",
+        group: "tacos",
+        name: "Carnitas Taco",
+        price: "$4.22",
+        description:
+          "Tender shredded pork on a soft corn tortilla, topped with creamy avocado, diced tomatoes, chopped onions, and fresh cilantro.",
+        image:
+          "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=1000&q=80"
+      },
+
+      {
+        type: "item",
+        group: "tacos",
+        name: "Shredded Chicken Taco",
+        price: "$3.45",
+        description:
+          "Shredded chicken, lettuce, and cheese in a crispy taco shell.",
+        image:
+          "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=1000&q=80"
+      },
+
+      {
+        type: "item",
+        group: "tacos",
+        name: "Shrimp Taco",
+        price: "$4.50",
+        description:
+          "Grilled shrimp topped with shredded cabbage, diced tomatoes, and fresh cilantro.",
+        image:
+          "https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?auto=format&fit=crop&w=1000&q=80"
+      },
+
+      {
+        type: "section",
+        group: "burritos",
+        title: "Burritos",
+        description:
+          "Generously filled burritos made fresh to order."
+      },
+
+      {
+        type: "item",
+        group: "burritos",
+        name: "California Burrito",
+        price: "$15.15",
+        description:
+          "Carne asada, guacamole, pico de gallo, sour cream, cheese, and french fries wrapped in a soft flour tortilla.",
+        image:
+          "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=1000&q=80"
+      },
+
+      {
+        type: "item",
+        group: "burritos",
+        name: "Chicken Burrito",
+        price: "$13.99",
+        description:
+          "Grilled chicken, refried beans, and rice wrapped in a soft flour tortilla.",
+        image:
+          "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=1000&q=80"
+      },
+
+      {
+        type: "section",
+        group: "drinks",
+        title: "Drinks",
+        description:
+          "Cold bottled drinks and aguas frescas."
+      },
+
+      {
+        type: "item",
+        group: "drinks",
+        name: "Red Powerade",
+        price: "$4.50",
+        description:
+          "Cold red Powerade.",
+        image:
+          "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=1000&q=80"
+      }
+    ];
+
+    const menuGrid =
+      document.getElementById("menuGrid");
+
+    const searchInput =
+      document.getElementById("menuSearch");
+
+    const stickyControls =
+      document.getElementById("stickyControls");
+
+    const groupButtons =
+      [...document.querySelectorAll(
+        "[data-group]"
+      )];
+
+    let selectedGroup = "all";
+    let searchQuery = "";
+    let expandedItem = null;
+
+    function escapeHTML(value) {
+      const element =
+        document.createElement("span");
+      element.textContent = String(value);
+      return element.innerHTML;
+    }
+
+    function renderMenu(
+      revealExpanded = false,
+      focusItem = null
+    ) {
+      menuGrid.innerHTML = "";
+
+      const sectionElements = new Map();
+
+      const filteredItems =
+        menuData.filter(entry => {
+
+          if (entry.type === "section") {
+            return true;
+          }
+
+          const groupMatches =
+            selectedGroup === "all" ||
+            entry.group === selectedGroup;
+
+          const searchMatches =
+            !searchQuery ||
+            [
+              entry.name,
+              entry.description
+            ]
+              .join(" ")
+              .toLowerCase()
+              .includes(searchQuery);
+
+          return (
+            groupMatches &&
+            searchMatches
+          );
+        });
+
+      const visibleGroups =
+        new Set(
+          filteredItems
+            .filter(
+              entry =>
+                entry.type === "item"
+            )
+            .map(
+              entry =>
+                entry.group
+            )
+        );
+
+      filteredItems.forEach(entry => {
+
+        if (
+          entry.type === "section"
+        ) {
+
+          if (
+            selectedGroup !== "all" &&
+            entry.group !== selectedGroup
+          ) {
+            return;
+          }
+
+          if (
+            !visibleGroups.has(entry.group)
+          ) {
+            return;
+          }
+
+          const section =
+            document.createElement(
+              "section"
+            );
+
+          section.className =
+            "section-row";
+
+          section.innerHTML = `
+            <h2>${escapeHTML(entry.title)}</h2>
+            <p>${escapeHTML(entry.description)}</p>
+          `;
+
+          menuGrid.appendChild(
+            section
+          );
+
+          sectionElements.set(
+            entry.group,
+            section
+          );
+
+          return;
+        }
+
+        const card =
+          document.createElement(
+            "article"
+          );
+
+        card.className =
+          "menu-card";
+
+        card.tabIndex = 0;
+        card.setAttribute(
+          "role",
+          "button"
+        );
+        card.setAttribute(
+          "aria-expanded",
+          String(expandedItem === entry)
+        );
+
+        if (
+          expandedItem === entry
+        ) {
+          card.classList.add(
+            "expanded"
+          );
+        }
+
+        card.innerHTML = `
+          <img
+            class="menu-card-image"
+            src="${escapeHTML(entry.image)}"
+            alt="${escapeHTML(entry.name)}"
+            loading="lazy"
+            decoding="async"
+          />
+
+          <div class="menu-card-body">
+
+            <div class="menu-card-topline">
+
+              <h3 class="menu-card-title">
+                ${escapeHTML(entry.name)}
+              </h3>
+
+              <p class="menu-card-price">
+                ${escapeHTML(entry.price)}
+              </p>
+
+            </div>
+
+            <p class="menu-card-description">
+              ${escapeHTML(entry.description)}
+            </p>
+
+            <div class="menu-card-close">
+              Tap to close &times;
+            </div>
+
+          </div>
+        `;
+
+        card.addEventListener(
+          "click",
+          () => {
+
+            const isClosing =
+              expandedItem === entry;
+
+            if (isClosing) {
+              expandedItem = null;
+            } else {
+              expandedItem = entry;
+            }
+
+            renderMenu(
+              !isClosing,
+              entry
+            );
+          }
+        );
+
+        card.addEventListener(
+          "keydown",
+          event => {
+            if (
+              event.key === "Enter" ||
+              event.key === " "
+            ) {
+              event.preventDefault();
+              card.click();
+            }
+          }
+        );
+
+        menuGrid.appendChild(
+          card
+        );
+
+        if (expandedItem === entry) {
+          sectionElements
+            .get(entry.group)
+            ?.after(card);
+
+          if (revealExpanded) {
+            requestAnimationFrame(() => {
+              card.focus({
+                preventScroll: true
+              });
+
+              sectionElements
+                .get(entry.group)
+                ?.scrollIntoView({
+                  behavior: window.matchMedia(
+                    "(prefers-reduced-motion: reduce)"
+                  ).matches
+                    ? "auto"
+                    : "smooth",
+                  block: "start"
+                });
+            });
+          }
+        } else if (focusItem === entry) {
+          requestAnimationFrame(() => {
+            card.focus({
+              preventScroll: true
+            });
+            card.scrollIntoView({
+              behavior: window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+              ).matches
+                ? "auto"
+                : "smooth",
+              block: "nearest"
+            });
+          });
+        }
+      });
+
+      if (!visibleGroups.size) {
+        const emptyState = document.createElement("p");
+        emptyState.className = "empty-state";
+        emptyState.textContent =
+          "No menu items match this category and search.";
+        menuGrid.appendChild(emptyState);
+      }
+    }
+
+    let searchTimer = null;
+
+    searchInput.addEventListener(
+      "input",
+      () => {
+
+        clearTimeout(
+          searchTimer
+        );
+
+        searchTimer =
+          setTimeout(
+            () => {
+
+              searchQuery =
+                searchInput.value
+                  .trim()
+                  .toLowerCase();
+
+              expandedItem = null;
+
+              renderMenu();
+
+            },
+            200
+          );
+      }
+    );
+
+    groupButtons.forEach(
+      button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            selectedGroup =
+              button.dataset.group;
+
+            expandedItem = null;
+
+            groupButtons.forEach(
+              other => {
+                const isActive =
+                  other === button;
+
+                other.classList.toggle(
+                  "active",
+                  isActive
+                );
+                other.setAttribute(
+                  "aria-pressed",
+                  String(isActive)
+                );
+              }
+            );
+
+            renderMenu();
+
+          }
+        );
+      }
+    );
+
+    groupButtons.forEach(
+      button =>
+        button.setAttribute(
+          "aria-pressed",
+          String(
+            button.dataset.group ===
+            selectedGroup
+          )
+        )
+    );
+
+    function updateStickyOffset() {
+      document.documentElement
+        .style.setProperty(
+          "--sticky-offset",
+          `${stickyControls.offsetHeight + 16}px`
+        );
+    }
+
+    if (
+      "ResizeObserver" in window
+    ) {
+      new ResizeObserver(
+        updateStickyOffset
+      ).observe(stickyControls);
+    } else {
+      window.addEventListener(
+        "resize",
+        updateStickyOffset
+      );
+    }
+
+    updateStickyOffset();
+    renderMenu();
+  </script>
+
+</body>
+</html>
