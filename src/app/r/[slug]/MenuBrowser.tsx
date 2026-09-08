@@ -54,7 +54,7 @@ export default function MenuBrowser({
         const resultCount = sections
           .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
           .reduce((count, section) => count + section.items.filter((item) => [item.name, item.description || ""].join(" ").toLowerCase().includes(nextSearch)).length, 0);
-        trackEvent({ name: "menu_search", restaurantId, queryLength: nextSearch.length, resultCount });
+        trackEvent({ name: "menu_search", restaurantId, query: nextSearch, queryLength: nextSearch.length, resultCount });
       }
     }, 200);
     return () => window.clearTimeout(timeout);
@@ -88,7 +88,7 @@ export default function MenuBrowser({
             onClick={() => {
               setSelectedCategory("all");
               setExpandedItemId(null);
-              trackEvent({ name: "category_selected", restaurantId, sectionId: null });
+              trackEvent({ name: "category_selected", restaurantId, sectionId: null, sectionName: "Full Menu" });
             }}
             aria-pressed={selectedCategory === "all"}
           >
@@ -102,7 +102,7 @@ export default function MenuBrowser({
               onClick={() => {
                 setSelectedCategory(section.id);
                 setExpandedItemId(null);
-                trackEvent({ name: "category_selected", restaurantId, sectionId: section.id });
+                trackEvent({ name: "category_selected", restaurantId, sectionId: section.id, sectionName: section.name });
               }}
               aria-pressed={selectedCategory === section.id}
             >
@@ -162,7 +162,10 @@ export default function MenuBrowser({
                           name: isExpanded ? "menu_item_collapsed" : "menu_item_expanded",
                           restaurantId,
                           itemId: item.id,
+                          itemName: item.name,
+                          priceCents: item.price_cents,
                           sectionId: section.id,
+                          sectionName: section.name,
                         });
                       }}
                       aria-expanded={expandedItemId === item.id}

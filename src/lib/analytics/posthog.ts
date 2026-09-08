@@ -1,5 +1,5 @@
 import posthog from "posthog-js";
-import type { AnalyticsEvent, AnalyticsProvider } from "./types";
+import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -37,19 +37,57 @@ export function initializePostHog() {
   }
 }
 
-function getPostHogProperties(event: AnalyticsEvent): Record<string, string | number> {
-  const properties: Record<string, string | number> = {
+function getPostHogItem(item: AnalyticsCartItem) {
+  return {
+    item_id: item.itemId,
+    item_name: item.itemName,
+    price_cents: item.priceCents,
+    quantity: item.quantity,
+  };
+}
+
+function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
+  const properties: Record<string, unknown> = {
     restaurant_id: event.restaurantId,
   };
 
   if (event.name === "category_selected") {
     properties.section_id = event.sectionId ?? "all";
+    properties.section_name = event.sectionName;
   } else if (event.name === "menu_search") {
+    properties.query = event.query;
     properties.query_length = event.queryLength;
     properties.result_count = event.resultCount;
   } else if (event.name === "menu_item_expanded" || event.name === "menu_item_collapsed") {
     properties.item_id = event.itemId;
+    properties.item_name = event.itemName;
+    properties.price_cents = event.priceCents;
     properties.section_id = event.sectionId;
+    properties.section_name = event.sectionName;
+  } else if (event.name === "add_to_cart" || event.name === "remove_from_cart") {
+    properties.item_id = event.itemId;
+    properties.item_name = event.itemName;
+    properties.price_cents = event.priceCents;
+    properties.quantity = event.quantity;
+    properties.value_cents = event.priceCents * event.quantity;
+    properties.currency = event.currency;
+  } else if (event.name === "cart_viewed" || event.name === "checkout_started") {
+    properties.currency = event.currency;
+    properties.value_cents = event.valueCents;
+    properties.item_count = event.items.length;
+    properties.total_quantity = event.items.reduce((total, item) => total + item.quantity, 0);
+    properties.item_ids = event.items.map((item) => item.itemId);
+    properties.item_names = event.items.map((item) => item.itemName);
+    properties.items = event.items.map(getPostHogItem);
+  } else if (event.name === "purchase") {
+    properties.transaction_id = event.transactionId;
+    properties.currency = event.currency;
+    properties.revenue_cents = event.revenueCents;
+    properties.item_count = event.items.length;
+    properties.total_quantity = event.items.reduce((total, item) => total + item.quantity, 0);
+    properties.item_ids = event.items.map((item) => item.itemId);
+    properties.item_names = event.items.map((item) => item.itemName);
+    properties.items = event.items.map(getPostHogItem);
   }
 
   return properties;

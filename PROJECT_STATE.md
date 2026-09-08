@@ -239,10 +239,27 @@ The production menu UI currently provides:
 - Image audit/import commands require `scripts/menu-image-assets.sql` to be applied remotely.
 - Storage import is conservative: it reports unmatched/missing files, does not overwrite without `--replace`, and never deletes old objects automatically.
 - SEO metadata, canonical URLs, Open Graph, Restaurant JSON-LD, sitemap, and robots are server-generated; no restaurant facts are invented.
-- Analytics events are sent through `trackEvent()` only. Search sends query length/result count, never raw search text.
+- Analytics events are sent through `trackEvent()` only. The constrained menu search term is permitted on `menu_search`; customer notes, contact-form content, and other potentially sensitive free-form text are not analytics properties.
 - GA4 remains optional through `NEXT_PUBLIC_ANALYTICS_PROVIDER=ga4` plus `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
 - PostHog is optional through `NEXT_PUBLIC_POSTHOG_KEY` plus `NEXT_PUBLIC_POSTHOG_HOST`; it uses the original Menu Man event names and memory-only anonymous state.
 - PostHog session replay, autocapture, automatic page views/page leaves, exception capture, heatmaps, performance capture, remote feature configuration, external dependency loading, and person profiles are disabled.
+
+## Analytics Event Property Schema
+
+Application code uses camelCase in the typed `AnalyticsEvent` union. Provider adapters convert these fields to the snake_case properties below. Every event includes `restaurant_id`.
+
+| Menu Man event | PostHog properties beyond `restaurant_id` | Notes |
+| --- | --- | --- |
+| `page_view` | None | Explicit page view; automatic PostHog page views remain disabled. |
+| `category_selected` | `section_id`, `section_name` | Full Menu uses `section_id: "all"` and `section_name: "Full Menu"`. |
+| `menu_search` | `query`, `query_length`, `result_count` | `query` is the trimmed, lowercase menu search term. No other free-form customer text is allowed. |
+| `menu_item_expanded`, `menu_item_collapsed` | `section_id`, `section_name`, `item_id`, `item_name`, `price_cents` | Prices are integer minor units. |
+| `phone_clicked`, `directions_clicked`, `delivery_clicked`, `pickup_clicked` | None | Contact details and destination URLs are not included. |
+| `add_to_cart`, `remove_from_cart` | `item_id`, `item_name`, `price_cents`, `quantity`, `value_cents`, `currency` | `value_cents` is derived as unit price times changed quantity. Defined for ordering but not emitted yet. |
+| `cart_viewed`, `checkout_started` | `currency`, `value_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | `items` contains `item_id`, `item_name`, `price_cents`, and `quantity`. Defined but not emitted yet. |
+| `purchase` | `transaction_id`, `currency`, `revenue_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | Transaction ID supports deduplication and contains no customer PII. Defined but not emitted yet. |
+
+Ordering analytics use ISO currency codes and integer cents in the Menu Man/PostHog contract. The GA4 adapter converts monetary values to currency units and maps `cart_viewed` to `view_cart` and `checkout_started` to `begin_checkout` while retaining GA4's standard `add_to_cart`, `remove_from_cart`, and `purchase` names.
 
 ## Immediate Roadmap
 
@@ -284,7 +301,7 @@ Ordering v1 must not move Supabase service-role access into client code. It also
 - Do not allow arbitrary tenant CSS, selectors, HTML, URLs, or style blocks through theme overrides.
 - Do not scatter direct `gtag()` calls through UI components; keep provider logic behind the analytics adapter.
 - Do not scatter direct `posthog.capture()` calls through UI components; keep provider logic behind the analytics adapter.
-- Do not send raw search text to analytics.
+- Only the constrained restaurant-menu query may be sent as free-form analytics text. Do not send customer notes, contact-form contents, or other potentially sensitive free-form input.
 - Do not add ordering, authentication, hostname routing, analytics, or SEO as implicit side effects of menu work.
 - Do not treat the abandoned Wix prototype as a current production dependency.
 - Keep the standalone prototype available as a reference when changing the production menu UI.

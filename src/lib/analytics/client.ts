@@ -1,4 +1,4 @@
-import type { AnalyticsEvent, AnalyticsProvider } from "./types";
+import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 import { isPostHogConfigured, posthogProvider } from "./posthog";
 
 interface GtagWindow extends Window {
@@ -9,11 +9,20 @@ interface GtagWindow extends Window {
 const providerName = process.env.NEXT_PUBLIC_ANALYTICS_PROVIDER;
 const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
+function getGa4Item(item: AnalyticsCartItem) {
+  return {
+    item_id: item.itemId,
+    item_name: item.itemName,
+    price: item.priceCents / 100,
+    quantity: item.quantity,
+  };
+}
+
 const ga4Provider: AnalyticsProvider = {
   track(event) {
     const win = window as GtagWindow;
     if (!win.gtag || !measurementId) return;
-    const parameters: Record<string, string | number> = { restaurant_id: event.restaurantId };
+    const parameters: Record<string, unknown> = { restaurant_id: event.restaurantId };
     let eventName: string = event.name;
 
     if (event.name === "page_view") {
@@ -33,6 +42,27 @@ const ga4Provider: AnalyticsProvider = {
     } else if (event.name === "menu_item_collapsed") {
       parameters.item_id = event.itemId;
       parameters.section_id = event.sectionId;
+    } else if (event.name === "add_to_cart" || event.name === "remove_from_cart") {
+      parameters.currency = event.currency;
+      parameters.value = (event.priceCents * event.quantity) / 100;
+      parameters.items = [
+        getGa4Item({
+          itemId: event.itemId,
+          itemName: event.itemName,
+          priceCents: event.priceCents,
+          quantity: event.quantity,
+        }),
+      ];
+    } else if (event.name === "cart_viewed" || event.name === "checkout_started") {
+      eventName = event.name === "cart_viewed" ? "view_cart" : "begin_checkout";
+      parameters.currency = event.currency;
+      parameters.value = event.valueCents / 100;
+      parameters.items = event.items.map(getGa4Item);
+    } else if (event.name === "purchase") {
+      parameters.transaction_id = event.transactionId;
+      parameters.currency = event.currency;
+      parameters.value = event.revenueCents / 100;
+      parameters.items = event.items.map(getGa4Item);
     }
 
     win.gtag("event", eventName, parameters);
