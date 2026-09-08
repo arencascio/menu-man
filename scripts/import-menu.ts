@@ -8,6 +8,8 @@ type ImportItem = {
   priceCents: number;
   imageUrl: string | null;
   sortOrder: number;
+  sourceSystem: string | null;
+  sourceItemId: string | null;
 };
 
 type ImportSection = {
@@ -30,7 +32,7 @@ const usage = `Usage:
   npm run import-menu -- --file path/to/menu.csv [--dry-run]
 
 JSON shape:
-  { restaurantSlug, menuName, sections: [{ name, description, sortOrder, items: [{ name, description, priceCents, imageUrl, sortOrder }] }] }
+  { restaurantSlug, menuName, sections: [{ name, description, sortOrder, items: [{ name, description, priceCents, imageUrl, sortOrder, sourceSystem, sourceItemId }] }] }
 
 CSV headers:
   restaurantSlug,menuName,sectionName,sectionDescription,sectionSortOrder,itemName,itemDescription,priceCents,imageUrl,itemSortOrder`;
@@ -137,6 +139,8 @@ function normalizeJson(input: unknown): ImportDocument {
             priceCents: requiredInteger(item.priceCents, `sections[${sectionIndex}].items[${itemIndex}].priceCents`),
             imageUrl: optionalString(item.imageUrl, `sections[${sectionIndex}].items[${itemIndex}].imageUrl`),
             sortOrder: requiredInteger(item.sortOrder, `sections[${sectionIndex}].items[${itemIndex}].sortOrder`),
+            sourceSystem: optionalString(item.sourceSystem, `sections[${sectionIndex}].items[${itemIndex}].sourceSystem`),
+            sourceItemId: optionalString(item.sourceItemId, `sections[${sectionIndex}].items[${itemIndex}].sourceItemId`),
           };
         }),
       };
@@ -169,6 +173,8 @@ function normalizeCsv(rows: CsvRow[]): ImportDocument {
       priceCents: requiredInteger(row.priceCents, `${rowLabel}.priceCents`),
       imageUrl: optionalString(row.imageUrl, `${rowLabel}.imageUrl`),
       sortOrder: requiredInteger(row.itemSortOrder, `${rowLabel}.itemSortOrder`),
+      sourceSystem: optionalString(row.sourceSystem, `${rowLabel}.sourceSystem`),
+      sourceItemId: optionalString(row.sourceItemId, `${rowLabel}.sourceItemId`),
     });
     sections.set(sectionKey, section);
   }
@@ -192,7 +198,12 @@ function validateDocument(document: ImportDocument) {
     if (section.items.length === 0) fail(`Section has no items: ${section.name}`);
 
     for (const item of section.items) {
-      const itemKey = `${normalizedName}\u0000${item.name.toLowerCase()}`;
+      if ((item.sourceSystem === null) !== (item.sourceItemId === null)) {
+        fail(`Item ${section.name} / ${item.name} must provide both sourceSystem and sourceItemId, or neither`);
+      }
+      const itemKey = item.sourceSystem && item.sourceItemId
+        ? `source\u0000${normalizedName}\u0000${item.sourceSystem.toLowerCase()}\u0000${item.sourceItemId}`
+        : `native\u0000${normalizedName}\u0000${item.name.toLowerCase()}`;
       if (itemKeys.has(itemKey)) fail(`Duplicate item placement: ${section.name} / ${item.name}`);
       itemKeys.add(itemKey);
     }
@@ -216,9 +227,12 @@ async function check<T>(promise: PromiseLike<{ data: T; error: { message: string
   return data;
 }
 
-async function findOne(client: SupabaseClient, table: string, filters: Record<string, string>, operation: string) {
+async function findOne(client: SupabaseClient, table: string, filters: Record<string, string | null | undefined>, operation: string) {
   let query = client.from(table).select("*");
-  for (const [column, value] of Object.entries(filters)) query = query.eq(column, value);
+  for (const [column, value] of Object.entries(filters)) {
+    if (value === undefined) continue;
+    query = value === null ? query.is(column, null) : query.eq(column, value);
+  }
   const { data, error } = await query.maybeSingle();
   if (error) fail(`${operation}: ${error.message}`);
   return data;
@@ -249,15 +263,27 @@ async function importDocument(document: ImportDocument, dryRun: boolean) {
       : await check(client.from("menu_sections").insert({ menu_id: menu.id, name: sectionInput.name, description: sectionInput.description, sort_order: sectionInput.sortOrder, is_active: true }).select("*").single(), "Create section");
 
     for (const itemInput of [...sectionInput.items].sort((a, b) => a.sortOrder - b.sortOrder)) {
-      const existingItem = await findOne(client, "menu_items", { name: itemInput.name }, "Find menu item");
+      const itemIdentity = itemInput.sourceSystem && itemInput.sourceItemId
+        ? { restaurant_id: restaurant.id, source_system: itemInput.sourceSystem, source_item_id: itemInput.sourceItemId }
+        : { restaurant_id: restaurant.id, source_system: null, source_item_id: null, name: itemInput.name };
+      const existingItem = await findOne(client, "menu_items", itemIdentity, "Find menu item");
+      const itemValues = {
+        restaurant_id: restaurant.id,
+        name: itemInput.name,
+        description: itemInput.description,
+        price_cents: itemInput.priceCents,
+        source_image_url: itemInput.imageUrl,
+        source_system: itemInput.sourceSystem,
+        source_item_id: itemInput.sourceItemId,
+      };
       const item = existingItem
-        ? await check(client.from("menu_items").update({ description: itemInput.description, price_cents: itemInput.priceCents, image_url: itemInput.imageUrl }).eq("id", existingItem.id).select("*").single(), "Update menu item")
-        : await check(client.from("menu_items").insert({ name: itemInput.name, description: itemInput.description, price_cents: itemInput.priceCents, image_url: itemInput.imageUrl }).select("*").single(), "Create menu item");
-      const placement = await findOne(client, "menu_section_items", { menu_section_id: section.id, menu_item_id: item.id }, "Find placement");
+        ? await check(client.from("menu_items").update(itemValues).eq("id", existingItem.id).select("*").single(), "Update menu item")
+        : await check(client.from("menu_items").insert(itemValues).select("*").single(), "Create menu item");
+      const placement = await findOne(client, "menu_section_items", { section_id: section.id, item_id: item.id }, "Find placement");
       if (placement) {
         await check(client.from("menu_section_items").update({ sort_order: itemInput.sortOrder }).eq("id", placement.id), "Update placement");
       } else {
-        await check(client.from("menu_section_items").insert({ menu_section_id: section.id, menu_item_id: item.id, sort_order: itemInput.sortOrder }), "Create placement");
+        await check(client.from("menu_section_items").insert({ section_id: section.id, item_id: item.id, sort_order: itemInput.sortOrder }), "Create placement");
       }
     }
   }

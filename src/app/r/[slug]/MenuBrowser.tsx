@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackEvent } from "@/lib/analytics/client";
 import styles from "./menu-browser.module.css";
 
 export type MenuItem = {
@@ -20,6 +21,7 @@ export type MenuSection = {
 };
 
 type MenuBrowserProps = {
+  restaurantId: string;
   currency: string | null;
   sections: MenuSection[];
   ariaLabel: string;
@@ -33,6 +35,7 @@ function formatPrice(priceCents: number, currency: string | null) {
 }
 
 export default function MenuBrowser({
+  restaurantId,
   currency,
   sections,
   ariaLabel,
@@ -44,11 +47,18 @@ export default function MenuBrowser({
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setSearch(searchInput.trim().toLowerCase());
+      const nextSearch = searchInput.trim().toLowerCase();
+      setSearch(nextSearch);
       setExpandedItemId(null);
+      if (nextSearch) {
+        const resultCount = sections
+          .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
+          .reduce((count, section) => count + section.items.filter((item) => [item.name, item.description || ""].join(" ").toLowerCase().includes(nextSearch)).length, 0);
+        trackEvent({ name: "menu_search", restaurantId, queryLength: nextSearch.length, resultCount });
+      }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [searchInput]);
+  }, [restaurantId, searchInput, sections, selectedCategory]);
 
   const visibleSections = sections
     .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
@@ -78,6 +88,7 @@ export default function MenuBrowser({
             onClick={() => {
               setSelectedCategory("all");
               setExpandedItemId(null);
+              trackEvent({ name: "category_selected", restaurantId, sectionId: null });
             }}
             aria-pressed={selectedCategory === "all"}
           >
@@ -91,6 +102,7 @@ export default function MenuBrowser({
               onClick={() => {
                 setSelectedCategory(section.id);
                 setExpandedItemId(null);
+                trackEvent({ name: "category_selected", restaurantId, sectionId: section.id });
               }}
               aria-pressed={selectedCategory === section.id}
             >
@@ -143,7 +155,16 @@ export default function MenuBrowser({
                       className={`${styles.item} ${expandedItemId === item.id ? styles.itemSelected : ""}`}
                       key={item.id}
                       type="button"
-                      onClick={() => toggleExpanded(item.id)}
+                      onClick={() => {
+                        const isExpanded = expandedItemId === item.id;
+                        toggleExpanded(item.id);
+                        trackEvent({
+                          name: isExpanded ? "menu_item_collapsed" : "menu_item_expanded",
+                          restaurantId,
+                          itemId: item.id,
+                          sectionId: section.id,
+                        });
+                      }}
                       aria-expanded={expandedItemId === item.id}
                     >
                       <span className={styles.image}>

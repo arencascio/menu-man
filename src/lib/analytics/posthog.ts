@@ -1,0 +1,68 @@
+import posthog from "posthog-js";
+import type { AnalyticsEvent, AnalyticsProvider } from "./types";
+
+const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+
+export function isPostHogConfigured() {
+  return Boolean(posthogKey && posthogHost);
+}
+
+export function initializePostHog() {
+  if (!posthogKey || !posthogHost || posthog.__loaded) return;
+
+  try {
+    posthog.init(posthogKey, {
+      api_host: posthogHost,
+      defaults: "2026-05-30",
+      advanced_disable_flags: true,
+      autocapture: false,
+      capture_dead_clicks: false,
+      capture_exceptions: false,
+      capture_heatmaps: false,
+      capture_pageleave: false,
+      capture_pageview: false,
+      capture_performance: false,
+      disable_external_dependency_loading: true,
+      disable_session_recording: true,
+      disableDeviceModel: true,
+      person_profiles: "never",
+      persistence: "memory",
+      rageclick: false,
+      save_campaign_params: false,
+      save_referrer: false,
+    });
+  } catch {
+    // Analytics must never prevent the restaurant experience from loading.
+  }
+}
+
+function getPostHogProperties(event: AnalyticsEvent): Record<string, string | number> {
+  const properties: Record<string, string | number> = {
+    restaurant_id: event.restaurantId,
+  };
+
+  if (event.name === "category_selected") {
+    properties.section_id = event.sectionId ?? "all";
+  } else if (event.name === "menu_search") {
+    properties.query_length = event.queryLength;
+    properties.result_count = event.resultCount;
+  } else if (event.name === "menu_item_expanded" || event.name === "menu_item_collapsed") {
+    properties.item_id = event.itemId;
+    properties.section_id = event.sectionId;
+  }
+
+  return properties;
+}
+
+export const posthogProvider: AnalyticsProvider = {
+  track(event) {
+    if (!posthog.__loaded) return;
+
+    try {
+      posthog.capture(event.name, getPostHogProperties(event));
+    } catch {
+      // A provider failure must not block UI behavior or other providers.
+    }
+  },
+};

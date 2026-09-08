@@ -7,11 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import-menu": "node --env-file-if-exists=.env.local --import=tsx scripts/import-menu.ts"
+    "import-menu": "node --env-file-if-exists=.env.local --import=tsx scripts/import-menu.ts",
+    "audit-images": "node --env-file-if-exists=.env.local --import=tsx scripts/audit-menu-images.ts",
+    "import-images": "node --env-file-if-exists=.env.local --import=tsx scripts/import-images.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
     "next": "16.3.4",
+    "posthog-js": "^1.428.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

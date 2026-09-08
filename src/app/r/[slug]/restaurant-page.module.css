@@ -1,0 +1,111 @@
+.shell {
+  --theme-primary: #5b0000;
+  --theme-accent: #b70000;
+  --theme-background: #f7f7f2;
+  --theme-surface: #ffffff;
+  --theme-text: #171717;
+  --theme-muted-text: #666666;
+  --theme-heading-font: Arial, Helvetica, sans-serif;
+  --theme-body-font: Arial, Helvetica, sans-serif;
+  --theme-radius: 14px;
+  --theme-content-width: 1440px;
+  --theme-section-gap: 22px;
+  --theme-card-gap: 22px;
+  min-height: 100vh;
+  color: var(--theme-text);
+  background: var(--theme-primary);
+  font-family: var(--theme-body-font);
+}
+
+.hero {
+  position: relative;
+  min-height: min(70vh, 720px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  padding: 4rem max(1.25rem, calc((100vw - 1180px) / 2)) 3rem;
+  color: #fff;
+  background: var(--theme-primary);
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  background: center / cover no-repeat;
+  opacity: .5;
+}
+
+.heroImagePlaceholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--theme-primary), #171717);
+}
+
+.heroImage::after,
+.heroImagePlaceholder::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgb(0 0 0 / 70%), transparent 70%);
+  content: "";
+}
+
+.heroContent { position: relative; z-index: 1; max-width: 760px; }
+.logo {
+  width: 82px;
+  height: 82px;
+  margin-bottom: 1.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+}
+.logoPlaceholder {
+  display: grid;
+  place-items: center;
+  color: var(--theme-primary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+.eyebrow { margin: 0 0 .75rem; color: #ffd28a; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.hero h1 { margin: 0; font-family: var(--theme-heading-font); font-size: clamp(2.8rem, 8vw, 7rem); line-height: .92; letter-spacing: -.06em; }
+.tagline { max-width: 42rem; margin: 1.25rem 0 0; font-size: clamp(1.05rem, 2vw, 1.35rem); line-height: 1.4; }
+.heroActions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+.primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: .75rem 1.1rem; border-radius: 999px; font-size: .9rem; font-weight: 700; }
+.primaryAction { color: #fff; background: var(--theme-accent); }
+.secondaryAction { border: 1px solid rgb(255 255 255 / 60%); color: #fff; background: rgb(0 0 0 / 18%); }
+.disabledAction { opacity: .65; cursor: default; }
+
+.content { background: var(--theme-background); }
+.info {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, .8fr);
+  gap: 2rem;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 3rem 2rem 1rem;
+}
+.info h2 { margin: 0 0 .9rem; font-family: var(--theme-heading-font); font-size: 1.7rem; font-weight: 500; letter-spacing: -.04em; }
+.description { max-width: 45rem; color: #555; line-height: 1.65; white-space: pre-line; }
+.details { display: grid; gap: 1rem; align-content: start; }
+.detail { color: #555; font-size: .92rem; line-height: 1.5; }
+.detail strong { display: block; margin-bottom: .25rem; color: #171717; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; }
+.detail a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.hours { display: grid; gap: .4rem; }
+.hours h2 { margin-top: 2rem; }
+.hourRow { display: flex; justify-content: space-between; gap: 1rem; color: #555; font-size: .9rem; }
+.hourDay { color: #171717; font-weight: 700; }
+.placeholderText { color: #8a5a00; font-style: italic; }
+.menuRegion { padding-top: 2rem; }
+.footer { display: flex; justify-content: space-between; gap: 2rem; max-width: var(--theme-content-width); margin: 0 auto; padding: 2rem; color: #fff; background: var(--theme-primary); font-size: .85rem; }
+.footer p { margin: 0; line-height: 1.5; }
+.socials { display: flex; flex-wrap: wrap; gap: 1rem; }
+.socials a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 700px) {
+  .hero { min-height: 620px; padding: 3rem 1.25rem 2.25rem; }
+  .logo { width: 68px; height: 68px; }
+  .info { display: block; padding: 2.25rem 1.25rem 0; }
+  .details { margin-top: 2rem; }
+  .hours h2 { margin-top: 1.5rem; }
+  .footer { display: block; padding: 1.5rem 1.25rem; }
+  .socials { margin-top: 1rem; }
+}
