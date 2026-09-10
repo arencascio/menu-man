@@ -63,6 +63,16 @@ const ga4Provider: AnalyticsProvider = {
       parameters.currency = event.currency;
       parameters.value = event.revenueCents / 100;
       parameters.items = event.items.map(getGa4Item);
+    } else if (event.name === "order_created") {
+      parameters.order_id = event.orderId;
+      parameters.order_number = event.orderNumber;
+      parameters.currency = event.currency;
+      parameters.value = event.valueCents / 100;
+      parameters.tax = event.taxCents / 100;
+      parameters.tip = event.tipCents / 100;
+      parameters.pickup_mode = event.pickupMode;
+      parameters.idempotency_replay = event.replayed;
+      parameters.items = event.items.map(getGa4Item);
     }
 
     win.gtag("event", eventName, parameters);

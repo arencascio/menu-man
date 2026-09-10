@@ -1,0 +1,6 @@
+project_id = "menu-man"
+
+# Staging fixtures are intentionally interleaved with the TypeScript menu
+# importer and must never run as an automatic production seed.
+[db.seed]
+enabled = false

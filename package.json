@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import=tsx scripts/run-tests.ts",
+    "test:migrations": "node --import=tsx scripts/migration-contract.test.ts",
     "import-menu": "node --env-file-if-exists=.env.local --import=tsx scripts/import-menu.ts",
+    "import-menu:staging": "node --env-file=.env.staging.local --import=tsx scripts/import-menu.ts --require-staging",
     "audit-images": "node --env-file-if-exists=.env.local --import=tsx scripts/audit-menu-images.ts",
     "import-images": "node --env-file-if-exists=.env.local --import=tsx scripts/import-images.ts"
   },
@@ -16,7 +19,8 @@
     "next": "16.3.4",
     "posthog-js": "^1.428.6",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^20",

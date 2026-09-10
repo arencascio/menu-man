@@ -10,7 +10,7 @@ Menu Man is a standalone Next.js App Router application backed by Supabase. The 
 /r/[slug]
 ```
 
-The route is server-rendered. It uses the Supabase service-role client on the server to fetch an active restaurant, its published menu, active sections, and section-item placements. Interactive rendering is delegated to the client component `src/app/r/[slug]/MenuBrowser.tsx`.
+The route is server-rendered. It uses the Supabase service-role client on the server to fetch an active restaurant, its published menu, active sections, section-item placements, and reusable modifier configuration. Interactive menu ordering and cart rendering are delegated to the client component `src/app/r/[slug]/MenuBrowser.tsx`; no database write capability crosses that boundary.
 
 The preserved files under `prototype/` are reference/source artifacts only. The Wix direction is abandoned and is not part of the current architecture.
 
@@ -19,20 +19,26 @@ The preserved files under `prototype/` are reference/source artifacts only. The 
 - Next.js `16.3.4`, App Router, TypeScript
 - React `19.2.8`
 - Supabase JavaScript client `@supabase/supabase-js`
-- `tsx` for the TypeScript importer script
+- `tsx` for TypeScript operational scripts and tests
+- Zod `4.5.4` for strict checkout request/response validation and normalization
 - CSS Modules and global CSS
 - ESLint 9 and TypeScript strict checking
 - No Tailwind, UI framework, ordering provider, auth provider, or hostname-routing layer
 - Provider-agnostic client analytics with optional GA4 and PostHog adapters
+- A restaurant-scoped client cart persisted in `localStorage`
+- A server-only authoritative checkout-preparation endpoint backed by one restricted PostgreSQL transaction
 
 Useful commands:
 
 ```bash
 npm run dev
+npm test
+npm run test:migrations
 npm run lint
 npx tsc --noEmit
 npm run build
 npm run import-menu -- --file ./data/armandos.json --dry-run
+npm run import-menu:staging -- --file ./data/armandos.json --dry-run
 npm run audit-images -- --restaurant armandos
 npm run import-images -- --restaurant armandos --folder ./images/armandos --dry-run
 ```
@@ -43,7 +49,15 @@ npm run import-images -- --restaurant armandos --folder ./images/armandos --dry-
 - `/r/[slug]`: dynamic restaurant menu route.
 - `src/app/r/[slug]/page.tsx`: server component and Supabase data loader.
 - `src/app/r/[slug]/MenuBrowser.tsx`: client component for menu interaction.
+- `src/app/r/[slug]/OrderItemPanel.tsx`: orderable item form, modifier validation, quantity, and special instructions.
+- `src/app/r/[slug]/CartPanel.tsx`: cart rendering and line editing controls.
+- `src/app/r/[slug]/CheckoutPanel.tsx`: customer/pickup/tip form, cart review, authoritative confirmation, and no payment UI.
+- `src/app/r/[slug]/useRestaurantCart.ts`: restaurant-scoped cart state, persistence, and ordering analytics.
 - `src/app/r/[slug]/menu-browser.module.css`: route-local menu styling.
+- `src/lib/cart/`: typed cart model, integer-cent calculations, validation, reducer, and storage boundary.
+- `src/lib/checkout/`: strict public contracts plus server-only Supabase RPC integration.
+- `/api/restaurants/[slug]/pickup-availability`: explicitly dynamic, non-cacheable operational availability projection. It is advisory only.
+- `/api/restaurants/[slug]/orders`: explicitly dynamic server-only checkout POST; it accepts no prices.
 - `src/lib/supabase/server.ts`: server-only Supabase client using environment variables.
 - `src/lib/seo/`: route metadata, canonical URL, and Restaurant JSON-LD helpers.
 - `src/lib/analytics/`: typed provider-agnostic event API with optional GA4 and PostHog adapters.
@@ -53,7 +67,7 @@ The route looks up an active restaurant by `restaurants.slug`, then one publishe
 
 ## Database Schema Contract
 
-The repository does not contain Supabase migration tooling or generated database types. The following is the schema contract currently expected by the route/importer.
+The authoritative clean-environment schema is committed under `supabase/migrations/`. Generated Supabase TypeScript database types are not yet committed. The following is the schema contract expected by the route/importer.
 
 ### `restaurants`
 
@@ -114,6 +128,7 @@ Hours are normalized because one day can contain multiple opening intervals. The
 - `image_path` nullable Menu Man-owned Supabase Storage object path
 - `source_system` nullable
 - `source_item_id` nullable
+- `is_orderable` boolean, not null, default `false`
 
 Sourced item identity is `restaurant_id + source_system + source_item_id`. `name` is display data, not identity. Native/manual items may leave both source fields null.
 
@@ -126,9 +141,38 @@ Sourced item identity is `restaurant_id + source_system + source_item_id`. `name
 
 The importer uses `section_id` and `item_id`; `menu_section_id` and `menu_item_id` are not valid columns.
 
+### Reusable modifiers
+
+- `modifier_groups`: restaurant-owned reusable group identity, name/description, source identity, and active state.
+- `modifier_options`: reusable choices within a group, with `default_price_adjustment_cents`, explicit `sort_order`, explicit `is_default`, source identity, and active state.
+- `menu_item_modifier_groups`: attaches a reusable group to an item and defines item-specific `min_selections`, `max_selections`, `sort_order`, and active state. `min = max = 1` represents exactly one; `min = 0` represents optional; `max > 1` permits multiple choices.
+- `menu_item_modifier_option_overrides`: optional item/option rows for item-specific price, sort, and active overrides. The row includes `modifier_group_id` so composite foreign keys prove that the option belongs to the attached group and all records belong to the same restaurant.
+
+The effective modifier price is resolved in this exact order: non-null item override, option default, then zero. An override of zero is meaningful and must not fall through to the default. Groups and options remain canonical and reusable; menu items are never duplicated to model choices.
+
+`is_default` is an explicit reusable option setting and defaults to `false`; position is never treated as a default. The server first removes inactive options and item-disabled overrides. The client applies the remaining explicit defaults only when their count satisfies that item's attachment `min_selections` and `max_selections`. Invalid default configurations and groups without defaults start unselected. Editing a cart line always restores its saved selections instead of reapplying current defaults.
+
+### Authoritative checkout and orders
+
+- `restaurant_ordering_settings`: one row per restaurant with `pickup_enabled`, `asap_enabled`, `scheduled_pickup_enabled`, lead time, cutoff before close, tax strategy, and tax rate in basis points. No restaurant row is seeded by the migration.
+- `restaurant_order_counters`: transactionally locked restaurant-scoped human order-number counter.
+- `orders`: restaurant/menu references, restaurant-scoped `order_number`, idempotency key and normalized-request SHA-256 fingerprint, independent order/payment statuses, customer contact fields, order instructions, explicit pickup mode/time/timezone snapshot, currency, tax strategy/rate snapshot, tip rate snapshot, subtotal/tax/tip/total integer cents, and timestamps. The column remains nullable for legacy/pre-checkout compatibility, but `create_order_v1` always allocates it before inserting a checkout-created order.
+- `order_items`: current item reference plus immutable snapshots of item name, base price, modifier total, unit price, quantity, line total, instructions, and sort order.
+- `order_item_modifiers`: current modifier references plus immutable group name, option name, and modifier price snapshots.
+
+`pickup_mode` is constrained to `asap` or `scheduled`; scheduled orders require `pickup_at`. Checkout resolves ASAP to its current estimated pickup timestamp and snapshots it. `order_number` is separate from the UUID, begins at 1001 for a restaurant without prior numbers, and is unique within that restaurant. Allocation occurs in the same transaction as the order and snapshots.
+
+The order lifecycle is `pending_payment`, `placed`, `confirmed`, `preparing`, `ready`, `completed`, or `cancelled`. This milestone creates only `pending_payment` with `payment_status = unpaid`. A future successful payment webhook owns the transition to `payment_status = paid` and `order_status = placed`. Operational restaurant queues must exclude `pending_payment`.
+
 ## Schema Migration
 
-The exact SQL is in `scripts/menu-items-source-identity.sql`. It adds nullable source identity fields and `restaurant_id` to `menu_items`, then creates a partial unique index for rows where all sourced identity fields are present.
+`supabase/migrations/` is the authoritative deterministic bootstrap for an empty Menu Man Supabase project. Apply every migration in filename order. It creates the platform extension requirement, all foundational catalog tables, restaurant profile/hours, source identity and image storage, presentation/SEO fields, modifiers, order snapshots, ordering settings, checkout functions, constraints, indexes, RLS, triggers, and grants.
+
+The files under `scripts/*.sql` are historical production-upgrade artifacts. They document how the existing legacy production database evolved, but most begin with `alter table` and cannot initialize an empty project. Do not mix them into a clean bootstrap. Do not push the clean baseline to the existing production project until its migration history has been separately audited and reconciled.
+
+Staging-only data lives under `supabase/seeds/staging/` and is intentionally excluded from automatic seeding. SQL contract tests live under `supabase/tests/`. The schema contract test is data-independent; the Armando fixture and checkout contract tests run after the ordered staging seed and roll back checkout-created rows.
+
+The historical source-identity upgrade SQL is in `scripts/menu-items-source-identity.sql`. It adds nullable source identity fields and `restaurant_id` to `menu_items`, then creates a partial unique index for rows where all sourced identity fields are present.
 
 Image provenance/storage SQL is in `scripts/menu-image-assets.sql`. It adds `source_image_url` and `image_path`, copies existing `image_url` values into `source_image_url` without deleting the legacy column, configures the `restaurant-assets` bucket, and adds public-read/server-write Storage grants. Runtime image preference is `image_path`, then `source_image_url`, then placeholder.
 
@@ -138,7 +182,36 @@ SEO SQL is in `scripts/restaurant-seo.sql`; it adds nullable `primary_domain`. A
 
 Restaurant profile and hours SQL is in `scripts/restaurant-content.sql`. Armando placeholder content is in `scripts/armandos-restaurant-content.sql`; it intentionally uses visible placeholder copy, null contact/order/social URLs, and closed hours rather than inventing facts. Apply the migration first and the seed second in Supabase. The route currently assumes the new profile columns exist, but gracefully renders without hour rows if the hours table has no records.
 
-The repository does not prove whether that SQL has been applied to the remote Supabase project. Apply and verify it in Supabase before a live sourced import. No application code should assume the migration succeeded solely because the file exists.
+Ordering v1 schema SQL is in `scripts/ordering-v1-schema.sql`. It adds `menu_items.is_orderable default false`, the reusable modifier model, the future order snapshot tables, tenant-consistent foreign keys, constraints, indexes, RLS, and intentionally restricted grants. Apply it before deploying application code that selects `is_orderable` or modifier tables. Apply `scripts/modifier-option-defaults.sql` next; it adds `modifier_options.is_default boolean not null default false`. `scripts/armandos-test-modifiers.sql` is optional test data; apply or rerun it last to mark exactly two known Armando items orderable, attach reusable sample groups, and make Chicken the explicit exactly-one default. It also demonstrates a `$2.00` item override taking precedence over a `$1.50` option default. The seed must be replaced with restaurant-verified modifier data before real ordering.
+
+Authoritative checkout SQL is in `scripts/checkout-v1.sql`; apply it after both ordering schema migrations and before deploying the checkout API/UI. It migrates the order lifecycle to `pending_payment`, adds request/tax/pickup snapshots, creates ordering settings and counters, and defines `get_pickup_availability_v1` and `create_order_v1`. Both are restricted to `service_role`; order creation is a `SECURITY DEFINER` function with an empty search path. The migration revokes direct service-role inserts/updates/deletes on the three order tables so application writes use the function. It deliberately inserts no live restaurant ordering configuration, tax rate, or business hours.
+
+The repository does not prove which historical scripts have been applied to the existing production project. Clean staging environments use migration tracking instead. No application code should assume a remote migration succeeded solely because the file exists.
+
+## Checkout Contracts and Calculations
+
+`POST /api/restaurants/[slug]/orders` requires `Content-Type: application/json` and an `Idempotency-Key` UUID header. The strict body is:
+
+```text
+menuId
+items[]: menuItemId, quantity, modifierOptionIds[], specialInstructions
+customer: name, phone, email
+pickup: { mode: asap } | { mode: scheduled, pickupAt }
+tipChoice: none | 10_percent | 15_percent | 20_percent
+orderNotes
+```
+
+Unknown fields, including any client price or total, are rejected. Limits are 50 lines, quantity 1–99, 50 unique modifiers per line, 500 characters per line instruction, and 1,000 characters for order notes. The response contains the UUID, human order number, `pending_payment`/`unpaid` states, currency, authoritative amounts, resolved pickup data, authoritative item snapshots, and an idempotent-replay flag.
+
+Before RPC invocation, Zod produces a normalized object: UUIDs are lowercase; strings are trimmed; empty optional strings become JSON null; email is lowercase; scheduled pickup is converted to UTC ISO format; each modifier ID array is lexically sorted; and item lines are lexically sorted by `[menuItemId, sorted modifier IDs, normalized special instructions, quantity]`. PostgreSQL receives that normalized value as `jsonb` and stores `encode(sha256(convert_to(p_request::text, 'UTF8')), 'hex')`. PostgreSQL `jsonb` canonicalizes object keys. Thus JSON whitespace, object-key order, UUID case, accepted email case/outer whitespace, empty-string versus null optionals, equivalent time-zone offsets, line order, and modifier order produce one fingerprint. Distinct line structure is intentionally not merged.
+
+Idempotency is scoped to `(restaurant_id, idempotency_key)`. The transaction takes an advisory lock for that pair. A retry with the same fingerprint returns the original order with `replayed = true`; the same key with a different normalized fingerprint is rejected with `IDEMPOTENCY_CONFLICT`.
+
+The checkout client reuses its key for ordinary retries. To survive a refresh after an ambiguous network response, it keeps only `{ SHA-256(canonical payload), idempotency UUID }` in restaurant-scoped `sessionStorage`; it does not store the customer fields or canonical request there. The record is deleted as soon as a valid authoritative response is received. A changed normalized request gets a new key.
+
+`GET /api/restaurants/[slug]/pickup-availability` is dynamic operational data: the route declares `dynamic = force-dynamic`, `revalidate = 0`, `fetchCache = force-no-store`, sends no-store CDN/browser headers, and the client fetch uses `cache: no-store`. It returns current ASAP availability and 15-minute scheduled slots labeled in the restaurant timezone. This GET is never authoritative. `create_order_v1` regenerates availability from current settings, IANA timezone, weekly hours, lead time, cutoff, and transaction time before accepting a pickup.
+
+V1 tax is restaurant-configured percentage tax. The server calculates `round(subtotal_cents * tax_rate_basis_points / 10000)` and snapshots the strategy/rate. The reserved `provider` tax strategy cannot create an order yet. Tips are server-owned choices calculated as the selected basis-point percentage of subtotal. All arithmetic persisted to orders is integer cents.
 
 ## Menu Importer
 
@@ -160,10 +233,13 @@ Behavior:
 - Supports native/manual items with both source fields null.
 - Preserves image URLs/paths; it does not upload images.
 - Preserves source image URLs in `source_image_url`; it does not upload images.
+- Does not write `is_orderable`, so existing item orderability is preserved and new rows use the database default `false`.
 - Is intended to be rerunnable without duplicating logical sourced items or placements.
 - Supports quoted CSV values and reports malformed input, missing fields, conflicting section descriptions, and duplicate placement identities.
 
 The importer uses service-role credentials from `.env.local` through `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Never expose the service-role key to browser code or commit `.env.local`.
+
+The staging command reads `.env.staging.local` and passes `--require-staging`. It refuses to run unless `MENU_MAN_ENV` is exactly `staging`, `MENU_MAN_STAGING_PROJECT_REF` is present, the configured HTTPS Supabase hostname exactly equals `<project-ref>.supabase.co`, and a service-role key is present. The guard reports only the verified project ref, never credentials.
 
 ## Armando Dataset Status
 
@@ -173,6 +249,7 @@ The importer uses service-role credentials from `.env.local` through `NEXT_PUBLI
 - Menu name: `Main Menu`
 - Sections: 26
 - Items: 309
+- Placements in this fixture version: 309. This is fixture-specific, not a schema invariant; canonical items may appear in multiple sections.
 - Source system: `doordash`
 - Unique source item IDs: 309
 - Section and item ordering preserved from the source
@@ -181,6 +258,7 @@ The importer uses service-role credentials from `.env.local` through `NEXT_PUBLI
 - 24 missing image URLs preserved as `null`
 - Duplicate display names were preserved as distinct sourced records
 - No image files were uploaded
+- The optional `scripts/armandos-test-modifiers.sql` seed enables exactly two source items for UI testing; it does not invent modifiers for the remaining 307 items.
 
 The source includes some questionable metadata, including conflicting descriptions for certain repeated categories and notes about missing/new images. Those values were not silently invented or merged.
 
@@ -195,7 +273,14 @@ The production menu UI currently provides:
 - Horizontally scrollable category controls on mobile with hidden scrollbar.
 - Approximately 200 ms debounced search over item name and description.
 - Inline item expansion with one expanded item at a time.
-- Expanded item content rendered directly beneath its section heading.
+- Expanded item content rendered directly beneath its section heading, with the existing informational state retained for non-orderable items.
+- Orderable item panels with image, description, naturally displayed item price, reusable modifier groups, explicit validated defaults, min/max validation, quantity, special instructions, and a computed display total.
+- Add/Update Cart remains visible but uses native disabled semantics and subdued styling until modifier selections are valid.
+- Maximum-selection guidance appears only when the maximum is lower than the number of active options; exactly-one groups use concise `Required · Choose 1` guidance.
+- A client-side cart supporting add, edit, remove, quantity changes, clear, subtotal, and persistence across refreshes for the same restaurant.
+- A checkout panel for customer name, phone, optional email, current ASAP/scheduled choices, tip choice, and optional order notes.
+- A server-confirmed order result with restaurant order number and authoritative subtotal, tax, tip, and total. The cart clears only after success.
+- A single versioned local-storage cart envelope; opening a different restaurant clears the previous restaurant's cart instead of mixing tenant data.
 - Category and search changes collapse the current item.
 - Currency-formatted prices using the restaurant currency, falling back to USD.
 - Keyboard/button semantics and reduced-motion styling for the interactive cards.
@@ -213,6 +298,11 @@ The production menu UI currently provides:
 - Keep theme presets versioned in code and tenant overrides restricted to a server-validated allowlist.
 - Keep UI analytics vendor-agnostic: one typed Menu Man event fans out to every configured provider.
 - Keep PostHog explicit-event-only and anonymous: no identification, persistent browser storage, autocapture, automatic page views, or session replay.
+- Resolve modifier pricing on the server as item override, then option default, then zero; store the resolved display snapshot in the cart.
+- Treat every browser price and total as display-only. Checkout reloads canonical menu/modifier data, validates availability and selections, recalculates every amount, and writes all snapshots in one database transaction.
+- Allocate restaurant-scoped order numbers only inside the authoritative checkout transaction.
+- Use restaurant-configured percentage tax for v1. PostgreSQL computes `round(subtotal_cents * tax_rate_basis_points / 10000)`; a future provider strategy is reserved but currently rejected at checkout. Tip percentages are likewise server-owned and calculated from subtotal.
+- Keep pre-payment records out of operational workflows; only a future trusted payment webhook may mark an order paid and placed.
 - Preserve the standalone prototype as a visual and behavioral reference, not as the production runtime.
 - Do not add a UI framework or Tailwind for this product surface.
 
@@ -221,17 +311,28 @@ The production menu UI currently provides:
 - `SUPABASE_SERVICE_ROLE_KEY` is server-only and must remain in environment configuration.
 - The importer is a privileged operational script and must only be run by trusted operators against the intended Supabase project.
 - The current route uses the service-role client and does not implement user authentication or per-restaurant authorization.
-- The current route does not expose write operations to browsers.
+- The browser can reach only the strict Next.js checkout endpoint. It never receives the service-role key and cannot write database tables directly.
+- Checkout accepts menu/item/modifier IDs, quantities, instructions, customer details, pickup selection, and a tip choice; price fields and unknown fields are rejected.
+- `create_order_v1` is the write boundary. It reloads restaurant/menu ownership, orderability, active modifier attachments/options, min/max rules, price overrides, hours, pickup configuration, and tax configuration before inserting anything.
+- Customer contact details and order notes are stored on the order but never included in analytics events or browser cart persistence.
+- Modifier definitions are read through the server-only Supabase client. RLS and grants give `anon` and `authenticated` no direct access to modifier or order tables.
+- The cart contains menu snapshots and preparation instructions in browser storage. It does not contain customer identity, contact details, card data, or authoritative totals.
 - Source files and imported descriptions/images are not treated as trusted HTML; React renders them as text and image URLs are passed to image elements.
 
 ## Known Limitations
 
-- No committed/generated Supabase types or migration runner exists in the repository.
+- Generated Supabase TypeScript database types are not committed.
 - Remote migration application status is not recorded locally.
 - The route assumes one published menu per restaurant through `.single()`.
 - The route currently does not include source identity fields in its item select because the UI does not need them.
 - The root page and document metadata still contain starter Next.js content.
-- No ordering, cart, payment, fulfillment, auth, customer accounts, or hostname routing exists.
+- No payment, webhook, refund, inventory, fulfillment notification, staff dashboard, auth, customer account, or hostname routing exists.
+- `pending_payment` cleanup/expiration is not implemented. These rows must be filtered out of restaurant operations.
+- Holiday/special-date hour exceptions are deferred. Availability is computed through one function so a future exception table can be applied before weekly-hour slot generation without changing the browser contract.
+- Pickup slots use 15-minute increments and expose the next seven local calendar days; this is not yet restaurant-configurable.
+- Checkout remains disabled until verified hours, timezone, pickup settings, and restaurant percentage tax are configured manually.
+- The public checkout endpoint has request-size validation and database idempotency but no distributed rate limiting or bot mitigation yet. Add deployment-edge or durable-store abuse controls before broad production ordering.
+- Only the two optional Armando test-seed items are orderable; the other imported items remain browsable with `is_orderable = false` until their real configuration is verified.
 - The importer does not delete records removed from a source file; stale sections, items, or placements require a separate reconciliation policy.
 - External image URLs may expire, be blocked, or change independently of Menu Man.
 - Some source records have missing descriptions or images, and source category descriptions contain conflicts that remain source data issues.
@@ -255,36 +356,28 @@ Application code uses camelCase in the typed `AnalyticsEvent` union. Provider ad
 | `menu_search` | `query`, `query_length`, `result_count` | `query` is the trimmed, lowercase menu search term. No other free-form customer text is allowed. |
 | `menu_item_expanded`, `menu_item_collapsed` | `section_id`, `section_name`, `item_id`, `item_name`, `price_cents` | Prices are integer minor units. |
 | `phone_clicked`, `directions_clicked`, `delivery_clicked`, `pickup_clicked` | None | Contact details and destination URLs are not included. |
-| `add_to_cart`, `remove_from_cart` | `item_id`, `item_name`, `price_cents`, `quantity`, `value_cents`, `currency` | `value_cents` is derived as unit price times changed quantity. Defined for ordering but not emitted yet. |
-| `cart_viewed`, `checkout_started` | `currency`, `value_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | `items` contains `item_id`, `item_name`, `price_cents`, and `quantity`. Defined but not emitted yet. |
+| `add_to_cart`, `remove_from_cart` | `item_id`, `item_name`, `price_cents`, `quantity`, `value_cents`, `currency` | `price_cents` is the configured unit price including selected modifiers; `value_cents` is unit price times the quantity added or removed. Emitted by cart operations. |
+| `cart_viewed`, `checkout_started` | `currency`, `value_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | `items` contains `item_id`, `item_name`, `price_cents`, and `quantity`. Emitted when the respective cart/checkout panel opens. Values are browser estimates. |
+| `order_created` | `order_id`, `order_number`, `currency`, `value_cents`, `tax_cents`, `tip_cents`, `pickup_mode`, `idempotency_replay`, item summary fields | Emitted only after the server returns an authoritative `pending_payment`/`unpaid` order. This is not a purchase. No customer fields or notes are sent. |
 | `purchase` | `transaction_id`, `currency`, `revenue_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | Transaction ID supports deduplication and contains no customer PII. Defined but not emitted yet. |
 
 Ordering analytics use ISO currency codes and integer cents in the Menu Man/PostHog contract. The GA4 adapter converts monetary values to currency units and maps `cart_viewed` to `view_cart` and `checkout_started` to `begin_checkout` while retaining GA4's standard `add_to_cart`, `remove_from_cart`, and `purchase` names.
 
 ## Immediate Roadmap
 
-1. Apply and verify `scripts/menu-items-source-identity.sql` in the target Supabase project.
-2. Re-run the Armando dry run, then perform the live import only after confirming the remote columns and unique index.
-3. Verify `/r/armandos` against the imported 26-section, 309-item dataset, including duplicate display names.
-4. Add generated Supabase schema types or migration tooling before further schema evolution.
-5. Replace starter root-page metadata/content when product-level navigation and SEO work is in scope.
-6. Define stale-record reconciliation before using imports as ongoing synchronization.
-7. Replace Armando placeholder profile values with verified restaurant-owned content.
-8. Apply image/theme SQL, run the image audit, and establish an explicit asset replacement policy before uploading owned imagery.
-9. Apply SEO SQL, set `NEXT_PUBLIC_SITE_URL`, configure the desired GA4 and/or PostHog public variables, and verify `/r/[slug]` metadata and analytics in the target deployment.
+1. Bootstrap the new staging project from `supabase/migrations/`, then run the explicitly guarded staging seed/import sequence.
+2. Run the SQL schema, fixture, and checkout contract tests against staging, including idempotent replay and same-key/different-payload conflict.
+3. Reconcile the existing production project's schema and migration history before considering any migration-tool adoption there; do not apply the clean baseline directly.
+4. Replace all test modifiers with restaurant-verified configuration before enabling production ordering.
+5. Implement payment provider/webhook handling; only a successful verified webhook may transition `unpaid`/`pending_payment` to `paid`/`placed` and emit `purchase`.
+6. Define pending-payment expiration, holiday exceptions, notification, and operational queue policies.
+7. Add generated Supabase schema types before further schema evolution.
 
 ## Ordering v1 Scope
 
-Ordering v1 is future work and is intentionally not implemented. The expected first scope is:
+Ordering v1 now includes explicit item orderability, reusable min/max modifier groups, item-specific price overrides, an orderable item panel, a persistent restaurant-isolated client cart, and authoritative checkout preparation. The browser submits no prices. The Next.js server normalizes the request and invokes a restricted PostgreSQL function that independently revalidates pickup and creates the order/snapshot rows transactionally.
 
-- Display a menu item and its price from the published menu.
-- Let a customer choose an item and quantity.
-- Build a temporary cart in the browser.
-- Capture the minimum customer/order details required by the restaurant.
-- Create a server-authorized order record and a clear confirmation state.
-- Keep payment, fulfillment integrations, staff workflows, and advanced customization out of the first slice unless separately specified.
-
-Ordering v1 must not move Supabase service-role access into client code. It also must not change the canonical menu/item/placement model just to support cart state.
+No payment is collected, `purchase` is not emitted, and a created order is not yet placed with the restaurant. The milestone stops at `pending_payment` / `unpaid`.
 
 ## Do Not Regress
 
@@ -301,8 +394,13 @@ Ordering v1 must not move Supabase service-role access into client code. It also
 - Do not allow arbitrary tenant CSS, selectors, HTML, URLs, or style blocks through theme overrides.
 - Do not scatter direct `gtag()` calls through UI components; keep provider logic behind the analytics adapter.
 - Do not scatter direct `posthog.capture()` calls through UI components; keep provider logic behind the analytics adapter.
+- Do not make imported items orderable by default; browseability and orderability are separate.
+- Do not trust cart snapshots, modifier prices, quantities, or totals at checkout; reload and validate canonical data server-side.
+- Do not treat `/pickup-availability` as authoritative or cacheable; checkout must revalidate the selection inside its transaction.
+- Do not place `pending_payment` orders into restaurant operational queues.
+- Do not let browser code insert authoritative `orders`, `order_items`, or `order_item_modifiers` rows.
 - Only the constrained restaurant-menu query may be sent as free-form analytics text. Do not send customer notes, contact-form contents, or other potentially sensitive free-form input.
-- Do not add ordering, authentication, hostname routing, analytics, or SEO as implicit side effects of menu work.
+- Do not add payment, authentication, hostname routing, analytics, or SEO as implicit side effects of menu work.
 - Do not treat the abandoned Wix prototype as a current production dependency.
 - Keep the standalone prototype available as a reference when changing the production menu UI.
 - Do not invent restaurant hours, contact details, addresses, social accounts, or order URLs in seed data.

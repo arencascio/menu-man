@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import process from "node:process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { assertStagingSupabaseTarget } from "./staging-safety";
 
 type ImportItem = {
   name: string;
@@ -30,12 +31,13 @@ type CsvRow = Record<string, string>;
 const usage = `Usage:
   npm run import-menu -- --file path/to/menu.json [--dry-run]
   npm run import-menu -- --file path/to/menu.csv [--dry-run]
+  npm run import-menu:staging -- --file path/to/menu.json [--dry-run]
 
 JSON shape:
   { restaurantSlug, menuName, sections: [{ name, description, sortOrder, items: [{ name, description, priceCents, imageUrl, sortOrder, sourceSystem, sourceItemId }] }] }
 
 CSV headers:
-  restaurantSlug,menuName,sectionName,sectionDescription,sectionSortOrder,itemName,itemDescription,priceCents,imageUrl,itemSortOrder`;
+  restaurantSlug,menuName,sectionName,sectionDescription,sectionSortOrder,itemName,itemDescription,priceCents,imageUrl,itemSortOrder,sourceSystem,sourceItemId`;
 
 function fail(message: string): never {
   throw new Error(message);
@@ -242,6 +244,10 @@ async function importDocument(document: ImportDocument, dryRun: boolean) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRoleKey) fail("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
+  if (process.argv.includes("--require-staging")) {
+    const stagingTarget = assertStagingSupabaseTarget(process.env);
+    console.log(`Verified staging Supabase target: ${stagingTarget.projectRef}`);
+  }
   const client = createClient(url, serviceRoleKey, { auth: { persistSession: false } });
 
   const restaurant = await findOne(client, "restaurants", { slug: document.restaurantSlug }, "Find restaurant");

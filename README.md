@@ -1,5 +1,29 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Clean Supabase bootstrap
+
+[`supabase/migrations`](supabase/migrations) is the authoritative ordered schema
+for a completely empty Menu Man Supabase environment. It includes foundational
+catalog tables, profile/hours, source and image fields, Storage, themes, SEO,
+modifiers, orders, ordering settings, checkout RPCs, RLS, grants, indexes, and
+triggers. Apply the files in filename order, normally with `supabase db push`
+after linking the CLI to the intended new project.
+
+The SQL files under `scripts/` are historical production-upgrade artifacts.
+They assume legacy tables already exist and must not be used to bootstrap an
+empty database or mixed into a clean migration run.
+
+Staging data is never automatic. Follow
+[`supabase/seeds/staging/README.md`](supabase/seeds/staging/README.md) after the
+schema migration. The staging menu command requires `.env.staging.local`,
+`MENU_MAN_ENV=staging`, and a Supabase hostname matching
+`MENU_MAN_STAGING_PROJECT_REF` exactly:
+
+```bash
+npm run import-menu:staging -- --file ./data/armandos.json --dry-run
+npm run import-menu:staging -- --file ./data/armandos.json
+```
+
 ## Menu imports
 
 Import a structured menu with the service-role key:
@@ -9,6 +33,35 @@ npm run import-menu -- --file ./menu.json --dry-run
 npm run import-menu -- --file ./menu.json
 npm run audit-images -- --restaurant armandos
 npm run import-images -- --restaurant armandos --folder ./images/armandos --dry-run
+```
+
+## Existing-production Ordering v1 upgrade history
+
+These historical scripts describe the incremental upgrade path used by the
+existing production database. They are retained for auditability; clean
+environments use `supabase/migrations/` instead.
+
+The historical order is:
+
+1. [`scripts/ordering-v1-schema.sql`](scripts/ordering-v1-schema.sql) — required schema, constraints, RLS, and restricted grants.
+2. [`scripts/modifier-option-defaults.sql`](scripts/modifier-option-defaults.sql) — required explicit modifier-option default flag.
+3. [`scripts/checkout-v1.sql`](scripts/checkout-v1.sql) — required authoritative checkout RPC, restaurant ordering settings, order counters, status migration, RLS, and restricted grants.
+4. [`scripts/armandos-test-modifiers.sql`](scripts/armandos-test-modifiers.sql) — optional test/staging seed for exactly two known Armando items; apply or rerun it after the schema migrations.
+
+All imported items default to `is_orderable = false`; the importer does not change that flag. Modifier options default to `is_default = false`, and ordering does not infer defaults from sort order. The optional seed explicitly enables only its two target items and marks Chicken as the sample default meat. Replace test modifier definitions with restaurant-verified data before real ordering.
+
+The cart is stored in the browser under `menu-man:cart:v1`, persists across refreshes, and is cleared when a different restaurant is opened. Its prices and totals are display-only. Checkout posts IDs and selections to the Next.js server, which invokes the restricted PostgreSQL transaction in `create_order_v1`; that transaction reloads authoritative data and writes order snapshots. No payment is collected. New records are `pending_payment` / `unpaid` and must not enter restaurant operations until a future successful payment webhook moves them to `placed` / `paid`.
+
+`checkout-v1.sql` intentionally enables no restaurant. Before checkout can succeed, an operator must configure verified business hours, a valid IANA restaurant timezone, and one `restaurant_ordering_settings` row with verified pickup rules and a verified tax rate in basis points. Do not use sample values in production.
+
+Run the cart tests and application checks with:
+
+```bash
+npm test
+npm run test:migrations
+npm run lint
+npx tsc --noEmit
+npm run build
 ```
 
 Optional analytics configuration:

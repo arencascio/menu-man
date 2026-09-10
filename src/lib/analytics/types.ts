@@ -42,6 +42,19 @@ export type AnalyticsEvent =
       currency: string;
       revenueCents: number;
       items: readonly AnalyticsCartItem[];
+    }
+  | {
+      name: "order_created";
+      restaurantId: string;
+      orderId: string;
+      orderNumber: string;
+      currency: string;
+      valueCents: number;
+      taxCents: number;
+      tipCents: number;
+      pickupMode: "asap" | "scheduled";
+      replayed: boolean;
+      items: readonly AnalyticsCartItem[];
     };
 
 export type AnalyticsProvider = {

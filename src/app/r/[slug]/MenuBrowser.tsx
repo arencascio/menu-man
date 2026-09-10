@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { trackEvent } from "@/lib/analytics/client";
+import { formatPrice } from "@/lib/cart/cart";
+import type { CartLine, MenuModifierGroup } from "@/lib/cart/types";
+import CartPanel from "./CartPanel";
+import CheckoutPanel from "./CheckoutPanel";
+import OrderItemPanel from "./OrderItemPanel";
+import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
 
 export type MenuItem = {
@@ -10,6 +16,8 @@ export type MenuItem = {
   description: string | null;
   price_cents: number;
   image_url: string | null;
+  is_orderable: boolean;
+  modifierGroups: MenuModifierGroup[];
 };
 
 export type MenuSection = {
@@ -22,20 +30,17 @@ export type MenuSection = {
 
 type MenuBrowserProps = {
   restaurantId: string;
+  restaurantSlug: string;
+  menuId: string;
   currency: string | null;
   sections: MenuSection[];
   ariaLabel: string;
 };
 
-function formatPrice(priceCents: number, currency: string | null) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency || "USD",
-  }).format(priceCents / 100);
-}
-
 export default function MenuBrowser({
   restaurantId,
+  restaurantSlug,
+  menuId,
   currency,
   sections,
   ariaLabel,
@@ -44,12 +49,16 @@ export default function MenuBrowser({
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const resolvedCurrency = currency || "USD";
+  const cart = useRestaurantCart(restaurantId, resolvedCurrency);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const nextSearch = searchInput.trim().toLowerCase();
       setSearch(nextSearch);
-      setExpandedItemId(null);
       if (nextSearch) {
         const resultCount = sections
           .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
@@ -78,6 +87,62 @@ export default function MenuBrowser({
     setExpandedItemId((current) => (current === itemId ? null : itemId));
   }
 
+  function closeExpandedItem(item: MenuItem, section: MenuSection) {
+    setExpandedItemId(null);
+    setEditingLineId(null);
+    trackEvent({
+      name: "menu_item_collapsed",
+      restaurantId,
+      itemId: item.id,
+      itemName: item.name,
+      priceCents: item.price_cents,
+      sectionId: section.id,
+      sectionName: section.name,
+    });
+  }
+
+  function saveCartLine(line: CartLine) {
+    if (editingLineId) cart.replaceLine(line);
+    else cart.addLine(line);
+    setExpandedItemId(null);
+    setEditingLineId(null);
+  }
+
+  function editCartLine(line: CartLine) {
+    const section = sections.find((candidate) => (
+      candidate.id === line.sectionId
+      && candidate.items.some((item) => item.id === line.menuItemId)
+    )) || sections.find((candidate) => candidate.items.some((item) => item.id === line.menuItemId));
+    if (!section) return;
+
+    setIsCartOpen(false);
+    setSearchInput("");
+    setSearch("");
+    setSelectedCategory(section.id);
+    setExpandedItemId(line.menuItemId);
+    setEditingLineId(line.lineId);
+  }
+
+  function openCheckout() {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+    trackEvent({
+      name: "checkout_started",
+      restaurantId,
+      currency: resolvedCurrency,
+      valueCents: cart.subtotalCents,
+      items: cart.lines.map((line) => ({
+        itemId: line.menuItemId,
+        itemName: line.itemName,
+        priceCents: line.basePriceCents + line.selectedModifiers.reduce(
+          (total, modifier) => total + modifier.priceAdjustmentCents,
+          0,
+        ),
+        quantity: line.quantity,
+      })),
+    });
+  }
+
   return (
     <main className={styles.page} aria-label={ariaLabel}>
       <div className={styles.controls}>
@@ -88,6 +153,7 @@ export default function MenuBrowser({
             onClick={() => {
               setSelectedCategory("all");
               setExpandedItemId(null);
+              setEditingLineId(null);
               trackEvent({ name: "category_selected", restaurantId, sectionId: null, sectionName: "Full Menu" });
             }}
             aria-pressed={selectedCategory === "all"}
@@ -102,6 +168,7 @@ export default function MenuBrowser({
               onClick={() => {
                 setSelectedCategory(section.id);
                 setExpandedItemId(null);
+                setEditingLineId(null);
                 trackEvent({ name: "category_selected", restaurantId, sectionId: section.id, sectionName: section.name });
               }}
               aria-pressed={selectedCategory === section.id}
@@ -115,11 +182,57 @@ export default function MenuBrowser({
           <input
             type="search"
             value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+              setExpandedItemId(null);
+              setEditingLineId(null);
+            }}
             placeholder="Search the menu..."
           />
         </label>
+        <button
+          className={styles.cartButton}
+          type="button"
+          aria-expanded={isCartOpen}
+          onClick={() => {
+            const willOpen = !isCartOpen;
+            setIsCartOpen(willOpen);
+            setIsCheckoutOpen(false);
+            if (willOpen) cart.trackCartViewed();
+          }}
+        >
+          Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}
+        </button>
       </div>
+
+      {isCartOpen && (
+        <CartPanel
+          lines={cart.lines}
+          currency={resolvedCurrency}
+          subtotalCents={cart.subtotalCents}
+          onClose={() => setIsCartOpen(false)}
+          onEdit={editCartLine}
+          onRemove={cart.removeLine}
+          onQuantityChange={cart.setLineQuantity}
+          onClear={cart.clearCart}
+          onCheckout={openCheckout}
+        />
+      )}
+
+      {isCheckoutOpen && (
+        <CheckoutPanel
+          restaurantId={restaurantId}
+          restaurantSlug={restaurantSlug}
+          menuId={menuId}
+          currency={resolvedCurrency}
+          lines={cart.lines}
+          onBack={() => {
+            setIsCheckoutOpen(false);
+            setIsCartOpen(cart.lines.length > 0);
+          }}
+          onOrderConfirmed={cart.clearAfterOrderCreated}
+        />
+      )}
 
       <div className={styles.menu}>
         {visibleSections.length > 0 ? (
@@ -134,19 +247,16 @@ export default function MenuBrowser({
                 </div>
 
                 {expandedItem && (
-                  <article className={styles.expandedItem}>
-                    <div className={styles.expandedContent}>
-                      <p className={styles.expandedLabel}>Selected dish</p>
-                      <h3>{expandedItem.name}</h3>
-                      {expandedItem.description && <p>{expandedItem.description}</p>}
-                    </div>
-                    <div className={styles.expandedPrice}>
-                      {formatPrice(expandedItem.price_cents, currency)}
-                      <button type="button" onClick={() => toggleExpanded(expandedItem.id)}>
-                        Close
-                      </button>
-                    </div>
-                  </article>
+                  <OrderItemPanel
+                    key={`${expandedItem.id}:${editingLineId || "new"}`}
+                    item={expandedItem}
+                    sectionId={section.id}
+                    sectionName={section.name}
+                    currency={resolvedCurrency}
+                    editingLine={cart.lines.find((line) => line.lineId === editingLineId) || null}
+                    onSave={saveCartLine}
+                    onClose={() => closeExpandedItem(expandedItem, section)}
+                  />
                 )}
 
                 <div className={styles.grid}>
@@ -158,6 +268,7 @@ export default function MenuBrowser({
                       onClick={() => {
                         const isExpanded = expandedItemId === item.id;
                         toggleExpanded(item.id);
+                        setEditingLineId(null);
                         trackEvent({
                           name: isExpanded ? "menu_item_collapsed" : "menu_item_expanded",
                           restaurantId,
@@ -180,7 +291,7 @@ export default function MenuBrowser({
                       </span>
                       <span className={styles.itemInfo}>
                         <span className={styles.itemName}>{item.name}</span>
-                        <span className={styles.price}>{formatPrice(item.price_cents, currency)}</span>
+                        <span className={styles.price}>{formatPrice(item.price_cents, resolvedCurrency)}</span>
                       </span>
                     </button>
                   ))}

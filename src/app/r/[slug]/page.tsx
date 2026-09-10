@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
+import { isMenuModifierOptionAvailable, resolveModifierPriceCents } from "@/lib/cart/cart";
+import type { MenuModifierGroup } from "@/lib/cart/types";
 import { resolveTheme } from "@/lib/themes/resolve-theme";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
 import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
@@ -135,7 +137,8 @@ if (restaurantError || !restaurant) {
             description,
             price_cents,
             source_image_url,
-            image_path
+            image_path,
+            is_orderable
           )
         )
       `)
@@ -152,6 +155,97 @@ if (restaurantError || !restaurant) {
         <p>There was a problem loading the menu.</p>
       </main>
     );
+  }
+
+  const [modifierGroupsResult, modifierOptionsResult, modifierAttachmentsResult, modifierOverridesResult] = await Promise.all([
+    supabaseServer
+      .from("modifier_groups")
+      .select("id, name, description, is_active")
+      .eq("restaurant_id", restaurant.id),
+    supabaseServer
+      .from("modifier_options")
+      .select("id, modifier_group_id, name, default_price_adjustment_cents, sort_order, is_default, is_active")
+      .eq("restaurant_id", restaurant.id),
+    supabaseServer
+      .from("menu_item_modifier_groups")
+      .select("menu_item_id, modifier_group_id, min_selections, max_selections, sort_order, is_active")
+      .eq("restaurant_id", restaurant.id),
+    supabaseServer
+      .from("menu_item_modifier_option_overrides")
+      .select("menu_item_id, modifier_option_id, price_adjustment_cents, sort_order, is_active")
+      .eq("restaurant_id", restaurant.id),
+  ]);
+
+  const modifierErrors = [
+    modifierGroupsResult.error,
+    modifierOptionsResult.error,
+    modifierAttachmentsResult.error,
+    modifierOverridesResult.error,
+  ].filter(Boolean);
+  if (modifierErrors.length > 0) {
+    console.error("There was a problem loading menu modifiers.", modifierErrors);
+  }
+
+  const modifierGroupsById = new Map(
+    (modifierGroupsResult.data || []).map((group) => [group.id, group]),
+  );
+  const modifierOptionsByGroupId = new Map<string, NonNullable<typeof modifierOptionsResult.data>>();
+  for (const option of modifierOptionsResult.data || []) {
+    const options = modifierOptionsByGroupId.get(option.modifier_group_id) || [];
+    options.push(option);
+    modifierOptionsByGroupId.set(option.modifier_group_id, options);
+  }
+  const modifierOverridesByItemAndOption = new Map(
+    (modifierOverridesResult.data || []).map((override) => [
+      `${override.menu_item_id}:${override.modifier_option_id}`,
+      override,
+    ]),
+  );
+  const modifierAttachmentsByItemId = new Map<string, NonNullable<typeof modifierAttachmentsResult.data>>();
+  for (const attachment of modifierAttachmentsResult.data || []) {
+    const attachments = modifierAttachmentsByItemId.get(attachment.menu_item_id) || [];
+    attachments.push(attachment);
+    modifierAttachmentsByItemId.set(attachment.menu_item_id, attachments);
+  }
+
+  function getItemModifierGroups(menuItemId: string): MenuModifierGroup[] {
+    return (modifierAttachmentsByItemId.get(menuItemId) || [])
+      .flatMap((attachment) => {
+        const group = modifierGroupsById.get(attachment.modifier_group_id);
+        if (!group || !group.is_active || !attachment.is_active) return [];
+        const options = (modifierOptionsByGroupId.get(group.id) || [])
+          .flatMap((option) => {
+            const override = modifierOverridesByItemAndOption.get(`${menuItemId}:${option.id}`);
+            if (!isMenuModifierOptionAvailable(
+              group.is_active,
+              option.is_active,
+              attachment.is_active,
+              override?.is_active,
+            )) return [];
+            return [{
+              id: option.id,
+              name: option.name,
+              priceAdjustmentCents: resolveModifierPriceCents(
+                override?.price_adjustment_cents,
+                option.default_price_adjustment_cents,
+              ),
+              sortOrder: override?.sort_order ?? option.sort_order,
+              isDefault: option.is_default,
+            }];
+          })
+          .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
+
+        return [{
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          minSelections: attachment.min_selections,
+          maxSelections: attachment.max_selections,
+          sortOrder: attachment.sort_order,
+          options,
+        }];
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
   }
 
   const { data: businessHours, error: businessHoursError } = await supabaseServer
@@ -204,6 +298,7 @@ if (restaurantError || !restaurant) {
         const items = Array.isArray(item) ? item : item ? [item] : [];
         return items.map((menuItem) => ({
           ...menuItem,
+          modifierGroups: getItemModifierGroups(menuItem.id),
           image_url: menuItem.image_path
             ? supabaseServer.storage.from("restaurant-assets").getPublicUrl(menuItem.image_path).data.publicUrl
             : menuItem.source_image_url,
@@ -238,6 +333,8 @@ if (restaurantError || !restaurant) {
         <div className={styles.menuRegion}>
           <MenuBrowser
             restaurantId={restaurant.id}
+            restaurantSlug={restaurant.slug}
+            menuId={menu.id}
             currency={restaurant.currency}
             sections={menuSections}
             ariaLabel={`${restaurant.name} ${menu.name}`}
