@@ -23,6 +23,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609080006_ordering_schema.sql",
     "202609080007_checkout_v1.sql",
     "202609100001_payments_foundation.sql",
+    "202609110001_fix_checkout_request_fingerprint_ambiguity.sql",
   ]);
 });
 
@@ -97,6 +98,22 @@ test("checkout functions and restricted service-role boundary are present", () =
   assert.match(checkout, /'unpaid'/);
   assert.match(checkout, /revoke insert, update, delete on table[\s\S]*public\.orders[\s\S]*from service_role/i);
   assert.match(checkout, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("checkout fingerprint references are unambiguous in bootstrap and forward repair", () => {
+  const checkout = migrations.find(({ file }) => file.endsWith("_checkout_v1.sql"))?.sql || "";
+  const repair = migrations.find(
+    ({ file }) => file.endsWith("_fix_checkout_request_fingerprint_ambiguity.sql"),
+  )?.sql || "";
+
+  for (const definition of [checkout, repair]) {
+    assert.match(definition, /\bv_request_fingerprint\s+text\s*;/i);
+    assert.match(definition, /v_request_fingerprint\s*:=\s*pg_catalog\.encode/i);
+    assert.match(definition, /select\s+o\.id\s*,\s*o\.request_fingerprint[\s\S]*from\s+public\.orders\s+o/i);
+    assert.match(definition, /existing_order\.request_fingerprint\s*<>\s*v_request_fingerprint/i);
+    assert.match(definition, /lower\(p_idempotency_key\)\s*,\s*v_request_fingerprint\s*,/i);
+    assert.doesNotMatch(definition, /\n\s*request_fingerprint\s+text\s*;/i);
+  }
 });
 
 test("payment state is mutated only through restricted functions", () => {

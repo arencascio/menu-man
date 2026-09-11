@@ -327,7 +327,7 @@ declare
   settings_record record;
   menu_uuid uuid;
   existing_order record;
-  request_fingerprint text;
+  v_request_fingerprint text;
   pickup_availability jsonb;
   pickup_mode_value text;
   pickup_at_value timestamptz;
@@ -371,19 +371,19 @@ begin
     pg_catalog.hashtextextended(restaurant_record.id::text || ':' || lower(p_idempotency_key), 0)
   );
 
-  request_fingerprint := pg_catalog.encode(
+  v_request_fingerprint := pg_catalog.encode(
     pg_catalog.sha256(pg_catalog.convert_to(p_request::text, 'UTF8')),
     'hex'
   );
 
-  select id, request_fingerprint
+  select o.id, o.request_fingerprint
   into existing_order
-  from public.orders
-  where restaurant_id = restaurant_record.id
-    and idempotency_key = lower(p_idempotency_key);
+  from public.orders o
+  where o.restaurant_id = restaurant_record.id
+    and o.idempotency_key = lower(p_idempotency_key);
 
   if found then
-    if existing_order.request_fingerprint <> request_fingerprint then
+    if existing_order.request_fingerprint <> v_request_fingerprint then
       raise exception using message = 'MM_IDEMPOTENCY_CONFLICT|This idempotency key was already used for a different request.';
     end if;
     return public.menu_man_order_response_v1(existing_order.id, true);
@@ -676,7 +676,7 @@ begin
     menu_uuid,
     order_number_value,
     lower(p_idempotency_key),
-    request_fingerprint,
+    v_request_fingerprint,
     'pending_payment',
     'unpaid',
     p_request #>> '{customer,name}',

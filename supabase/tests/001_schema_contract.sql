@@ -5,6 +5,7 @@ do $$
 declare
   missing_tables text[];
   missing_columns text[];
+  checkout_function_definition text;
 begin
   select array_agg(required_table.name order by required_table.name)
   into missing_tables
@@ -100,6 +101,21 @@ begin
     or to_regprocedure('public.create_order_v1(text,text,jsonb)') is null
   then
     raise exception 'Required checkout functions are missing';
+  end if;
+
+  select lower(pg_catalog.pg_get_functiondef(
+    'public.create_order_v1(text,text,jsonb)'::regprocedure
+  )) into checkout_function_definition;
+
+  if position('v_request_fingerprint text' in checkout_function_definition) = 0
+    or position('v_request_fingerprint := pg_catalog.encode' in checkout_function_definition) = 0
+    or position('select o.id, o.request_fingerprint' in checkout_function_definition) = 0
+    or position(
+      'existing_order.request_fingerprint <> v_request_fingerprint'
+      in checkout_function_definition
+    ) = 0
+  then
+    raise exception 'Checkout fingerprint references are not explicitly disambiguated';
   end if;
 
   if to_regprocedure('public.prepare_payment_v1(uuid,text,boolean,integer,integer)') is null
