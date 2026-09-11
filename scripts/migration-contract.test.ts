@@ -25,6 +25,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609100001_payments_foundation.sql",
     "202609110001_fix_checkout_request_fingerprint_ambiguity.sql",
     "202609110002_route_based_checkout.sql",
+    "202609110003_fix_terminal_payment_failure_transition.sql",
   ]);
 });
 
@@ -140,6 +141,9 @@ test("payment state is mutated only through restricted functions", () => {
 
 test("route checkout adds a capability-protected snapshot and terminal failure guard", () => {
   const migration = migrations.find(({ file }) => file.endsWith("_route_based_checkout.sql"))?.sql || "";
+  const repair = migrations.find(
+    ({ file }) => file.endsWith("_fix_terminal_payment_failure_transition.sql"),
+  )?.sql || "";
   assert.match(migration, /create or replace function public\.get_order_payment_view_v1/i);
   assert.match(migration, /session\.access_token_hash = p_access_token_hash/i);
   assert.match(migration, /restaurant\.slug = p_restaurant_slug/i);
@@ -148,6 +152,11 @@ test("route checkout adds a capability-protected snapshot and terminal failure g
   assert.match(migration, /'payment_failed'/i);
   assert.match(migration, /order_status = 'cancelled'/i);
   assert.match(migration, /grant execute on function public\.get_order_payment_view_v1[\s\S]*to service_role/i);
+
+  for (const definition of [migration, repair]) {
+    assert.match(definition, /'reconciliation',\s*\n\s*'payment\.terminal_failure'/i);
+    assert.doesNotMatch(definition, /'system',\s*\n\s*'payment\.terminal_failure'/i);
+  }
 });
 
 test("browser analytics cannot emit purchase", () => {

@@ -51,7 +51,7 @@ begin
       restaurant_id, payment_id, payment_attempt_id, source, event_type,
       previous_state, next_state
     ) values (
-      payment_record.restaurant_id, payment_record.id, new.id, 'system',
+      payment_record.restaurant_id, payment_record.id, new.id, 'reconciliation',
       'payment.terminal_failure',
       jsonb_build_object(
         'payment', payment_record.status,

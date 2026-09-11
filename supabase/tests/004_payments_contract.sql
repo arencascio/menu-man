@@ -24,6 +24,7 @@ declare
   payment_uuid uuid;
   second_payment_uuid uuid;
   payment_view jsonb;
+  failed_payment_status jsonb;
   event_uuid uuid;
 begin
   select id into strict restaurant_uuid
@@ -270,14 +271,44 @@ begin
   );
   perform public.apply_payment_event_v1((webhook_response ->> 'webhookEventId')::uuid);
 
-  if not exists (
-    select 1 from public.orders
-    where id = (failed_order_response ->> 'orderId')::uuid
-      and order_status = 'cancelled'
-      and payment_status = 'failed'
-      and cancellation_reason = 'payment_declined'
-  ) then
-    raise exception 'Conclusive decline did not terminally cancel the order';
+  if (select status from public.payment_attempts
+      where id = (failed_attempt ->> 'attemptId')::uuid) <> 'failed'
+    or (select status from public.payments
+        where id = (prepared ->> 'paymentId')::uuid) <> 'failed'
+    or not exists (
+      select 1 from public.orders
+      where id = (failed_order_response ->> 'orderId')::uuid
+        and order_status = 'cancelled'
+        and payment_status = 'failed'
+        and cancellation_reason = 'payment_declined'
+    )
+  then
+    raise exception 'Conclusive decline did not fail the attempt/payment and terminally cancel the order';
+  end if;
+
+  failed_payment_status := public.authorize_payment_session_v1(
+    (failed_order_response ->> 'orderId')::uuid, repeat('1', 64)
+  );
+  if failed_payment_status ->> 'status' <> 'failed'
+    or failed_payment_status ->> 'orderStatus' <> 'cancelled'
+    or failed_payment_status ->> 'paymentStatus' <> 'failed'
+    or failed_payment_status #>> '{latestAttempt,status}' <> 'failed'
+  then
+    raise exception 'Payment status API source did not expose a terminal decline: %', failed_payment_status;
+  end if;
+
+  payment_view := public.get_order_payment_view_v1(
+    (failed_order_response ->> 'orderId')::uuid, 'armandos', repeat('1', 64)
+  );
+  if payment_view #>> '{payment,status}' <> 'failed'
+    or payment_view #>> '{payment,orderStatus}' <> 'cancelled'
+    or payment_view #>> '{payment,paymentStatus}' <> 'failed'
+    or payment_view #>> '{payment,latestAttempt,status}' <> 'failed'
+    or payment_view #>> '{order,orderStatus}' <> 'cancelled'
+    or payment_view #>> '{order,paymentStatus}' <> 'failed'
+    or payment_view #>> '{order,cancellationReason}' <> 'payment_declined'
+  then
+    raise exception 'Order payment view did not expose a terminal decline: %', payment_view;
   end if;
 
   begin
