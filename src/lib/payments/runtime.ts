@@ -1,0 +1,31 @@
+export function fakePaymentRuntimeAllowed(input: {
+  menuManEnvironment?: string;
+  nodeEnvironment?: string;
+  explicitlyEnabled?: string;
+}) {
+  const { menuManEnvironment, nodeEnvironment, explicitlyEnabled } = input;
+  if (menuManEnvironment === "production") return false;
+
+  const nonProductionRuntime = menuManEnvironment === "staging"
+    || menuManEnvironment === "development"
+    || nodeEnvironment === "development"
+    || nodeEnvironment === "test";
+
+  return nonProductionRuntime && explicitlyEnabled === "true";
+}
+
+export function isFakePaymentRuntimeEnabled() {
+  return fakePaymentRuntimeAllowed({
+    menuManEnvironment: process.env.MENU_MAN_ENV,
+    nodeEnvironment: process.env.NODE_ENV,
+    explicitlyEnabled: process.env.MENU_MAN_ENABLE_FAKE_PAYMENTS,
+  });
+}
+
+export function requireFakeWebhookSecret() {
+  const secret = process.env.MENU_MAN_FAKE_WEBHOOK_SECRET;
+  if (!isFakePaymentRuntimeEnabled() || !secret || secret.length < 32) {
+    throw new Error("The fake payment provider is not configured for this non-production environment.");
+  }
+  return secret;
+}

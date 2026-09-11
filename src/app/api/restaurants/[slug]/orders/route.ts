@@ -6,6 +6,7 @@ import {
   type CheckoutErrorCode,
 } from "@/lib/checkout/contracts";
 import { CheckoutServerError, createAuthoritativeOrder } from "@/lib/checkout/server";
+import { preparePaymentForOrder } from "@/lib/payments/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -53,7 +54,8 @@ export async function POST(
     const checkoutRequest = checkoutRequestSchema.parse(JSON.parse(rawBody));
     const { slug } = await params;
     const response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest);
-    return NextResponse.json(response, {
+    const paymentSession = await preparePaymentForOrder(response.orderId);
+    return NextResponse.json({ ...response, paymentSession }, {
       status: response.replayed ? 200 : 201,
       headers: responseHeaders,
     });

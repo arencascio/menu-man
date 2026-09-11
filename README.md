@@ -50,7 +50,7 @@ The historical order is:
 
 All imported items default to `is_orderable = false`; the importer does not change that flag. Modifier options default to `is_default = false`, and ordering does not infer defaults from sort order. The optional seed explicitly enables only its two target items and marks Chicken as the sample default meat. Replace test modifier definitions with restaurant-verified data before real ordering.
 
-The cart is stored in the browser under `menu-man:cart:v1`, persists across refreshes, and is cleared when a different restaurant is opened. Its prices and totals are display-only. Checkout posts IDs and selections to the Next.js server, which invokes the restricted PostgreSQL transaction in `create_order_v1`; that transaction reloads authoritative data and writes order snapshots. No payment is collected. New records are `pending_payment` / `unpaid` and must not enter restaurant operations until a future successful payment webhook moves them to `placed` / `paid`.
+The cart is stored in the browser under `menu-man:cart:v1`, persists across refreshes, and is cleared when a different restaurant is opened. Its prices and totals are display-only. Checkout posts IDs and selections to the Next.js server, which invokes the restricted PostgreSQL transaction in `create_order_v1`; that transaction reloads authoritative data and writes order snapshots. New records are `pending_payment` / `unpaid`. Payment preparation runs only after that transaction commits, and only a verified provider event can move an order to `placed` / `paid`. The cart is retained until that verified transition.
 
 `checkout-v1.sql` intentionally enables no restaurant. Before checkout can succeed, an operator must configure verified business hours, a valid IANA restaurant timezone, and one `restaurant_ordering_settings` row with verified pickup rules and a verified tax rate in basis points. Do not use sample values in production.
 
@@ -63,6 +63,36 @@ npm run lint
 npx tsc --noEmit
 npm run build
 ```
+
+## Fake payment provider
+
+The provider-neutral payment foundation includes a signed fake provider for
+development and staging. It is unavailable when `MENU_MAN_ENV=production`,
+requires an explicit enable flag, and only accepts database connections marked
+with the `test` environment:
+
+```text
+MENU_MAN_ENV=staging
+MENU_MAN_ENABLE_FAKE_PAYMENTS=true
+MENU_MAN_FAKE_WEBHOOK_SECRET=<at-least-32-random-characters>
+```
+
+Apply `supabase/seeds/staging/004_armandos_fake_payments.sql` only to staging.
+The checkout exposes deterministic success, decline, unknown outcome, delayed,
+duplicate, out-of-order, authorization-only, refund, and late-success cases.
+Fake events use the same signature verification, webhook inbox, deduplication,
+state transition, audit, and server purchase-outbox path used by future real
+provider adapters. No card fields or raw card data are accepted.
+
+Public payment endpoints are capability-token protected:
+
+- `POST /api/orders/[orderId]/payment-session`
+- `POST /api/orders/[orderId]/payments`
+- `GET /api/orders/[orderId]/payment-status`
+- `POST /api/webhooks/payments/fake` (non-production only)
+
+The browser analytics API cannot construct `purchase`. A verified successful
+payment event writes one server-side `purchase` record to `analytics_outbox`.
 
 Optional analytics configuration:
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { paymentSessionResponseSchema } from "@/lib/payments/contracts";
 
 const uuidSchema = z.uuid().transform((value) => value.toLowerCase());
 
@@ -97,6 +98,7 @@ export const checkoutResponseSchema = z.strictObject({
   }),
   items: z.array(authoritativeOrderItemSchema),
   replayed: z.boolean(),
+  paymentSession: paymentSessionResponseSchema.nullable().optional(),
 });
 
 const rawPickupAvailabilitySchema = z.strictObject({

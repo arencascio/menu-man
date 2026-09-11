@@ -22,6 +22,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609080005_restaurant_presentation.sql",
     "202609080006_ordering_schema.sql",
     "202609080007_checkout_v1.sql",
+    "202609100001_payments_foundation.sql",
   ]);
 });
 
@@ -42,6 +43,15 @@ test("baseline creates every documented application table", () => {
     "order_item_modifiers",
     "restaurant_ordering_settings",
     "restaurant_order_counters",
+    "restaurant_payment_connections",
+    "payment_provider_references",
+    "payments",
+    "payment_checkout_sessions",
+    "payment_attempts",
+    "payment_webhook_events",
+    "refunds",
+    "payment_state_transitions",
+    "analytics_outbox",
   ];
 
   for (const table of tables) {
@@ -79,7 +89,7 @@ test("menu item placement uniqueness is section-scoped", () => {
 });
 
 test("checkout functions and restricted service-role boundary are present", () => {
-  const checkout = migrations.at(-1)?.sql || "";
+  const checkout = migrations.find(({ file }) => file.endsWith("_checkout_v1.sql"))?.sql || "";
   assert.match(checkout, /create or replace function public\.get_pickup_availability_v1/i);
   assert.match(checkout, /create or replace function public\.create_order_v1/i);
   assert.match(checkout, /security definer/i);
@@ -87,6 +97,34 @@ test("checkout functions and restricted service-role boundary are present", () =
   assert.match(checkout, /'unpaid'/);
   assert.match(checkout, /revoke insert, update, delete on table[\s\S]*public\.orders[\s\S]*from service_role/i);
   assert.match(checkout, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("payment state is mutated only through restricted functions", () => {
+  const payments = migrations.find(({ file }) => file.endsWith("_payments_foundation.sql"))?.sql || "";
+  for (const functionName of [
+    "prepare_payment_v1",
+    "authorize_payment_session_v1",
+    "reserve_payment_attempt_v1",
+    "record_payment_command_result_v1",
+    "ingest_payment_webhook_v1",
+    "apply_payment_event_v1",
+    "expire_payment_v1",
+    "reserve_refund_v1",
+  ]) {
+    assert.match(payments, new RegExp(`create or replace function public\\.${functionName}\\b`, "i"));
+    assert.match(payments, new RegExp(`grant execute on function public\\.${functionName}[\\s\\S]*to service_role`, "i"));
+  }
+  assert.match(payments, /revoke insert, update, delete on table[\s\S]*public\.payments[\s\S]*from service_role/i);
+  assert.match(payments, /unique \(\s*provider_key, environment, provider_event_id\s*\)/i);
+  assert.match(payments, /provider_key <> 'fake' or environment = 'test'/i);
+  assert.match(payments, /'purchase', 'payment', payment_record\.id/i);
+});
+
+test("browser analytics cannot emit purchase", () => {
+  const analyticsTypes = readFileSync(join(process.cwd(), "src", "lib", "analytics", "types.ts"), "utf8");
+  const analyticsClient = readFileSync(join(process.cwd(), "src", "lib", "analytics", "client.ts"), "utf8");
+  assert.doesNotMatch(analyticsTypes, /name:\s*"purchase"/);
+  assert.doesNotMatch(analyticsClient, /event\.name === "purchase"/);
 });
 
 test("staging fixture values never appear in schema migrations", () => {

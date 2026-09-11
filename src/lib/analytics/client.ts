@@ -58,11 +58,6 @@ const ga4Provider: AnalyticsProvider = {
       parameters.currency = event.currency;
       parameters.value = event.valueCents / 100;
       parameters.items = event.items.map(getGa4Item);
-    } else if (event.name === "purchase") {
-      parameters.transaction_id = event.transactionId;
-      parameters.currency = event.currency;
-      parameters.value = event.revenueCents / 100;
-      parameters.items = event.items.map(getGa4Item);
     } else if (event.name === "order_created") {
       parameters.order_id = event.orderId;
       parameters.order_number = event.orderNumber;

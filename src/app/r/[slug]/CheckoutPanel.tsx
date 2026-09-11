@@ -12,6 +12,8 @@ import {
   type PickupAvailability,
   type TipChoice,
 } from "@/lib/checkout/contracts";
+import { paymentStatusSchema } from "@/lib/payments/contracts";
+import type { PaymentStatus } from "@/lib/payments/types";
 import styles from "./menu-browser.module.css";
 
 type CheckoutPanelProps = {
@@ -21,7 +23,7 @@ type CheckoutPanelProps = {
   currency: string;
   lines: CartLine[];
   onBack: () => void;
-  onOrderConfirmed: () => void;
+  onPaymentConfirmed: () => void;
 };
 
 type IdempotencyAttempt = { fingerprint: string; key: string };
@@ -45,7 +47,7 @@ export default function CheckoutPanel({
   currency,
   lines,
   onBack,
-  onOrderConfirmed,
+  onPaymentConfirmed,
 }: CheckoutPanelProps) {
   const [availability, setAvailability] = useState<PickupAvailability | null>(null);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
@@ -59,8 +61,46 @@ export default function CheckoutPanel({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<CheckoutResponse | null>(null);
+  const [payment, setPayment] = useState<PaymentStatus | null>(null);
+  const [fakeScenario, setFakeScenario] = useState("success");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const attempt = useRef<IdempotencyAttempt | null>(null);
+  const paymentAttempt = useRef<string | null>(null);
+  const clearedPaidCart = useRef(false);
   const attemptStorageKey = `menu-man:checkout-attempt:v1:${restaurantId}`;
+  const paymentStorageKey = `menu-man:payment-session:v1:${restaurantId}`;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    try {
+      const storedValue = window.sessionStorage.getItem(paymentStorageKey);
+      if (!storedValue) return () => controller.abort();
+      const storedOrder = checkoutResponseSchema.parse(JSON.parse(storedValue));
+      if (!storedOrder.paymentSession) return () => controller.abort();
+      void Promise.resolve().then(() => {
+        if (!active) return;
+        setConfirmation(storedOrder);
+        setPayment(storedOrder.paymentSession?.payment || null);
+      });
+      void fetch(`/api/orders/${encodeURIComponent(storedOrder.orderId)}/payment-status`, {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${storedOrder.paymentSession.checkoutToken}` },
+        signal: controller.signal,
+      }).then(async (response) => {
+        if (active && response.ok) setPayment(paymentStatusSchema.parse(await response.json()));
+      }).catch(() => {
+        // The regular payment UI remains available if resume status cannot be loaded.
+      });
+    } catch {
+      window.sessionStorage.removeItem(paymentStorageKey);
+    }
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [paymentStorageKey]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -89,21 +129,147 @@ export default function CheckoutPanel({
     return () => controller.abort();
   }, [restaurantSlug]);
 
+  useEffect(() => {
+    const session = confirmation?.paymentSession;
+    const shouldPoll = payment?.status === "processing"
+      || (payment?.status === "cancelled" && fakeScenario === "late_success");
+    if (!session || !shouldPoll) return;
+    let active = true;
+    let polling = false;
+    const interval = window.setInterval(async () => {
+      if (polling) return;
+      polling = true;
+      try {
+        const response = await fetch(`/api/orders/${encodeURIComponent(confirmation.orderId)}/payment-status`, {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${session.checkoutToken}` },
+        });
+        if (!response.ok) return;
+        if (active) setPayment(paymentStatusSchema.parse(await response.json()));
+      } catch {
+        // Polling is best-effort; the next poll can recover from transient failures.
+      } finally {
+        polling = false;
+      }
+    }, 750);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [confirmation, fakeScenario, payment]);
+
+  useEffect(() => {
+    if (
+      payment?.orderStatus === "placed"
+      && ["paid", "partially_refunded", "refunded"].includes(payment.paymentStatus)
+      && !clearedPaidCart.current
+    ) {
+      clearedPaidCart.current = true;
+      try {
+        window.sessionStorage.removeItem(paymentStorageKey);
+      } catch {
+        // Payment completion is authoritative even if local cleanup fails.
+      }
+      onPaymentConfirmed();
+    }
+  }, [onPaymentConfirmed, payment, paymentStorageKey]);
+
+  async function submitFakePayment() {
+    const session = confirmation?.paymentSession;
+    if (!confirmation || !session || session.browserSession.provider !== "fake") return;
+    setPaymentSubmitting(true);
+    setPaymentError(null);
+    paymentAttempt.current ||= crypto.randomUUID();
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(confirmation.orderId)}/payments`, {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkoutToken: session.checkoutToken,
+          clientAttemptKey: paymentAttempt.current,
+          paymentMethodToken: `fake:${fakeScenario}`,
+        }),
+      });
+      const body = await response.json() as unknown;
+      if (!response.ok) {
+        const errorBody = body as { error?: { message?: string } };
+        throw new Error(errorBody.error?.message || "Payment could not be submitted.");
+      }
+      const nextPayment = paymentStatusSchema.parse(body);
+      setPayment(nextPayment);
+      if (nextPayment.status === "failed") paymentAttempt.current = null;
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : "Payment could not be submitted.");
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  }
+
   if (confirmation) {
+    const session = confirmation.paymentSession;
+    const fakeScenarios = session?.browserSession.provider === "fake"
+      ? session.browserSession.publicConfig.scenarios as string[] | undefined
+      : undefined;
+    const isPlaced = payment?.orderStatus === "placed";
     return (
       <section className={styles.checkoutPanel} aria-live="polite">
-        <p className={styles.expandedLabel}>Order created</p>
+        <p className={styles.expandedLabel}>{isPlaced ? "Order placed" : "Order created"}</p>
         <h2>Order #{confirmation.orderNumber}</h2>
         <p className={styles.confirmationTotal}>{formatPrice(confirmation.totalCents, confirmation.currency)}</p>
-        <p>
-          This order is awaiting payment and has not been placed with the restaurant yet.
-        </p>
+        {isPlaced ? (
+          <p>Payment was verified by the server and the order has been placed with the restaurant.</p>
+        ) : payment?.orderStatus === "cancelled" ? (
+          <p className={styles.formError}>This order is cancelled. A late payment requires review or refund.</p>
+        ) : (
+          <p>This order is awaiting payment and has not been placed with the restaurant yet.</p>
+        )}
         <dl className={styles.authoritativeTotals}>
           <div><dt>Subtotal</dt><dd>{formatPrice(confirmation.subtotalCents, confirmation.currency)}</dd></div>
           <div><dt>Tax</dt><dd>{formatPrice(confirmation.taxCents, confirmation.currency)}</dd></div>
           <div><dt>Tip</dt><dd>{formatPrice(confirmation.tipCents, confirmation.currency)}</dd></div>
           <div><dt>Total</dt><dd>{formatPrice(confirmation.totalCents, confirmation.currency)}</dd></div>
         </dl>
+        {!session && (
+          <p className={styles.formError}>No payment provider is currently configured for this restaurant.</p>
+        )}
+        {session && payment?.status === "processing" && (
+          <p>Payment is processing. Keep this page open while the server waits for the verified provider event.</p>
+        )}
+        {session && payment?.status === "authorized" && (
+          <p>Payment is authorized but has not been captured. The order remains pending payment.</p>
+        )}
+        {session && payment?.status === "failed" && (
+          <p className={styles.formError}>{payment.latestAttempt?.failureMessage || "Payment failed. Choose a test case and try again."}</p>
+        )}
+        {session && session.browserSession.provider === "fake" && !isPlaced
+          && payment?.status !== "processing" && payment?.status !== "authorized"
+          && payment?.orderStatus !== "cancelled" && (
+          <fieldset className={styles.checkoutFieldset}>
+            <legend>Fake payment provider</legend>
+            <label>
+              Test case
+              <select value={fakeScenario} onChange={(event) => {
+                setFakeScenario(event.target.value);
+                paymentAttempt.current = null;
+              }}>
+                {(fakeScenarios || []).map((scenario) => (
+                  <option key={scenario} value={scenario}>{scenario.replaceAll("_", " ")}</option>
+                ))}
+              </select>
+            </label>
+            <small>No card details are collected. This provider is restricted to non-production environments.</small>
+            {paymentError && <p className={styles.formError} role="alert">{paymentError}</p>}
+            <button
+              className={styles.checkoutButton}
+              type="button"
+              disabled={paymentSubmitting}
+              onClick={() => void submitFakePayment()}
+            >
+              {paymentSubmitting ? "Submitting Test Payment…" : "Submit Test Payment"}
+            </button>
+          </fieldset>
+        )}
         <button className={styles.checkoutButton} type="button" onClick={onBack}>Return to Menu</button>
       </section>
     );
@@ -188,7 +354,14 @@ export default function CheckoutPanel({
       }
       attempt.current = null;
       setConfirmation(order);
-      onOrderConfirmed();
+      setPayment(order.paymentSession?.payment || null);
+      if (order.paymentSession) {
+        try {
+          window.sessionStorage.setItem(paymentStorageKey, JSON.stringify(order));
+        } catch {
+          // The active page can still finish payment when session storage is unavailable.
+        }
+      }
       trackEvent({
         name: "order_created",
         restaurantId,

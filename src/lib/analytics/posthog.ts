@@ -79,15 +79,6 @@ function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
     properties.item_ids = event.items.map((item) => item.itemId);
     properties.item_names = event.items.map((item) => item.itemName);
     properties.items = event.items.map(getPostHogItem);
-  } else if (event.name === "purchase") {
-    properties.transaction_id = event.transactionId;
-    properties.currency = event.currency;
-    properties.revenue_cents = event.revenueCents;
-    properties.item_count = event.items.length;
-    properties.total_quantity = event.items.reduce((total, item) => total + item.quantity, 0);
-    properties.item_ids = event.items.map((item) => item.itemId);
-    properties.item_names = event.items.map((item) => item.itemName);
-    properties.items = event.items.map(getPostHogItem);
   } else if (event.name === "order_created") {
     properties.order_id = event.orderId;
     properties.order_number = event.orderNumber;

@@ -27,6 +27,7 @@ The preserved files under `prototype/` are reference/source artifacts only. The 
 - Provider-agnostic client analytics with optional GA4 and PostHog adapters
 - A restaurant-scoped client cart persisted in `localStorage`
 - A server-only authoritative checkout-preparation endpoint backed by one restricted PostgreSQL transaction
+- A provider-neutral payment foundation with a signed development/staging fake provider
 
 Useful commands:
 
@@ -51,13 +52,16 @@ npm run import-images -- --restaurant armandos --folder ./images/armandos --dry-
 - `src/app/r/[slug]/MenuBrowser.tsx`: client component for menu interaction.
 - `src/app/r/[slug]/OrderItemPanel.tsx`: orderable item form, modifier validation, quantity, and special instructions.
 - `src/app/r/[slug]/CartPanel.tsx`: cart rendering and line editing controls.
-- `src/app/r/[slug]/CheckoutPanel.tsx`: customer/pickup/tip form, cart review, authoritative confirmation, and no payment UI.
+- `src/app/r/[slug]/CheckoutPanel.tsx`: customer/pickup/tip form, cart review, authoritative confirmation, and fake-provider staging payment controls.
 - `src/app/r/[slug]/useRestaurantCart.ts`: restaurant-scoped cart state, persistence, and ordering analytics.
 - `src/app/r/[slug]/menu-browser.module.css`: route-local menu styling.
 - `src/lib/cart/`: typed cart model, integer-cent calculations, validation, reducer, and storage boundary.
 - `src/lib/checkout/`: strict public contracts plus server-only Supabase RPC integration.
+- `src/lib/payments/`: provider contracts, registry, orchestration, normalized events, and the fake adapter.
 - `/api/restaurants/[slug]/pickup-availability`: explicitly dynamic, non-cacheable operational availability projection. It is advisory only.
-- `/api/restaurants/[slug]/orders`: explicitly dynamic server-only checkout POST; it accepts no prices.
+- `/api/restaurants/[slug]/orders`: explicitly dynamic server-only checkout POST; it accepts no prices and prepares payment only after order creation commits.
+- `/api/orders/[orderId]/payment-session`, `/payments`, and `/payment-status`: checkout-capability-protected payment endpoints.
+- `/api/webhooks/payments/fake`: signed non-production fake-provider webhook endpoint.
 - `src/lib/supabase/server.ts`: server-only Supabase client using environment variables.
 - `src/lib/seo/`: route metadata, canonical URL, and Restaurant JSON-LD helpers.
 - `src/lib/analytics/`: typed provider-agnostic event API with optional GA4 and PostHog adapters.
@@ -162,7 +166,7 @@ The effective modifier price is resolved in this exact order: non-null item over
 
 `pickup_mode` is constrained to `asap` or `scheduled`; scheduled orders require `pickup_at`. Checkout resolves ASAP to its current estimated pickup timestamp and snapshots it. `order_number` is separate from the UUID, begins at 1001 for a restaurant without prior numbers, and is unique within that restaurant. Allocation occurs in the same transaction as the order and snapshots.
 
-The order lifecycle is `pending_payment`, `placed`, `confirmed`, `preparing`, `ready`, `completed`, or `cancelled`. This milestone creates only `pending_payment` with `payment_status = unpaid`. A future successful payment webhook owns the transition to `payment_status = paid` and `order_status = placed`. Operational restaurant queues must exclude `pending_payment`.
+The order lifecycle is `pending_payment`, `placed`, `confirmed`, `preparing`, `ready`, `completed`, or `cancelled`. `create_order_v1` creates only `pending_payment` with `payment_status = unpaid`. The payment layer is prepared afterward. Only a verified provider event owns the transition to `payment_status = paid` and `order_status = placed`. Operational restaurant queues must exclude `pending_payment`.
 
 ## Schema Migration
 
@@ -326,8 +330,9 @@ The production menu UI currently provides:
 - The route assumes one published menu per restaurant through `.single()`.
 - The route currently does not include source identity fields in its item select because the UI does not need them.
 - The root page and document metadata still contain starter Next.js content.
-- No payment, webhook, refund, inventory, fulfillment notification, staff dashboard, auth, customer account, or hostname routing exists.
-- `pending_payment` cleanup/expiration is not implemented. These rows must be filtered out of restaurant operations.
+- Finix and Square are not implemented. The payment foundation currently includes only the explicitly enabled development/staging fake provider.
+- Payment expiration has a restricted transition function; scheduling the cleanup/reconciliation worker remains operational work.
+- No inventory, fulfillment notification, staff dashboard, restaurant admin auth, customer account, or hostname routing exists.
 - Holiday/special-date hour exceptions are deferred. Availability is computed through one function so a future exception table can be applied before weekly-hour slot generation without changing the browser contract.
 - Pickup slots use 15-minute increments and expose the next seven local calendar days; this is not yet restaurant-configurable.
 - Checkout remains disabled until verified hours, timezone, pickup settings, and restaurant percentage tax are configured manually.
@@ -359,9 +364,9 @@ Application code uses camelCase in the typed `AnalyticsEvent` union. Provider ad
 | `add_to_cart`, `remove_from_cart` | `item_id`, `item_name`, `price_cents`, `quantity`, `value_cents`, `currency` | `price_cents` is the configured unit price including selected modifiers; `value_cents` is unit price times the quantity added or removed. Emitted by cart operations. |
 | `cart_viewed`, `checkout_started` | `currency`, `value_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | `items` contains `item_id`, `item_name`, `price_cents`, and `quantity`. Emitted when the respective cart/checkout panel opens. Values are browser estimates. |
 | `order_created` | `order_id`, `order_number`, `currency`, `value_cents`, `tax_cents`, `tip_cents`, `pickup_mode`, `idempotency_replay`, item summary fields | Emitted only after the server returns an authoritative `pending_payment`/`unpaid` order. This is not a purchase. No customer fields or notes are sent. |
-| `purchase` | `transaction_id`, `currency`, `revenue_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | Transaction ID supports deduplication and contains no customer PII. Defined but not emitted yet. |
+| `purchase` | `transaction_id`, `currency`, `revenue_cents`, `item_count`, `total_quantity`, `item_ids`, `item_names`, `items` | Server-only. A verified successful payment inserts one transactional outbox event; browser analytics cannot construct it. |
 
-Ordering analytics use ISO currency codes and integer cents in the Menu Man/PostHog contract. The GA4 adapter converts monetary values to currency units and maps `cart_viewed` to `view_cart` and `checkout_started` to `begin_checkout` while retaining GA4's standard `add_to_cart`, `remove_from_cart`, and `purchase` names.
+Ordering analytics use ISO currency codes and integer cents in the Menu Man/PostHog contract. The browser GA4 adapter converts monetary values to currency units and maps `cart_viewed` to `view_cart` and `checkout_started` to `begin_checkout`. Purchase delivery is isolated to the server-side outbox path.
 
 ## Immediate Roadmap
 
@@ -369,15 +374,15 @@ Ordering analytics use ISO currency codes and integer cents in the Menu Man/Post
 2. Run the SQL schema, fixture, and checkout contract tests against staging, including idempotent replay and same-key/different-payload conflict.
 3. Reconcile the existing production project's schema and migration history before considering any migration-tool adoption there; do not apply the clean baseline directly.
 4. Replace all test modifiers with restaurant-verified configuration before enabling production ordering.
-5. Implement payment provider/webhook handling; only a successful verified webhook may transition `unpaid`/`pending_payment` to `paid`/`placed` and emit `purchase`.
+5. Integrate Finix against the provider-neutral contracts, then add Square without changing checkout state ownership.
 6. Define pending-payment expiration, holiday exceptions, notification, and operational queue policies.
 7. Add generated Supabase schema types before further schema evolution.
 
 ## Ordering v1 Scope
 
-Ordering v1 now includes explicit item orderability, reusable min/max modifier groups, item-specific price overrides, an orderable item panel, a persistent restaurant-isolated client cart, and authoritative checkout preparation. The browser submits no prices. The Next.js server normalizes the request and invokes a restricted PostgreSQL function that independently revalidates pickup and creates the order/snapshot rows transactionally.
+Ordering v1 includes explicit item orderability, reusable min/max modifier groups, item-specific price overrides, an orderable item panel, a persistent restaurant-isolated client cart, and authoritative checkout preparation. The browser submits no prices. The Next.js server normalizes the request and invokes a restricted PostgreSQL function that independently revalidates pickup and creates the order/snapshot rows transactionally. A separate payment layer then creates a logical payment and accepts only provider-issued opaque payment tokens.
 
-No payment is collected, `purchase` is not emitted, and a created order is not yet placed with the restaurant. The milestone stops at `pending_payment` / `unpaid`.
+The fake provider can exercise payment behavior in development/staging. A created order remains `pending_payment` / `unpaid` until a verified event succeeds. Browser code cannot emit `purchase`; verified success inserts the server-side purchase outbox record transactionally.
 
 ## Do Not Regress
 

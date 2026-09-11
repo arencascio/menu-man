@@ -36,14 +36,6 @@ export type AnalyticsEvent =
       items: readonly AnalyticsCartItem[];
     }
   | {
-      name: "purchase";
-      restaurantId: string;
-      transactionId: string;
-      currency: string;
-      revenueCents: number;
-      items: readonly AnalyticsCartItem[];
-    }
-  | {
       name: "order_created";
       restaurantId: string;
       orderId: string;

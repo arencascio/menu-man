@@ -8,7 +8,8 @@ database and must not be mixed into a clean bootstrap.
 
 The baseline includes the catalog, restaurant profile/hours, source identity,
 image storage, themes, SEO, modifiers, order snapshots, ordering configuration,
-checkout functions, indexes, constraints, RLS, triggers, and explicit grants.
+checkout functions, provider-neutral payment records and state functions,
+webhook/audit/outbox infrastructure, indexes, constraints, RLS, triggers, and explicit grants.
 Schema migrations contain no Armando or staging operational values.
 
 For a hosted staging project, link the Supabase CLI only after checking the
@@ -18,9 +19,12 @@ and reconciled separately.
 
 Staging data is opt-in under `supabase/seeds/staging/`. There is intentionally no
 automatic `supabase/seed.sql`. See that directory's README for the interleaved
-restaurant seed, TypeScript menu import, operational seed, modifier seed, and
+restaurant seed, TypeScript menu import, operational seed, modifier seed, fake
+payment connection seed, and
 contract-test sequence.
 
 Database contract tests under `supabase/tests/` are plain SQL suitable for
 `psql -v ON_ERROR_STOP=1 -f <file>`. The checkout test wraps order creation in a
-transaction and rolls it back.
+transaction and rolls it back. The payment contract test similarly verifies
+success, replay, out-of-order events, refunds, and late-success quarantine in a
+rolled-back transaction.

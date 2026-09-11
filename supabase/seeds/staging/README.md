@@ -11,7 +11,8 @@ Run the sequence only against the separately created staging project:
    `npm run import-menu:staging`.
 3. Apply `002_armandos_operations.sql`.
 4. Apply `003_armandos_test_modifiers.sql`.
-5. Run the SQL files under `supabase/tests/` in filename order.
+5. Apply `004_armandos_fake_payments.sql`.
+6. Run the SQL files under `supabase/tests/` in filename order.
 
 One explicit hosted-staging command sequence is:
 
@@ -27,9 +28,11 @@ npm run import-menu:staging -- --file ./data/armandos.json --dry-run
 npm run import-menu:staging -- --file ./data/armandos.json
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/002_armandos_operations.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/003_armandos_test_modifiers.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/004_armandos_fake_payments.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/001_schema_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/002_checkout_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/003_armandos_fixture.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/004_payments_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new
@@ -44,7 +47,13 @@ MENU_MAN_ENV=staging
 MENU_MAN_STAGING_PROJECT_REF=<the intended staging project ref>
 NEXT_PUBLIC_SUPABASE_URL=https://<the intended staging project ref>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<the staging service-role key>
+MENU_MAN_ENABLE_FAKE_PAYMENTS=true
+MENU_MAN_FAKE_WEBHOOK_SECRET=<at-least-32-random-characters>
 ```
+
+The fake provider is rejected when `MENU_MAN_ENV=production`, requires the
+explicit enable flag and signing secret, and only accepts database connections
+whose environment is `test`.
 
 It refuses to run unless the marker is exactly `staging`, the expected project
 ref is present, the configured HTTPS hostname exactly matches that project ref,

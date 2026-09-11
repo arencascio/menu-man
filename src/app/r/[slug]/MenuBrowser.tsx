@@ -230,7 +230,7 @@ export default function MenuBrowser({
             setIsCheckoutOpen(false);
             setIsCartOpen(cart.lines.length > 0);
           }}
-          onOrderConfirmed={cart.clearAfterOrderCreated}
+          onPaymentConfirmed={cart.clearAfterOrderCreated}
         />
       )}
 

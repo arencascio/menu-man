@@ -24,6 +24,15 @@ begin
     ('order_item_modifiers'),
     ('restaurant_ordering_settings'),
     ('restaurant_order_counters')
+    ,('restaurant_payment_connections')
+    ,('payment_provider_references')
+    ,('payments')
+    ,('payment_checkout_sessions')
+    ,('payment_attempts')
+    ,('payment_webhook_events')
+    ,('refunds')
+    ,('payment_state_transitions')
+    ,('analytics_outbox')
   ) required_table(name)
   where to_regclass('public.' || required_table.name) is null;
 
@@ -49,6 +58,10 @@ begin
     ('orders', 'pickup_timezone'),
     ('orders', 'tax_rate_basis_points'),
     ('orders', 'tip_basis_points')
+    ,('orders', 'payment_due_at')
+    ,('payments', 'connection_id')
+    ,('payment_attempts', 'provider_idempotency_key')
+    ,('payment_webhook_events', 'provider_event_id')
   ) required_column(table_name, column_name)
   where not exists (
     select 1
@@ -73,6 +86,10 @@ begin
         'menu_item_modifier_groups', 'menu_item_modifier_option_overrides',
         'orders', 'order_items', 'order_item_modifiers',
         'restaurant_ordering_settings', 'restaurant_order_counters'
+        ,'restaurant_payment_connections', 'payment_provider_references',
+        'payments', 'payment_checkout_sessions', 'payment_attempts',
+        'payment_webhook_events', 'refunds', 'payment_state_transitions',
+        'analytics_outbox'
       )
       and not relation.relrowsecurity
   ) then
@@ -83,6 +100,14 @@ begin
     or to_regprocedure('public.create_order_v1(text,text,jsonb)') is null
   then
     raise exception 'Required checkout functions are missing';
+  end if;
+
+  if to_regprocedure('public.prepare_payment_v1(uuid,text,boolean,integer,integer)') is null
+    or to_regprocedure('public.reserve_payment_attempt_v1(uuid,text,uuid)') is null
+    or to_regprocedure('public.apply_payment_event_v1(uuid)') is null
+    or to_regprocedure('public.reserve_refund_v1(uuid,uuid,integer,text,text)') is null
+  then
+    raise exception 'Required payment functions are missing';
   end if;
 
   if has_function_privilege('anon', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE')
@@ -100,6 +125,14 @@ begin
     or has_table_privilege('service_role', 'public.order_item_modifiers', 'INSERT')
   then
     raise exception 'service_role must not insert order snapshots directly';
+  end if;
+
+  if has_table_privilege('service_role', 'public.payments', 'INSERT')
+    or has_table_privilege('service_role', 'public.payment_attempts', 'UPDATE')
+    or has_table_privilege('service_role', 'public.payment_webhook_events', 'INSERT')
+    or has_table_privilege('service_role', 'public.analytics_outbox', 'INSERT')
+  then
+    raise exception 'service_role must mutate payment state only through restricted functions';
   end if;
 
   if not has_table_privilege('service_role', 'public.menu_items', 'SELECT')
