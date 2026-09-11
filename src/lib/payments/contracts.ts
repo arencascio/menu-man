@@ -14,6 +14,11 @@ export const paymentSubmissionRequestSchema = z.strictObject({
   paymentMethodToken: z.string().min(1).max(500),
 });
 
+export const fakePaymentRecoveryRequestSchema = z.strictObject({
+  checkoutToken: checkoutCapabilitySchema,
+  resolution: z.enum(["succeeded", "failed"]),
+});
+
 const latestAttemptSchema = z.strictObject({
   attemptId: uuid,
   status: z.enum(["processing", "authorized", "succeeded", "failed", "cancelled", "unknown"]),

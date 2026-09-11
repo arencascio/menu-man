@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { trackEvent } from "@/lib/analytics/client";
 import { formatPrice } from "@/lib/cart/cart";
 import type { CartLine, MenuModifierGroup } from "@/lib/cart/types";
 import CartPanel from "./CartPanel";
 import CheckoutPanel from "./CheckoutPanel";
+import type { ActivePaymentOrderSummary } from "./CheckoutPanel";
 import OrderItemPanel from "./OrderItemPanel";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
@@ -52,8 +53,32 @@ export default function MenuBrowser({
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [hasStoredPaymentSession, setHasStoredPaymentSession] = useState(false);
+  const [activePayment, setActivePayment] = useState<ActivePaymentOrderSummary | null>(null);
   const resolvedCurrency = currency || "USD";
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
+  const paymentStorageKey = `menu-man:payment-session:v1:${restaurantId}`;
+  const cartLocked = hasStoredPaymentSession ? activePayment?.locksCart ?? true : false;
+
+  useEffect(() => {
+    let hasStoredSession = false;
+    try {
+      hasStoredSession = Boolean(window.sessionStorage.getItem(paymentStorageKey));
+    } catch {
+      // Checkout can still start when session storage is unavailable.
+    }
+    void Promise.resolve().then(() => setHasStoredPaymentSession(hasStoredSession));
+  }, [paymentStorageKey]);
+
+  const handleActivePaymentChange = useCallback((nextPayment: ActivePaymentOrderSummary | null) => {
+    setActivePayment(nextPayment);
+    setHasStoredPaymentSession(Boolean(nextPayment));
+    if (nextPayment?.locksCart) {
+      setIsCartOpen(false);
+      setExpandedItemId(null);
+      setEditingLineId(null);
+    }
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -102,6 +127,7 @@ export default function MenuBrowser({
   }
 
   function saveCartLine(line: CartLine) {
+    if (cartLocked) return;
     if (editingLineId) cart.replaceLine(line);
     else cart.addLine(line);
     setExpandedItemId(null);
@@ -109,6 +135,7 @@ export default function MenuBrowser({
   }
 
   function editCartLine(line: CartLine) {
+    if (cartLocked) return;
     const section = sections.find((candidate) => (
       candidate.id === line.sectionId
       && candidate.items.some((item) => item.id === line.menuItemId)
@@ -124,6 +151,11 @@ export default function MenuBrowser({
   }
 
   function openCheckout() {
+    if (cartLocked) {
+      setIsCheckoutOpen(true);
+      setIsCartOpen(false);
+      return;
+    }
     setIsCartOpen(false);
     setIsCheckoutOpen(true);
     trackEvent({
@@ -145,6 +177,24 @@ export default function MenuBrowser({
 
   return (
     <main className={styles.page} aria-label={ariaLabel}>
+      {activePayment && (
+        <aside className={styles.activePaymentBanner} aria-live="polite">
+          <div>
+            <strong>Active order #{activePayment.orderNumber}</strong>
+            <span>{activePayment.statusLabel} · {formatPrice(activePayment.totalCents, activePayment.currency)}</span>
+            {activePayment.locksCart && <small>Menu and cart changes are paused while this order total is locked.</small>}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsCheckoutOpen(true);
+              setIsCartOpen(false);
+            }}
+          >
+            Resume Payment
+          </button>
+        </aside>
+      )}
       <div className={styles.controls}>
         <nav className={styles.categories} aria-label="Menu categories">
           <button
@@ -194,6 +244,7 @@ export default function MenuBrowser({
           className={styles.cartButton}
           type="button"
           aria-expanded={isCartOpen}
+          disabled={cartLocked}
           onClick={() => {
             const willOpen = !isCartOpen;
             setIsCartOpen(willOpen);
@@ -219,19 +270,22 @@ export default function MenuBrowser({
         />
       )}
 
-      {isCheckoutOpen && (
-        <CheckoutPanel
-          restaurantId={restaurantId}
-          restaurantSlug={restaurantSlug}
-          menuId={menuId}
-          currency={resolvedCurrency}
-          lines={cart.lines}
-          onBack={() => {
-            setIsCheckoutOpen(false);
-            setIsCartOpen(cart.lines.length > 0);
-          }}
-          onPaymentConfirmed={cart.clearAfterOrderCreated}
-        />
+      {(isCheckoutOpen || hasStoredPaymentSession) && (
+        <div hidden={!isCheckoutOpen}>
+          <CheckoutPanel
+            restaurantId={restaurantId}
+            restaurantSlug={restaurantSlug}
+            menuId={menuId}
+            currency={resolvedCurrency}
+            lines={cart.lines}
+            onBack={() => {
+              setIsCheckoutOpen(false);
+              setIsCartOpen(!cartLocked && cart.lines.length > 0);
+            }}
+            onPaymentConfirmed={cart.clearAfterOrderCreated}
+            onActivePaymentChange={handleActivePaymentChange}
+          />
+        </div>
       )}
 
       <div className={styles.menu}>
@@ -246,7 +300,7 @@ export default function MenuBrowser({
                   {section.description && <p>{section.description}</p>}
                 </div>
 
-                {expandedItem && (
+                {expandedItem && !cartLocked && (
                   <OrderItemPanel
                     key={`${expandedItem.id}:${editingLineId || "new"}`}
                     item={expandedItem}
@@ -265,6 +319,7 @@ export default function MenuBrowser({
                       className={`${styles.item} ${expandedItemId === item.id ? styles.itemSelected : ""}`}
                       key={item.id}
                       type="button"
+                      disabled={cartLocked}
                       onClick={() => {
                         const isExpanded = expandedItemId === item.id;
                         toggleExpanded(item.id);

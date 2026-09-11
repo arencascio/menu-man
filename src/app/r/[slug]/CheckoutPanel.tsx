@@ -13,6 +13,13 @@ import {
   type TipChoice,
 } from "@/lib/checkout/contracts";
 import { paymentStatusSchema } from "@/lib/payments/contracts";
+import {
+  getCustomerPaymentStatusLabel,
+  getPaymentProcessingPresentation,
+  isServerMarkedPaymentExpired,
+  LONG_PROCESSING_THRESHOLD_MS,
+  paymentLocksCart,
+} from "@/lib/payments/state";
 import type { PaymentStatus } from "@/lib/payments/types";
 import styles from "./menu-browser.module.css";
 
@@ -24,6 +31,16 @@ type CheckoutPanelProps = {
   lines: CartLine[];
   onBack: () => void;
   onPaymentConfirmed: () => void;
+  onActivePaymentChange: (payment: ActivePaymentOrderSummary | null) => void;
+};
+
+export type ActivePaymentOrderSummary = {
+  orderId: string;
+  orderNumber: string;
+  totalCents: number;
+  currency: string;
+  statusLabel: string;
+  locksCart: boolean;
 };
 
 type IdempotencyAttempt = { fingerprint: string; key: string };
@@ -48,6 +65,7 @@ export default function CheckoutPanel({
   lines,
   onBack,
   onPaymentConfirmed,
+  onActivePaymentChange,
 }: CheckoutPanelProps) {
   const [availability, setAvailability] = useState<PickupAvailability | null>(null);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
@@ -65,6 +83,8 @@ export default function CheckoutPanel({
   const [fakeScenario, setFakeScenario] = useState("success");
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [recoverySubmitting, setRecoverySubmitting] = useState<"succeeded" | "failed" | null>(null);
+  const [longProcessing, setLongProcessing] = useState(false);
   const attempt = useRef<IdempotencyAttempt | null>(null);
   const paymentAttempt = useRef<string | null>(null);
   const clearedPaidCart = useRef(false);
@@ -132,7 +152,8 @@ export default function CheckoutPanel({
   useEffect(() => {
     const session = confirmation?.paymentSession;
     const shouldPoll = payment?.status === "processing"
-      || (payment?.status === "cancelled" && fakeScenario === "late_success");
+      || payment?.status === "authorized"
+      || payment?.status === "cancelled";
     if (!session || !shouldPoll) return;
     let active = true;
     let polling = false;
@@ -151,12 +172,69 @@ export default function CheckoutPanel({
       } finally {
         polling = false;
       }
-    }, 750);
+    }, 1_500);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
-  }, [confirmation, fakeScenario, payment]);
+  }, [confirmation, payment?.status]);
+
+  const processingIdentity = payment?.status === "processing"
+    ? payment.latestAttempt?.attemptId || payment.paymentId
+    : null;
+
+  useEffect(() => {
+    if (!processingIdentity || payment?.latestAttempt?.status === "unknown") return;
+    const timeout = window.setTimeout(() => setLongProcessing(true), LONG_PROCESSING_THRESHOLD_MS);
+    return () => window.clearTimeout(timeout);
+  }, [payment?.latestAttempt?.status, processingIdentity]);
+
+  useEffect(() => {
+    const session = confirmation?.paymentSession;
+    if (
+      !confirmation
+      || !session
+      || !payment
+      || payment.orderStatus !== "pending_payment"
+      || !["requires_payment_method", "failed"].includes(payment.status)
+    ) return;
+    const delay = Math.max(0, Date.parse(payment.paymentDueAt) - Date.now()) + 250;
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/orders/${encodeURIComponent(confirmation.orderId)}/payment-status`, {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${session.checkoutToken}` },
+        });
+        if (response.ok) setPayment(paymentStatusSchema.parse(await response.json()));
+      } catch {
+        // A later resume/status request can safely ask the server to apply expiration.
+      }
+    }, delay);
+    return () => window.clearTimeout(timeout);
+  }, [confirmation, payment]);
+
+  useEffect(() => {
+    if (!confirmation || !payment) return;
+    if (
+      payment.orderStatus === "placed"
+      && ["paid", "partially_refunded", "refunded"].includes(payment.paymentStatus)
+    ) return;
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      onActivePaymentChange({
+        orderId: confirmation.orderId,
+        orderNumber: confirmation.orderNumber,
+        totalCents: confirmation.totalCents,
+        currency: confirmation.currency,
+        statusLabel: getCustomerPaymentStatusLabel(payment),
+        locksCart: paymentLocksCart(payment),
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [confirmation, onActivePaymentChange, payment]);
 
   useEffect(() => {
     if (
@@ -170,9 +248,10 @@ export default function CheckoutPanel({
       } catch {
         // Payment completion is authoritative even if local cleanup fails.
       }
+      onActivePaymentChange(null);
       onPaymentConfirmed();
     }
-  }, [onPaymentConfirmed, payment, paymentStorageKey]);
+  }, [onActivePaymentChange, onPaymentConfirmed, payment, paymentStorageKey]);
 
   async function submitFakePayment() {
     const session = confirmation?.paymentSession;
@@ -197,6 +276,7 @@ export default function CheckoutPanel({
         throw new Error(errorBody.error?.message || "Payment could not be submitted.");
       }
       const nextPayment = paymentStatusSchema.parse(body);
+      setLongProcessing(false);
       setPayment(nextPayment);
       if (nextPayment.status === "failed") paymentAttempt.current = null;
     } catch (error) {
@@ -206,12 +286,67 @@ export default function CheckoutPanel({
     }
   }
 
+  async function resolveUnknownPayment(resolution: "succeeded" | "failed") {
+    const session = confirmation?.paymentSession;
+    if (
+      !confirmation
+      || !session
+      || session.browserSession.provider !== "fake"
+      || payment?.latestAttempt?.status !== "unknown"
+    ) return;
+    setRecoverySubmitting(resolution);
+    setPaymentError(null);
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(confirmation.orderId)}/payments/fake-recovery`,
+        {
+          method: "POST",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ checkoutToken: session.checkoutToken, resolution }),
+        },
+      );
+      const body = await response.json() as unknown;
+      if (!response.ok) {
+        const errorBody = body as { error?: { message?: string } };
+        throw new Error(errorBody.error?.message || "Payment status could not be reconciled.");
+      }
+      const nextPayment = paymentStatusSchema.parse(body);
+      setPayment(nextPayment);
+      if (nextPayment.status === "failed") paymentAttempt.current = null;
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : "Payment status could not be reconciled.");
+    } finally {
+      setRecoverySubmitting(null);
+    }
+  }
+
+  function startFreshCheckout() {
+    if (!payment || !isServerMarkedPaymentExpired(payment)) return;
+    try {
+      window.sessionStorage.removeItem(paymentStorageKey);
+    } catch {
+      // Server-confirmed expiration is sufficient even if local cleanup is unavailable.
+    }
+    paymentAttempt.current = null;
+    setConfirmation(null);
+    setPayment(null);
+    onActivePaymentChange(null);
+    onBack();
+  }
+
   if (confirmation) {
     const session = confirmation.paymentSession;
     const fakeScenarios = session?.browserSession.provider === "fake"
       ? session.browserSession.publicConfig.scenarios as string[] | undefined
       : undefined;
     const isPlaced = payment?.orderStatus === "placed";
+    const isExpired = payment ? isServerMarkedPaymentExpired(payment) : false;
+    const isLateSuccess = payment?.status === "succeeded" && !isPlaced;
+    const processingPresentation = getPaymentProcessingPresentation(payment, longProcessing);
+    const canRecoverUnknown = session?.browserSession.provider === "fake"
+      && session.browserSession.publicConfig.unknownRecoveryEnabled === true
+      && payment?.latestAttempt?.status === "unknown";
     return (
       <section className={styles.checkoutPanel} aria-live="polite">
         <p className={styles.expandedLabel}>{isPlaced ? "Order placed" : "Order created"}</p>
@@ -219,6 +354,16 @@ export default function CheckoutPanel({
         <p className={styles.confirmationTotal}>{formatPrice(confirmation.totalCents, confirmation.currency)}</p>
         {isPlaced ? (
           <p>Payment was verified by the server and the order has been placed with the restaurant.</p>
+        ) : isLateSuccess ? (
+          <div className={styles.paymentWarningPanel} role="status">
+            <h3>Payment confirmed after the order deadline</h3>
+            <p>This order was not placed automatically. The payment requires restaurant review or a refund.</p>
+          </div>
+        ) : isExpired ? (
+          <div className={styles.paymentNoticePanel} role="status">
+            <h3>Payment expired</h3>
+            <p>The server has expired this unpaid order. You can now safely start a fresh checkout.</p>
+          </div>
         ) : payment?.orderStatus === "cancelled" ? (
           <p className={styles.formError}>This order is cancelled. A late payment requires review or refund.</p>
         ) : (
@@ -233,14 +378,52 @@ export default function CheckoutPanel({
         {!session && (
           <p className={styles.formError}>No payment provider is currently configured for this restaurant.</p>
         )}
-        {session && payment?.status === "processing" && (
-          <p>Payment is processing. Keep this page open while the server waits for the verified provider event.</p>
+        {session && processingPresentation === "short" && (
+          <div className={styles.paymentNoticePanel} role="status">
+            <h3>Payment is processing</h3>
+            <p>This usually takes a few moments. We will update this order after the provider confirms it.</p>
+          </div>
+        )}
+        {session && processingPresentation === "uncertain" && (
+          <div className={styles.paymentWarningPanel} role="status">
+            <h3>We&apos;re still confirming this payment. Don&apos;t submit another payment yet.</h3>
+            <p>Your order will not be lost. Keep this page open while we check for a verified update, and do not retry while the payment status is uncertain.</p>
+            {canRecoverUnknown && (
+              <div className={styles.fakeRecoveryControls}>
+                <p><strong>Staging recovery:</strong> resolve this original test attempt without creating another payment.</p>
+                <button
+                  type="button"
+                  disabled={recoverySubmitting !== null}
+                  onClick={() => void resolveUnknownPayment("succeeded")}
+                >
+                  {recoverySubmitting === "succeeded" ? "Resolving…" : "Resolve as succeeded"}
+                </button>
+                <button
+                  type="button"
+                  disabled={recoverySubmitting !== null}
+                  onClick={() => void resolveUnknownPayment("failed")}
+                >
+                  {recoverySubmitting === "failed" ? "Resolving…" : "Resolve as failed"}
+                </button>
+              </div>
+            )}
+          </div>
         )}
         {session && payment?.status === "authorized" && (
           <p>Payment is authorized but has not been captured. The order remains pending payment.</p>
         )}
         {session && payment?.status === "failed" && (
-          <p className={styles.formError}>{payment.latestAttempt?.failureMessage || "Payment failed. Choose a test case and try again."}</p>
+          <div className={styles.paymentErrorPanel} role="alert">
+            <h3>Payment declined</h3>
+            <p>The payment was declined, so this order has not been placed.</p>
+            <p>Common reasons include:</p>
+            <ul>
+              <li>Card information could not be verified</li>
+              <li>Insufficient funds or a bank restriction</li>
+              <li>The bank declined the transaction for security reasons</li>
+            </ul>
+            <p>Check the payment details and retry, or use another payment method.</p>
+          </div>
         )}
         {session && session.browserSession.provider === "fake" && !isPlaced
           && payment?.status !== "processing" && payment?.status !== "authorized"
@@ -269,6 +452,11 @@ export default function CheckoutPanel({
               {paymentSubmitting ? "Submitting Test Payment…" : "Submit Test Payment"}
             </button>
           </fieldset>
+        )}
+        {isExpired && (
+          <button className={styles.checkoutButton} type="button" onClick={startFreshCheckout}>
+            Start a Fresh Checkout
+          </button>
         )}
         <button className={styles.checkoutButton} type="button" onClick={onBack}>Return to Menu</button>
       </section>
@@ -451,10 +639,10 @@ export default function CheckoutPanel({
         <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={1000} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
 
         {submitError && <p className={styles.formError} role="alert">{submitError}</p>}
+        <small className={styles.checkoutActionHint}>You&apos;ll enter payment details next. You won&apos;t be charged yet.</small>
         <button className={styles.checkoutButton} type="submit" disabled={submitting || !canPickup || lines.length === 0}>
-          {submitting ? "Creating Order…" : "Create Order"}
+          {submitting ? "Continuing to Payment…" : "Continue to Payment"}
         </button>
-        <small>No payment is collected yet. The order will remain pending payment.</small>
       </form>
     </section>
   );

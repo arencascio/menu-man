@@ -10,7 +10,9 @@ import {
   type PaymentSessionResponse,
 } from "./contracts";
 import { getPaymentProvider } from "./registry";
-import { isFakePaymentRuntimeEnabled } from "./runtime";
+import { FakePaymentProviderAdapter } from "./providers/fake/adapter";
+import { isFakePaymentRecoveryRuntimeEnabled, isFakePaymentRuntimeEnabled } from "./runtime";
+import { shouldExpirePaymentOnStatusRead } from "./state";
 import type {
   NormalizedPaymentEvent,
   PaymentCommandResult,
@@ -112,7 +114,7 @@ export async function preparePaymentForOrder(orderId: string): Promise<PaymentSe
 }
 
 export async function getPaymentSession(orderId: string, checkoutToken: string) {
-  const status = await authorizePaymentStatus(orderId, checkoutToken);
+  const status = await getPaymentStatus(orderId, checkoutToken);
   const adapter = getPaymentProvider(status.provider);
   const browserSession = await adapter.createBrowserSession(connectionFromStatus(status));
   return { payment: status, browserSession };
@@ -264,7 +266,51 @@ export async function getPaymentStatus(orderId: string, checkoutToken: string) {
     await processDuePaymentEvents("fake");
     status = await authorizePaymentStatus(orderId, checkoutToken);
   }
+  if (shouldExpirePaymentOnStatusRead(status)) {
+    const { data, error } = await supabaseServer.rpc("expire_payment_v1", {
+      p_payment_id: status.paymentId,
+    });
+    if (error) throw parseDatabaseError(error.message);
+    status = parsePaymentStatus(data);
+  }
   return status;
+}
+
+export async function resolveFakeUnknownPayment(
+  orderId: string,
+  checkoutToken: string,
+  resolution: "succeeded" | "failed",
+) {
+  if (!isFakePaymentRecoveryRuntimeEnabled()) {
+    throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "Fake payment recovery is disabled.");
+  }
+
+  const status = await authorizePaymentStatus(orderId, checkoutToken);
+  if (
+    status.provider !== "fake"
+    || status.providerEnvironment !== "test"
+    || status.orderStatus !== "pending_payment"
+    || status.status !== "processing"
+    || status.latestAttempt?.status !== "unknown"
+  ) {
+    throw new PaymentServerError("PAYMENT_NOT_ALLOWED", "This payment is not awaiting fake-provider reconciliation.");
+  }
+
+  const adapter = getPaymentProvider("fake");
+  if (!(adapter instanceof FakePaymentProviderAdapter)) {
+    throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "Fake payment recovery is disabled.");
+  }
+
+  const delivery = adapter.createUnknownPaymentResolution({
+    ...connectionFromStatus(status),
+    attemptId: status.latestAttempt.attemptId,
+    amountCents: status.amountCents,
+    currency: status.currency,
+    resolution,
+  });
+  await enqueueDevelopmentDeliveries("fake", [delivery]);
+  await processDuePaymentEvents("fake");
+  return authorizePaymentStatus(orderId, checkoutToken);
 }
 
 export async function acceptPaymentWebhook(providerKey: string, rawBody: string, headers: Headers) {

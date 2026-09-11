@@ -26,6 +26,13 @@ export const fakePaymentScenarios = [
 
 type FakeScenario = typeof fakePaymentScenarios[number];
 
+export type FakeUnknownPaymentResolutionInput = PaymentConnectionContext & {
+  attemptId: string;
+  amountCents: number;
+  currency: string;
+  resolution: "succeeded" | "failed";
+};
+
 type FakeWebhookPayload = {
   id: string;
   type: NormalizedPaymentEvent["kind"];
@@ -41,7 +48,10 @@ function makeReference(prefix: string, id: string) {
 export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
   readonly key = "fake";
 
-  constructor(private readonly signingSecret: string) {}
+  constructor(
+    private readonly signingSecret: string,
+    private readonly allowUnknownRecovery = false,
+  ) {}
 
   async beginOnboarding(input: PaymentConnectionContext): Promise<OnboardingAction> {
     if (input.environment !== "test") throw new Error("Fake payments require a test connection.");
@@ -70,6 +80,7 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
       publicConfig: {
         scenarios: [...fakePaymentScenarios],
         warning: "Test provider only. No payment details are collected.",
+        unknownRecoveryEnabled: this.allowUnknownRecovery,
       },
     };
   }
@@ -160,6 +171,36 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
 
   async retrievePayment(input: PaymentConnectionContext & { providerPaymentReference: string }): Promise<PaymentCommandResult> {
     return { status: "processing", providerStatus: "UNCHANGED", providerPaymentReference: input.providerPaymentReference };
+  }
+
+  createUnknownPaymentResolution(input: FakeUnknownPaymentResolutionInput): ProviderWebhookDelivery {
+    if (!this.allowUnknownRecovery) throw new Error("Fake unknown-payment recovery is disabled.");
+    if (input.environment !== "test") throw new Error("Fake payments require a test connection.");
+    const providerPaymentReference = makeReference("fake_pay", input.attemptId);
+    const providerTransactionReference = makeReference("fake_txn", input.attemptId);
+    const eventBase = {
+      connectionId: input.connectionId,
+      attemptId: input.attemptId,
+      amountCents: input.amountCents,
+      currency: input.currency,
+      providerPaymentReference,
+      providerTransactionReference,
+    };
+
+    if (input.resolution === "succeeded") {
+      return this.delivery("payment.succeeded", {
+        ...eventBase,
+        providerStatus: "RECONCILED_SUCCEEDED",
+      });
+    }
+
+    return this.delivery("payment.failed", {
+      ...eventBase,
+      providerStatus: "RECONCILED_FAILED",
+      failureCategory: "provider_decline",
+      failureCode: "RECONCILED_FAILED",
+      failureMessage: "The uncertain fake payment was reconciled as failed.",
+    });
   }
 
   async capturePayment(input: PaymentConnectionContext & { providerPaymentReference: string; amountCents: number }): Promise<PaymentCommandResult> {

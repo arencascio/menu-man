@@ -22,6 +22,22 @@ export function isFakePaymentRuntimeEnabled() {
   });
 }
 
+export function fakePaymentRecoveryRuntimeAllowed(input: {
+  menuManEnvironment?: string;
+  nodeEnvironment?: string;
+  explicitlyEnabled?: string;
+}) {
+  return input.menuManEnvironment === "staging" && fakePaymentRuntimeAllowed(input);
+}
+
+export function isFakePaymentRecoveryRuntimeEnabled() {
+  return fakePaymentRecoveryRuntimeAllowed({
+    menuManEnvironment: process.env.MENU_MAN_ENV,
+    nodeEnvironment: process.env.NODE_ENV,
+    explicitlyEnabled: process.env.MENU_MAN_ENABLE_FAKE_PAYMENTS,
+  });
+}
+
 export function requireFakeWebhookSecret() {
   const secret = process.env.MENU_MAN_FAKE_WEBHOOK_SECRET;
   if (!isFakePaymentRuntimeEnabled() || !secret || secret.length < 32) {

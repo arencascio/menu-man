@@ -95,3 +95,22 @@ test("fake provider covers decline, unknown, authorization, late success, and re
   assert.equal(event.kind, "refund.succeeded");
 });
 
+test("fake unknown recovery signs terminal events for the original attempt", () => {
+  const adapter = new FakePaymentProviderAdapter(SECRET, true);
+  for (const resolution of ["succeeded", "failed"] as const) {
+    const delivery = adapter.createUnknownPaymentResolution({
+      ...CONNECTION,
+      attemptId: PAYMENT.attemptId,
+      amountCents: PAYMENT.amountCents,
+      currency: PAYMENT.currency,
+      resolution,
+    });
+    const event = adapter.normalizeWebhook(adapter.verifyWebhook(
+      delivery.rawBody,
+      new Headers(delivery.headers),
+    ))[0];
+    assert.equal(event.attemptId, PAYMENT.attemptId);
+    assert.equal(event.kind, resolution === "succeeded" ? "payment.succeeded" : "payment.failed");
+    assert.equal(event.amountCents, PAYMENT.amountCents);
+  }
+});
