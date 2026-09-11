@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { trackEvent } from "@/lib/analytics/client";
 import {
   calculateCartSubtotalCents,
@@ -9,10 +9,12 @@ import {
   createCartState,
 } from "@/lib/cart/cart";
 import {
+  CART_STORAGE_KEY,
   loadRestaurantCart,
   saveRestaurantCart,
 } from "@/lib/cart/storage";
 import type { CartLine } from "@/lib/cart/types";
+import { fingerprintCart } from "@/lib/payments/browser-session";
 
 function trackLineChange(
   name: "add_to_cart" | "remove_from_cart",
@@ -34,9 +36,11 @@ function trackLineChange(
 
 export default function useRestaurantCart(restaurantId: string, currency: string) {
   const [state, dispatch] = useReducer(cartReducer, createCartState(restaurantId, currency));
+  const skipNextSave = useRef(false);
 
   useEffect(() => {
     try {
+      skipNextSave.current = true;
       dispatch({ type: "hydrate", cart: loadRestaurantCart(window.localStorage, restaurantId, currency) });
     } catch {
       dispatch({
@@ -47,7 +51,25 @@ export default function useRestaurantCart(restaurantId: string, currency: string
   }, [currency, restaurantId]);
 
   useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== CART_STORAGE_KEY) return;
+      try {
+        skipNextSave.current = true;
+        dispatch({ type: "hydrate", cart: loadRestaurantCart(window.localStorage, restaurantId, currency) });
+      } catch {
+        // Keep the current in-memory cart when another tab writes invalid storage.
+      }
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [currency, restaurantId]);
+
+  useEffect(() => {
     if (!state.hydrated || state.restaurantId !== restaurantId) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
     try {
       saveRestaurantCart(window.localStorage, {
         restaurantId: state.restaurantId,
@@ -100,6 +122,21 @@ export default function useRestaurantCart(restaurantId: string, currency: string
     dispatch({ type: "clear" });
   }, []);
 
+  const clearIfFingerprintMatches = useCallback(async (expectedFingerprint: string) => {
+    if (await fingerprintCart(state.lines) !== expectedFingerprint) return false;
+    try {
+      saveRestaurantCart(window.localStorage, {
+        restaurantId,
+        currency,
+        lines: [],
+      });
+    } catch {
+      // The in-memory cart can still clear when persistent storage is unavailable.
+    }
+    dispatch({ type: "clear" });
+    return true;
+  }, [currency, restaurantId, state.lines]);
+
   const trackCartViewed = useCallback(() => {
     trackEvent({
       name: "cart_viewed",
@@ -125,6 +162,7 @@ export default function useRestaurantCart(restaurantId: string, currency: string
     setLineQuantity,
     clearCart,
     clearAfterOrderCreated,
+    clearIfFingerprintMatches,
     trackCartViewed,
-  }), [addLine, clearAfterOrderCreated, clearCart, removeLine, replaceLine, setLineQuantity, state, trackCartViewed]);
+  }), [addLine, clearAfterOrderCreated, clearCart, clearIfFingerprintMatches, removeLine, replaceLine, setLineQuantity, state, trackCartViewed]);
 }

@@ -29,7 +29,8 @@ export function shouldExpirePaymentOnStatusRead(payment: PaymentStatus, nowMs = 
 export function paymentLocksCart(payment: PaymentStatus, nowMs = Date.now()) {
   if (payment.orderStatus === "placed") return false;
   if (isServerMarkedPaymentExpired(payment, nowMs)) return false;
-  return payment.orderStatus === "pending_payment" || payment.orderStatus === "cancelled";
+  if (payment.orderStatus === "pending_payment") return true;
+  return payment.orderStatus === "cancelled" && payment.status !== "failed";
 }
 
 export function getCustomerPaymentStatusLabel(payment: PaymentStatus, nowMs = Date.now()) {

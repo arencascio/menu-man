@@ -4,6 +4,9 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { isMenuModifierOptionAvailable, resolveModifierPriceCents } from "@/lib/cart/cart";
 import type { MenuModifierGroup } from "@/lib/cart/types";
 import { resolveTheme } from "@/lib/themes/resolve-theme";
+import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
+import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
+import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
 import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
 import { type BusinessHour } from "./BusinessHours";
@@ -271,6 +274,24 @@ if (restaurantError || !restaurant) {
     hasUsableAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null
   );
   const theme = resolveTheme(restaurant.theme_preset, restaurant.theme_overrides);
+  let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
+  for (const capability of await listGuestPaymentCapabilities()) {
+    try {
+      const view = await getOrderPaymentView(slug, capability.orderId, capability.checkoutToken);
+      const payment = await getPaymentStatus(capability.orderId, capability.checkoutToken);
+      if (paymentLocksCart(payment)) {
+        initialActivePayment = {
+          orderId: capability.orderId,
+          orderNumber: view.order.orderNumber,
+          statusLabel: getCustomerPaymentStatusLabel(payment),
+          locksCart: true,
+        };
+        break;
+      }
+    } catch (error) {
+      if (!(error instanceof PaymentServerError)) throw error;
+    }
+  }
   const themeStyle = {
     "--theme-primary": theme.colors.primary,
     "--theme-accent": theme.colors.accent,
@@ -334,10 +355,10 @@ if (restaurantError || !restaurant) {
           <MenuBrowser
             restaurantId={restaurant.id}
             restaurantSlug={restaurant.slug}
-            menuId={menu.id}
             currency={restaurant.currency}
             sections={menuSections}
             ariaLabel={`${restaurant.name} ${menu.name}`}
+            initialActivePayment={initialActivePayment}
           />
         </div>
       </div>

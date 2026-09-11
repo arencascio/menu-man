@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkoutCapabilitySchema } from "@/lib/payments/contracts";
+import { getGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 import { getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +10,9 @@ const headers = { "Cache-Control": "no-store" };
 
 export async function GET(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   try {
-    const authorization = request.headers.get("authorization") || "";
-    const checkoutToken = checkoutCapabilitySchema.parse(
-      authorization.startsWith("Bearer ") ? authorization.slice(7) : "",
-    );
     const { orderId } = await params;
+    const checkoutToken = await getGuestPaymentCapability(orderId);
+    if (!checkoutToken) throw new PaymentServerError("INVALID_PAYMENT_SESSION", "Payment session is unavailable.");
     return NextResponse.json(await getPaymentStatus(orderId, checkoutToken), { headers });
   } catch (error) {
     if (error instanceof PaymentServerError) {
@@ -29,4 +27,3 @@ export async function GET(request: Request, { params }: { params: Promise<{ orde
     );
   }
 }
-

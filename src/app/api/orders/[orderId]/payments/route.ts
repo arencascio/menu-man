@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { paymentSubmissionRequestSchema } from "@/lib/payments/contracts";
+import { getGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 import { PaymentServerError, submitPayment } from "@/lib/payments/server";
 
 export const dynamic = "force-dynamic";
@@ -28,9 +29,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     }
     const body = paymentSubmissionRequestSchema.parse(await request.json());
     const { orderId } = await params;
+    const checkoutToken = await getGuestPaymentCapability(orderId);
+    if (!checkoutToken) throw new PaymentServerError("INVALID_PAYMENT_SESSION", "Payment session is unavailable.");
     const payment = await submitPayment(
       orderId,
-      body.checkoutToken,
+      checkoutToken,
       body.clientAttemptKey,
       body.paymentMethodToken,
     );
@@ -54,4 +57,3 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     );
   }
 }
-

@@ -1,12 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { formatPrice } from "@/lib/cart/cart";
 import type { CartLine, MenuModifierGroup } from "@/lib/cart/types";
+import { paymentStatusSchema } from "@/lib/payments/contracts";
+import {
+  activeOrderStorageKey,
+  checkoutBroadcastChannelName,
+  loadActiveOrderMarker,
+  removeActiveOrderMarker,
+  saveActiveOrderMarker,
+} from "@/lib/payments/browser-session";
+import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import CartPanel from "./CartPanel";
-import CheckoutPanel from "./CheckoutPanel";
-import type { ActivePaymentOrderSummary } from "./CheckoutPanel";
 import OrderItemPanel from "./OrderItemPanel";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
@@ -32,53 +40,118 @@ export type MenuSection = {
 type MenuBrowserProps = {
   restaurantId: string;
   restaurantSlug: string;
-  menuId: string;
   currency: string | null;
   sections: MenuSection[];
   ariaLabel: string;
+  initialActivePayment: {
+    orderId: string;
+    orderNumber: string;
+    statusLabel: string;
+    locksCart: true;
+  } | null;
 };
 
 export default function MenuBrowser({
   restaurantId,
   restaurantSlug,
-  menuId,
   currency,
   sections,
   ariaLabel,
+  initialActivePayment,
 }: MenuBrowserProps) {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [hasStoredPaymentSession, setHasStoredPaymentSession] = useState(false);
-  const [activePayment, setActivePayment] = useState<ActivePaymentOrderSummary | null>(null);
+  const [activePayment, setActivePayment] = useState<{
+    orderId: string;
+    orderNumber: string;
+    statusLabel: string;
+    locksCart: boolean;
+  } | null>(initialActivePayment);
   const resolvedCurrency = currency || "USD";
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
-  const paymentStorageKey = `menu-man:payment-session:v1:${restaurantId}`;
-  const cartLocked = hasStoredPaymentSession ? activePayment?.locksCart ?? true : false;
+  const cartLocked = Boolean(activePayment?.locksCart);
 
   useEffect(() => {
-    let hasStoredSession = false;
-    try {
-      hasStoredSession = Boolean(window.sessionStorage.getItem(paymentStorageKey));
-    } catch {
-      // Checkout can still start when session storage is unavailable.
-    }
-    void Promise.resolve().then(() => setHasStoredPaymentSession(hasStoredSession));
-  }, [paymentStorageKey]);
+    if (!initialActivePayment || loadActiveOrderMarker(window.localStorage, restaurantId)) return;
+    saveActiveOrderMarker(window.localStorage, {
+      version: 1,
+      restaurantId,
+      restaurantSlug,
+      orderId: initialActivePayment.orderId,
+      orderNumber: initialActivePayment.orderNumber,
+      cartFingerprint: "",
+    });
+  }, [initialActivePayment, restaurantId, restaurantSlug]);
 
-  const handleActivePaymentChange = useCallback((nextPayment: ActivePaymentOrderSummary | null) => {
-    setActivePayment(nextPayment);
-    setHasStoredPaymentSession(Boolean(nextPayment));
-    if (nextPayment?.locksCart) {
+  const refreshActivePayment = useCallback(async () => {
+    const marker = loadActiveOrderMarker(window.localStorage, restaurantId);
+    if (!marker || marker.restaurantSlug !== restaurantSlug) {
+      setActivePayment(null);
+      return;
+    }
+    setActivePayment({
+      orderId: marker.orderId,
+      orderNumber: marker.orderNumber,
+      statusLabel: "Checking payment status",
+      locksCart: true,
+    });
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(marker.orderId)}/payment-status`, { cache: "no-store" });
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 404) {
+          removeActiveOrderMarker(window.localStorage, restaurantId);
+          setActivePayment(null);
+        }
+        return;
+      }
+      const payment = paymentStatusSchema.parse(await response.json());
+      if (!paymentLocksCart(payment)) {
+        if (payment.orderStatus === "placed" && ["paid", "partially_refunded", "refunded"].includes(payment.paymentStatus)) {
+          await cart.clearIfFingerprintMatches(marker.cartFingerprint);
+        }
+        removeActiveOrderMarker(window.localStorage, restaurantId);
+        setActivePayment(null);
+        return;
+      }
+      setActivePayment({
+        orderId: marker.orderId,
+        orderNumber: marker.orderNumber,
+        statusLabel: getCustomerPaymentStatusLabel(payment),
+        locksCart: true,
+      });
       setIsCartOpen(false);
       setExpandedItemId(null);
       setEditingLineId(null);
+    } catch {
+      // Keep the conservative lock until an authoritative refresh succeeds.
     }
-  }, []);
+  }, [cart, restaurantId, restaurantSlug]);
+
+  useEffect(() => {
+    const initialRefresh = window.setTimeout(() => void refreshActivePayment(), 0);
+    function handleStorage(event: StorageEvent) {
+      if (event.key === activeOrderStorageKey(restaurantId)) void refreshActivePayment();
+    }
+    const channel = typeof BroadcastChannel === "undefined"
+      ? null
+      : new BroadcastChannel(checkoutBroadcastChannelName(restaurantId));
+    const handleMessage = () => void refreshActivePayment();
+    const interval = window.setInterval(() => void refreshActivePayment(), 5_000);
+    window.addEventListener("storage", handleStorage);
+    channel?.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      channel?.removeEventListener("message", handleMessage);
+      channel?.close();
+      window.clearTimeout(initialRefresh);
+      window.clearInterval(interval);
+    };
+  }, [refreshActivePayment, restaurantId]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -152,12 +225,13 @@ export default function MenuBrowser({
 
   function openCheckout() {
     if (cartLocked) {
-      setIsCheckoutOpen(true);
       setIsCartOpen(false);
+      if (activePayment) {
+        router.push(`/r/${encodeURIComponent(restaurantSlug)}/order/${encodeURIComponent(activePayment.orderId)}/payment`);
+      }
       return;
     }
     setIsCartOpen(false);
-    setIsCheckoutOpen(true);
     trackEvent({
       name: "checkout_started",
       restaurantId,
@@ -173,6 +247,7 @@ export default function MenuBrowser({
         quantity: line.quantity,
       })),
     });
+    router.push(`/r/${encodeURIComponent(restaurantSlug)}/checkout`);
   }
 
   return (
@@ -181,14 +256,14 @@ export default function MenuBrowser({
         <aside className={styles.activePaymentBanner} aria-live="polite">
           <div>
             <strong>Active order #{activePayment.orderNumber}</strong>
-            <span>{activePayment.statusLabel} · {formatPrice(activePayment.totalCents, activePayment.currency)}</span>
+            <span>{activePayment.statusLabel}</span>
             {activePayment.locksCart && <small>Menu and cart changes are paused while this order total is locked.</small>}
           </div>
           <button
             type="button"
             onClick={() => {
-              setIsCheckoutOpen(true);
               setIsCartOpen(false);
+              router.push(`/r/${encodeURIComponent(restaurantSlug)}/order/${encodeURIComponent(activePayment.orderId)}/payment`);
             }}
           >
             Resume Payment
@@ -248,7 +323,6 @@ export default function MenuBrowser({
           onClick={() => {
             const willOpen = !isCartOpen;
             setIsCartOpen(willOpen);
-            setIsCheckoutOpen(false);
             if (willOpen) cart.trackCartViewed();
           }}
         >
@@ -268,24 +342,6 @@ export default function MenuBrowser({
           onClear={cart.clearCart}
           onCheckout={openCheckout}
         />
-      )}
-
-      {(isCheckoutOpen || hasStoredPaymentSession) && (
-        <div hidden={!isCheckoutOpen}>
-          <CheckoutPanel
-            restaurantId={restaurantId}
-            restaurantSlug={restaurantSlug}
-            menuId={menuId}
-            currency={resolvedCurrency}
-            lines={cart.lines}
-            onBack={() => {
-              setIsCheckoutOpen(false);
-              setIsCartOpen(!cartLocked && cart.lines.length > 0);
-            }}
-            onPaymentConfirmed={cart.clearAfterOrderCreated}
-            onActivePaymentChange={handleActivePaymentChange}
-          />
-        </div>
       )}
 
       <div className={styles.menu}>

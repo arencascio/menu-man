@@ -8,15 +8,18 @@ import {
 
 test("payment submission accepts only opaque bounded input and UUID attempt keys", () => {
   assert.equal(paymentSubmissionRequestSchema.safeParse({
-    checkoutToken: "x".repeat(43),
     clientAttemptKey: "10000000-0000-4000-8000-000000000001",
     paymentMethodToken: "fake:success",
   }).success, true);
   assert.equal(paymentSubmissionRequestSchema.safeParse({
-    checkoutToken: "short",
     clientAttemptKey: "not-a-uuid",
     paymentMethodToken: "fake:success",
     amountCents: 1,
+  }).success, false);
+  assert.equal(paymentSubmissionRequestSchema.safeParse({
+    checkoutToken: "x".repeat(43),
+    clientAttemptKey: "10000000-0000-4000-8000-000000000001",
+    paymentMethodToken: "fake:success",
   }).success, false);
 });
 
@@ -39,17 +42,14 @@ test("payment status is provider-neutral", () => {
   }).success, true);
 });
 
-test("fake recovery accepts only a capability and deterministic terminal resolution", () => {
+test("fake recovery accepts only a deterministic terminal resolution", () => {
   assert.equal(fakePaymentRecoveryRequestSchema.safeParse({
-    checkoutToken: "x".repeat(43),
     resolution: "succeeded",
   }).success, true);
   assert.equal(fakePaymentRecoveryRequestSchema.safeParse({
-    checkoutToken: "x".repeat(43),
     resolution: "processing",
   }).success, false);
   assert.equal(fakePaymentRecoveryRequestSchema.safeParse({
-    checkoutToken: "x".repeat(43),
     resolution: "failed",
     clientAttemptKey: "10000000-0000-4000-8000-000000000001",
   }).success, false);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { paymentSessionRequestSchema } from "@/lib/payments/contracts";
+import { getGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 import { getPaymentSession, PaymentServerError } from "@/lib/payments/server";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +12,11 @@ const headers = { "Cache-Control": "no-store" };
 
 export async function POST(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   try {
-    const body = paymentSessionRequestSchema.parse(await request.json());
+    paymentSessionRequestSchema.parse(await request.json());
     const { orderId } = await params;
-    return NextResponse.json(await getPaymentSession(orderId, body.checkoutToken), { headers });
+    const checkoutToken = await getGuestPaymentCapability(orderId);
+    if (!checkoutToken) throw new PaymentServerError("INVALID_PAYMENT_SESSION", "Payment session is unavailable.");
+    return NextResponse.json(await getPaymentSession(orderId, checkoutToken), { headers });
   } catch (error) {
     if (error instanceof ZodError || error instanceof SyntaxError) {
       return NextResponse.json(
@@ -33,4 +36,3 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     );
   }
 }
-

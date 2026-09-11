@@ -14,13 +14,16 @@ declare
   request_payload jsonb;
   order_response jsonb;
   second_order_response jsonb;
+  failed_order_response jsonb;
   prepared jsonb;
   attempt jsonb;
   second_attempt jsonb;
+  failed_attempt jsonb;
   webhook_response jsonb;
   refund_response jsonb;
   payment_uuid uuid;
   second_payment_uuid uuid;
+  payment_view jsonb;
   event_uuid uuid;
 begin
   select id into strict restaurant_uuid
@@ -177,6 +180,16 @@ begin
     raise exception 'Verified refund did not update payment summaries';
   end if;
 
+  payment_view := public.get_order_payment_view_v1(
+    (order_response ->> 'orderId')::uuid, 'armandos', repeat('a', 64)
+  );
+  if payment_view #>> '{order,orderNumber}' <> order_response ->> 'orderNumber'
+    or jsonb_array_length(payment_view #> '{order,items}') < 1
+    or payment_view #>> '{payment,status}' <> 'refunded'
+  then
+    raise exception 'Capability-protected order payment view is incomplete: %', payment_view;
+  end if;
+
   second_order_response := public.create_order_v1(
     'armandos', gen_random_uuid()::text, request_payload
   );
@@ -231,6 +244,52 @@ begin
   then
     raise exception 'Late success was not quarantined from order placement/purchase analytics';
   end if;
+
+  failed_order_response := public.create_order_v1(
+    'armandos', gen_random_uuid()::text, request_payload
+  );
+  prepared := public.prepare_payment_v1(
+    (failed_order_response ->> 'orderId')::uuid, repeat('1', 64), true, 30, 120
+  );
+  failed_attempt := public.reserve_payment_attempt_v1(
+    (failed_order_response ->> 'orderId')::uuid, repeat('1', 64), gen_random_uuid()
+  );
+  webhook_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-decline', connection_uuid, repeat('2', 64),
+    jsonb_build_object('fixture', 'decline'),
+    jsonb_build_object(
+      'kind', 'payment.failed',
+      'attemptId', failed_attempt ->> 'attemptId',
+      'amountCents', failed_attempt ->> 'amountCents',
+      'currency', failed_attempt ->> 'currency',
+      'providerStatus', 'DECLINED',
+      'failureCategory', 'provider_decline',
+      'failureCode', 'CARD_DECLINED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((webhook_response ->> 'webhookEventId')::uuid);
+
+  if not exists (
+    select 1 from public.orders
+    where id = (failed_order_response ->> 'orderId')::uuid
+      and order_status = 'cancelled'
+      and payment_status = 'failed'
+      and cancellation_reason = 'payment_declined'
+  ) then
+    raise exception 'Conclusive decline did not terminally cancel the order';
+  end if;
+
+  begin
+    perform public.reserve_payment_attempt_v1(
+      (failed_order_response ->> 'orderId')::uuid, repeat('1', 64), gen_random_uuid()
+    );
+    raise exception 'Terminally declined order accepted another payment attempt';
+  exception when others then
+    if sqlerrm not like 'MM_PAYMENT_NOT_ALLOWED|%' then
+      raise;
+    end if;
+  end;
 end;
 $$;
 

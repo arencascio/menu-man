@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { fakePaymentRecoveryRequestSchema } from "@/lib/payments/contracts";
+import { getGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 import { PaymentServerError, resolveFakeUnknownPayment } from "@/lib/payments/server";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     }
     const body = fakePaymentRecoveryRequestSchema.parse(await request.json());
     const { orderId } = await params;
-    const payment = await resolveFakeUnknownPayment(orderId, body.checkoutToken, body.resolution);
+    const checkoutToken = await getGuestPaymentCapability(orderId);
+    if (!checkoutToken) throw new PaymentServerError("INVALID_PAYMENT_SESSION", "Payment session is unavailable.");
+    const payment = await resolveFakeUnknownPayment(orderId, checkoutToken, body.resolution);
     return NextResponse.json(payment, { status: 202, headers });
   } catch (error) {
     if (error instanceof ZodError || error instanceof SyntaxError) {

@@ -92,6 +92,16 @@ test("failed payments remain retryable and lock cart changes until server expira
   assert.equal(getCustomerPaymentStatusLabel(failed, NOW), "Payment declined");
 });
 
+test("a server-terminal decline unlocks the cart while preserving its reason", () => {
+  const declined = payment({
+    status: "failed",
+    orderStatus: "cancelled",
+    paymentStatus: "failed",
+  });
+  assert.equal(paymentLocksCart(declined, NOW), false);
+  assert.equal(getCustomerPaymentStatusLabel(declined, NOW), "Payment declined");
+});
+
 test("a late success stays locked and is identified for review", () => {
   const lateSuccess = payment({
     status: "succeeded",

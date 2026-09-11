@@ -24,6 +24,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609080007_checkout_v1.sql",
     "202609100001_payments_foundation.sql",
     "202609110001_fix_checkout_request_fingerprint_ambiguity.sql",
+    "202609110002_route_based_checkout.sql",
   ]);
 });
 
@@ -135,6 +136,18 @@ test("payment state is mutated only through restricted functions", () => {
   assert.match(payments, /unique \(\s*provider_key, environment, provider_event_id\s*\)/i);
   assert.match(payments, /provider_key <> 'fake' or environment = 'test'/i);
   assert.match(payments, /'purchase', 'payment', payment_record\.id/i);
+});
+
+test("route checkout adds a capability-protected snapshot and terminal failure guard", () => {
+  const migration = migrations.find(({ file }) => file.endsWith("_route_based_checkout.sql"))?.sql || "";
+  assert.match(migration, /create or replace function public\.get_order_payment_view_v1/i);
+  assert.match(migration, /session\.access_token_hash = p_access_token_hash/i);
+  assert.match(migration, /restaurant\.slug = p_restaurant_slug/i);
+  assert.match(migration, /create trigger payment_attempt_terminal_failure/i);
+  assert.match(migration, /'payment_declined'/i);
+  assert.match(migration, /'payment_failed'/i);
+  assert.match(migration, /order_status = 'cancelled'/i);
+  assert.match(migration, /grant execute on function public\.get_order_payment_view_v1[\s\S]*to service_role/i);
 });
 
 test("browser analytics cannot emit purchase", () => {

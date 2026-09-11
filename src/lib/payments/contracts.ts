@@ -4,18 +4,14 @@ const uuid = z.uuid().transform((value) => value.toLowerCase());
 
 export const checkoutCapabilitySchema = z.string().min(32).max(200);
 
-export const paymentSessionRequestSchema = z.strictObject({
-  checkoutToken: checkoutCapabilitySchema,
-});
+export const paymentSessionRequestSchema = z.strictObject({});
 
 export const paymentSubmissionRequestSchema = z.strictObject({
-  checkoutToken: checkoutCapabilitySchema,
   clientAttemptKey: uuid,
   paymentMethodToken: z.string().min(1).max(500),
 });
 
 export const fakePaymentRecoveryRequestSchema = z.strictObject({
-  checkoutToken: checkoutCapabilitySchema,
   resolution: z.enum(["succeeded", "failed"]),
 });
 
@@ -65,7 +61,6 @@ export const reservedAttemptSchema = z.strictObject({
 });
 
 export const paymentSessionResponseSchema = z.strictObject({
-  checkoutToken: checkoutCapabilitySchema,
   expiresAt: z.string().datetime({ offset: true }),
   payment: paymentStatusSchema,
   browserSession: z.strictObject({

@@ -84,12 +84,26 @@ Fake events use the same signature verification, webhook inbox, deduplication,
 state transition, audit, and server purchase-outbox path used by future real
 provider adapters. No card fields or raw card data are accepted.
 
-Public payment endpoints are capability-token protected:
+Guest payment endpoints are protected by an order-scoped, HTTP-only,
+SameSite cookie. The opaque checkout capability is never exposed to browser
+JavaScript. Payment and confirmation use discrete routes:
+
+- `/r/[slug]/checkout`
+- `/r/[slug]/order/[orderId]/payment`
+- `/r/[slug]/order/[orderId]/confirmation`
+
+Payment endpoints are:
 
 - `POST /api/orders/[orderId]/payment-session`
 - `POST /api/orders/[orderId]/payments`
 - `GET /api/orders/[orderId]/payment-status`
 - `POST /api/webhooks/payments/fake` (non-production only)
+
+Conclusive payment failure terminally cancels the frozen order with a specific
+`payment_declined` or `payment_failed` reason so another attempt cannot be
+reserved for that order. Unknown, processing, and authorized outcomes remain
+locked pending an authoritative provider update. Cross-tab browser messages
+only trigger a server status refetch; they are never trusted as payment state.
 
 The browser analytics API cannot construct `purchase`. A verified successful
 payment event writes one server-side `purchase` record to `analytics_outbox`.

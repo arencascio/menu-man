@@ -8,6 +8,7 @@ import {
 } from "@/lib/checkout/contracts";
 import { CheckoutServerError, createAuthoritativeOrder } from "@/lib/checkout/server";
 import { preparePaymentForOrder } from "@/lib/payments/server";
+import { setGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -155,10 +156,25 @@ export async function POST(
     });
 
     logCheckout("before_return_success", createdOrder);
-    return NextResponse.json({ ...response, paymentSession }, {
+    const checkoutToken = paymentSession && "checkoutToken" in paymentSession
+      ? paymentSession.checkoutToken
+      : null;
+    const publicPaymentSession = paymentSession
+      ? paymentSessionResponseWithoutCapability(paymentSession)
+      : null;
+    const nextResponse = NextResponse.json({ ...response, paymentSession: publicPaymentSession }, {
       status: response.replayed ? 200 : 201,
       headers: responseHeaders,
     });
+    if (checkoutToken && paymentSession) {
+      setGuestPaymentCapability(
+        nextResponse,
+        response.orderId,
+        checkoutToken,
+        paymentSession.expiresAt,
+      );
+    }
+    return nextResponse;
   } catch (error) {
     logCheckoutFailure(failureStage, error, sensitiveValues, createdOrder);
 
@@ -192,4 +208,14 @@ export async function POST(
       error: { code: "CHECKOUT_FAILED", message: "Checkout could not be completed." },
     }, { status: 500, headers: responseHeaders });
   }
+}
+
+function paymentSessionResponseWithoutCapability(
+  paymentSession: NonNullable<Awaited<ReturnType<typeof preparePaymentForOrder>>>,
+) {
+  return {
+    expiresAt: paymentSession.expiresAt,
+    payment: paymentSession.payment,
+    browserSession: paymentSession.browserSession,
+  };
 }

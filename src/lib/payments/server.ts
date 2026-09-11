@@ -13,6 +13,7 @@ import { getPaymentProvider } from "./registry";
 import { FakePaymentProviderAdapter } from "./providers/fake/adapter";
 import { isFakePaymentRecoveryRuntimeEnabled, isFakePaymentRuntimeEnabled } from "./runtime";
 import { shouldExpirePaymentOnStatusRead } from "./state";
+import { orderPaymentViewSchema } from "./view-contracts";
 import type {
   NormalizedPaymentEvent,
   PaymentCommandResult,
@@ -80,7 +81,9 @@ function parsePaymentStatus(data: unknown) {
   return parsed.data;
 }
 
-export async function preparePaymentForOrder(orderId: string): Promise<PaymentSessionResponse | null> {
+export async function preparePaymentForOrder(
+  orderId: string,
+): Promise<(PaymentSessionResponse & { checkoutToken: string }) | null> {
   const checkoutToken = randomBytes(32).toString("base64url");
   const { data, error } = await supabaseServer.rpc("prepare_payment_v1", {
     p_order_id: orderId,
@@ -105,12 +108,12 @@ export async function preparePaymentForOrder(orderId: string): Promise<PaymentSe
   const { sessionExpiresAt, ...payment } = parsed.data;
   const adapter = getPaymentProvider(payment.provider);
   const browserSession = await adapter.createBrowserSession(connectionFromStatus(payment));
-  return paymentSessionResponseSchema.parse({
-    checkoutToken,
+  const publicSession = paymentSessionResponseSchema.parse({
     expiresAt: sessionExpiresAt,
     payment,
     browserSession,
   });
+  return Object.assign(publicSession, { checkoutToken });
 }
 
 export async function getPaymentSession(orderId: string, checkoutToken: string) {
@@ -127,6 +130,25 @@ async function authorizePaymentStatus(orderId: string, checkoutToken: string) {
   });
   if (error) throw parseDatabaseError(error.message);
   return parsePaymentStatus(data);
+}
+
+export async function getOrderPaymentView(
+  restaurantSlug: string,
+  orderId: string,
+  checkoutToken: string,
+) {
+  const { data, error } = await supabaseServer.rpc("get_order_payment_view_v1", {
+    p_order_id: orderId,
+    p_restaurant_slug: restaurantSlug,
+    p_access_token_hash: tokenHash(checkoutToken),
+  });
+  if (error) throw parseDatabaseError(error.message);
+  const parsed = orderPaymentViewSchema.safeParse(data);
+  if (!parsed.success) {
+    console.error("Invalid order payment view response.", parsed.error);
+    throw new PaymentServerError("PAYMENT_FAILED", "Order payment details could not be loaded.");
+  }
+  return parsed.data;
 }
 
 async function recordCommandResult(attemptId: string, result: PaymentCommandResult) {
