@@ -41,6 +41,32 @@ function parseDatabaseError(message: string) {
   return new CheckoutServerError("CHECKOUT_FAILED", "Checkout could not be completed.");
 }
 
+function sensitiveCheckoutValues(request: CheckoutRequest, idempotencyKey: string) {
+  const values = [
+    request.customer.name,
+    request.customer.phone,
+    request.customer.email,
+    request.orderNotes,
+    ...request.items.map((item) => item.specialInstructions),
+    idempotencyKey,
+  ].filter((value): value is string => Boolean(value));
+
+  return [...new Set(values.flatMap((value) => [
+    value,
+    JSON.stringify(value).slice(1, -1),
+  ]))].sort((left, right) => right.length - left.length);
+}
+
+function sanitizedRpcErrorValue(value: unknown, sensitiveValues: string[]) {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return undefined;
+
+  return sensitiveValues.reduce(
+    (sanitized, sensitiveValue) => sanitized.replaceAll(sensitiveValue, "[redacted]"),
+    value,
+  ).slice(0, 2_000);
+}
+
 export async function getPickupAvailability(restaurantSlug: string) {
   const { data, error } = await supabaseServer.rpc("get_pickup_availability_v1", {
     p_restaurant_slug: restaurantSlug,
@@ -60,12 +86,30 @@ export async function createAuthoritativeOrder(
   idempotencyKey: string,
   request: CheckoutRequest,
 ) {
-  const { data, error } = await supabaseServer.rpc("create_order_v1", {
+  const rpcResponse = await supabaseServer.rpc("create_order_v1", {
     p_restaurant_slug: restaurantSlug,
     p_idempotency_key: idempotencyKey,
     p_request: request,
   });
-  if (error) throw parseDatabaseError(error.message);
+  const { data, error } = rpcResponse;
+  if (error) {
+    const sensitiveValues = sensitiveCheckoutValues(request, idempotencyKey);
+    const logFields = {
+      rpc: "create_order_v1",
+      code: sanitizedRpcErrorValue(error.code, sensitiveValues),
+      message: sanitizedRpcErrorValue(error.message, sensitiveValues),
+      details: sanitizedRpcErrorValue(error.details, sensitiveValues),
+      hint: sanitizedRpcErrorValue(error.hint, sensitiveValues),
+      status: sanitizedRpcErrorValue(rpcResponse.status, sensitiveValues),
+      statusText: sanitizedRpcErrorValue(rpcResponse.statusText, sensitiveValues),
+    };
+
+    console.error("[checkout-rpc]", Object.fromEntries(
+      Object.entries(logFields).filter(([, value]) => value !== undefined),
+    ));
+
+    throw parseDatabaseError(error.message);
+  }
 
   const parsed = checkoutResponseSchema.safeParse(data);
   if (!parsed.success) {
