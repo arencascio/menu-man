@@ -27,6 +27,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609110002_route_based_checkout.sql",
     "202609110003_fix_terminal_payment_failure_transition.sql",
     "202609110004_fake_payment_exception_controls.sql",
+    "202609120001_square_adapter_support.sql",
   ]);
 });
 
@@ -178,6 +179,38 @@ test("fake exceptional-state controls are capability protected and test-only", (
   assert.match(migration, /'authorization_voided'/i);
   assert.match(migration, /'payment_late_success'/i);
   assert.doesNotMatch(migration, /insert into public\.payment_attempts/i);
+});
+
+test("real-provider support keeps reconciliation and refund correlation restricted", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_square_adapter_support.sql"),
+  )?.sql || "";
+  for (const functionName of [
+    "record_refund_command_result_v1",
+    "ingest_payment_reconciliation_v1",
+    "touch_payment_reconciliation_v1",
+  ]) {
+    assert.match(migration, new RegExp(`create or replace function public\\.${functionName}\\b`, "i"));
+    assert.match(migration, new RegExp(`grant execute on function public\\.${functionName}[\\s\\S]*to service_role`, "i"));
+    assert.match(migration, new RegExp(`revoke all on function public\\.${functionName}[\\s\\S]*from public, anon, authenticated`, "i"));
+  }
+  assert.match(migration, /event_source in \('webhook', 'reconciliation'\)/i);
+  assert.match(migration, /event_source = 'webhook' and signature_verified/i);
+  assert.match(migration, /event_source = 'reconciliation' and not signature_verified/i);
+  assert.match(migration, /set source = 'reconciliation'/i);
+});
+
+test("Square staging bootstrap stores only provider references, never Square secrets", () => {
+  const seed = readFileSync(
+    join(process.cwd(), "supabase", "seeds", "staging", "005_armandos_square_sandbox.sql"),
+    "utf8",
+  );
+  assert.match(seed, /provider_key[\s\S]*'square'/i);
+  assert.match(seed, /environment[\s\S]*'sandbox'/i);
+  assert.match(seed, /reference_kind[\s\S]*'location'/i);
+  assert.match(seed, /vercel-env:SQUARE_SANDBOX_ACCESS_TOKEN/i);
+  assert.doesNotMatch(seed, /sandbox_access_token\s*[,)]/i);
+  assert.doesNotMatch(seed, /webhook_signature_key\s*[,)]/i);
 });
 
 test("browser analytics cannot emit purchase", () => {

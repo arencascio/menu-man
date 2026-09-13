@@ -1,4 +1,4 @@
-export const paymentProviderKeys = ["fake"] as const;
+export const paymentProviderKeys = ["fake", "square"] as const;
 
 export type PaymentProviderKey = string;
 export type CaptureMode = "automatic" | "manual";
@@ -60,8 +60,11 @@ export type RefundCommandResult = {
   status: "processing" | "failed";
   providerStatus: string;
   providerRefundReference?: string;
+  failureCategory?: string;
   failureCode?: string;
   failureMessage?: string;
+  providerMetadata?: Record<string, unknown>;
+  reconciliationEvent?: NormalizedPaymentEvent;
   developmentWebhookDeliveries?: ProviderWebhookDelivery[];
 };
 
@@ -70,7 +73,9 @@ export type NormalizedPaymentEvent = {
   kind: PaymentEventKind;
   occurredAt: string;
   availableAt: string;
-  connectionId: string;
+  connectionId?: string;
+  providerAccountReference?: string;
+  providerLocationReference?: string;
   attemptId?: string;
   refundId?: string;
   amountCents?: number;
@@ -89,6 +94,7 @@ export type VerifiedProviderWebhook = {
   environment: "test" | "sandbox" | "production";
   rawBody: string;
   payload: Record<string, unknown>;
+  sanitizedPayload?: Record<string, unknown>;
 };
 
 export type PaymentStatus = {

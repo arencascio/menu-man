@@ -13,7 +13,11 @@ import {
 } from "./contracts";
 import { getPaymentProvider } from "./registry";
 import { FakePaymentProviderAdapter } from "./providers/fake/adapter";
-import { isFakePaymentRecoveryRuntimeEnabled, isFakePaymentRuntimeEnabled } from "./runtime";
+import {
+  isFakePaymentRecoveryRuntimeEnabled,
+  isFakePaymentRuntimeEnabled,
+  isSquareSandboxRuntimeEnabled,
+} from "./runtime";
 import { shouldExpirePaymentOnStatusRead } from "./state";
 import { orderPaymentViewSchema } from "./view-contracts";
 import type {
@@ -168,6 +172,28 @@ async function recordCommandResult(attemptId: string, result: PaymentCommandResu
   if (error) throw parseDatabaseError(error.message);
 }
 
+async function recordRefundCommandResult(refundId: string, result: {
+  status: "processing" | "failed";
+  providerStatus: string;
+  providerRefundReference?: string;
+  failureCategory?: string;
+  failureCode?: string;
+  failureMessage?: string;
+  providerMetadata?: Record<string, unknown>;
+}) {
+  const { error } = await supabaseServer.rpc("record_refund_command_result_v1", {
+    p_refund_id: refundId,
+    p_status: result.status,
+    p_provider_refund_reference: result.providerRefundReference || null,
+    p_provider_status: result.providerStatus,
+    p_failure_category: result.failureCategory || null,
+    p_failure_code: result.failureCode || null,
+    p_failure_message: result.failureMessage || null,
+    p_provider_metadata: result.providerMetadata || {},
+  });
+  if (error) throw parseDatabaseError(error.message);
+}
+
 async function enqueueDevelopmentDeliveries(
   providerKey: string,
   deliveries: ProviderWebhookDelivery[] | undefined,
@@ -276,6 +302,7 @@ async function runFakeFullRefund(
     amountCents: refund.amountCents,
     currency: refund.currency,
   });
+  await recordRefundCommandResult(refund.refundId, result);
   await enqueueDevelopmentDeliveries("fake", result.developmentWebhookDeliveries);
   await processDuePaymentEvents("fake");
   return authorizePaymentStatus(status.orderId, checkoutToken);
@@ -287,9 +314,12 @@ export async function getPaymentStatus(orderId: string, checkoutToken: string) {
     if (!isFakePaymentRuntimeEnabled()) {
       throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "The fake payment provider is disabled.");
     }
-    await processDuePaymentEvents("fake");
-    status = await authorizePaymentStatus(orderId, checkoutToken);
+  } else if (status.provider === "square" && !isSquareSandboxRuntimeEnabled()) {
+    throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "The Square Sandbox payment provider is disabled.");
   }
+  await processDuePaymentEvents(status.provider);
+  status = await authorizePaymentStatus(orderId, checkoutToken);
+  status = await reconcilePaymentIfDue(status, checkoutToken);
   if (shouldExpirePaymentOnStatusRead(status)) {
     const { data, error } = await supabaseServer.rpc("expire_payment_v1", {
       p_payment_id: status.paymentId,
@@ -298,6 +328,61 @@ export async function getPaymentStatus(orderId: string, checkoutToken: string) {
     status = parsePaymentStatus(data);
   }
   return status;
+}
+
+async function reconcilePaymentIfDue(status: PaymentStatus, checkoutToken: string) {
+  const attempt = status.latestAttempt;
+  if (
+    status.provider !== "square"
+    || !attempt
+    || !["processing", "unknown", "authorized"].includes(attempt.status)
+  ) return status;
+
+  const { data, error } = await supabaseServer
+    .from("payment_attempts")
+    .select("provider_payment_reference,last_provider_sync_at,amount_cents,currency,created_at")
+    .eq("id", attempt.attemptId)
+    .eq("connection_id", status.connectionId)
+    .maybeSingle();
+  if (error || !data) return status;
+  if (data.last_provider_sync_at && Date.now() - Date.parse(data.last_provider_sync_at) < 10_000) return status;
+
+  const adapter = getPaymentProvider(status.provider);
+  const result = await adapter.retrievePayment({
+    ...connectionFromStatus(status),
+    attemptId: attempt.attemptId,
+    paymentId: status.paymentId,
+    orderId: status.orderId,
+    providerPaymentReference: data.provider_payment_reference,
+    createdAt: data.created_at,
+    amountCents: data.amount_cents,
+    currency: data.currency,
+  });
+  if (!result.reconciliationEvent) {
+    const touched = await supabaseServer.rpc("touch_payment_reconciliation_v1", {
+      p_attempt_id: attempt.attemptId,
+      p_provider_status: result.providerStatus,
+    });
+    if (touched.error) throw parseDatabaseError(touched.error.message);
+    return status;
+  }
+  await applyPaymentReconciliation(result.reconciliationEvent);
+  return authorizePaymentStatus(status.orderId, checkoutToken);
+}
+
+async function applyPaymentReconciliation(event: NormalizedPaymentEvent) {
+  if (!event.connectionId) {
+    throw new PaymentServerError("INVALID_PAYMENT_EVENT", "Reconciliation event has no payment connection.");
+  }
+  const { error } = await supabaseServer.rpc("ingest_payment_reconciliation_v1", {
+    p_provider_key: "square",
+    p_environment: "sandbox",
+    p_provider_event_id: event.eventId,
+    p_connection_id: event.connectionId,
+    p_normalized_event: normalizedEventPayload(event),
+    p_occurred_at: event.occurredAt,
+  });
+  if (error) throw parseDatabaseError(error.message);
 }
 
 export async function resolveFakeUnknownPayment(
@@ -449,6 +534,7 @@ export async function resolveFakeLateSuccess(
       amountCents: refund.amountCents,
       currency: refund.currency,
     });
+    await recordRefundCommandResult(refund.refundId, result);
     await enqueueDevelopmentDeliveries("fake", result.developmentWebhookDeliveries);
     await processDuePaymentEvents("fake");
   }
@@ -457,28 +543,91 @@ export async function resolveFakeLateSuccess(
 
 export async function acceptPaymentWebhook(providerKey: string, rawBody: string, headers: Headers) {
   const adapter = getPaymentProvider(providerKey);
-  const verified = adapter.verifyWebhook(rawBody, headers);
+  const verified = await adapter.verifyWebhook(rawBody, headers);
   const events = adapter.normalizeWebhook(verified);
   const payloadHash = createHash("sha256").update(rawBody, "utf8").digest("hex");
-  const rawPayload = JSON.parse(rawBody) as Record<string, unknown>;
-  const accepted: Array<{ webhookEventId: string; inserted: boolean }> = [];
+  const persistedPayload = verified.sanitizedPayload || verified.payload;
+  const accepted: Array<{ webhookEventId?: string; providerEventId?: string; inserted: boolean; ignored?: boolean }> = [];
 
   for (const event of events) {
+    const resolved = await resolveWebhookEvent(providerKey, verified.environment, event);
+    if (!resolved) {
+      accepted.push({ providerEventId: event.eventId, inserted: false, ignored: true });
+      continue;
+    }
     const { data, error } = await supabaseServer.rpc("ingest_payment_webhook_v1", {
       p_provider_key: providerKey,
       p_environment: verified.environment,
       p_provider_event_id: event.eventId,
-      p_connection_id: event.connectionId,
+      p_connection_id: resolved.connectionId,
       p_payload_sha256: payloadHash,
-      p_raw_payload: rawPayload,
-      p_normalized_event: normalizedEventPayload(event),
-      p_occurred_at: event.occurredAt,
-      p_available_at: event.availableAt,
+      p_raw_payload: persistedPayload,
+      p_normalized_event: normalizedEventPayload(resolved),
+      p_occurred_at: resolved.occurredAt,
+      p_available_at: resolved.availableAt,
     });
     if (error) throw parseDatabaseError(error.message);
     accepted.push(data as { webhookEventId: string; inserted: boolean });
   }
   return accepted;
+}
+
+async function resolveWebhookEvent(
+  providerKey: string,
+  environment: "test" | "sandbox" | "production",
+  event: NormalizedPaymentEvent,
+): Promise<NormalizedPaymentEvent | null> {
+  if (event.connectionId) return event;
+  if (!event.providerAccountReference || !event.providerLocationReference) return null;
+
+  const reference = await supabaseServer
+    .from("payment_provider_references")
+    .select("connection_id")
+    .eq("provider_key", providerKey)
+    .eq("environment", environment)
+    .eq("reference_kind", "location")
+    .eq("external_id", event.providerLocationReference)
+    .maybeSingle();
+  if (reference.error || !reference.data) return null;
+  const connectionId = reference.data.connection_id;
+  const connection = await supabaseServer
+    .from("restaurant_payment_connections")
+    .select("id")
+    .eq("id", connectionId)
+    .eq("provider_key", providerKey)
+    .eq("environment", environment)
+    .eq("provider_account_reference", event.providerAccountReference)
+    .maybeSingle();
+  if (connection.error || !connection.data) return null;
+
+  if (event.kind.startsWith("payment.")) {
+    if (!event.attemptId || !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(event.attemptId)) return null;
+    const attempt = await supabaseServer
+      .from("payment_attempts")
+      .select("provider_payment_reference")
+      .eq("id", event.attemptId)
+      .eq("connection_id", connectionId)
+      .maybeSingle();
+    if (attempt.error || !attempt.data) return null;
+    if (
+      attempt.data.provider_payment_reference
+      && event.providerPaymentReference
+      && attempt.data.provider_payment_reference !== event.providerPaymentReference
+    ) {
+      throw new PaymentServerError("INVALID_PAYMENT_EVENT", "Provider payment reference does not match the attempt.");
+    }
+  } else if (event.kind.startsWith("refund.")) {
+    if (!event.providerRefundReference) return null;
+    const refund = await supabaseServer
+      .from("refunds")
+      .select("id")
+      .eq("connection_id", connectionId)
+      .eq("provider_refund_reference", event.providerRefundReference)
+      .maybeSingle();
+    if (refund.error || !refund.data) return null;
+    event = { ...event, refundId: refund.data.id };
+  }
+  return { ...event, connectionId };
 }
 
 function normalizedEventPayload(event: NormalizedPaymentEvent) {
@@ -488,6 +637,9 @@ function normalizedEventPayload(event: NormalizedPaymentEvent) {
 export async function processDuePaymentEvents(providerKey: string) {
   if (providerKey === "fake" && !isFakePaymentRuntimeEnabled()) {
     throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "The fake payment provider is disabled.");
+  }
+  if (providerKey === "square" && !isSquareSandboxRuntimeEnabled()) {
+    throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "The Square Sandbox payment provider is disabled.");
   }
   const { data, error } = await supabaseServer.rpc("list_due_payment_webhooks_v1", {
     p_provider_key: providerKey,

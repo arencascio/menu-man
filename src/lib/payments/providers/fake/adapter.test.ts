@@ -33,7 +33,7 @@ test("fake provider signs and normalizes a successful webhook", async () => {
   assert.equal(result.status, "processing");
   const delivery = result.developmentWebhookDeliveries?.[0];
   assert.ok(delivery);
-  const verified = adapter.verifyWebhook(delivery.rawBody, new Headers(delivery.headers));
+  const verified = await adapter.verifyWebhook(delivery.rawBody, new Headers(delivery.headers));
   const [event] = adapter.normalizeWebhook(verified);
   assert.equal(event.kind, "payment.succeeded");
   assert.equal(event.amountCents, 1250);
@@ -45,7 +45,7 @@ test("fake webhook verification rejects tampering", async () => {
   const result = await adapter.createPayment({ ...PAYMENT, paymentMethodToken: "fake:success" });
   const delivery = result.developmentWebhookDeliveries?.[0];
   assert.ok(delivery);
-  assert.throws(() => adapter.verifyWebhook(`${delivery.rawBody} `, new Headers(delivery.headers)));
+  await assert.rejects(() => adapter.verifyWebhook(`${delivery.rawBody} `, new Headers(delivery.headers)));
 });
 
 test("fake provider produces duplicate and out-of-order deliveries deterministically", async () => {
@@ -58,10 +58,10 @@ test("fake provider produces duplicate and out-of-order deliveries deterministic
   );
 
   const outOfOrder = await adapter.createPayment({ ...PAYMENT, paymentMethodToken: "fake:out_of_order" });
-  const kinds = outOfOrder.developmentWebhookDeliveries?.map((delivery) => {
-    const verified = adapter.verifyWebhook(delivery.rawBody, new Headers(delivery.headers));
+  const kinds = await Promise.all((outOfOrder.developmentWebhookDeliveries || []).map(async (delivery) => {
+    const verified = await adapter.verifyWebhook(delivery.rawBody, new Headers(delivery.headers));
     return adapter.normalizeWebhook(verified)[0].kind;
-  });
+  }));
   assert.deepEqual(kinds, ["payment.succeeded", "payment.processing"]);
 });
 
@@ -89,14 +89,14 @@ test("fake provider covers decline, unknown, authorization, late success, and re
   assert.equal(refund.developmentWebhookDeliveries?.length, 1);
   const delivery = refund.developmentWebhookDeliveries?.[0];
   assert.ok(delivery);
-  const event = adapter.normalizeWebhook(adapter.verifyWebhook(
+  const event = adapter.normalizeWebhook(await adapter.verifyWebhook(
     delivery.rawBody,
     new Headers(delivery.headers),
   ))[0];
   assert.equal(event.kind, "refund.succeeded");
 });
 
-test("fake unknown recovery signs terminal events for the original attempt", () => {
+test("fake unknown recovery signs terminal events for the original attempt", async () => {
   const adapter = new FakePaymentProviderAdapter(SECRET, true);
   for (const resolution of ["succeeded", "failed"] as const) {
     const delivery = adapter.createUnknownPaymentResolution({
@@ -106,7 +106,7 @@ test("fake unknown recovery signs terminal events for the original attempt", () 
       currency: PAYMENT.currency,
       resolution,
     });
-    const event = adapter.normalizeWebhook(adapter.verifyWebhook(
+    const event = adapter.normalizeWebhook(await adapter.verifyWebhook(
       delivery.rawBody,
       new Headers(delivery.headers),
     ))[0];
@@ -126,7 +126,7 @@ test("fake authorization capture and void emit verified events for the existing 
   const capture = await adapter.capturePayment(input);
   const captureDelivery = capture.developmentWebhookDeliveries?.[0];
   assert.ok(captureDelivery);
-  const captureEvent = adapter.normalizeWebhook(adapter.verifyWebhook(
+  const captureEvent = adapter.normalizeWebhook(await adapter.verifyWebhook(
     captureDelivery.rawBody,
     new Headers(captureDelivery.headers),
   ))[0];
@@ -136,7 +136,7 @@ test("fake authorization capture and void emit verified events for the existing 
   const voided = await adapter.cancelPayment(input);
   const voidDelivery = voided.developmentWebhookDeliveries?.[0];
   assert.ok(voidDelivery);
-  const voidEvent = adapter.normalizeWebhook(adapter.verifyWebhook(
+  const voidEvent = adapter.normalizeWebhook(await adapter.verifyWebhook(
     voidDelivery.rawBody,
     new Headers(voidDelivery.headers),
   ))[0];

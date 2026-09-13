@@ -45,3 +45,26 @@ export function requireFakeWebhookSecret() {
   }
   return secret;
 }
+
+export function squareSandboxRuntimeAllowed(input: {
+  menuManEnvironment?: string;
+  nodeEnvironment?: string;
+  vercelEnvironment?: string;
+  explicitlyEnabled?: string;
+}) {
+  if (input.menuManEnvironment === "production" || input.vercelEnvironment === "production") return false;
+  const nonProductionRuntime = input.menuManEnvironment === "staging"
+    || input.menuManEnvironment === "development"
+    || input.nodeEnvironment === "development"
+    || input.nodeEnvironment === "test";
+  return nonProductionRuntime && input.explicitlyEnabled === "true";
+}
+
+export function isSquareSandboxRuntimeEnabled() {
+  return squareSandboxRuntimeAllowed({
+    menuManEnvironment: process.env.MENU_MAN_ENV,
+    nodeEnvironment: process.env.NODE_ENV,
+    vercelEnvironment: process.env.VERCEL_ENV,
+    explicitlyEnabled: process.env.MENU_MAN_ENABLE_SQUARE_SANDBOX,
+  });
+}

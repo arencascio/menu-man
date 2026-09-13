@@ -18,6 +18,7 @@ import {
 } from "@/lib/payments/state";
 import type { OrderPaymentView } from "@/lib/payments/view-contracts";
 import OrderSnapshot from "./OrderSnapshot";
+import SquarePaymentForm from "./SquarePaymentForm";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
 
@@ -124,8 +125,8 @@ export default function PaymentPanel({
     }
   }, [cart, order.orderId, payment, restaurantId, restaurantSlug, router]);
 
-  async function submitFakePayment() {
-    if (paymentSession.browserSession.provider !== "fake" || !paymentLocksCart(payment)) return;
+  async function submitPaymentMethodToken(paymentMethodToken: string) {
+    if (!paymentLocksCart(payment)) return;
     setSubmitting(true);
     setError(null);
     paymentAttempt.current ||= crypto.randomUUID();
@@ -136,7 +137,7 @@ export default function PaymentPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientAttemptKey: paymentAttempt.current,
-          paymentMethodToken: `fake:${fakeScenario}`,
+          paymentMethodToken,
         }),
       });
       const body = await response.json() as unknown;
@@ -150,6 +151,11 @@ export default function PaymentPanel({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function submitFakePayment() {
+    if (paymentSession.browserSession.provider !== "fake") return;
+    await submitPaymentMethodToken(`fake:${fakeScenario}`);
   }
 
   async function resolveUnknownPayment(resolution: "succeeded" | "failed") {
@@ -302,6 +308,18 @@ export default function PaymentPanel({
           </div>
         )}
         {isLateSuccessRefunded && <div className={styles.paymentNoticePanel}><h3>Payment refunded</h3><p>The payment was refunded and the order was not placed. Your cart is unlocked.</p></div>}
+
+        {paymentSession.browserSession.provider === "square" && payment.status === "requires_payment_method" && payment.orderStatus === "pending_payment" && (
+          <SquarePaymentForm
+            orderId={order.orderId}
+            amountCents={payment.amountCents}
+            currency={payment.currency}
+            publicConfig={paymentSession.browserSession.publicConfig}
+            submitting={submitting}
+            onToken={submitPaymentMethodToken}
+            onError={setError}
+          />
+        )}
 
         {paymentSession.browserSession.provider === "fake" && payment.status !== "processing" && payment.status !== "authorized" && payment.orderStatus === "pending_payment" && (
           <fieldset className={styles.checkoutFieldset}>

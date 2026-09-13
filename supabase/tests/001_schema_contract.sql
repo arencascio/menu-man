@@ -63,6 +63,10 @@ begin
     ,('payments', 'connection_id')
     ,('payment_attempts', 'provider_idempotency_key')
     ,('payment_webhook_events', 'provider_event_id')
+    ,('payment_webhook_events', 'event_source')
+    ,('refunds', 'failure_category')
+    ,('refunds', 'failure_code')
+    ,('refunds', 'failure_message')
   ) required_column(table_name, column_name)
   where not exists (
     select 1
@@ -125,6 +129,9 @@ begin
     or to_regprocedure('public.reserve_fake_authorization_action_v1(uuid,text,text,uuid)') is null
     or to_regprocedure('public.reserve_fake_late_success_resolution_v1(uuid,text,text,uuid)') is null
     or to_regprocedure('public.accept_fake_late_success_v1(uuid,text)') is null
+    or to_regprocedure('public.record_refund_command_result_v1(uuid,text,text,text,text,text,text,jsonb)') is null
+    or to_regprocedure('public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)') is null
+    or to_regprocedure('public.touch_payment_reconciliation_v1(uuid,text)') is null
   then
     raise exception 'Required payment functions are missing';
   end if;
@@ -137,12 +144,22 @@ begin
     or has_function_privilege('authenticated', 'public.reserve_fake_late_success_resolution_v1(uuid,text,text,uuid)', 'EXECUTE')
     or has_function_privilege('anon', 'public.accept_fake_late_success_v1(uuid,text)', 'EXECUTE')
     or has_function_privilege('authenticated', 'public.accept_fake_late_success_v1(uuid,text)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.record_refund_command_result_v1(uuid,text,text,text,text,text,text,jsonb)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.record_refund_command_result_v1(uuid,text,text,text,text,text,text,jsonb)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
   then
     raise exception 'Checkout RPC must not be executable by anon/authenticated';
   end if;
 
-  if not has_function_privilege('service_role', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE') then
-    raise exception 'service_role cannot execute checkout RPC';
+  if not has_function_privilege('service_role', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE')
+    or not has_function_privilege('service_role', 'public.record_refund_command_result_v1(uuid,text,text,text,text,text,text,jsonb)', 'EXECUTE')
+    or not has_function_privilege('service_role', 'public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)', 'EXECUTE')
+    or not has_function_privilege('service_role', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
+  then
+    raise exception 'service_role cannot execute a required checkout/payment RPC';
   end if;
 
   if has_table_privilege('service_role', 'public.orders', 'INSERT')

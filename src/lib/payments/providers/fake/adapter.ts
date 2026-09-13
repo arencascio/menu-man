@@ -4,6 +4,8 @@ import type {
   CreatePaymentInput,
   CreateRefundInput,
   PaymentProviderAdapter,
+  RetrievePaymentInput,
+  RetrieveRefundInput,
 } from "../../adapter";
 import type {
   BrowserPaymentSession,
@@ -175,7 +177,7 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
     };
   }
 
-  async retrievePayment(input: PaymentConnectionContext & { providerPaymentReference: string }): Promise<PaymentCommandResult> {
+  async retrievePayment(input: RetrievePaymentInput): Promise<PaymentCommandResult> {
     return { status: "processing", providerStatus: "UNCHANGED", providerPaymentReference: input.providerPaymentReference };
   }
 
@@ -263,11 +265,11 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
     };
   }
 
-  async retrieveRefund(input: PaymentConnectionContext & { providerRefundReference: string }): Promise<RefundCommandResult> {
+  async retrieveRefund(input: RetrieveRefundInput): Promise<RefundCommandResult> {
     return { status: "processing", providerStatus: "UNCHANGED", providerRefundReference: input.providerRefundReference };
   }
 
-  verifyWebhook(rawBody: string, headers: Headers): VerifiedProviderWebhook {
+  async verifyWebhook(rawBody: string, headers: Headers): Promise<VerifiedProviderWebhook> {
     const signatureHeader = headers.get("fake-payment-signature") || "";
     const match = signatureHeader.match(/^t=(\d+),v1=([0-9a-f]{64})$/);
     if (!match) throw new Error("Fake webhook signature is missing or malformed.");

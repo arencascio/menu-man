@@ -12,7 +12,11 @@ Run the sequence only against the separately created staging project:
 3. Apply `002_armandos_operations.sql`.
 4. Apply `003_armandos_test_modifiers.sql`.
 5. Apply `004_armandos_fake_payments.sql`.
-6. Run the SQL files under `supabase/tests/` in filename order.
+6. To route Armando's to Square Sandbox, apply `005_armandos_square_sandbox.sql`
+   with the fixed Sandbox merchant and location IDs.
+7. Run the SQL files under `supabase/tests/` in filename order. The fake
+   contract temporarily selects the fake route inside its rolled-back
+   transaction; the Square contract uses the selected Square route.
 
 One explicit hosted-staging command sequence is:
 
@@ -29,10 +33,12 @@ npm run import-menu:staging -- --file ./data/armandos.json
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/002_armandos_operations.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/003_armandos_test_modifiers.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/004_armandos_fake_payments.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -v menu_man_environment=staging -v square_merchant_id='<sandbox-merchant-id>' -v square_location_id='<sandbox-location-id>' -f supabase/seeds/staging/005_armandos_square_sandbox.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/001_schema_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/002_checkout_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/003_armandos_fixture.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/004_payments_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/005_square_payments_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new
@@ -49,11 +55,25 @@ NEXT_PUBLIC_SUPABASE_URL=https://<the intended staging project ref>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<the staging service-role key>
 MENU_MAN_ENABLE_FAKE_PAYMENTS=true
 MENU_MAN_FAKE_WEBHOOK_SECRET=<at-least-32-random-characters>
+MENU_MAN_ENABLE_SQUARE_SANDBOX=true
+SQUARE_API_VERSION=2026-08-19
+SQUARE_SANDBOX_APPLICATION_ID=<sandbox-application-id>
+SQUARE_SANDBOX_ACCESS_TOKEN=<sandbox-access-token>
+SQUARE_SANDBOX_MERCHANT_ID=<sandbox-merchant-id>
+SQUARE_SANDBOX_LOCATION_ID=<sandbox-location-id>
+SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY=<sandbox-webhook-signature-key>
+SQUARE_SANDBOX_WEBHOOK_NOTIFICATION_URL=https://<preview-host>/api/webhooks/payments/square/sandbox
 ```
 
 The fake provider is rejected when `MENU_MAN_ENV=production`, requires the
 explicit enable flag and signing secret, and only accepts database connections
 whose environment is `test`.
+
+The Square adapter is likewise disabled for `MENU_MAN_ENV=production` and
+requires its explicit Sandbox enable flag. Only the application ID and
+location ID are returned to the browser. The Sandbox access token and webhook
+signature key remain server-side Vercel secrets and are not stored in the
+database seed.
 
 It refuses to run unless the marker is exactly `staging`, the expected project
 ref is present, the configured HTTPS hostname exactly matches that project ref,

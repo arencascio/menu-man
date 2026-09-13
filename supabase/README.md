@@ -20,11 +20,13 @@ and reconciled separately.
 Staging data is opt-in under `supabase/seeds/staging/`. There is intentionally no
 automatic `supabase/seed.sql`. See that directory's README for the interleaved
 restaurant seed, TypeScript menu import, operational seed, modifier seed, fake
-payment connection seed, and
+payment connection seed, optional fixed Square Sandbox connection seed, and
 contract-test sequence.
 
 Database contract tests under `supabase/tests/` are plain SQL suitable for
 `psql -v ON_ERROR_STOP=1 -f <file>`. The checkout test wraps order creation in a
 transaction and rolls it back. The payment contract test similarly verifies
 success, replay, out-of-order events, refunds, and late-success quarantine in a
-rolled-back transaction.
+rolled-back transaction. The Square contract additionally verifies the real-
+provider connection, reconciliation source, sanitized persistence, deduplication,
+purchase outbox, and refund transition path.

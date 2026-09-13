@@ -35,8 +35,14 @@ begin
   where restaurant_id = restaurant_uuid
     and provider_key = 'fake'
     and environment = 'test'
-    and connection_status = 'active'
-    and is_payment_route;
+    and connection_status = 'active';
+
+  update public.restaurant_payment_connections
+  set is_payment_route = false
+  where restaurant_id = restaurant_uuid and is_payment_route;
+  update public.restaurant_payment_connections
+  set is_payment_route = true
+  where id = connection_uuid;
 
   select id into strict menu_uuid
   from public.menus where restaurant_id = restaurant_uuid and is_published;

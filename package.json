@@ -20,6 +20,7 @@
     "posthog-js": "^1.428.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "square": "^45.1.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
