@@ -28,6 +28,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609110003_fix_terminal_payment_failure_transition.sql",
     "202609110004_fake_payment_exception_controls.sql",
     "202609120001_square_adapter_support.sql",
+    "202609130001_canonicalize_dst_pickup_slots.sql",
   ]);
 });
 
@@ -117,6 +118,20 @@ test("checkout fingerprint references are unambiguous in bootstrap and forward r
     assert.match(definition, /existing_order\.request_fingerprint\s*<>\s*v_request_fingerprint/i);
     assert.match(definition, /lower\(p_idempotency_key\)\s*,\s*v_request_fingerprint\s*,/i);
     assert.doesNotMatch(definition, /\n\s*request_fingerprint\s+text\s*;/i);
+  }
+});
+
+test("pickup availability canonically removes repeated fall-DST wall-clock slots", () => {
+  const checkout = migrations.find(({ file }) => file.endsWith("_checkout_v1.sql"))?.sql || "";
+  const repair = migrations.find(
+    ({ file }) => file.endsWith("_canonicalize_dst_pickup_slots.sql"),
+  )?.sql || "";
+
+  for (const definition of [checkout, repair]) {
+    assert.match(
+      definition,
+      /distinct on \(slot at time zone restaurant_record\.timezone\)[\s\S]*order by \(slot at time zone restaurant_record\.timezone\), slot[\s\S]*where canonical_slot\.slot >= p_now/i,
+    );
   }
 });
 

@@ -13,6 +13,10 @@ import {
   type TipChoice,
 } from "@/lib/checkout/contracts";
 import {
+  isPickupSelectionAvailable,
+  resolvePickupSelection,
+} from "@/lib/checkout/pickup-selection";
+import {
   broadcastCheckoutEvent,
   fingerprintCart,
   saveActiveOrderMarker,
@@ -72,11 +76,10 @@ export default function CheckoutPanel({
       if (!response.ok) throw new Error("Pickup availability could not be loaded.");
       const nextAvailability = await response.json() as PickupAvailability;
       setAvailability(nextAvailability);
-      if (nextAvailability.asap.available) {
-        setPickupMode("asap");
-      } else if (nextAvailability.scheduled.slots.length > 0) {
-        setPickupMode("scheduled");
-        setPickupAt(nextAvailability.scheduled.slots[0].pickupAt);
+      const nextSelection = resolvePickupSelection(nextAvailability);
+      if (nextSelection) {
+        setPickupMode(nextSelection.mode);
+        setPickupAt(nextSelection.mode === "scheduled" ? nextSelection.pickupAt : "");
       }
     }).catch((error) => {
       if (!controller.signal.aborted) {
@@ -86,9 +89,10 @@ export default function CheckoutPanel({
     return () => controller.abort();
   }, [restaurantSlug]);
 
-  const canPickup = pickupMode === "asap"
-    ? Boolean(availability?.asap.available)
-    : Boolean(pickupAt && availability?.scheduled.slots.some((slot) => slot.pickupAt === pickupAt));
+  const canPickup = isPickupSelectionAvailable(
+    availability,
+    pickupMode === "asap" ? { mode: "asap" } : { mode: "scheduled", pickupAt },
+  );
 
   async function submitCheckout(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

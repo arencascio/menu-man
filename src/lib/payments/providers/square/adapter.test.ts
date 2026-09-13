@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import test from "node:test";
-import type { Location, Payment, PaymentRefund } from "square";
+import { SquareError, SquareTimeoutError, type Location, type Payment, type PaymentRefund } from "square";
 import { SquarePaymentProviderAdapter } from "./adapter";
 import type { SquareGateway } from "./client";
 import { SQUARE_API_VERSION, type SquareSandboxConfig } from "./config";
+import {
+  paymentCommandResult,
+  paymentEvent,
+  refundEvent,
+  squareErrorResult,
+} from "./mappers";
 
 const config: SquareSandboxConfig = {
   applicationId: "sandbox-sq0idb-test",
@@ -109,6 +115,90 @@ test("Square CreatePayment uses the Menu Man attempt identity, authoritative tot
 
   await adapter.createPayment({ ...paymentInput, captureMode: "manual" });
   assert.equal(request?.autocomplete, false);
+});
+
+test("Square payment statuses normalize without treating an unverified command success as paid", () => {
+  const expectedKinds = new Map<string, string>([
+    ["PENDING", "payment.processing"],
+    ["APPROVED", "payment.authorized"],
+    ["COMPLETED", "payment.succeeded"],
+    ["FAILED", "payment.failed"],
+    ["CANCELED", "payment.cancelled"],
+  ]);
+
+  for (const [status, kind] of expectedKinds) {
+    const payment = { ...completedPayment, status } as Payment;
+    const event = paymentEvent(payment, {
+      eventId: `event-${status.toLowerCase()}`,
+      attemptId: paymentInput.attemptId,
+    });
+    assert.equal(event?.kind, kind);
+    assert.equal(event?.attemptId, paymentInput.attemptId);
+  }
+
+  assert.equal(paymentCommandResult(completedPayment).status, "processing");
+  assert.equal(paymentCommandResult({ ...completedPayment, status: "FAILED" } as Payment).status, "failed");
+  assert.equal(paymentEvent({ ...completedPayment, status: "UNKNOWN" } as Payment, {
+    eventId: "event-unknown",
+  }), undefined);
+});
+
+test("Square errors separate conclusive card failures from ambiguous provider outcomes", () => {
+  const declined = squareErrorResult(new SquareError({
+    statusCode: 402,
+    body: { errors: [{ category: "PAYMENT_METHOD_ERROR", code: "CARD_DECLINED", detail: "private detail" }] },
+  }));
+  assert.equal(declined.status, "failed");
+  assert.equal(declined.failureCategory, "provider_decline");
+  assert.equal(declined.failureCode, "CARD_DECLINED");
+  assert.equal(declined.failureMessage?.includes("private detail"), false);
+
+  for (const code of ["CVV_FAILURE", "INVALID_POSTAL_CODE", "INVALID_EXPIRATION", "INSUFFICIENT_FUNDS"]) {
+    const result = squareErrorResult(new SquareError({
+      statusCode: 400,
+      body: { errors: [{ category: "INVALID_REQUEST_ERROR", code }] },
+    }));
+    assert.equal(result.status, "failed");
+    assert.equal(result.failureCategory, "provider_decline");
+  }
+
+  const configuration = squareErrorResult(new SquareError({
+    statusCode: 400,
+    body: { errors: [{ category: "INVALID_REQUEST_ERROR", code: "BAD_REQUEST" }] },
+  }));
+  assert.equal(configuration.status, "failed");
+  assert.equal(configuration.failureCategory, "provider_configuration");
+
+  const throttled = squareErrorResult(new SquareError({
+    statusCode: 429,
+    body: { errors: [{ category: "RATE_LIMIT_ERROR", code: "RATE_LIMITED" }] },
+  }));
+  assert.equal(throttled.status, "unknown");
+  assert.equal(throttled.failureCategory, "provider_unavailable");
+
+  const serverFailure = squareErrorResult(new SquareError({
+    statusCode: 503,
+    body: { errors: [{ category: "API_ERROR", code: "INTERNAL_SERVER_ERROR" }] },
+  }));
+  assert.equal(serverFailure.status, "unknown");
+  assert.equal(squareErrorResult(new SquareTimeoutError("timed out")).status, "unknown");
+  assert.equal(squareErrorResult(new Error("connection reset")).status, "unknown");
+});
+
+test("Square refund statuses normalize for processing, success, and terminal failure", () => {
+  const expectedKinds = new Map<string, string>([
+    ["PENDING", "refund.processing"],
+    ["COMPLETED", "refund.succeeded"],
+    ["FAILED", "refund.failed"],
+    ["REJECTED", "refund.failed"],
+  ]);
+  for (const [status, kind] of expectedKinds) {
+    const event = refundEvent({ ...completedRefund, status } as PaymentRefund, {
+      eventId: `refund-${status.toLowerCase()}`,
+      refundId: "50000000-0000-4000-8000-000000000001",
+    });
+    assert.equal(event?.kind, kind);
+  }
 });
 
 test("Square reconciliation is read-only and can discover an ambiguous payment by attempt reference", async () => {
@@ -227,6 +317,40 @@ test("Square verifies the exact raw webhook and stores only allowlisted payment 
   await assert.rejects(() => adapter.verifyWebhook(`${rawBody} `, new Headers({
     "x-square-hmacsha256-signature": signature,
   })));
+});
+
+test("Square ignores signed events for a different merchant, location, or application", async () => {
+  const adapter = new SquarePaymentProviderAdapter(config, gateway());
+  async function normalized(overrides: {
+    merchantId?: string;
+    locationId?: string;
+    applicationId?: string;
+  }) {
+    const rawBody = JSON.stringify({
+      merchant_id: overrides.merchantId || config.merchantId,
+      type: "payment.updated",
+      event_id: crypto.randomUUID(),
+      created_at: "2026-09-12T18:00:01.000Z",
+      data: { object: { payment: {
+        id: completedPayment.id,
+        status: "COMPLETED",
+        location_id: overrides.locationId || config.locationId,
+        reference_id: paymentInput.attemptId,
+        amount_money: { amount: 1250, currency: "USD" },
+        application_details: { application_id: overrides.applicationId || config.applicationId },
+      } } },
+    });
+    const signature = createHmac("sha256", config.webhookSignatureKey)
+      .update(`${config.webhookNotificationUrl}${rawBody}`, "utf8")
+      .digest("base64");
+    return adapter.normalizeWebhook(await adapter.verifyWebhook(rawBody, new Headers({
+      "x-square-hmacsha256-signature": signature,
+    })));
+  }
+
+  assert.deepEqual(await normalized({ merchantId: "other-merchant" }), []);
+  assert.deepEqual(await normalized({ locationId: "other-location" }), []);
+  assert.deepEqual(await normalized({ applicationId: "other-application" }), []);
 });
 
 test("Square verifies and normalizes refund webhooks without retaining card or buyer data", async () => {

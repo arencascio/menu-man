@@ -28,5 +28,8 @@ Database contract tests under `supabase/tests/` are plain SQL suitable for
 transaction and rolls it back. The payment contract test similarly verifies
 success, replay, out-of-order events, refunds, and late-success quarantine in a
 rolled-back transaction. The Square contract additionally verifies the real-
-provider connection, reconciliation source, sanitized persistence, deduplication,
-purchase outbox, and refund transition path.
+provider connection, verified webhook and reconciliation sources, sanitized
+persistence, deduplication, purchase outbox, and refund transition path. The
+pickup availability contract creates rollback-only fixtures with fixed clocks
+for hours, lead-time, cutoff, closed-period, timezone, DST, and order
+revalidation boundaries.

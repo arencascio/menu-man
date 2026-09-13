@@ -55,3 +55,16 @@ test("staging exceptional-state controls use server routes and retain safe navig
   assert.doesNotMatch(payment, /Edit Cart and Start Fresh/);
   assert.doesNotMatch(payment, /requires restaurant review or a refund/i);
 });
+
+test("checkout pickup availability is uncached and stale failures retain the editable cart", () => {
+  const availabilityRoute = read(
+    "src", "app", "api", "restaurants", "[slug]", "pickup-availability", "route.ts",
+  );
+  const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
+  assert.match(availabilityRoute, /fetchCache\s*=\s*"force-no-store"/);
+  assert.match(availabilityRoute, /Cache-Control["']?:\s*"no-store/);
+  assert.match(checkout, /resolvePickupSelection\(nextAvailability\)/);
+  assert.match(checkout, /isPickupSelectionAvailable/);
+  assert.match(checkout, /errorBody\.error\?\.message/);
+  assert.doesNotMatch(checkout, /cart\.clear\(/);
+});

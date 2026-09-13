@@ -241,10 +241,15 @@ begin
         and p_now < order_deadline
       then
         for candidate in
-          select slot
-          from generate_series(interval_start, interval_end - interval '1 minute', interval '15 minutes') slot
-          where slot >= p_now + make_interval(mins => settings_record.pickup_lead_time_minutes)
-          order by slot
+          select canonical_slot.slot
+          from (
+            select distinct on (slot at time zone restaurant_record.timezone) slot
+            from generate_series(interval_start, interval_end - interval '1 minute', interval '15 minutes') slot
+            order by (slot at time zone restaurant_record.timezone), slot
+          ) canonical_slot
+          where canonical_slot.slot >= p_now
+            + make_interval(mins => settings_record.pickup_lead_time_minutes)
+          order by canonical_slot.slot
         loop
           slots := slots || jsonb_build_array(jsonb_build_object('pickupAt', candidate));
         end loop;
