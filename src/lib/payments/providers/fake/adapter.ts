@@ -1,5 +1,10 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import type { CreatePaymentInput, CreateRefundInput, PaymentProviderAdapter } from "../../adapter";
+import type {
+  AuthorizedPaymentActionInput,
+  CreatePaymentInput,
+  CreateRefundInput,
+  PaymentProviderAdapter,
+} from "../../adapter";
 import type {
   BrowserPaymentSession,
   ConnectionSnapshot,
@@ -50,7 +55,7 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
 
   constructor(
     private readonly signingSecret: string,
-    private readonly allowUnknownRecovery = false,
+    private readonly allowStagingControls = false,
   ) {}
 
   async beginOnboarding(input: PaymentConnectionContext): Promise<OnboardingAction> {
@@ -80,7 +85,8 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
       publicConfig: {
         scenarios: [...fakePaymentScenarios],
         warning: "Test provider only. No payment details are collected.",
-        unknownRecoveryEnabled: this.allowUnknownRecovery,
+        unknownRecoveryEnabled: this.allowStagingControls,
+        exceptionControlsEnabled: this.allowStagingControls,
       },
     };
   }
@@ -174,7 +180,7 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
   }
 
   createUnknownPaymentResolution(input: FakeUnknownPaymentResolutionInput): ProviderWebhookDelivery {
-    if (!this.allowUnknownRecovery) throw new Error("Fake unknown-payment recovery is disabled.");
+    if (!this.allowStagingControls) throw new Error("Fake unknown-payment recovery is disabled.");
     if (input.environment !== "test") throw new Error("Fake payments require a test connection.");
     const providerPaymentReference = makeReference("fake_pay", input.attemptId);
     const providerTransactionReference = makeReference("fake_txn", input.attemptId);
@@ -203,12 +209,41 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
     });
   }
 
-  async capturePayment(input: PaymentConnectionContext & { providerPaymentReference: string; amountCents: number }): Promise<PaymentCommandResult> {
-    return { status: "processing", providerStatus: "CAPTURE_SUBMITTED", providerPaymentReference: input.providerPaymentReference };
+  async capturePayment(input: AuthorizedPaymentActionInput): Promise<PaymentCommandResult> {
+    if (input.environment !== "test") throw new Error("Fake payments require a test connection.");
+    return {
+      status: "processing",
+      providerStatus: "CAPTURE_SUBMITTED",
+      providerPaymentReference: input.providerPaymentReference,
+      developmentWebhookDeliveries: [this.delivery("payment.succeeded", {
+        connectionId: input.connectionId,
+        attemptId: input.attemptId,
+        amountCents: input.amountCents,
+        currency: input.currency,
+        providerPaymentReference: input.providerPaymentReference,
+        providerStatus: "CAPTURED",
+      })],
+    };
   }
 
-  async cancelPayment(input: PaymentConnectionContext & { providerPaymentReference: string }): Promise<PaymentCommandResult> {
-    return { status: "processing", providerStatus: "CANCEL_SUBMITTED", providerPaymentReference: input.providerPaymentReference };
+  async cancelPayment(input: AuthorizedPaymentActionInput): Promise<PaymentCommandResult> {
+    if (input.environment !== "test") throw new Error("Fake payments require a test connection.");
+    return {
+      status: "processing",
+      providerStatus: "VOID_SUBMITTED",
+      providerPaymentReference: input.providerPaymentReference,
+      developmentWebhookDeliveries: [this.delivery("payment.failed", {
+        connectionId: input.connectionId,
+        attemptId: input.attemptId,
+        amountCents: input.amountCents,
+        currency: input.currency,
+        providerPaymentReference: input.providerPaymentReference,
+        providerStatus: "VOIDED",
+        failureCategory: "authorization_voided",
+        failureCode: "AUTHORIZATION_VOIDED",
+        failureMessage: "The fake provider voided this authorization.",
+      })],
+    };
   }
 
   async createRefund(input: CreateRefundInput): Promise<RefundCommandResult> {

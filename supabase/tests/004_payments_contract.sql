@@ -324,4 +324,340 @@ begin
 end;
 $$;
 
+do $$
+declare
+  restaurant_uuid uuid;
+  connection_uuid uuid;
+  menu_uuid uuid;
+  item_uuid uuid;
+  chicken_option_uuid uuid;
+  pickup_at_value text;
+  request_payload jsonb;
+  order_response jsonb;
+  prepared jsonb;
+  attempt jsonb;
+  event_response jsonb;
+  action_reservation jsonb;
+  late_resolution jsonb;
+  refund_response jsonb;
+  payment_status jsonb;
+begin
+  select restaurant.id into strict restaurant_uuid
+  from public.restaurants restaurant
+  where restaurant.slug = 'armandos' and restaurant.is_active;
+
+  select connection.id into strict connection_uuid
+  from public.restaurant_payment_connections connection
+  where connection.restaurant_id = restaurant_uuid
+    and connection.provider_key = 'fake'
+    and connection.environment = 'test'
+    and connection.connection_status = 'active'
+    and connection.is_payment_route;
+
+  select menu.id into strict menu_uuid
+  from public.menus menu
+  where menu.restaurant_id = restaurant_uuid and menu.is_published;
+
+  select item.id into strict item_uuid
+  from public.menu_items item
+  where item.restaurant_id = restaurant_uuid
+    and item.source_system = 'doordash'
+    and item.source_item_id = '198880505'
+    and item.is_orderable;
+
+  select option.id into strict chicken_option_uuid
+  from public.modifier_options option
+  where option.restaurant_id = restaurant_uuid
+    and option.source_system = 'menu-man-test'
+    and option.source_option_id = 'chicken'
+    and option.is_active;
+
+  select slot ->> 'pickupAt' into pickup_at_value
+  from jsonb_array_elements(
+    public.get_pickup_availability_v1('armandos', statement_timestamp()) #> '{scheduled,slots}'
+  ) slot
+  order by (slot ->> 'pickupAt')::timestamptz
+  limit 1;
+
+  request_payload := jsonb_build_object(
+    'menuId', menu_uuid,
+    'items', jsonb_build_array(jsonb_build_object(
+      'menuItemId', item_uuid,
+      'quantity', 1,
+      'modifierOptionIds', jsonb_build_array(chicken_option_uuid),
+      'specialInstructions', null
+    )),
+    'customer', jsonb_build_object(
+      'name', 'Payment Exceptional State Test',
+      'phone', '555-0100',
+      'email', null
+    ),
+    'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
+    'tipChoice', 'none',
+    'orderNotes', null
+  );
+
+  -- Capture the existing authorization through a verified provider event.
+  order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
+  prepared := public.prepare_payment_v1(
+    (order_response ->> 'orderId')::uuid, repeat('3', 64), true, 30, 120
+  );
+  attempt := public.reserve_payment_attempt_v1(
+    (order_response ->> 'orderId')::uuid, repeat('3', 64), gen_random_uuid()
+  );
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-authorization-capture', connection_uuid, repeat('3', 64),
+    jsonb_build_object('fixture', 'authorization-capture'),
+    jsonb_build_object(
+      'kind', 'payment.authorized',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerPaymentReference', 'fake_authorization_capture',
+      'providerStatus', 'AUTHORIZED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  action_reservation := public.reserve_fake_authorization_action_v1(
+    (order_response ->> 'orderId')::uuid, repeat('3', 64), 'capture', gen_random_uuid()
+  );
+  if action_reservation ->> 'attemptId' <> attempt ->> 'attemptId' then
+    raise exception 'Capture created or selected a different payment attempt';
+  end if;
+  payment_status := public.reserve_fake_authorization_action_v1(
+    (order_response ->> 'orderId')::uuid, repeat('3', 64), 'capture', gen_random_uuid()
+  );
+  if not (payment_status ->> 'replayed')::boolean
+    or payment_status ->> 'providerIdempotencyKey' <> action_reservation ->> 'providerIdempotencyKey'
+  then
+    raise exception 'Repeated capture did not reuse its provider idempotency key';
+  end if;
+  begin
+    perform public.reserve_fake_authorization_action_v1(
+      (order_response ->> 'orderId')::uuid, repeat('3', 64), 'void', gen_random_uuid()
+    );
+    raise exception 'Reserved capture allowed a conflicting void';
+  exception when others then
+    if sqlerrm not like 'MM_PAYMENT_IN_PROGRESS|%' then
+      raise;
+    end if;
+  end;
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-authorization-captured', connection_uuid, repeat('4', 64),
+    jsonb_build_object('fixture', 'authorization-captured'),
+    jsonb_build_object(
+      'kind', 'payment.succeeded',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerPaymentReference', 'fake_authorization_capture',
+      'providerStatus', 'CAPTURED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  if not exists (
+      select 1 from public.orders order_row
+      where order_row.id = (order_response ->> 'orderId')::uuid
+        and order_row.order_status = 'placed'
+        and order_row.payment_status = 'paid'
+    )
+    or (select count(*) from public.payment_attempts payment_attempt
+        where payment_attempt.payment_id = (prepared ->> 'paymentId')::uuid) <> 1
+  then
+    raise exception 'Capturing an existing authorization did not place the order safely';
+  end if;
+
+  -- Void the existing authorization and verify the distinct terminal reason.
+  order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
+  prepared := public.prepare_payment_v1(
+    (order_response ->> 'orderId')::uuid, repeat('4', 64), true, 30, 120
+  );
+  attempt := public.reserve_payment_attempt_v1(
+    (order_response ->> 'orderId')::uuid, repeat('4', 64), gen_random_uuid()
+  );
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-authorization-void', connection_uuid, repeat('5', 64),
+    jsonb_build_object('fixture', 'authorization-void'),
+    jsonb_build_object(
+      'kind', 'payment.authorized',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerPaymentReference', 'fake_authorization_void',
+      'providerStatus', 'AUTHORIZED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  action_reservation := public.reserve_fake_authorization_action_v1(
+    (order_response ->> 'orderId')::uuid, repeat('4', 64), 'void', gen_random_uuid()
+  );
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-authorization-voided', connection_uuid, repeat('6', 64),
+    jsonb_build_object('fixture', 'authorization-voided'),
+    jsonb_build_object(
+      'kind', 'payment.failed',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerPaymentReference', 'fake_authorization_void',
+      'providerStatus', 'VOIDED',
+      'failureCategory', 'authorization_voided',
+      'failureCode', 'AUTHORIZATION_VOIDED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  payment_status := public.authorize_payment_session_v1(
+    (order_response ->> 'orderId')::uuid, repeat('4', 64)
+  );
+  if payment_status ->> 'status' <> 'failed'
+    or payment_status ->> 'orderStatus' <> 'cancelled'
+    or payment_status #>> '{latestAttempt,failureCategory}' <> 'authorization_voided'
+    or not exists (
+      select 1 from public.orders order_row
+      where order_row.id = (order_response ->> 'orderId')::uuid
+        and order_row.cancellation_reason = 'authorization_voided'
+    )
+    or (select count(*) from public.payment_attempts payment_attempt
+        where payment_attempt.payment_id = (prepared ->> 'paymentId')::uuid) <> 1
+  then
+    raise exception 'Voiding an authorization did not terminally unlock the original attempt: %', payment_status;
+  end if;
+
+  -- Accept a quarantined late success without auto-placing it beforehand.
+  order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
+  prepared := public.prepare_payment_v1(
+    (order_response ->> 'orderId')::uuid, repeat('5', 64), true, 30, 120
+  );
+  attempt := public.reserve_payment_attempt_v1(
+    (order_response ->> 'orderId')::uuid, repeat('5', 64), gen_random_uuid()
+  );
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-late-accept-cancelled', connection_uuid, repeat('7', 64),
+    jsonb_build_object('fixture', 'late-accept-cancelled'),
+    jsonb_build_object(
+      'kind', 'payment.cancelled',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerStatus', 'CANCELLED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-late-accept-succeeded', connection_uuid, repeat('8', 64),
+    jsonb_build_object('fixture', 'late-accept-succeeded'),
+    jsonb_build_object(
+      'kind', 'payment.succeeded',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerPaymentReference', 'fake_late_accept',
+      'providerStatus', 'SUCCEEDED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  if (select order_status from public.orders order_row
+      where order_row.id = (order_response ->> 'orderId')::uuid) <> 'cancelled'
+  then
+    raise exception 'Late success was placed before explicit acceptance';
+  end if;
+  late_resolution := public.reserve_fake_late_success_resolution_v1(
+    (order_response ->> 'orderId')::uuid, repeat('5', 64), 'accepted', gen_random_uuid()
+  );
+  payment_status := public.accept_fake_late_success_v1(
+    (order_response ->> 'orderId')::uuid, repeat('5', 64)
+  );
+  if payment_status ->> 'orderStatus' <> 'placed'
+    or payment_status ->> 'paymentStatus' <> 'paid'
+    or (select count(*) from public.analytics_outbox outbox
+        where outbox.event_type = 'purchase'
+          and outbox.aggregate_id = (prepared ->> 'paymentId')::uuid) <> 1
+  then
+    raise exception 'Explicit late-success acceptance did not place the order: %', payment_status;
+  end if;
+
+  -- Refund a separate quarantined late success through the refund event path.
+  order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
+  prepared := public.prepare_payment_v1(
+    (order_response ->> 'orderId')::uuid, repeat('6', 64), true, 30, 120
+  );
+  attempt := public.reserve_payment_attempt_v1(
+    (order_response ->> 'orderId')::uuid, repeat('6', 64), gen_random_uuid()
+  );
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-late-refund-cancelled', connection_uuid, repeat('9', 64),
+    jsonb_build_object('fixture', 'late-refund-cancelled'),
+    jsonb_build_object(
+      'kind', 'payment.cancelled',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerStatus', 'CANCELLED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-late-refund-succeeded', connection_uuid, repeat('a', 64),
+    jsonb_build_object('fixture', 'late-refund-succeeded'),
+    jsonb_build_object(
+      'kind', 'payment.succeeded',
+      'attemptId', attempt ->> 'attemptId',
+      'amountCents', attempt ->> 'amountCents',
+      'currency', attempt ->> 'currency',
+      'providerPaymentReference', 'fake_late_refund',
+      'providerStatus', 'SUCCEEDED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  late_resolution := public.reserve_fake_late_success_resolution_v1(
+    (order_response ->> 'orderId')::uuid, repeat('6', 64), 'refunded', gen_random_uuid()
+  );
+  refund_response := public.reserve_refund_v1(
+    (prepared ->> 'paymentId')::uuid,
+    (late_resolution ->> 'resolutionKey')::uuid,
+    (prepared ->> 'amountCents')::integer,
+    'Late success contract refund',
+    'contract_test'
+  );
+  event_response := public.ingest_payment_webhook_v1(
+    'fake', 'test', 'contract-late-refund-completed', connection_uuid, repeat('b', 64),
+    jsonb_build_object('fixture', 'late-refund-completed'),
+    jsonb_build_object(
+      'kind', 'refund.succeeded',
+      'refundId', refund_response ->> 'refundId',
+      'amountCents', refund_response ->> 'amountCents',
+      'currency', refund_response ->> 'currency',
+      'providerRefundReference', 'fake_late_refund_completed',
+      'providerStatus', 'SUCCEEDED'
+    ),
+    now(), now()
+  );
+  perform public.apply_payment_event_v1((event_response ->> 'webhookEventId')::uuid);
+  payment_status := public.authorize_payment_session_v1(
+    (order_response ->> 'orderId')::uuid, repeat('6', 64)
+  );
+  if payment_status ->> 'status' <> 'refunded'
+    or payment_status ->> 'orderStatus' <> 'cancelled'
+    or payment_status ->> 'paymentStatus' <> 'refunded'
+    or exists (
+      select 1 from public.analytics_outbox outbox
+      where outbox.event_type = 'purchase'
+        and outbox.aggregate_id = (prepared ->> 'paymentId')::uuid
+    )
+    or (select count(*) from public.payment_attempts payment_attempt
+        where payment_attempt.payment_id = (prepared ->> 'paymentId')::uuid) <> 1
+  then
+    raise exception 'Explicit late-success refund did not preserve quarantine: %', payment_status;
+  end if;
+end;
+$$;
+
 rollback;

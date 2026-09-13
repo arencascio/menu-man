@@ -35,3 +35,23 @@ test("multi-tab messages are advisory and trigger authoritative status fetches",
   assert.match(menu, /payment-status/);
   assert.match(menu, /paymentStatusSchema\.parse/);
 });
+
+test("staging exceptional-state controls use server routes and retain safe navigation", () => {
+  for (const parts of [
+    ["src", "app", "api", "orders", "[orderId]", "payments", "fake-authorization", "route.ts"],
+    ["src", "app", "api", "orders", "[orderId]", "payments", "fake-late-success", "route.ts"],
+  ]) assert.equal(existsSync(join(root, ...parts)), true);
+
+  const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  assert.match(payment, /Capture Payment/);
+  assert.match(payment, /Void Authorization/);
+  assert.match(payment, /Resolve as Accepted \/ Placed/);
+  assert.match(payment, /Resolve as Refunded/);
+  assert.match(payment, /We&apos;re confirming your order/);
+  assert.match(payment, /Please don&apos;t submit another payment while we confirm the order with the restaurant/);
+  assert.match(payment, /Back to Checkout Details/);
+  assert.match(payment, /href={`\/r\/\$\{restaurantSlug\}\/checkout`}/);
+  assert.match(payment, /href={`\/r\/\$\{restaurantSlug\}`}/);
+  assert.doesNotMatch(payment, /Edit Cart and Start Fresh/);
+  assert.doesNotMatch(payment, /requires restaurant review or a refund/i);
+});

@@ -30,14 +30,17 @@ export function paymentLocksCart(payment: PaymentStatus, nowMs = Date.now()) {
   if (payment.orderStatus === "placed") return false;
   if (isServerMarkedPaymentExpired(payment, nowMs)) return false;
   if (payment.orderStatus === "pending_payment") return true;
+  if (payment.orderStatus === "cancelled" && payment.status === "refunded") return false;
   return payment.orderStatus === "cancelled" && payment.status !== "failed";
 }
 
 export function getCustomerPaymentStatusLabel(payment: PaymentStatus, nowMs = Date.now()) {
   if (isServerMarkedPaymentExpired(payment, nowMs)) return "Payment expired";
   if (payment.orderStatus === "placed") return "Paid and placed";
-  if (payment.status === "succeeded") return "Payment confirmed; order requires review";
+  if (payment.status === "succeeded") return "We're confirming your order";
   if (payment.latestAttempt?.status === "unknown") return "Confirmation pending";
+  if (payment.latestAttempt?.failureCategory === "authorization_voided") return "Authorization voided";
+  if (payment.status === "refunded" && payment.orderStatus === "cancelled") return "Payment refunded";
   if (payment.status === "failed") return "Payment declined";
   if (payment.status === "authorized") return "Payment authorized";
   if (payment.status === "processing") return "Payment processing";

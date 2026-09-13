@@ -122,12 +122,21 @@ begin
     or to_regprocedure('public.reserve_payment_attempt_v1(uuid,text,uuid)') is null
     or to_regprocedure('public.apply_payment_event_v1(uuid)') is null
     or to_regprocedure('public.reserve_refund_v1(uuid,uuid,integer,text,text)') is null
+    or to_regprocedure('public.reserve_fake_authorization_action_v1(uuid,text,text,uuid)') is null
+    or to_regprocedure('public.reserve_fake_late_success_resolution_v1(uuid,text,text,uuid)') is null
+    or to_regprocedure('public.accept_fake_late_success_v1(uuid,text)') is null
   then
     raise exception 'Required payment functions are missing';
   end if;
 
   if has_function_privilege('anon', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE')
     or has_function_privilege('authenticated', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.reserve_fake_authorization_action_v1(uuid,text,text,uuid)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.reserve_fake_authorization_action_v1(uuid,text,text,uuid)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.reserve_fake_late_success_resolution_v1(uuid,text,text,uuid)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.reserve_fake_late_success_resolution_v1(uuid,text,text,uuid)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.accept_fake_late_success_v1(uuid,text)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.accept_fake_late_success_v1(uuid,text)', 'EXECUTE')
   then
     raise exception 'Checkout RPC must not be executable by anon/authenticated';
   end if;

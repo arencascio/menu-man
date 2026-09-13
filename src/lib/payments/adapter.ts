@@ -29,6 +29,16 @@ export type CreateRefundInput = PaymentConnectionContext & {
   currency: string;
 };
 
+export type AuthorizedPaymentActionInput = PaymentConnectionContext & {
+  attemptId: string;
+  paymentId: string;
+  orderId: string;
+  providerIdempotencyKey: string;
+  providerPaymentReference: string;
+  amountCents: number;
+  currency: string;
+};
+
 export interface PaymentProviderAdapter {
   readonly key: string;
   beginOnboarding(input: PaymentConnectionContext): Promise<OnboardingAction>;
@@ -37,8 +47,8 @@ export interface PaymentProviderAdapter {
   createBrowserSession(input: PaymentConnectionContext): Promise<BrowserPaymentSession>;
   createPayment(input: CreatePaymentInput): Promise<PaymentCommandResult>;
   retrievePayment(input: PaymentConnectionContext & { providerPaymentReference: string }): Promise<PaymentCommandResult>;
-  capturePayment(input: PaymentConnectionContext & { providerPaymentReference: string; amountCents: number }): Promise<PaymentCommandResult>;
-  cancelPayment(input: PaymentConnectionContext & { providerPaymentReference: string }): Promise<PaymentCommandResult>;
+  capturePayment(input: AuthorizedPaymentActionInput): Promise<PaymentCommandResult>;
+  cancelPayment(input: AuthorizedPaymentActionInput): Promise<PaymentCommandResult>;
   createRefund(input: CreateRefundInput): Promise<RefundCommandResult>;
   retrieveRefund(input: PaymentConnectionContext & { providerRefundReference: string }): Promise<RefundCommandResult>;
   verifyWebhook(rawBody: string, headers: Headers): VerifiedProviderWebhook;

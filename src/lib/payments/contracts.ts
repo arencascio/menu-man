@@ -15,6 +15,47 @@ export const fakePaymentRecoveryRequestSchema = z.strictObject({
   resolution: z.enum(["succeeded", "failed"]),
 });
 
+export const fakeAuthorizationActionRequestSchema = z.strictObject({
+  action: z.enum(["capture", "void"]),
+  clientActionKey: uuid,
+});
+
+export const fakeLateSuccessResolutionRequestSchema = z.strictObject({
+  resolution: z.enum(["accepted", "refunded"]),
+  clientActionKey: uuid,
+});
+
+export const reservedAuthorizationActionSchema = z.strictObject({
+  action: z.enum(["capture", "void"]),
+  attemptId: uuid,
+  paymentId: uuid,
+  orderId: uuid,
+  connectionId: uuid,
+  provider: z.literal("fake"),
+  providerEnvironment: z.literal("test"),
+  providerIdempotencyKey: z.string().min(1),
+  providerPaymentReference: z.string().min(1),
+  amountCents: z.int().nonnegative(),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  attemptStatus: z.enum(["authorized", "succeeded", "failed", "cancelled"]),
+  replayed: z.boolean(),
+});
+
+export const reservedLateSuccessResolutionSchema = z.strictObject({
+  resolution: z.enum(["accepted", "refunded"]),
+  resolutionKey: uuid,
+  attemptId: uuid,
+  paymentId: uuid,
+  orderId: uuid,
+  connectionId: uuid,
+  provider: z.literal("fake"),
+  providerEnvironment: z.literal("test"),
+  providerPaymentReference: z.string().min(1),
+  amountCents: z.int().nonnegative(),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  replayed: z.boolean(),
+});
+
 const latestAttemptSchema = z.strictObject({
   attemptId: uuid,
   status: z.enum(["processing", "authorized", "succeeded", "failed", "cancelled", "unknown"]),

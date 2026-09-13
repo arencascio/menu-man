@@ -102,7 +102,33 @@ test("a server-terminal decline unlocks the cart while preserving its reason", (
   assert.equal(getCustomerPaymentStatusLabel(declined, NOW), "Payment declined");
 });
 
-test("a late success stays locked and is identified for review", () => {
+test("a verified authorization void and full late-success refund unlock the cart", () => {
+  const voided = payment({
+    status: "failed",
+    orderStatus: "cancelled",
+    paymentStatus: "failed",
+    latestAttempt: {
+      attemptId: "40000000-0000-4000-8000-000000000001",
+      status: "failed",
+      failureCategory: "authorization_voided",
+      failureCode: "AUTHORIZATION_VOIDED",
+      failureMessage: null,
+    },
+  });
+  assert.equal(paymentLocksCart(voided, NOW), false);
+  assert.equal(getCustomerPaymentStatusLabel(voided, NOW), "Authorization voided");
+
+  const refundedLateSuccess = payment({
+    status: "refunded",
+    orderStatus: "cancelled",
+    paymentStatus: "refunded",
+    paidAt: "2026-09-11T12:05:00.000Z",
+  });
+  assert.equal(paymentLocksCart(refundedLateSuccess, NOW), false);
+  assert.equal(getCustomerPaymentStatusLabel(refundedLateSuccess, NOW), "Payment refunded");
+});
+
+test("a late success stays locked with customer-safe confirmation copy", () => {
   const lateSuccess = payment({
     status: "succeeded",
     orderStatus: "cancelled",
@@ -110,5 +136,5 @@ test("a late success stays locked and is identified for review", () => {
     paidAt: "2026-09-11T12:05:00.000Z",
   });
   assert.equal(paymentLocksCart(lateSuccess, NOW), true);
-  assert.equal(getCustomerPaymentStatusLabel(lateSuccess, NOW), "Payment confirmed; order requires review");
+  assert.equal(getCustomerPaymentStatusLabel(lateSuccess, NOW), "We're confirming your order");
 });

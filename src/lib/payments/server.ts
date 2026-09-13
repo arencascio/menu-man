@@ -6,7 +6,9 @@ import {
   paymentSessionResponseSchema,
   paymentStatusSchema,
   preparedPaymentSchema,
+  reservedAuthorizationActionSchema,
   reservedAttemptSchema,
+  reservedLateSuccessResolutionSchema,
   type PaymentSessionResponse,
 } from "./contracts";
 import { getPaymentProvider } from "./registry";
@@ -332,6 +334,124 @@ export async function resolveFakeUnknownPayment(
   });
   await enqueueDevelopmentDeliveries("fake", [delivery]);
   await processDuePaymentEvents("fake");
+  return authorizePaymentStatus(orderId, checkoutToken);
+}
+
+export async function resolveFakeAuthorizationAction(
+  orderId: string,
+  checkoutToken: string,
+  action: "capture" | "void",
+  clientActionKey: string,
+) {
+  if (!isFakePaymentRecoveryRuntimeEnabled()) {
+    throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "Fake authorization controls are disabled.");
+  }
+
+  const { data, error } = await supabaseServer.rpc("reserve_fake_authorization_action_v1", {
+    p_order_id: orderId,
+    p_access_token_hash: tokenHash(checkoutToken),
+    p_action: action,
+    p_client_action_key: clientActionKey,
+  });
+  if (error) throw parseDatabaseError(error.message);
+  const reservation = reservedAuthorizationActionSchema.safeParse(data);
+  if (!reservation.success) {
+    console.error("Invalid fake authorization reservation.", reservation.error);
+    throw new PaymentServerError("PAYMENT_FAILED", "The authorization could not be updated.");
+  }
+
+  if (reservation.data.attemptStatus !== "authorized") {
+    return authorizePaymentStatus(orderId, checkoutToken);
+  }
+
+  const adapter = getPaymentProvider("fake");
+  const providerInput = {
+    connectionId: reservation.data.connectionId,
+    provider: reservation.data.provider,
+    environment: reservation.data.providerEnvironment,
+    attemptId: reservation.data.attemptId,
+    paymentId: reservation.data.paymentId,
+    orderId: reservation.data.orderId,
+    providerIdempotencyKey: reservation.data.providerIdempotencyKey,
+    providerPaymentReference: reservation.data.providerPaymentReference,
+    amountCents: reservation.data.amountCents,
+    currency: reservation.data.currency,
+  };
+  const result = action === "capture"
+    ? await adapter.capturePayment(providerInput)
+    : await adapter.cancelPayment(providerInput);
+  await enqueueDevelopmentDeliveries("fake", result.developmentWebhookDeliveries);
+  await processDuePaymentEvents("fake");
+  return authorizePaymentStatus(orderId, checkoutToken);
+}
+
+export async function resolveFakeLateSuccess(
+  orderId: string,
+  checkoutToken: string,
+  resolution: "accepted" | "refunded",
+  clientActionKey: string,
+) {
+  if (!isFakePaymentRecoveryRuntimeEnabled()) {
+    throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "Fake late-success controls are disabled.");
+  }
+
+  const { data, error } = await supabaseServer.rpc("reserve_fake_late_success_resolution_v1", {
+    p_order_id: orderId,
+    p_access_token_hash: tokenHash(checkoutToken),
+    p_resolution: resolution,
+    p_client_action_key: clientActionKey,
+  });
+  if (error) throw parseDatabaseError(error.message);
+  const reservation = reservedLateSuccessResolutionSchema.safeParse(data);
+  if (!reservation.success) {
+    console.error("Invalid fake late-success reservation.", reservation.error);
+    throw new PaymentServerError("PAYMENT_FAILED", "The payment could not be resolved.");
+  }
+
+  if (resolution === "accepted") {
+    const accepted = await supabaseServer.rpc("accept_fake_late_success_v1", {
+      p_order_id: orderId,
+      p_access_token_hash: tokenHash(checkoutToken),
+    });
+    if (accepted.error) throw parseDatabaseError(accepted.error.message);
+    return parsePaymentStatus(accepted.data);
+  }
+
+  const currentStatus = await authorizePaymentStatus(orderId, checkoutToken);
+  if (currentStatus.status === "refunded") return currentStatus;
+  const reservedRefund = await supabaseServer.rpc("reserve_refund_v1", {
+    p_payment_id: reservation.data.paymentId,
+    p_idempotency_key: reservation.data.resolutionKey,
+    p_amount_cents: reservation.data.amountCents,
+    p_reason: "Fake late-success resolution",
+    p_requested_by: "fake_provider_reconciliation",
+  });
+  if (reservedRefund.error) throw parseDatabaseError(reservedRefund.error.message);
+  const refund = reservedRefund.data as {
+    refundId: string;
+    paymentId: string;
+    connectionId: string;
+    amountCents: number;
+    currency: string;
+    providerIdempotencyKey: string;
+    status: string;
+  };
+  if (refund.status !== "succeeded") {
+    const adapter = getPaymentProvider("fake");
+    const result = await adapter.createRefund({
+      connectionId: reservation.data.connectionId,
+      provider: reservation.data.provider,
+      environment: reservation.data.providerEnvironment,
+      refundId: refund.refundId,
+      paymentId: refund.paymentId,
+      providerIdempotencyKey: refund.providerIdempotencyKey,
+      providerPaymentReference: reservation.data.providerPaymentReference,
+      amountCents: refund.amountCents,
+      currency: refund.currency,
+    });
+    await enqueueDevelopmentDeliveries("fake", result.developmentWebhookDeliveries);
+    await processDuePaymentEvents("fake");
+  }
   return authorizePaymentStatus(orderId, checkoutToken);
 }
 

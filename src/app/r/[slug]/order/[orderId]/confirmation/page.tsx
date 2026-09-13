@@ -25,5 +25,24 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
   }
   const { data: restaurant } = await supabaseServer.from("restaurants").select("id").eq("slug", slug).maybeSingle();
   if (!restaurant) notFound();
-  return <main className={styles.page}><ConfirmationEffects restaurantId={restaurant.id} orderId={orderId} currency={view.order.currency} /><section className={styles.checkoutPanel}><p className={styles.expandedLabel}>Order placed</p><h1>Order #{view.order.orderNumber}</h1><p>Payment was verified by the server and the order has been placed with the restaurant.</p><OrderSnapshot order={view.order} /><Link className={styles.checkoutButton} href={`/r/${slug}`}>Return to Menu</Link></section></main>;
+  return (
+    <main className={styles.page}>
+      <ConfirmationEffects restaurantId={restaurant.id} orderId={orderId} currency={view.order.currency} />
+      <section className={styles.checkoutPanel} aria-labelledby="confirmation-title">
+        <header>
+          <p className={styles.expandedLabel}>Order placed</p>
+          <h1 id="confirmation-title">Order #{view.order.orderNumber}</h1>
+          <p>Payment was verified by the server and the order has been placed with the restaurant.</p>
+        </header>
+        <section aria-label="Order details">
+          <OrderSnapshot order={view.order} />
+        </section>
+        {/* Future confirmation additions belong in separate pickup, location,
+            notification, and receipt sections without changing payment state. */}
+        <nav aria-label="Confirmation actions">
+          <Link className={styles.checkoutButton} href={`/r/${slug}`}>Return to Menu</Link>
+        </nav>
+      </section>
+    </main>
+  );
 }

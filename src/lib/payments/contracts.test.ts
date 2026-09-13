@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  fakeAuthorizationActionRequestSchema,
+  fakeLateSuccessResolutionRequestSchema,
   fakePaymentRecoveryRequestSchema,
   paymentStatusSchema,
   paymentSubmissionRequestSchema,
@@ -21,6 +23,14 @@ test("payment submission accepts only opaque bounded input and UUID attempt keys
     clientAttemptKey: "10000000-0000-4000-8000-000000000001",
     paymentMethodToken: "fake:success",
   }).success, false);
+});
+
+test("fake exceptional-state controls require one idempotent terminal action", () => {
+  const key = "10000000-0000-4000-8000-000000000001";
+  assert.equal(fakeAuthorizationActionRequestSchema.safeParse({ action: "capture", clientActionKey: key }).success, true);
+  assert.equal(fakeAuthorizationActionRequestSchema.safeParse({ action: "refund", clientActionKey: key }).success, false);
+  assert.equal(fakeLateSuccessResolutionRequestSchema.safeParse({ resolution: "refunded", clientActionKey: key }).success, true);
+  assert.equal(fakeLateSuccessResolutionRequestSchema.safeParse({ resolution: "processing", clientActionKey: key }).success, false);
 });
 
 test("payment status is provider-neutral", () => {

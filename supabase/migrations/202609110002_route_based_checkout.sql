@@ -35,6 +35,7 @@ begin
 
   failure_reason := case
     when new.failure_category = 'provider_decline' then 'payment_declined'
+    when new.failure_category = 'authorization_voided' then 'authorization_voided'
     else 'payment_failed'
   end;
 

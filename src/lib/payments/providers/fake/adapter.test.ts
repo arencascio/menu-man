@@ -23,6 +23,7 @@ test("fake provider exposes every deterministic scenario without card fields", a
   const adapter = new FakePaymentProviderAdapter(SECRET);
   const session = await adapter.createBrowserSession(CONNECTION);
   assert.deepEqual(session.publicConfig.scenarios, [...fakePaymentScenarios]);
+  assert.equal(session.publicConfig.exceptionControlsEnabled, false);
   assert.equal(JSON.stringify(session).includes("card"), false);
 });
 
@@ -113,4 +114,33 @@ test("fake unknown recovery signs terminal events for the original attempt", () 
     assert.equal(event.kind, resolution === "succeeded" ? "payment.succeeded" : "payment.failed");
     assert.equal(event.amountCents, PAYMENT.amountCents);
   }
+});
+
+test("fake authorization capture and void emit verified events for the existing attempt", async () => {
+  const adapter = new FakePaymentProviderAdapter(SECRET, true);
+  const input = {
+    ...PAYMENT,
+    providerPaymentReference: "fake_pay_existing",
+  };
+
+  const capture = await adapter.capturePayment(input);
+  const captureDelivery = capture.developmentWebhookDeliveries?.[0];
+  assert.ok(captureDelivery);
+  const captureEvent = adapter.normalizeWebhook(adapter.verifyWebhook(
+    captureDelivery.rawBody,
+    new Headers(captureDelivery.headers),
+  ))[0];
+  assert.equal(captureEvent.kind, "payment.succeeded");
+  assert.equal(captureEvent.attemptId, PAYMENT.attemptId);
+
+  const voided = await adapter.cancelPayment(input);
+  const voidDelivery = voided.developmentWebhookDeliveries?.[0];
+  assert.ok(voidDelivery);
+  const voidEvent = adapter.normalizeWebhook(adapter.verifyWebhook(
+    voidDelivery.rawBody,
+    new Headers(voidDelivery.headers),
+  ))[0];
+  assert.equal(voidEvent.kind, "payment.failed");
+  assert.equal(voidEvent.attemptId, PAYMENT.attemptId);
+  assert.equal(voidEvent.failureCategory, "authorization_voided");
 });

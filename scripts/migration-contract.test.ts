@@ -26,6 +26,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609110001_fix_checkout_request_fingerprint_ambiguity.sql",
     "202609110002_route_based_checkout.sql",
     "202609110003_fix_terminal_payment_failure_transition.sql",
+    "202609110004_fake_payment_exception_controls.sql",
   ]);
 });
 
@@ -157,6 +158,26 @@ test("route checkout adds a capability-protected snapshot and terminal failure g
     assert.match(definition, /'reconciliation',\s*\n\s*'payment\.terminal_failure'/i);
     assert.doesNotMatch(definition, /'system',\s*\n\s*'payment\.terminal_failure'/i);
   }
+});
+
+test("fake exceptional-state controls are capability protected and test-only", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_fake_payment_exception_controls.sql"),
+  )?.sql || "";
+  for (const functionName of [
+    "reserve_fake_authorization_action_v1",
+    "reserve_fake_late_success_resolution_v1",
+    "accept_fake_late_success_v1",
+  ]) {
+    assert.match(migration, new RegExp(`create or replace function public\\.${functionName}\\b`, "i"));
+    assert.match(migration, new RegExp(`grant execute on function public\\.${functionName}[\\s\\S]*to service_role`, "i"));
+  }
+  assert.match(migration, /session\.access_token_hash = p_access_token_hash/i);
+  assert.match(migration, /connection_record\.provider_key <> 'fake'/i);
+  assert.match(migration, /connection_record\.environment <> 'test'/i);
+  assert.match(migration, /'authorization_voided'/i);
+  assert.match(migration, /'payment_late_success'/i);
+  assert.doesNotMatch(migration, /insert into public\.payment_attempts/i);
 });
 
 test("browser analytics cannot emit purchase", () => {
