@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { paymentStatusSchema, type PaymentSessionResponse } from "@/lib/payments/contracts";
+import { clearCheckoutDraft } from "@/lib/checkout/draft";
 import {
   broadcastCheckoutEvent,
   loadActiveOrderMarker,
@@ -114,6 +115,7 @@ export default function PaymentPanel({
           await cart.clearIfFingerprintMatches(marker.cartFingerprint);
           removeActiveOrderMarker(window.localStorage, restaurantId);
         }
+        clearCheckoutDraft(window.sessionStorage, restaurantId);
         broadcastCheckoutEvent(restaurantId, "payment_terminal");
         router.replace(`/r/${encodeURIComponent(restaurantSlug)}/order/${encodeURIComponent(order.orderId)}/confirmation`);
       })();
@@ -261,7 +263,7 @@ export default function PaymentPanel({
         <p>This total is frozen from the authoritative order snapshot.</p>
         <OrderSnapshot order={order} />
 
-        {processingPresentation === "short" && <div className={styles.paymentNoticePanel}><h3>Payment is processing</h3><p>This usually takes a few moments. We will update this order after the provider confirms it.</p></div>}
+        {processingPresentation === "short" && <div className={styles.paymentNoticePanel}><h3>Confirming your payment&hellip;</h3><p>This usually takes a few seconds. Please don&apos;t close this page or submit another payment.</p></div>}
         {processingPresentation === "uncertain" && (
           <div className={styles.paymentWarningPanel}>
             <h3>We&apos;re still confirming this payment. Don&apos;t submit another payment yet.</h3>

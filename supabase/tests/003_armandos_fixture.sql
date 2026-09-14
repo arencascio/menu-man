@@ -55,8 +55,10 @@ begin
       and pickup_enabled
       and asap_enabled
       and scheduled_pickup_enabled
-      and pickup_lead_time_minutes = 0
+      and pickup_lead_time_minutes = 15
       and pickup_cutoff_minutes_before_close = 15
+      and pickup_slot_interval_minutes = 5
+      and advance_order_days = 0
       and tax_strategy = 'restaurant_percentage'
       and tax_rate_basis_points = 875
   ) then

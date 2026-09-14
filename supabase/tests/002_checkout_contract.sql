@@ -17,10 +17,15 @@ declare
   replay_response jsonb;
   base_price integer;
   expected_tax integer;
+  custom_response jsonb;
 begin
   select id into strict restaurant_uuid
   from public.restaurants
   where slug = 'armandos' and is_active = true;
+
+  update public.restaurant_ordering_settings
+  set advance_order_days = 1
+  where restaurant_id = restaurant_uuid;
 
   select id into strict menu_uuid
   from public.menus
@@ -115,6 +120,40 @@ begin
   ) <> 1 then
     raise exception 'Idempotent checkout created more than one order';
   end if;
+
+  custom_response := public.create_order_v1(
+    'armandos',
+    gen_random_uuid()::text,
+    jsonb_set(
+      jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
+      '{customTipCents}',
+      '425'::jsonb
+    )
+  );
+  if (custom_response ->> 'tipCents')::integer <> 425
+    or (custom_response ->> 'totalCents')::integer
+      <> (custom_response ->> 'subtotalCents')::integer
+        + (custom_response ->> 'taxCents')::integer + 425
+    or (select tip_basis_points from public.orders
+        where id = (custom_response ->> 'orderId')::uuid) is not null
+  then
+    raise exception 'Custom tip was not authoritatively applied: %', custom_response;
+  end if;
+
+  begin
+    perform public.create_order_v1(
+      'armandos',
+      gen_random_uuid()::text,
+      jsonb_set(
+        jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
+        '{customTipCents}',
+        '-1'::jsonb
+      )
+    );
+    raise exception 'Expected a negative custom tip to be rejected';
+  exception when others then
+    if position('MM_INVALID_REQUEST' in sqlerrm) = 0 then raise; end if;
+  end;
 
   if (
     select count(*)

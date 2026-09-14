@@ -42,8 +42,17 @@ const checkoutInputSchema = z.strictObject({
   items: z.array(checkoutLineSchema).min(1).max(50),
   customer: customerSchema,
   pickup: pickupSchema,
-  tipChoice: z.enum(["none", "10_percent", "15_percent", "20_percent"]),
+  tipChoice: z.enum(["none", "10_percent", "15_percent", "20_percent", "custom"]),
+  customTipCents: z.union([z.int().nonnegative().max(2_147_483_647), z.null()]).optional(),
   orderNotes: optionalTrimmedText(1000),
+}).superRefine((request, context) => {
+  if (request.tipChoice === "custom" && request.customTipCents == null) {
+    context.addIssue({
+      code: "custom",
+      path: ["customTipCents"],
+      message: "Enter a valid custom tip with no more than two decimal places.",
+    });
+  }
 });
 
 function canonicalLineKey(line: z.output<typeof checkoutLineSchema>) {
@@ -68,6 +77,7 @@ export const checkoutRequestSchema = checkoutInputSchema.transform((request) => 
   customer: request.customer,
   pickup: request.pickup,
   tipChoice: request.tipChoice,
+  customTipCents: request.tipChoice === "custom" ? request.customTipCents! : null,
   orderNotes: request.orderNotes,
 }));
 

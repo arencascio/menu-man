@@ -29,6 +29,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609110004_fake_payment_exception_controls.sql",
     "202609120001_square_adapter_support.sql",
     "202609130001_canonicalize_dst_pickup_slots.sql",
+    "202609130002_checkout_pickup_ux.sql",
   ]);
 });
 
@@ -80,6 +81,8 @@ test("baseline contains required source, image, theme, SEO, and ordering fields"
     "request_fingerprint",
     "pickup_timezone",
     "tax_rate_basis_points",
+    "pickup_slot_interval_minutes",
+    "advance_order_days",
   ]) {
     assert.match(completeSchema, new RegExp(`\\b${field}\\b`, "i"));
   }
@@ -103,6 +106,22 @@ test("checkout functions and restricted service-role boundary are present", () =
   assert.match(checkout, /'unpaid'/);
   assert.match(checkout, /revoke insert, update, delete on table[\s\S]*public\.orders[\s\S]*from service_role/i);
   assert.match(checkout, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("checkout pickup UX migration keeps custom tips and pickup cadence server authoritative", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_checkout_pickup_ux.sql"),
+  )?.sql || "";
+  assert.match(migration, /pickup_slot_interval_minutes integer not null default 15/i);
+  assert.match(migration, /pickup_slot_interval_minutes between 5 and 1440/i);
+  assert.match(migration, /advance_order_days integer not null default 0/i);
+  assert.match(migration, /for day_offset in -1\.\.settings_record\.advance_order_days/i);
+  assert.match(migration, /make_interval\(mins => settings_record\.pickup_slot_interval_minutes\)/i);
+  assert.match(migration, /alter column tip_basis_points drop not null/i);
+  assert.match(migration, /p_request ->> 'tipChoice' <> 'custom'/i);
+  assert.match(migration, /custom_tip_value::integer/i);
+  assert.match(migration, /revoke all on function public\.create_order_base_v1[\s\S]*service_role/i);
+  assert.match(migration, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
 });
 
 test("checkout fingerprint references are unambiguous in bootstrap and forward repair", () => {

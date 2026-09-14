@@ -39,6 +39,7 @@ function requestFixture() {
       pickupAt: "2026-09-09T12:00:00-07:00",
     },
     tipChoice: "15_percent" as const,
+    customTipCents: null,
     orderNotes: "  Ring bell  ",
   };
 }
@@ -58,6 +59,14 @@ test("canonicalizes equivalent accepted checkout requests identically", () => {
   assert.deepEqual(first.items[1].modifierOptionIds, [OPTION_A_ID, OPTION_B_ID]);
   assert.equal(first.customer.email, "ada@example.com");
   assert.equal(first.items[0].specialInstructions, null);
+});
+
+test("accepts a custom tip only as a validated nonnegative integer-cent amount", () => {
+  const custom = { ...requestFixture(), tipChoice: "custom", customTipCents: 425 };
+  assert.equal(checkoutRequestSchema.parse(custom).customTipCents, 425);
+
+  assert.equal(checkoutRequestSchema.safeParse({ ...custom, customTipCents: -1 }).success, false);
+  assert.equal(checkoutRequestSchema.safeParse({ ...custom, customTipCents: 1.5 }).success, false);
 });
 
 test("rejects client prices and duplicate modifier option IDs", () => {

@@ -47,6 +47,8 @@ begin
     scheduled_pickup_enabled,
     pickup_lead_time_minutes,
     pickup_cutoff_minutes_before_close,
+    pickup_slot_interval_minutes,
+    advance_order_days,
     tax_strategy,
     tax_rate_basis_points
   ) values (
@@ -54,8 +56,10 @@ begin
     true,
     true,
     true,
-    0,
     15,
+    15,
+    5,
+    0,
     'restaurant_percentage',
     875
   )
@@ -65,6 +69,8 @@ begin
     scheduled_pickup_enabled = excluded.scheduled_pickup_enabled,
     pickup_lead_time_minutes = excluded.pickup_lead_time_minutes,
     pickup_cutoff_minutes_before_close = excluded.pickup_cutoff_minutes_before_close,
+    pickup_slot_interval_minutes = excluded.pickup_slot_interval_minutes,
+    advance_order_days = excluded.advance_order_days,
     tax_strategy = excluded.tax_strategy,
     tax_rate_basis_points = excluded.tax_rate_basis_points;
 end;

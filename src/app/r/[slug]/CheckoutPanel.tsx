@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { calculateLineTotalCents, formatPrice } from "@/lib/cart/cart";
+import { loadCheckoutDraft, saveCheckoutDraft } from "@/lib/checkout/draft";
 import {
   checkoutRequestSchema,
   checkoutResponseSchema,
@@ -16,6 +17,8 @@ import {
   isPickupSelectionAvailable,
   resolvePickupSelection,
 } from "@/lib/checkout/pickup-selection";
+import { formatPickupDateTime } from "@/lib/checkout/pickup-presentation";
+import { parseCustomTipCents } from "@/lib/checkout/tips";
 import {
   broadcastCheckoutEvent,
   fingerprintCart,
@@ -38,6 +41,7 @@ const tipChoices: Array<{ value: TipChoice; label: string }> = [
   { value: "10_percent", label: "10%" },
   { value: "15_percent", label: "15%" },
   { value: "20_percent", label: "20%" },
+  { value: "custom", label: "Custom" },
 ];
 
 async function fingerprintPayload(payload: string) {
@@ -61,13 +65,54 @@ export default function CheckoutPanel({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [tipChoice, setTipChoice] = useState<TipChoice>("none");
+  const [customTipAmount, setCustomTipAmount] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const attempt = useRef<IdempotencyAttempt | null>(null);
+  const restoredPickup = useRef<{ mode: "asap" } | { mode: "scheduled"; pickupAt: string } | undefined>(undefined);
   const attemptStorageKey = `menu-man:checkout-attempt:v1:${restaurantId}`;
 
   useEffect(() => {
+    const draft = loadCheckoutDraft(window.sessionStorage, restaurantId);
+    const hydration = window.setTimeout(() => {
+      if (draft) {
+        setCustomerName(draft.customerName);
+        setPhone(draft.phone);
+        setEmail(draft.email);
+        setPickupMode(draft.pickup.mode);
+        setPickupAt(draft.pickup.mode === "scheduled" ? draft.pickup.pickupAt : "");
+        setTipChoice(draft.tipChoice);
+        setCustomTipAmount(draft.customTipAmount);
+        setOrderNotes(draft.orderNotes);
+        restoredPickup.current = draft.pickup;
+      }
+      setDraftHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(hydration);
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    try {
+      saveCheckoutDraft(window.sessionStorage, {
+        restaurantId,
+        customerName,
+        phone,
+        email,
+        pickup: pickupMode === "asap" ? { mode: "asap" } : { mode: "scheduled", pickupAt },
+        tipChoice,
+        customTipAmount,
+        orderNotes,
+      });
+    } catch {
+      // Draft retention is a convenience; checkout remains functional without storage.
+    }
+  }, [customTipAmount, customerName, draftHydrated, email, orderNotes, phone, pickupAt, pickupMode, restaurantId, tipChoice]);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
     const controller = new AbortController();
     void fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/pickup-availability`, {
       cache: "no-store",
@@ -76,7 +121,8 @@ export default function CheckoutPanel({
       if (!response.ok) throw new Error("Pickup availability could not be loaded.");
       const nextAvailability = await response.json() as PickupAvailability;
       setAvailability(nextAvailability);
-      const nextSelection = resolvePickupSelection(nextAvailability);
+      const nextSelection = resolvePickupSelection(nextAvailability, restoredPickup.current);
+      restoredPickup.current = undefined;
       if (nextSelection) {
         setPickupMode(nextSelection.mode);
         setPickupAt(nextSelection.mode === "scheduled" ? nextSelection.pickupAt : "");
@@ -87,12 +133,18 @@ export default function CheckoutPanel({
       }
     });
     return () => controller.abort();
-  }, [restaurantSlug]);
+  }, [draftHydrated, restaurantSlug]);
 
   const canPickup = isPickupSelectionAvailable(
     availability,
     pickupMode === "asap" ? { mode: "asap" } : { mode: "scheduled", pickupAt },
   );
+  const selectedPickupAt = pickupMode === "asap"
+    ? availability?.asap.estimatedPickupAt
+    : pickupAt;
+  const selectedPickupLabel = selectedPickupAt && availability?.timezone
+    ? formatPickupDateTime(selectedPickupAt, availability.timezone)
+    : null;
 
   async function submitCheckout(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -109,6 +161,7 @@ export default function CheckoutPanel({
       customer: { name: customerName, phone, email },
       pickup: pickupMode === "asap" ? { mode: "asap" } : { mode: "scheduled", pickupAt },
       tipChoice,
+      customTipCents: tipChoice === "custom" ? parseCustomTipCents(customTipAmount) : null,
       orderNotes,
     });
     if (!parsedRequest.success) {
@@ -218,12 +271,20 @@ export default function CheckoutPanel({
         </div>
 
         <form className={styles.checkoutForm} onSubmit={submitCheckout}>
+          <section className={styles.pickupSummary} aria-label="Selected pickup time">
+            <div>
+              <p className={styles.expandedLabel}>Pickup</p>
+              <strong>{selectedPickupLabel || "Select a pickup time"}</strong>
+              {selectedPickupLabel && <small>{pickupMode === "asap" ? "ASAP pickup" : "Scheduled pickup"}</small>}
+            </div>
+            <a className={styles.pickupEditLink} href="#pickup-details">Edit</a>
+          </section>
           <div className={styles.checkoutFields}>
             <label>Name<input required maxLength={200} autoComplete="name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
             <label>Phone<input required maxLength={50} autoComplete="tel" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
             <label>Email <small>Optional</small><input maxLength={320} autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           </div>
-          <fieldset className={styles.checkoutFieldset}>
+          <fieldset className={styles.checkoutFieldset} id="pickup-details">
             <legend>Pickup</legend>
             {availabilityError && <p className={styles.formError}>{availabilityError}</p>}
             {!availability && !availabilityError && <p>Loading current availability…</p>}
@@ -241,6 +302,11 @@ export default function CheckoutPanel({
           <fieldset className={styles.checkoutFieldset}>
             <legend>Tip</legend>
             <div className={styles.tipChoices}>{tipChoices.map((choice) => <label key={choice.value}><input type="radio" name="tip" checked={tipChoice === choice.value} onChange={() => setTipChoice(choice.value)} />{choice.label}</label>)}</div>
+            {tipChoice === "custom" && (
+              <label className={styles.customTipField}>Custom tip
+                <span><span aria-hidden="true">$</span><input required inputMode="decimal" placeholder="0.00" value={customTipAmount} onChange={(event) => setCustomTipAmount(event.target.value)} aria-label="Custom tip amount in dollars" /></span>
+              </label>
+            )}
           </fieldset>
           <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={1000} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
           {submitError && <p className={styles.formError} role="alert">{submitError}</p>}

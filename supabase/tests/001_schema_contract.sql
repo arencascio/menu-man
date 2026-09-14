@@ -6,6 +6,7 @@ declare
   missing_tables text[];
   missing_columns text[];
   checkout_function_definition text;
+  checkout_wrapper_definition text;
 begin
   select array_agg(required_table.name order by required_table.name)
   into missing_tables
@@ -59,6 +60,8 @@ begin
     ('orders', 'pickup_timezone'),
     ('orders', 'tax_rate_basis_points'),
     ('orders', 'tip_basis_points')
+    ,('restaurant_ordering_settings', 'pickup_slot_interval_minutes')
+    ,('restaurant_ordering_settings', 'advance_order_days')
     ,('orders', 'payment_due_at')
     ,('payments', 'connection_id')
     ,('payment_attempts', 'provider_idempotency_key')
@@ -103,13 +106,18 @@ begin
 
   if to_regprocedure('public.get_pickup_availability_v1(text,timestamp with time zone)') is null
     or to_regprocedure('public.create_order_v1(text,text,jsonb)') is null
+    or to_regprocedure('public.create_order_base_v1(text,text,jsonb)') is null
   then
     raise exception 'Required checkout functions are missing';
   end if;
 
   select lower(pg_catalog.pg_get_functiondef(
-    'public.create_order_v1(text,text,jsonb)'::regprocedure
+    'public.create_order_base_v1(text,text,jsonb)'::regprocedure
   )) into checkout_function_definition;
+
+  select lower(pg_catalog.pg_get_functiondef(
+    'public.create_order_v1(text,text,jsonb)'::regprocedure
+  )) into checkout_wrapper_definition;
 
   if position('v_request_fingerprint text' in checkout_function_definition) = 0
     or position('v_request_fingerprint := pg_catalog.encode' in checkout_function_definition) = 0
@@ -120,6 +128,12 @@ begin
     ) = 0
   then
     raise exception 'Checkout fingerprint references are not explicitly disambiguated';
+  end if;
+
+  if position('customtipcents' in checkout_wrapper_definition) = 0
+    or position('custom_tip_value' in checkout_wrapper_definition) = 0
+  then
+    raise exception 'Checkout wrapper does not authoritatively handle custom tips';
   end if;
 
   if to_regprocedure('public.prepare_payment_v1(uuid,text,boolean,integer,integer)') is null
@@ -138,6 +152,8 @@ begin
 
   if has_function_privilege('anon', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE')
     or has_function_privilege('authenticated', 'public.create_order_v1(text,text,jsonb)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.create_order_base_v1(text,text,jsonb)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.create_order_base_v1(text,text,jsonb)', 'EXECUTE')
     or has_function_privilege('anon', 'public.reserve_fake_authorization_action_v1(uuid,text,text,uuid)', 'EXECUTE')
     or has_function_privilege('authenticated', 'public.reserve_fake_authorization_action_v1(uuid,text,text,uuid)', 'EXECUTE')
     or has_function_privilege('anon', 'public.reserve_fake_late_success_resolution_v1(uuid,text,text,uuid)', 'EXECUTE')
@@ -160,6 +176,10 @@ begin
     or not has_function_privilege('service_role', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
   then
     raise exception 'service_role cannot execute a required checkout/payment RPC';
+  end if;
+
+  if has_function_privilege('service_role', 'public.create_order_base_v1(text,text,jsonb)', 'EXECUTE') then
+    raise exception 'service_role must not bypass the authoritative checkout wrapper';
   end if;
 
   if has_table_privilege('service_role', 'public.orders', 'INSERT')

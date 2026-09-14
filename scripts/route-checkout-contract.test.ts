@@ -63,8 +63,36 @@ test("checkout pickup availability is uncached and stale failures retain the edi
   const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
   assert.match(availabilityRoute, /fetchCache\s*=\s*"force-no-store"/);
   assert.match(availabilityRoute, /Cache-Control["']?:\s*"no-store/);
-  assert.match(checkout, /resolvePickupSelection\(nextAvailability\)/);
+  assert.match(checkout, /resolvePickupSelection\(nextAvailability,/);
   assert.match(checkout, /isPickupSelectionAvailable/);
   assert.match(checkout, /errorBody\.error\?\.message/);
   assert.doesNotMatch(checkout, /cart\.clear\(/);
+});
+
+test("checkout draft PII is session scoped and cleared only on verified completion", () => {
+  const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
+  const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  const confirmationEffects = read("src", "app", "r", "[slug]", "ConfirmationEffects.tsx");
+  const draft = read("src", "lib", "checkout", "draft.ts");
+  assert.match(checkout, /loadCheckoutDraft\(window\.sessionStorage/);
+  assert.match(checkout, /saveCheckoutDraft\(window\.sessionStorage/);
+  assert.doesNotMatch(checkout, /saveCheckoutDraft\(window\.localStorage/);
+  assert.match(draft, /CHECKOUT_DRAFT_TTL_MS = 2 \* 60 \* 60 \* 1_000/);
+  assert.match(payment, /clearCheckoutDraft\(window\.sessionStorage/);
+  assert.match(confirmationEffects, /clearCheckoutDraft\(window\.sessionStorage/);
+});
+
+test("pickup snapshots and confirmation status are rendered from the frozen order", () => {
+  const snapshot = read("src", "app", "r", "[slug]", "OrderSnapshot.tsx");
+  const confirmation = read(
+    "src", "app", "r", "[slug]", "order", "[orderId]", "confirmation", "page.tsx",
+  );
+  const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  assert.match(snapshot, /formatPickupDateTime\(order\.pickup\.pickupAt, order\.pickup\.timezone\)/);
+  assert.match(snapshot, />Pickup</);
+  assert.match(confirmation, /Pickup status/);
+  assert.match(confirmation, /Order number/);
+  assert.match(confirmation, /confirmationPanel/);
+  assert.match(payment, /Confirming your payment&hellip;/);
+  assert.doesNotMatch(payment, /provider confirms it/i);
 });

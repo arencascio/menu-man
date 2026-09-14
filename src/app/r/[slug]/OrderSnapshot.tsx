@@ -1,10 +1,18 @@
 import { formatPrice } from "@/lib/cart/cart";
+import { formatPickupDateTime } from "@/lib/checkout/pickup-presentation";
 import type { OrderPaymentView } from "@/lib/payments/view-contracts";
 import styles from "./menu-browser.module.css";
 
 export default function OrderSnapshot({ order }: { order: OrderPaymentView["order"] }) {
   return (
     <>
+      <section className={styles.pickupSummary} aria-label="Pickup details">
+        <div>
+          <p className={styles.expandedLabel}>Pickup</p>
+          <strong>{formatPickupDateTime(order.pickup.pickupAt, order.pickup.timezone)}</strong>
+          <small>{order.pickup.mode === "asap" ? "ASAP pickup" : "Scheduled pickup"}</small>
+        </div>
+      </section>
       <p className={styles.confirmationTotal}>{formatPrice(order.totalCents, order.currency)}</p>
       <div className={styles.checkoutReview}>
         {order.items.map((item) => (

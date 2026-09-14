@@ -6,6 +6,7 @@ import {
   loadActiveOrderMarker,
   removeActiveOrderMarker,
 } from "@/lib/payments/browser-session";
+import { clearCheckoutDraft } from "@/lib/checkout/draft";
 import useRestaurantCart from "./useRestaurantCart";
 
 export default function ConfirmationEffects({
@@ -29,6 +30,7 @@ export default function ConfirmationEffects({
         await cart.clearIfFingerprintMatches(marker.cartFingerprint);
         removeActiveOrderMarker(window.localStorage, restaurantId);
       }
+      clearCheckoutDraft(window.sessionStorage, restaurantId);
       broadcastCheckoutEvent(restaurantId, "payment_terminal");
     })();
   }, [cart, orderId, restaurantId]);

@@ -133,6 +133,12 @@
 .checkoutReview small, .checkoutForm > small, .checkoutFieldset > small { color: var(--muted); }
 .checkoutActionHint { display: block; margin: 0 0 -10px; font-weight: 700; }
 .checkoutForm { display: grid; gap: 18px; }
+.pickupSummary { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 18px 0; padding: 16px 18px; border: 1px solid #c8d1d8; border-radius: 10px; background: #f5f8fa; }
+.pickupSummary > div { display: grid; gap: 3px; }
+.pickupSummary .expandedLabel { margin: 0; }
+.pickupSummary strong { font-size: 19px; }
+.pickupSummary small { color: var(--muted); }
+.pickupEditLink { flex: 0 0 auto; color: var(--theme-accent, var(--accent)); font-weight: 800; }
 .checkoutFields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .checkoutFields label, .orderNotes { display: grid; gap: 7px; font-size: 14px; font-weight: 700; }
 .checkoutFields input, .checkoutFieldset select, .orderNotes textarea { box-sizing: border-box; width: 100%; border: 1px solid #bbb; border-radius: 8px; padding: 11px; color: #171717; background: #fff; font: inherit; }
@@ -143,6 +149,9 @@
 .checkoutFieldset label:has(select) { display: grid; grid-template-columns: auto auto 1fr; }
 .checkoutFieldset input { accent-color: var(--theme-accent, var(--accent)); }
 .tipChoices { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.checkoutFieldset .customTipField { display: grid; align-items: stretch; gap: 7px; margin-top: 12px; max-width: 220px; }
+.customTipField > span { display: flex; align-items: center; gap: 8px; }
+.customTipField input { box-sizing: border-box; width: 100%; border: 1px solid #bbb; border-radius: 8px; padding: 11px; color: #171717; background: #fff; font: inherit; }
 .confirmationTotal { margin: 12px 0; font-size: 32px; font-weight: 800; }
 .authoritativeTotals { display: grid; gap: 8px; margin: 20px 0; }
 .authoritativeTotals div { display: flex; justify-content: space-between; gap: 20px; }
@@ -156,6 +165,14 @@
 .paymentWarningPanel { border-color: #a56400; background: #fff4d6; }
 .paymentErrorPanel { border-color: #b42318; background: #fff1f0; }
 .paymentErrorPanel ul { margin: 8px 0; padding-left: 21px; }
+.confirmationPanel { border: 1px solid #a8d5b5; box-shadow: 0 12px 35px rgb(21 128 61 / 10%); }
+.confirmationHeader { padding: 22px; border-radius: 12px; background: #edf9f0; text-align: center; }
+.confirmationHeader .expandedLabel { color: #16713a; }
+.successMark { display: inline-grid; width: 46px; height: 46px; margin-bottom: 10px; place-items: center; border-radius: 50%; color: #fff; background: #198754; font-size: 28px; font-weight: 900; }
+.confirmationStatus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+.confirmationStatus div { padding: 14px; border: 1px solid #b9ddc3; border-radius: 10px; background: #f5fcf7; }
+.confirmationStatus dt { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.confirmationStatus dd { margin: 5px 0 0; color: #145c32; font-size: 18px; font-weight: 800; }
 .paymentErrorPanel li + li { margin-top: 4px; }
 .fakeRecoveryControls { margin-top: 13px; padding-top: 12px; border-top: 1px solid #cf9d3e; }
 .fakeRecoveryControls button { margin: 8px 8px 0 0; border: 1px solid #111; border-radius: 7px; padding: 9px 12px; color: #111; background: #fff; cursor: pointer; font: inherit; font-weight: 700; }
@@ -195,6 +212,7 @@
   .cartLineActions { flex-wrap: wrap; }
   .checkoutPanel { padding: 16px; }
   .checkoutFields { grid-template-columns: 1fr; }
+  .confirmationStatus { grid-template-columns: 1fr; }
   .checkoutFieldset label:has(select) { grid-template-columns: auto 1fr; }
   .checkoutFieldset label:has(select) select { grid-column: 1 / -1; }
 }

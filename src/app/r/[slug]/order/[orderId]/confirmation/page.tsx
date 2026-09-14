@@ -28,17 +28,24 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
   return (
     <main className={styles.page}>
       <ConfirmationEffects restaurantId={restaurant.id} orderId={orderId} currency={view.order.currency} />
-      <section className={styles.checkoutPanel} aria-labelledby="confirmation-title">
-        <header>
+      <section className={`${styles.checkoutPanel} ${styles.confirmationPanel}`} aria-labelledby="confirmation-title">
+        <header className={styles.confirmationHeader}>
+          <span className={styles.successMark} aria-hidden="true">✓</span>
           <p className={styles.expandedLabel}>Order placed</p>
           <h1 id="confirmation-title">Order #{view.order.orderNumber}</h1>
-          <p>Payment was verified by the server and the order has been placed with the restaurant.</p>
+          <p>Your payment is confirmed and the restaurant has received your pickup order.</p>
         </header>
+        <dl className={styles.confirmationStatus}>
+          <div><dt>Pickup status</dt><dd>Order placed</dd></div>
+          <div><dt>Order number</dt><dd>#{view.order.orderNumber}</dd></div>
+        </dl>
         <section aria-label="Order details">
           <OrderSnapshot order={view.order} />
         </section>
-        {/* Future confirmation additions belong in separate pickup, location,
-            notification, and receipt sections without changing payment state. */}
+        {/* Future confirmation sections:
+            - restaurant address and directions
+            - confirmation email delivery notice
+            - printable/PDF receipt */}
         <nav aria-label="Confirmation actions">
           <Link className={styles.checkoutButton} href={`/r/${slug}`}>Return to Menu</Link>
         </nav>

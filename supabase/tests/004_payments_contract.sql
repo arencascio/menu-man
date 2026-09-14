@@ -30,6 +30,10 @@ begin
   select id into strict restaurant_uuid
   from public.restaurants where slug = 'armandos' and is_active;
 
+  update public.restaurant_ordering_settings
+  set advance_order_days = 1
+  where restaurant_id = restaurant_uuid;
+
   select id into strict connection_uuid
   from public.restaurant_payment_connections
   where restaurant_id = restaurant_uuid

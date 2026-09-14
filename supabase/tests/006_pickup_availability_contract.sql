@@ -59,6 +59,27 @@ begin
     raise exception 'Off-grid lead time did not round scheduled pickup to the next slot: %', availability;
   end if;
 
+  update public.restaurant_ordering_settings
+  set pickup_lead_time_minutes = 15,
+      pickup_slot_interval_minutes = 5
+  where restaurant_id = restaurant_uuid;
+  availability := public.get_pickup_availability_v1(
+    'qa-pickup-contract', timestamptz '2026-09-14 12:07:00-07'
+  );
+  select min((slot ->> 'pickupAt')::timestamptz) into first_slot
+  from jsonb_array_elements(availability #> '{scheduled,slots}') slot;
+  if (availability #>> '{asap,estimatedPickupAt}')::timestamptz
+      <> timestamptz '2026-09-14 12:22:00-07'
+    or first_slot <> timestamptz '2026-09-14 12:25:00-07'
+  then
+    raise exception 'Configurable lead time and 5-minute slots were not applied: %', availability;
+  end if;
+
+  update public.restaurant_ordering_settings
+  set pickup_lead_time_minutes = 30,
+      pickup_slot_interval_minutes = 15
+  where restaurant_id = restaurant_uuid;
+
   availability := public.get_pickup_availability_v1(
     'qa-pickup-contract', timestamptz '2026-09-14 19:29:00-07'
   );
@@ -100,6 +121,25 @@ begin
   then
     raise exception 'Orders remained available at the configured submission cutoff: %', availability;
   end if;
+
+  availability := public.get_pickup_availability_v1(
+    'qa-pickup-contract', timestamptz '2026-09-13 12:00:00-07'
+  );
+  if jsonb_array_length(availability #> '{scheduled,slots}') <> 0 then
+    raise exception 'Default same-day horizon exposed a future-day pickup: %', availability;
+  end if;
+  update public.restaurant_ordering_settings
+  set advance_order_days = 1
+  where restaurant_id = restaurant_uuid;
+  availability := public.get_pickup_availability_v1(
+    'qa-pickup-contract', timestamptz '2026-09-13 12:00:00-07'
+  );
+  if jsonb_array_length(availability #> '{scheduled,slots}') = 0 then
+    raise exception 'Configured one-day horizon did not expose the next service day: %', availability;
+  end if;
+  update public.restaurant_ordering_settings
+  set advance_order_days = 0
+  where restaurant_id = restaurant_uuid;
 
   delete from public.restaurant_business_hours where restaurant_id = restaurant_uuid;
   insert into public.restaurant_business_hours (
@@ -236,9 +276,9 @@ begin
   values (restaurant_uuid, 'Checkout Pickup QA Fixture', 'qa-checkout-pickup-contract', 'USD', true, 'UTC');
   insert into public.restaurant_ordering_settings (
     restaurant_id, pickup_enabled, asap_enabled, scheduled_pickup_enabled,
-    pickup_lead_time_minutes, pickup_cutoff_minutes_before_close,
+    pickup_lead_time_minutes, pickup_cutoff_minutes_before_close, advance_order_days,
     tax_strategy, tax_rate_basis_points
-  ) values (restaurant_uuid, true, true, true, 0, 0, 'restaurant_percentage', 0);
+  ) values (restaurant_uuid, true, true, true, 0, 0, 1, 'restaurant_percentage', 0);
   insert into public.restaurant_business_hours (
     restaurant_id, day_of_week, open_time, close_time, is_closed, sort_order
   )
