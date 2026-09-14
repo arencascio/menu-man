@@ -33,3 +33,10 @@ persistence, deduplication, purchase outbox, and refund transition path. The
 pickup availability contract creates rollback-only fixtures with fixed clocks
 for hours, lead-time, cutoff, closed-period, timezone, DST, and order
 revalidation boundaries.
+
+The order-management migration adds Supabase Auth-backed restaurant
+memberships, role presets plus explicit capability overrides, RLS/restricted
+RPC boundaries, a separate forward-only fulfillment state, append-only actor
+audit events, private PII-free Realtime invalidations, cursor history reads,
+and an export-ready cursor read model. Its staging contract runs only after a
+first owner has been invited and bootstrapped.

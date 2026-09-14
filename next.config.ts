@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
     return [{
       source: "/r/:slug/order/:orderId/payment",
       headers: [{ key: "Content-Security-Policy", value: squarePaymentCsp }],
+    }, {
+      source: "/manage/:path*",
+      headers: [
+        { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Robots-Tag", value: "noindex, nofollow" },
+      ],
     }];
   },
 };

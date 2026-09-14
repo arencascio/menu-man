@@ -31,6 +31,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609130001_canonicalize_dst_pickup_slots.sql",
     "202609130002_checkout_pickup_ux.sql",
     "202609130003_safe_checkout_abandonment.sql",
+    "202609140001_order_management_foundation.sql",
   ]);
 });
 
@@ -60,6 +61,14 @@ test("baseline creates every documented application table", () => {
     "refunds",
     "payment_state_transitions",
     "analytics_outbox",
+    "restaurant_capabilities",
+    "restaurant_role_capability_defaults",
+    "restaurant_memberships",
+    "restaurant_membership_permission_overrides",
+    "restaurant_access_events",
+    "restaurant_refund_policies",
+    "order_fulfillments",
+    "order_fulfillment_events",
   ];
 
   for (const table of tables) {
@@ -268,6 +277,46 @@ test("browser analytics cannot emit purchase", () => {
   const analyticsClient = readFileSync(join(process.cwd(), "src", "lib", "analytics", "client.ts"), "utf8");
   assert.doesNotMatch(analyticsTypes, /name:\s*"purchase"/);
   assert.doesNotMatch(analyticsClient, /event\.name === "purchase"/);
+});
+
+test("order management is tenant-scoped, capability-based, and financially isolated", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_order_management_foundation.sql"),
+  )?.sql || "";
+  for (const capability of [
+    "view_orders", "advance_fulfillment", "view_customer_contact",
+    "export_order_history", "issue_refunds", "manage_memberships",
+  ]) assert.match(migration, new RegExp(`'${capability}'`, "i"));
+  for (const functionName of [
+    "list_my_restaurant_memberships_v1", "list_managed_orders_v1",
+    "get_managed_order_detail_v1", "list_managed_order_export_rows_v1",
+    "transition_order_fulfillment_v1",
+  ]) {
+    assert.match(migration, new RegExp(`create or replace function public\\.${functionName}\\b`, "i"));
+    assert.match(migration, new RegExp(`grant execute on function public\\.${functionName}[\\s\\S]*to authenticated`, "i"));
+    assert.match(migration, new RegExp(`revoke all on function public\\.${functionName}[\\s\\S]*from public, anon, authenticated`, "i"));
+  }
+  assert.match(migration, /status in \('new', 'preparing', 'ready', 'completed'\)/i);
+  assert.doesNotMatch(migration, /fulfillment[^\n]*accepted/i);
+  assert.match(migration, /fulfillment_record\.version <> p_expected_version/i);
+  assert.match(migration, /actor_user_id uuid references auth\.users/i);
+  assert.match(migration, /restaurant_access_events/i);
+  assert.doesNotMatch(migration, /grant\s+(?:insert|update|delete)[\s\S]*public\.orders[\s\S]*to authenticated/i);
+  assert.match(migration, /private\.require_restaurant_capability_v1\(p_restaurant_slug, 'view_orders'\)/i);
+  assert.match(migration, /private\.require_restaurant_capability_v1\(p_restaurant_slug, 'advance_fulfillment'\)/i);
+  assert.match(migration, /limit p_limit \+ 1/i);
+  assert.match(migration, /refund_window_days integer not null default 7/i);
+  assert.match(migration, /p_restaurant_slug, 'export_order_history'/i);
+  assert.match(migration, /realtime\.send\([\s\S]*'order_changed'/i);
+});
+
+test("order management routes expose login but no public signup", () => {
+  const login = readFileSync(join(process.cwd(), "src", "app", "manage", "login", "LoginForm.tsx"), "utf8");
+  const server = readFileSync(join(process.cwd(), "src", "lib", "order-management", "server.ts"), "utf8");
+  assert.match(login, /signInWithPassword/i);
+  assert.doesNotMatch(login, /signUp\s*\(/i);
+  assert.match(server, /auth\.getClaims\(\)/i);
+  assert.doesNotMatch(server, /supabaseServer/i);
 });
 
 test("staging fixture values never appear in schema migrations", () => {

@@ -17,6 +17,8 @@ Run the sequence only against the separately created staging project:
 7. Run the SQL files under `supabase/tests/` in filename order. The fake
    contract temporarily selects the fake route inside its rolled-back
    transaction; the Square contract uses the selected Square route.
+8. After the order-management migration is applied, invite and bootstrap the
+   first owner with the guarded staging command below. Then run `007`.
 
 One explicit hosted-staging command sequence is:
 
@@ -40,6 +42,8 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/003
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/004_payments_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/005_square_payments_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/006_pickup_availability_contract.sql
+npm run bootstrap-owner:staging -- --restaurant armandos --email '<owner-email>' --display-name '<owner-name>' --app-origin 'https://<preview-host>'
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/007_order_management_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new
@@ -53,6 +57,7 @@ The staging importer requires `.env.staging.local` to contain all of:
 MENU_MAN_ENV=staging
 MENU_MAN_STAGING_PROJECT_REF=<the intended staging project ref>
 NEXT_PUBLIC_SUPABASE_URL=https://<the intended staging project ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<staging-publishable-key>
 SUPABASE_SERVICE_ROLE_KEY=<the staging service-role key>
 MENU_MAN_ENABLE_FAKE_PAYMENTS=true
 MENU_MAN_FAKE_WEBHOOK_SECRET=<at-least-32-random-characters>
@@ -65,6 +70,13 @@ SQUARE_SANDBOX_LOCATION_ID=<sandbox-location-id>
 SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY=<sandbox-webhook-signature-key>
 SQUARE_SANDBOX_WEBHOOK_NOTIFICATION_URL=https://<preview-host>/api/webhooks/payments/square/sandbox
 ```
+
+In Supabase Authentication settings, disable public user signups, set the Site
+URL to the Preview deployment, and allow the Preview callback URL. The
+publishable key is intentionally browser-safe; the service-role key remains a
+server-only secret. The bootstrap command validates the staging project host,
+creates the Auth invitation, then uses the restricted one-time owner RPC. It
+does not print credentials or invitation tokens.
 
 The fake provider is rejected when `MENU_MAN_ENV=production`, requires the
 explicit enable flag and signing secret, and only accepts database connections

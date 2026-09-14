@@ -1,0 +1,91 @@
+.shell {
+  min-height: 100vh;
+  background: #f5f5f4;
+  color: #171717;
+}
+
+.topbar {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px clamp(16px, 3vw, 36px);
+  border-bottom: 1px solid #d6d3d1;
+  background: #fff;
+}
+
+.brand { font-size: 15px; font-weight: 750; letter-spacing: -0.015em; }
+.topActions { display: flex; align-items: center; gap: 12px; }
+.restaurantName { color: #57534e; font-size: 13px; }
+.main { padding: clamp(16px, 3vw, 32px); }
+
+.authMain {
+  min-height: calc(100vh - 59px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.authCard {
+  width: min(100%, 400px);
+  padding: 28px;
+  border: 1px solid #d6d3d1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 5%);
+}
+
+.authCard h1 { font-size: 25px; letter-spacing: -0.03em; }
+.muted { margin-top: 8px; color: #57534e; line-height: 1.45; font-size: 14px; }
+.form { display: grid; gap: 16px; margin-top: 24px; }
+.field { display: grid; gap: 6px; font-size: 13px; font-weight: 650; }
+.input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #a8a29e;
+  border-radius: 7px;
+  background: #fff;
+  color: #171717;
+  font: inherit;
+}
+.input:focus { outline: 3px solid #d6d3d1; border-color: #171717; }
+.button, .buttonSecondary, .linkButton {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.button { border: 1px solid #171717; background: #171717; color: #fff; }
+.button:hover { background: #292524; }
+.button:disabled { cursor: wait; opacity: .55; }
+.buttonSecondary, .linkButton { border: 1px solid #a8a29e; background: #fff; color: #171717; }
+.linkButton { min-height: auto; padding: 7px 10px; }
+.textLink { color: #44403c; text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+.error { padding: 10px 12px; border: 1px solid #fca5a5; border-radius: 7px; background: #fef2f2; color: #991b1b; font-size: 13px; line-height: 1.4; }
+.success { padding: 10px 12px; border: 1px solid #86efac; border-radius: 7px; background: #f0fdf4; color: #166534; font-size: 13px; line-height: 1.4; }
+
+.empty {
+  max-width: 620px;
+  margin: 80px auto;
+  padding: 30px;
+  border: 1px solid #d6d3d1;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+}
+
+.restaurantList { max-width: 620px; display: grid; gap: 10px; margin: 40px auto; }
+.restaurantLink { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid #d6d3d1; border-radius: 8px; background: #fff; }
+
+@media (max-width: 640px) {
+  .restaurantName { display: none; }
+  .authCard { padding: 22px; }
+}
