@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getManagedOrderDetail, listRestaurantMemberships, ManagementError } from "@/lib/order-management/server";
+import { formatQueuePaymentLabel } from "@/lib/order-management/contracts";
 import FulfillmentAction from "./FulfillmentAction";
 import sharedStyles from "../../../management.module.css";
 import styles from "../orders.module.css";
@@ -33,7 +34,10 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
         <Link className={styles.backLink} href={`/manage/${slug}/orders`}>← Back to orders</Link>
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Order #{order.orderNumber}</h1><p className={styles.pickupHero}>{order.pickup.mode === "asap" ? "ASAP pickup" : "Pickup"} · {dateTime(order.pickup.pickupAt, order.pickup.timezone)}</p></div>
-          <div>{membership.capabilities.includes("advance_fulfillment") ? <FulfillmentAction slug={slug} orderId={order.orderId} status={order.fulfillment.status} version={order.fulfillment.version} /> : null}</div>
+          <div className={styles.detailActions}>
+            {membership.capabilities.includes("advance_fulfillment") ? <FulfillmentAction slug={slug} orderId={order.orderId} status={order.fulfillment.status} version={order.fulfillment.version} /> : null}
+            <div className={styles.exceptionActionSlot} data-exception-actions-slot="reserved" aria-hidden="true" />
+          </div>
         </header>
         <div className={styles.detailGrid}>
           <div>
@@ -41,7 +45,7 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
             <section className={styles.panel}><h2 className={styles.panelTitle}>Operational timeline</h2><ol className={styles.timeline}>{order.timeline.map((event) => <li className={styles.timelineItem} key={event.id}><strong>{event.label}</strong><p className={styles.timelineMeta}>{event.actorName ? `${event.actorName} · ` : ""}{dateTime(event.occurredAt, order.pickup.timezone)}</p></li>)}</ol></section>
           </div>
           <aside>
-            <section className={styles.panel}><h2 className={styles.panelTitle}>Status</h2><p><strong>Fulfillment:</strong> {order.fulfillment.status}</p><p className={styles.paid} style={{ marginTop: 8 }}>{order.payment.status}</p>{order.payment.refundedCents ? <p className={styles.meta} style={{ marginTop: 8 }}>Refunded: {money(order.payment.refundedCents, order.currency)}</p> : null}</section>
+            <section className={styles.panel}><h2 className={styles.panelTitle}>Status</h2><p><strong>Fulfillment:</strong> {order.fulfillment.status}</p><p className={styles.paid} style={{ marginTop: 8 }}>{formatQueuePaymentLabel(order.payment.status, order.payment.refundedCents, order.currency)}</p></section>
             <section className={styles.panel}><h2 className={styles.panelTitle}>Customer</h2>{order.customer ? <div className={styles.contact}><strong>{order.customer.name}</strong>{order.customer.phone ? <a href={`tel:${order.customer.phone}`}>{order.customer.phone}</a> : null}{order.customer.email ? <a href={`mailto:${order.customer.email}`}>{order.customer.email}</a> : null}</div> : <p className={styles.meta}>Customer contact access is restricted.</p>}</section>
             <section className={styles.panel}><h2 className={styles.panelTitle}>Receipt</h2><div className={styles.receipt}><div className={styles.receiptRow}><span>Subtotal</span><span>{money(order.subtotalCents, order.currency)}</span></div><div className={styles.receiptRow}><span>Tax</span><span>{money(order.taxCents, order.currency)}</span></div><div className={styles.receiptRow}><span>Tip</span><span>{money(order.tipCents, order.currency)}</span></div><div className={`${styles.receiptRow} ${styles.receiptTotal}`}><span>Total</span><span>{money(order.totalCents, order.currency)}</span></div></div></section>
           </aside>

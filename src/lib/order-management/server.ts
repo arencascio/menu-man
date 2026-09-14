@@ -81,6 +81,7 @@ export async function listManagedOrders(
     p_cursor_at: query.cursorAt ?? null,
     p_cursor_order_id: query.cursorOrderId ?? null,
     p_limit: query.limit,
+    p_date_basis: query.dateBasis,
   });
   if (error) throw rpcError(error);
 
@@ -88,11 +89,15 @@ export async function listManagedOrders(
     orderId: row.order_id,
     orderNumber: row.order_number,
     placedAt: row.placed_at,
+    historyDate: row.history_date,
     pickupMode: row.pickup_mode,
     pickupAt: row.pickup_at,
     pickupTimezone: row.pickup_timezone,
     customerName: row.customer_name,
     itemSummary: row.item_summary,
+    itemCount: row.item_count,
+    totalCents: row.total_cents,
+    currency: row.currency,
     paymentStatus: row.payment_status,
     refundedCents: row.refunded_cents,
     fulfillmentStatus: row.fulfillment_status,
@@ -106,7 +111,7 @@ export async function listManagedOrders(
   return managedOrderPageSchema.parse({
     orders,
     nextCursor: hasMore && finalOrder ? {
-      at: query.view === "active" ? finalOrder.pickupAt : finalOrder.completedAt,
+      at: query.view === "active" ? finalOrder.pickupAt : finalOrder.historyDate,
       orderId: finalOrder.orderId,
     } : null,
   });

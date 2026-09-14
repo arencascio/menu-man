@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createAdminBrowserClient } from "@/lib/supabase/admin-browser";
-import { managedOrderPageSchema, nextFulfillmentStatus, timingState, type ManagedOrderPage, type ManagedOrderSummary, type OrderListView } from "@/lib/order-management/contracts";
+import { formatQueuePaymentLabel, managedOrderPageSchema, nextFulfillmentStatus, timingState, type ManagedOrderPage, type ManagedOrderSummary, type OrderListView } from "@/lib/order-management/contracts";
 import styles from "./orders.module.css";
 
 type HistoryPreset = "today" | "7" | "30" | "90" | "custom";
@@ -43,7 +43,7 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
   const [now, setNow] = useState(() => Date.now());
 
   const buildUrl = useCallback((targetView: OrderListView, cursor?: ManagedOrderPage["nextCursor"]) => {
-    const params = new URLSearchParams({ view: targetView, limit: "50" });
+    const params = new URLSearchParams({ view: targetView, dateBasis: "placed", limit: "50" });
     if (targetView === "history") {
       const range = dateRange(preset, timezone, customFrom, customTo);
       if (range.from) params.set("from", range.from);
@@ -151,7 +151,8 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
                   <span className={`${styles.timing} ${timing.tone === "late" ? styles.timingLate : timing.tone === "due" ? styles.timingDue : ""}`}>{timing.label}</span>
                   <p className={styles.customer}>{order.customerName ?? "Customer contact restricted"}</p>
                   <p className={styles.items}>{order.itemSummary.map((item) => `${item.quantity}× ${item.itemName}`).join(" · ")}</p>
-                  <footer className={styles.cardFooter}><span className={styles.paid}>{order.paymentStatus}{order.refundedCents ? ` · ${order.refundedCents / 100} refunded` : ""}</span>{canAdvance && nextStatus ? <button className={styles.advanceButton} disabled={pendingId === order.orderId} onClick={() => void advance(order)}>{actionLabels[nextStatus]}</button> : null}</footer>
+                  <div className={styles.cardFacts}><span>{order.itemCount} {order.itemCount === 1 ? "item" : "items"}</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: order.currency }).format(order.totalCents / 100)}</strong></div>
+                  <footer className={styles.cardFooter}><span className={styles.paid}>{formatQueuePaymentLabel(order.paymentStatus, order.refundedCents, order.currency)}</span>{canAdvance && nextStatus ? <button className={styles.advanceButton} disabled={pendingId === order.orderId} onClick={() => void advance(order)}>{actionLabels[nextStatus]}</button> : null}</footer>
                 </article>;
               })}
             </div>
@@ -165,8 +166,8 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
             <button className={styles.secondaryButton} onClick={() => void refresh("history")}>Apply</button>
           </div>
           <div className={styles.history} style={{ marginTop: 14 }}>
-            <div className={`${styles.historyRow} ${styles.historyHeader}`}><span>Order</span><span>Customer / items</span><span>Pickup</span><span>Payment</span><span>Completed</span></div>
-            {page.orders.length === 0 ? <p className={styles.emptyColumn}>No completed orders in this range.</p> : page.orders.map((order) => <div className={styles.historyRow} key={order.orderId}><Link className={styles.orderLink} href={`/manage/${slug}/orders/${order.orderId}`}>#{order.orderNumber}</Link><span><strong>{order.customerName ?? "Contact restricted"}</strong><br /><small>{order.itemSummary.map((item) => `${item.quantity}× ${item.itemName}`).join(", ")}</small></span><span>{historyPickupLabel(order)}</span><span className={styles.paid}>{order.paymentStatus}</span><span>{order.completedAt ? historyPickupLabel({ ...order, pickupAt: order.completedAt }) : "—"}</span></div>)}
+            <div className={`${styles.historyRow} ${styles.historyHeader}`}><span>Order</span><span>Customer / items</span><span>Placed</span><span>Pickup</span><span>Payment</span><span>Total</span></div>
+            {page.orders.length === 0 ? <p className={styles.emptyColumn}>No completed orders in this range.</p> : page.orders.map((order) => <div className={styles.historyRow} key={order.orderId}><Link className={styles.orderLink} href={`/manage/${slug}/orders/${order.orderId}`}>#{order.orderNumber}</Link><span><strong>{order.customerName ?? "Contact restricted"}</strong><br /><small>{order.itemCount} {order.itemCount === 1 ? "item" : "items"} · {order.itemSummary.map((item) => `${item.quantity}× ${item.itemName}`).join(", ")}</small></span><span>{historyPickupLabel({ ...order, pickupAt: order.placedAt })}</span><span>{historyPickupLabel(order)}</span><span className={styles.paid}>{formatQueuePaymentLabel(order.paymentStatus, order.refundedCents, order.currency)}</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: order.currency }).format(order.totalCents / 100)}</strong></div>)}
           </div>
           {page.nextCursor ? <div className={styles.loadMore}><button className={styles.secondaryButton} disabled={loading} onClick={() => void refresh("history", page.nextCursor)}>Load more</button></div> : null}
         </>

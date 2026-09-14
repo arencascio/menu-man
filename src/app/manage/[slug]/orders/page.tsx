@@ -15,7 +15,7 @@ export default async function ManagedOrdersPage({ params }: { params: Promise<{ 
   }
   const membership = memberships.find((entry) => entry.restaurantSlug === slug);
   if (!membership || !membership.capabilities.includes("view_orders")) redirect("/manage");
-  const initialPage = await listManagedOrders(slug, { view: "active", limit: 50 });
+  const initialPage = await listManagedOrders(slug, { view: "active", dateBasis: "placed", limit: 50 });
 
   return (
     <main className={sharedStyles.main}>

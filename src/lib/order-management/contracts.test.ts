@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   fulfillmentTransitionRequestSchema,
+  formatQueuePaymentLabel,
   managedOrdersQuerySchema,
   nextFulfillmentStatus,
   restaurantMembershipSchema,
@@ -47,4 +48,10 @@ test("history query requires complete cursors and ordered custom ranges", () => 
   assert.equal(managedOrdersQuerySchema.safeParse({ view: "history", from: "2026-09-01", to: "2026-09-14", limit: 50 }).success, true);
   assert.equal(managedOrdersQuerySchema.safeParse({ view: "history", from: "2026-09-14", to: "2026-09-01", limit: 50 }).success, false);
   assert.equal(managedOrdersQuerySchema.safeParse({ view: "history", cursorAt: "2026-09-14T18:00:00Z", limit: 50 }).success, false);
+});
+
+test("queue refund labels show one normalized status and one formatted amount", () => {
+  assert.equal(formatQueuePaymentLabel("refunded", 1494), "REFUNDED · $14.94");
+  assert.equal(formatQueuePaymentLabel("partially_refunded", 500), "PARTIALLY REFUNDED · $5.00");
+  assert.equal(formatQueuePaymentLabel("paid", 0), "PAID");
 });

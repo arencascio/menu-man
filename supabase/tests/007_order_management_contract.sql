@@ -15,6 +15,7 @@ declare
   result jsonb;
   detail jsonb;
   order_number_value bigint;
+  restaurant_today date;
 begin
   select restaurant.id into strict restaurant_uuid
   from public.restaurants restaurant
@@ -34,6 +35,8 @@ begin
     and membership.status = 'active'
   order by membership.created_at
   limit 1;
+
+  restaurant_today := (now() at time zone 'America/Los_Angeles')::date;
 
   if not private.member_has_capability_v1(
     owner_membership_uuid, 'owner', 'manage_memberships'
@@ -65,7 +68,7 @@ begin
     order_uuid, restaurant_uuid, menu_uuid, order_number_value,
     gen_random_uuid()::text, repeat('7', 64), 'placed', 'paid',
     'Management Contract Customer', '555-0100', 'contract@example.invalid',
-    'Management contract note', 'scheduled', now() + interval '20 minutes',
+    'Management contract note', 'scheduled', now() + interval '2 days',
     'America/Los_Angeles', 'USD', 1000, 'restaurant_percentage', 0,
     0, 0, 0, 1000, now()
   );
@@ -93,6 +96,16 @@ begin
     where queue.order_id = order_uuid
   ) then
     raise exception 'Authorized owner could not read the restaurant queue';
+  end if;
+
+  if not exists (
+    select 1 from public.list_managed_orders_v1('armandos', 'active') queue
+    where queue.order_id = order_uuid
+      and queue.fulfillment_status = 'new'
+      and queue.total_cents = 1000
+      and queue.item_count = 0
+  ) then
+    raise exception 'A new post-launch paid order did not enter the active queue as new';
   end if;
 
   result := public.transition_order_fulfillment_v1(
@@ -137,6 +150,20 @@ begin
     raise exception 'Completed order disappeared from historical pagination';
   end if;
 
+  if not exists (
+    select 1 from public.list_managed_orders_v1(
+      'armandos', 'history', restaurant_today, restaurant_today,
+      null, null, 50, 'placed'
+    ) history where history.order_id = order_uuid
+  ) or exists (
+    select 1 from public.list_managed_orders_v1(
+      'armandos', 'history', restaurant_today, restaurant_today,
+      null, null, 50, 'pickup'
+    ) history where history.order_id = order_uuid
+  ) then
+    raise exception 'History date basis did not default to placed time independently of pickup time';
+  end if;
+
   insert into public.restaurant_membership_permission_overrides (
     restaurant_id, membership_id, capability, allowed, created_by_user_id
   ) values (
@@ -172,7 +199,7 @@ begin
     if sqlerrm not like 'MM_MANAGEMENT_FORBIDDEN|%' then raise; end if;
   end;
 
-  if has_function_privilege('anon', 'public.list_managed_orders_v1(text,text,date,date,timestamptz,uuid,integer)', 'EXECUTE')
+  if has_function_privilege('anon', 'public.list_managed_orders_v1(text,text,date,date,timestamptz,uuid,integer,text)', 'EXECUTE')
     or has_function_privilege('anon', 'public.transition_order_fulfillment_v1(text,uuid,integer,text,uuid)', 'EXECUTE')
     or has_table_privilege('authenticated', 'public.orders', 'UPDATE')
     or has_table_privilege('authenticated', 'public.payments', 'UPDATE')

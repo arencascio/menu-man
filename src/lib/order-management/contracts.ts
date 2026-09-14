@@ -6,6 +6,7 @@ export const managementCapabilitySchema = z.enum([
   "view_customer_contact",
   "export_order_history",
   "issue_refunds",
+  "correct_fulfillment",
   "manage_memberships",
 ]);
 
@@ -34,6 +35,7 @@ export const managedOrderSummarySchema = z.object({
   orderId: z.uuid(),
   orderNumber: z.string().min(1),
   placedAt: z.iso.datetime({ offset: true }),
+  historyDate: z.iso.datetime({ offset: true }),
   pickupMode: z.enum(["asap", "scheduled"]),
   pickupAt: z.iso.datetime({ offset: true }),
   pickupTimezone: z.string().min(1),
@@ -42,6 +44,9 @@ export const managedOrderSummarySchema = z.object({
     quantity: z.number().int().positive(),
     itemName: z.string().min(1),
   })),
+  itemCount: z.number().int().nonnegative(),
+  totalCents: z.number().int().nonnegative(),
+  currency: z.string().length(3),
   paymentStatus: z.string().min(1),
   refundedCents: z.number().int().nonnegative(),
   fulfillmentStatus: fulfillmentStatusSchema,
@@ -138,6 +143,7 @@ export const fulfillmentTransitionResultSchema = z.object({
 
 export const managedOrdersQuerySchema = z.object({
   view: orderListViewSchema.default("active"),
+  dateBasis: z.enum(["placed", "pickup"]).default("placed"),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   cursorAt: z.iso.datetime({ offset: true }).optional(),
@@ -173,4 +179,18 @@ export function timingState(pickupAt: string, nowMs: number) {
     return { tone: "due" as const, label: `Due in ${differenceMinutes} min` };
   }
   return { tone: "normal" as const, label: `Due in ${differenceMinutes} min` };
+}
+
+export function formatQueuePaymentLabel(
+  paymentStatus: string,
+  refundedCents: number,
+  currency = "USD",
+) {
+  const amount = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(refundedCents / 100);
+  if (paymentStatus === "refunded") return `REFUNDED · ${amount}`;
+  if (paymentStatus === "partially_refunded") return `PARTIALLY REFUNDED · ${amount}`;
+  return paymentStatus.replaceAll("_", " ").toUpperCase();
 }

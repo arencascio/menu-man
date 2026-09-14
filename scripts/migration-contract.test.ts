@@ -32,6 +32,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609130002_checkout_pickup_ux.sql",
     "202609130003_safe_checkout_abandonment.sql",
     "202609140001_order_management_foundation.sql",
+    "202609140002_order_management_refinements.sql",
   ]);
 });
 
@@ -285,7 +286,8 @@ test("order management is tenant-scoped, capability-based, and financially isola
   )?.sql || "";
   for (const capability of [
     "view_orders", "advance_fulfillment", "view_customer_contact",
-    "export_order_history", "issue_refunds", "manage_memberships",
+    "export_order_history", "issue_refunds", "correct_fulfillment",
+    "manage_memberships",
   ]) assert.match(migration, new RegExp(`'${capability}'`, "i"));
   for (const functionName of [
     "list_my_restaurant_memberships_v1", "list_managed_orders_v1",
@@ -317,6 +319,24 @@ test("order management routes expose login but no public signup", () => {
   assert.doesNotMatch(login, /signUp\s*\(/i);
   assert.match(server, /auth\.getClaims\(\)/i);
   assert.doesNotMatch(server, /supabaseServer/i);
+});
+
+test("order management refinement quarantines backfill and uses placed-time history", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_order_management_refinements.sql"),
+  )?.sql || "";
+  assert.match(migration, /event\.metadata ->> 'source' = 'migration_backfill'/i);
+  assert.match(migration, /where fulfillment\.status <> 'completed'/i);
+  assert.match(migration, /set status = 'completed'/i);
+  assert.match(migration, /p_view = 'active'[\s\S]*fulfillment\.status <> 'completed'/i);
+  assert.match(migration, /'preservedOriginalBackfill', true/i);
+  assert.match(migration, /p_date_basis text default 'placed'/i);
+  assert.match(migration, /when 'pickup' then order_record\.pickup_at[\s\S]*else coalesce\(order_record\.placed_at, order_record\.created_at\)/i);
+  assert.match(migration, /item_count integer/i);
+  assert.match(migration, /total_cents integer/i);
+  assert.match(migration, /'correct_fulfillment'/i);
+  assert.match(migration, /action <> 'fulfillment\.corrected'[\s\S]*btrim\(coalesce\(reason, ''\)\) <> ''/i);
+  assert.doesNotMatch(migration, /delete from public\.order_fulfillment_events/i);
 });
 
 test("staging fixture values never appear in schema migrations", () => {

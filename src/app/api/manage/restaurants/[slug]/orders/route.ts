@@ -11,6 +11,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ slu
   const params = request.nextUrl.searchParams;
   const parsed = managedOrdersQuerySchema.safeParse({
     view: params.get("view") ?? undefined,
+    dateBasis: params.get("dateBasis") ?? undefined,
     from: params.get("from") ?? undefined,
     to: params.get("to") ?? undefined,
     cursorAt: params.get("cursorAt") ?? undefined,

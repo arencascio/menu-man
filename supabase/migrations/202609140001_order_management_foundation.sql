@@ -22,6 +22,7 @@ insert into public.restaurant_capabilities (capability, description) values
   ('view_customer_contact', 'View customer names and contact information'),
   ('export_order_history', 'Export restaurant order history'),
   ('issue_refunds', 'Issue provider-backed refunds when a future workflow is enabled'),
+  ('correct_fulfillment', 'Perform a future reason-required audited fulfillment correction'),
   ('manage_memberships', 'Manage restaurant users, roles, and permission overrides');
 
 create table public.restaurant_role_capability_defaults (
@@ -188,6 +189,9 @@ create index order_fulfillments_restaurant_status_idx
 create index orders_management_pickup_idx
   on public.orders (restaurant_id, pickup_at, id)
   where order_status = 'placed';
+create index orders_management_placed_idx
+  on public.orders (restaurant_id, placed_at desc, id desc)
+  where placed_at is not null;
 
 create table public.order_fulfillment_events (
   id bigint generated always as identity primary key,
@@ -222,7 +226,8 @@ create table public.order_fulfillment_events (
   ),
   constraint order_fulfillment_events_action_check check (
     action in ('fulfillment.created', 'fulfillment.started_preparing',
-      'fulfillment.marked_ready', 'fulfillment.completed')
+      'fulfillment.marked_ready', 'fulfillment.completed',
+      'fulfillment.historical_backfill_completed', 'fulfillment.corrected')
   ),
   constraint order_fulfillment_events_previous_status_check check (
     previous_status is null or previous_status in ('new', 'preparing', 'ready', 'completed')
@@ -231,7 +236,8 @@ create table public.order_fulfillment_events (
     next_status in ('new', 'preparing', 'ready', 'completed')
   ),
   constraint order_fulfillment_events_reason_check check (
-    reason is null or char_length(reason) <= 500
+    (reason is null or char_length(reason) <= 500)
+    and (action <> 'fulfillment.corrected' or btrim(coalesce(reason, '')) <> '')
   ),
   constraint order_fulfillment_events_metadata_check check (jsonb_typeof(metadata) = 'object'),
   constraint order_fulfillment_events_restaurant_action_key unique (restaurant_id, client_action_id)
@@ -419,17 +425,22 @@ create or replace function public.list_managed_orders_v1(
   p_to_date date default null,
   p_cursor_at timestamptz default null,
   p_cursor_order_id uuid default null,
-  p_limit integer default 50
+  p_limit integer default 50,
+  p_date_basis text default 'placed'
 )
 returns table (
   order_id uuid,
   order_number text,
   placed_at timestamptz,
+  history_date timestamptz,
   pickup_mode text,
   pickup_at timestamptz,
   pickup_timezone text,
   customer_name text,
   item_summary jsonb,
+  item_count integer,
+  total_cents integer,
+  currency text,
   payment_status text,
   refunded_cents integer,
   fulfillment_status text,
@@ -447,6 +458,7 @@ declare
   restaurant_record public.restaurants%rowtype;
 begin
   if p_view not in ('active', 'history')
+    or p_date_basis not in ('placed', 'pickup')
     or p_limit not between 1 and 100
     or (p_cursor_at is null) <> (p_cursor_order_id is null)
     or (p_from_date is not null and p_to_date is not null and p_from_date > p_to_date)
@@ -462,7 +474,11 @@ begin
   return query
   select order_record.id,
          order_record.order_number::text,
-         order_record.placed_at,
+         coalesce(order_record.placed_at, order_record.created_at),
+         case p_date_basis
+           when 'pickup' then order_record.pickup_at
+           else coalesce(order_record.placed_at, order_record.created_at)
+         end,
          order_record.pickup_mode,
          order_record.pickup_at,
          order_record.pickup_timezone,
@@ -475,6 +491,13 @@ begin
            from public.order_items item
            where item.order_id = order_record.id
          ), '[]'::jsonb),
+         coalesce((
+           select sum(item.quantity)::integer
+           from public.order_items item
+           where item.order_id = order_record.id
+         ), 0),
+         order_record.total_cents,
+         order_record.currency,
          order_record.payment_status,
          coalesce(payment.refunded_cents, 0),
          fulfillment.status,
@@ -498,21 +521,32 @@ begin
       or
       (p_view = 'history'
         and fulfillment.status = 'completed'
-        and (p_from_date is null or order_record.placed_at >= (
+        and (p_from_date is null or (case p_date_basis
+          when 'pickup' then order_record.pickup_at
+          else coalesce(order_record.placed_at, order_record.created_at)
+        end) >= (
           p_from_date::timestamp at time zone restaurant_record.timezone
         ))
-        and (p_to_date is null or order_record.placed_at < (
+        and (p_to_date is null or (case p_date_basis
+          when 'pickup' then order_record.pickup_at
+          else coalesce(order_record.placed_at, order_record.created_at)
+        end) < (
           (p_to_date + 1)::timestamp at time zone restaurant_record.timezone
         ))
         and (
           p_cursor_at is null
-          or (fulfillment.completed_at, order_record.id) < (p_cursor_at, p_cursor_order_id)
+          or ((case p_date_basis
+            when 'pickup' then order_record.pickup_at
+            else coalesce(order_record.placed_at, order_record.created_at)
+          end), order_record.id) < (p_cursor_at, p_cursor_order_id)
         ))
     )
   order by
     case when p_view = 'active' then order_record.pickup_at end asc,
     case when p_view = 'active' then order_record.id end asc,
-    case when p_view = 'history' then fulfillment.completed_at end desc,
+    case when p_view = 'history' and p_date_basis = 'placed'
+      then coalesce(order_record.placed_at, order_record.created_at) end desc,
+    case when p_view = 'history' and p_date_basis = 'pickup' then order_record.pickup_at end desc,
     case when p_view = 'history' then order_record.id end desc
   limit p_limit + 1;
 end;
@@ -623,6 +657,8 @@ begin
                  when 'fulfillment.started_preparing' then 'Preparation started'
                  when 'fulfillment.marked_ready' then 'Order marked ready'
                  when 'fulfillment.completed' then 'Order completed'
+                 when 'fulfillment.historical_backfill_completed' then 'Imported as historical order'
+                 when 'fulfillment.corrected' then 'Fulfillment status corrected'
                end as label,
                membership.display_name as actor_name,
                event.created_at as occurred_at,
@@ -907,20 +943,12 @@ insert into public.order_fulfillments (
 )
 select order_record.restaurant_id,
        order_record.id,
-       case order_record.order_status
-         when 'preparing' then 'preparing'
-         when 'ready' then 'ready'
-         when 'completed' then 'completed'
-         else 'new'
-       end,
+       'completed',
        1,
        coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at),
-       case when order_record.order_status in ('preparing', 'ready', 'completed')
-         then coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at) end,
-       case when order_record.order_status in ('ready', 'completed')
-         then coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at) end,
-       case when order_record.order_status = 'completed'
-         then coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at) end,
+       coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at),
+       coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at),
+       coalesce(order_record.updated_at, order_record.placed_at, order_record.created_at),
        coalesce(order_record.placed_at, order_record.created_at),
        coalesce(order_record.updated_at, order_record.created_at)
 from public.orders order_record
@@ -934,12 +962,16 @@ insert into public.order_fulfillment_events (
 select fulfillment.restaurant_id,
        fulfillment.order_id,
        'system',
-       'fulfillment.created',
+       'fulfillment.historical_backfill_completed',
        null,
-       fulfillment.status,
-       jsonb_build_object('source', 'migration_backfill'),
+       'completed',
+       jsonb_build_object(
+         'source', 'migration_backfill',
+         'legacyOrderStatus', order_record.order_status
+       ),
        fulfillment.created_at
 from public.order_fulfillments fulfillment
+join public.orders order_record on order_record.id = fulfillment.order_id
 where not exists (
   select 1 from public.order_fulfillment_events event
   where event.order_id = fulfillment.order_id
@@ -1099,7 +1131,7 @@ revoke all on function private.current_user_can_receive_order_topic_v1(text)
 from public, anon, authenticated, service_role;
 revoke all on function public.list_my_restaurant_memberships_v1()
 from public, anon, authenticated, service_role;
-revoke all on function public.list_managed_orders_v1(text, text, date, date, timestamptz, uuid, integer)
+revoke all on function public.list_managed_orders_v1(text, text, date, date, timestamptz, uuid, integer, text)
 from public, anon, authenticated, service_role;
 revoke all on function public.get_managed_order_detail_v1(text, uuid)
 from public, anon, authenticated, service_role;
@@ -1122,7 +1154,7 @@ grant execute on function public.list_my_restaurant_memberships_v1() to authenti
 grant usage on schema private to authenticated;
 grant execute on function private.current_user_can_receive_order_topic_v1(text)
 to authenticated;
-grant execute on function public.list_managed_orders_v1(text, text, date, date, timestamptz, uuid, integer)
+grant execute on function public.list_managed_orders_v1(text, text, date, date, timestamptz, uuid, integer, text)
 to authenticated;
 grant execute on function public.get_managed_order_detail_v1(text, uuid) to authenticated;
 grant execute on function public.list_managed_order_export_rows_v1(text, date, date, timestamptz, uuid, integer)

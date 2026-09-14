@@ -15,6 +15,10 @@ test("management UI has the three approved active columns and separate history",
   for (const preset of ["Today", "Last 7 days", "Last 30 days", "Last 90 days", "Custom"]) {
     assert.match(queue, new RegExp(preset));
   }
+  assert.match(queue, /order\.itemCount/);
+  assert.match(queue, /order\.totalCents/);
+  assert.match(queue, /formatQueuePaymentLabel/);
+  assert.doesNotMatch(queue, /refundedCents \/ 100} refunded/);
 });
 
 test("management live updates are advisory and refetch authoritative server state", () => {
@@ -47,4 +51,5 @@ test("order detail renders the immutable operational snapshot and sanitized time
   assert.match(detail, /order\.orderNumber/);
   assert.match(detail, /order\.pickup\.pickupAt/);
   assert.match(detail, /order\.items\.map/);
+  assert.match(detail, /data-exception-actions-slot="reserved"/);
 });
