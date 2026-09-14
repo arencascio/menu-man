@@ -9,7 +9,18 @@ type SquareTokenResult = {
   token?: string;
 };
 
+type SquareCardField = "cardNumber" | "expirationDate" | "cvv" | "postalCode";
+
+type SquareCardInputEvent = CustomEvent<{
+  field: SquareCardField;
+  currentState: { isCompletelyValid: boolean };
+}>;
+
 type SquareCard = {
+  addEventListener(
+    eventName: "cardBrandChanged" | "errorClassAdded" | "errorClassRemoved" | "focusClassAdded" | "focusClassRemoved" | "postalCodeChanged",
+    listener: (event: SquareCardInputEvent) => void,
+  ): void;
   attach(selector: string): Promise<void>;
   destroy(): Promise<void>;
   tokenize(verificationDetails: {
@@ -52,7 +63,14 @@ export default function SquarePaymentForm({
   const scriptUrl = typeof publicConfig.scriptUrl === "string" ? publicConfig.scriptUrl : "";
   const [sdkReady, setSdkReady] = useState(false);
   const [cardReady, setCardReady] = useState(false);
+  const [cardComplete, setCardComplete] = useState(false);
   const card = useRef<SquareCard | null>(null);
+  const validCardFields = useRef<Record<SquareCardField, boolean>>({
+    cardNumber: false,
+    expirationDate: false,
+    cvv: false,
+    postalCode: false,
+  });
   const cardContainerId = `square-card-${orderId.replaceAll("-", "")}`;
 
   useEffect(() => {
@@ -65,6 +83,20 @@ export default function SquarePaymentForm({
         if (!square) throw new Error("Square payment fields could not be loaded.");
         const payments = await square.payments(applicationId, locationId);
         const nextCard = await payments.card();
+        const updateValidity = (event: SquareCardInputEvent) => {
+          const detail = event.detail;
+          if (!detail?.field || !detail.currentState) return;
+          validCardFields.current[detail.field] = detail.currentState.isCompletelyValid;
+          setCardComplete(Object.values(validCardFields.current).every(Boolean));
+        };
+        for (const eventName of [
+          "cardBrandChanged",
+          "errorClassAdded",
+          "errorClassRemoved",
+          "focusClassAdded",
+          "focusClassRemoved",
+          "postalCodeChanged",
+        ] as const) nextCard.addEventListener(eventName, updateValidity);
         await nextCard.attach(`#${cardContainerId}`);
         if (!active) {
           await nextCard.destroy();
@@ -80,6 +112,13 @@ export default function SquarePaymentForm({
       active = false;
       const mountedCard = card.current;
       card.current = null;
+      validCardFields.current = {
+        cardNumber: false,
+        expirationDate: false,
+        cvv: false,
+        postalCode: false,
+      };
+      setCardComplete(false);
       if (mountedCard) void mountedCard.destroy();
     };
   }, [applicationId, cardContainerId, locationId, onError, sdkReady]);
@@ -122,8 +161,12 @@ export default function SquarePaymentForm({
       <form className={styles.squarePaymentForm} onSubmit={(event) => void submit(event)}>
         <h2>Card details</h2>
         <p>Card information is entered securely with Square and is never sent directly to Menu Man.</p>
-        <div id={cardContainerId} className={styles.squareCardContainer} aria-label="Secure card details" />
-        <button className={styles.checkoutButton} type="submit" disabled={!cardReady || submitting}>
+        <div
+          id={cardContainerId}
+          className={`${styles.squareCardContainer} ${cardComplete ? styles.squareCardContainerComplete : ""}`}
+          aria-label="Secure card details"
+        />
+        <button className={styles.checkoutButton} type="submit" disabled={!cardReady || !cardComplete || submitting}>
           {submitting ? "Submitting Payment…" : "Pay with Card"}
         </button>
       </form>

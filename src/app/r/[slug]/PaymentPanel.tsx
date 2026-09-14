@@ -41,6 +41,7 @@ export default function PaymentPanel({
   const [payment, setPayment] = useState(initialView.payment);
   const [fakeScenario, setFakeScenario] = useState("success");
   const [submitting, setSubmitting] = useState(false);
+  const [abandoning, setAbandoning] = useState(false);
   const [recoverySubmitting, setRecoverySubmitting] = useState<"succeeded" | "failed" | null>(null);
   const [authorizationSubmitting, setAuthorizationSubmitting] = useState<"capture" | "void" | null>(null);
   const [authorizationChoice, setAuthorizationChoice] = useState<"capture" | "void" | null>(null);
@@ -160,6 +161,43 @@ export default function PaymentPanel({
     await submitPaymentMethodToken(`fake:${fakeScenario}`);
   }
 
+  async function abandonCheckout() {
+    if (
+      abandoning
+      || payment.status !== "requires_payment_method"
+      || payment.orderStatus !== "pending_payment"
+      || payment.latestAttempt !== null
+    ) return;
+    setAbandoning(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(order.orderId)}/checkout-abandonment`,
+        { method: "POST", cache: "no-store" },
+      );
+      const body = await response.json() as { error?: { message?: string } };
+      if (!response.ok) {
+        if (response.status === 409) {
+          const statusResponse = await fetch(
+            `/api/orders/${encodeURIComponent(order.orderId)}/payment-status`,
+            { cache: "no-store" },
+          );
+          if (statusResponse.ok) setPayment(paymentStatusSchema.parse(await statusResponse.json()));
+        }
+        throw new Error(body.error?.message || "Checkout could not be abandoned.");
+      }
+      // Keep the marker until every tab performs its own authoritative status
+      // refetch. The revoked server session then causes each tab to unlock.
+      broadcastCheckoutEvent(restaurantId, "payment_changed");
+      router.push(`/r/${encodeURIComponent(restaurantSlug)}`);
+    } catch (abandonmentError) {
+      setError(abandonmentError instanceof Error
+        ? abandonmentError.message
+        : "Checkout could not be abandoned.");
+      setAbandoning(false);
+    }
+  }
+
   async function resolveUnknownPayment(resolution: "succeeded" | "failed") {
     if (payment.latestAttempt?.status !== "unknown") return;
     setRecoverySubmitting(resolution);
@@ -245,6 +283,9 @@ export default function PaymentPanel({
     && paymentSession.browserSession.publicConfig.unknownRecoveryEnabled === true
     && payment.latestAttempt?.status === "unknown";
   const terminalFailure = payment.status === "failed" && payment.orderStatus === "cancelled";
+  const canSafelyAbandon = payment.status === "requires_payment_method"
+    && payment.orderStatus === "pending_payment"
+    && payment.latestAttempt === null;
   const authorizationVoided = terminalFailure
     && payment.latestAttempt?.failureCategory === "authorization_voided";
   const terminalDecline = terminalFailure
@@ -260,7 +301,6 @@ export default function PaymentPanel({
       <section className={styles.checkoutPanel} aria-live="polite">
         <p className={styles.expandedLabel}>Payment</p>
         <h1>Order #{order.orderNumber}</h1>
-        <p>This total is frozen from the authoritative order snapshot.</p>
         <OrderSnapshot order={order} />
 
         {processingPresentation === "short" && <div className={styles.paymentNoticePanel}><h3>Confirming your payment&hellip;</h3><p>This usually takes a few seconds. Please don&apos;t close this page or submit another payment.</p></div>}
@@ -333,7 +373,18 @@ export default function PaymentPanel({
         )}
         {error && <p className={styles.formError} role="alert">{error}</p>}
         {(terminalFailure || isExpired || isLateSuccessRefunded) && <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}/checkout`}>Back to Checkout Details</Link>}
-        <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}`}>Return to Menu</Link>
+        {canSafelyAbandon ? (
+          <button
+            className={styles.checkoutButton}
+            type="button"
+            disabled={abandoning}
+            onClick={() => void abandonCheckout()}
+          >
+            {abandoning ? "Returning to Menu…" : "Return to Menu"}
+          </button>
+        ) : (
+          <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}`}>Return to Menu</Link>
+        )}
       </section>
     </main>
   );

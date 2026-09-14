@@ -39,3 +39,14 @@ export function setGuestPaymentCapability(
     priority: "high",
   });
 }
+
+export function clearGuestPaymentCapability(response: NextResponse, orderId: string) {
+  response.cookies.set(capabilityCookieName(orderId), "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+    priority: "high",
+  });
+}

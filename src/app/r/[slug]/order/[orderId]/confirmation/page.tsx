@@ -45,7 +45,9 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
         {/* Future confirmation sections:
             - restaurant address and directions
             - confirmation email delivery notice
-            - printable/PDF receipt */}
+            - printable/PDF receipt
+            - optional daily-reset display numbers; the restaurant and diner
+              intentionally share the same order number today */}
         <nav aria-label="Confirmation actions">
           <Link className={styles.checkoutButton} href={`/r/${slug}`}>Return to Menu</Link>
         </nav>

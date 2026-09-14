@@ -1,12 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  checkoutAbandonmentResponseSchema,
   fakeAuthorizationActionRequestSchema,
   fakeLateSuccessResolutionRequestSchema,
   fakePaymentRecoveryRequestSchema,
   paymentStatusSchema,
   paymentSubmissionRequestSchema,
 } from "./contracts";
+
+test("checkout abandonment exposes no capability or payment method data", () => {
+  const response = {
+    abandoned: true,
+    orderId: "10000000-0000-4000-8000-000000000001",
+    paymentId: "20000000-0000-4000-8000-000000000001",
+  };
+  assert.equal(checkoutAbandonmentResponseSchema.safeParse(response).success, true);
+  assert.equal(checkoutAbandonmentResponseSchema.safeParse({ ...response, checkoutToken: "secret" }).success, false);
+});
 
 test("payment submission accepts only opaque bounded input and UUID attempt keys", () => {
   assert.equal(paymentSubmissionRequestSchema.safeParse({

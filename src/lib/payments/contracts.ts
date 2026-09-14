@@ -6,6 +6,12 @@ export const checkoutCapabilitySchema = z.string().min(32).max(200);
 
 export const paymentSessionRequestSchema = z.strictObject({});
 
+export const checkoutAbandonmentResponseSchema = z.strictObject({
+  abandoned: z.literal(true),
+  orderId: uuid,
+  paymentId: uuid,
+});
+
 export const paymentSubmissionRequestSchema = z.strictObject({
   clientAttemptKey: uuid,
   paymentMethodToken: z.string().min(1).max(500),

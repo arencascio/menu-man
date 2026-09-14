@@ -13,7 +13,6 @@ export default function OrderSnapshot({ order }: { order: OrderPaymentView["orde
           <small>{order.pickup.mode === "asap" ? "ASAP pickup" : "Scheduled pickup"}</small>
         </div>
       </section>
-      <p className={styles.confirmationTotal}>{formatPrice(order.totalCents, order.currency)}</p>
       <div className={styles.checkoutReview}>
         {order.items.map((item) => (
           <div className={styles.orderSnapshotLine} key={item.orderItemId}>

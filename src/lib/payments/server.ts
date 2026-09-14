@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { supabaseServer } from "@/lib/supabase/server";
 import {
+  checkoutAbandonmentResponseSchema,
   paymentSessionResponseSchema,
   paymentStatusSchema,
   preparedPaymentSchema,
@@ -127,6 +128,20 @@ export async function getPaymentSession(orderId: string, checkoutToken: string) 
   const adapter = getPaymentProvider(status.provider);
   const browserSession = await adapter.createBrowserSession(connectionFromStatus(status));
   return { payment: status, browserSession };
+}
+
+export async function abandonCheckout(orderId: string, checkoutToken: string) {
+  const { data, error } = await supabaseServer.rpc("abandon_checkout_v1", {
+    p_order_id: orderId,
+    p_access_token_hash: tokenHash(checkoutToken),
+  });
+  if (error) throw parseDatabaseError(error.message);
+  const parsed = checkoutAbandonmentResponseSchema.safeParse(data);
+  if (!parsed.success) {
+    console.error("Invalid checkout abandonment response.", parsed.error);
+    throw new PaymentServerError("PAYMENT_FAILED", "Checkout could not be abandoned.");
+  }
+  return parsed.data;
 }
 
 async function authorizePaymentStatus(orderId: string, checkoutToken: string) {

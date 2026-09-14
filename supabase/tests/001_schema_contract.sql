@@ -146,6 +146,7 @@ begin
     or to_regprocedure('public.record_refund_command_result_v1(uuid,text,text,text,text,text,text,jsonb)') is null
     or to_regprocedure('public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)') is null
     or to_regprocedure('public.touch_payment_reconciliation_v1(uuid,text)') is null
+    or to_regprocedure('public.abandon_checkout_v1(uuid,text)') is null
   then
     raise exception 'Required payment functions are missing';
   end if;
@@ -166,6 +167,8 @@ begin
     or has_function_privilege('authenticated', 'public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)', 'EXECUTE')
     or has_function_privilege('anon', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
     or has_function_privilege('authenticated', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.abandon_checkout_v1(uuid,text)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.abandon_checkout_v1(uuid,text)', 'EXECUTE')
   then
     raise exception 'Checkout RPC must not be executable by anon/authenticated';
   end if;
@@ -174,6 +177,7 @@ begin
     or not has_function_privilege('service_role', 'public.record_refund_command_result_v1(uuid,text,text,text,text,text,text,jsonb)', 'EXECUTE')
     or not has_function_privilege('service_role', 'public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)', 'EXECUTE')
     or not has_function_privilege('service_role', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
+    or not has_function_privilege('service_role', 'public.abandon_checkout_v1(uuid,text)', 'EXECUTE')
   then
     raise exception 'service_role cannot execute a required checkout/payment RPC';
   end if;

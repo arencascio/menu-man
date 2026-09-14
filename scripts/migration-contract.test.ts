@@ -30,6 +30,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609120001_square_adapter_support.sql",
     "202609130001_canonicalize_dst_pickup_slots.sql",
     "202609130002_checkout_pickup_ux.sql",
+    "202609130003_safe_checkout_abandonment.sql",
   ]);
 });
 
@@ -173,6 +174,21 @@ test("payment state is mutated only through restricted functions", () => {
   assert.match(payments, /unique \(\s*provider_key, environment, provider_event_id\s*\)/i);
   assert.match(payments, /provider_key <> 'fake' or environment = 'test'/i);
   assert.match(payments, /'purchase', 'payment', payment_record\.id/i);
+});
+
+test("safe checkout abandonment is capability protected and serialized with payment attempts", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_safe_checkout_abandonment.sql"),
+  )?.sql || "";
+  assert.match(migration, /create or replace function public\.abandon_checkout_v1/i);
+  assert.match(migration, /session\.access_token_hash = p_access_token_hash/i);
+  assert.match(migration, /for update of payment/i);
+  assert.match(migration, /from public\.payment_attempts attempt[\s\S]*attempt\.payment_id = payment_record\.id/i);
+  assert.match(migration, /cancellation_reason = 'checkout_abandoned'/i);
+  assert.match(migration, /set revoked_at = coalesce\(revoked_at, now\(\)\)/i);
+  assert.match(migration, /'checkout\.abandoned'/i);
+  assert.match(migration, /revoke all on function public\.abandon_checkout_v1\(uuid, text\)[\s\S]*service_role/i);
+  assert.match(migration, /grant execute on function public\.abandon_checkout_v1\(uuid, text\) to service_role/i);
 });
 
 test("route checkout adds a capability-protected snapshot and terminal failure guard", () => {

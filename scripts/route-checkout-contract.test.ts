@@ -34,6 +34,23 @@ test("multi-tab messages are advisory and trigger authoritative status fetches",
   assert.match(menu, /BroadcastChannel/);
   assert.match(menu, /payment-status/);
   assert.match(menu, /paymentStatusSchema\.parse/);
+  assert.match(menu, /response\.status === 401 \|\| response\.status === 404/);
+});
+
+test("safe return-to-menu abandons server-side before navigation", () => {
+  const route = read(
+    "src", "app", "api", "orders", "[orderId]", "checkout-abandonment", "route.ts",
+  );
+  const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  assert.match(route, /getGuestPaymentCapability/);
+  assert.match(route, /abandonCheckout\(orderId, checkoutToken\)/);
+  assert.match(route, /clearGuestPaymentCapability/);
+  assert.match(payment, /payment\.status === "requires_payment_method"/);
+  assert.match(payment, /payment\.latestAttempt === null/);
+  assert.match(payment, /checkout-abandonment/);
+  assert.match(payment, /if \(!response\.ok\)/);
+  assert.match(payment, /broadcastCheckoutEvent\(restaurantId, "payment_changed"\)/);
+  assert.match(payment, /router\.push\(`\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}`\)/);
 });
 
 test("staging exceptional-state controls use server routes and retain safe navigation", () => {
@@ -95,4 +112,22 @@ test("pickup snapshots and confirmation status are rendered from the frozen orde
   assert.match(confirmation, /confirmationPanel/);
   assert.match(payment, /Confirming your payment&hellip;/);
   assert.doesNotMatch(payment, /provider confirms it/i);
+});
+
+test("payment and confirmation keep receipt totals without duplicate headline totals or developer copy", () => {
+  const snapshot = read("src", "app", "r", "[slug]", "OrderSnapshot.tsx");
+  const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  const styles = read("src", "app", "r", "[slug]", "menu-browser.module.css");
+  assert.match(snapshot, /<dt>Total<\/dt>/);
+  assert.doesNotMatch(snapshot, /confirmationTotal/);
+  assert.doesNotMatch(payment, /This total is frozen from the authoritative order snapshot/);
+  assert.doesNotMatch(styles, /\.confirmationTotal/);
+});
+
+test("Square card readiness is presentation-only and never submits a client total", () => {
+  const square = read("src", "app", "r", "[slug]", "SquarePaymentForm.tsx");
+  assert.match(square, /isCompletelyValid/);
+  assert.match(square, /squareCardContainerComplete/);
+  assert.match(square, /disabled=\{!cardReady \|\| !cardComplete \|\| submitting\}/);
+  assert.doesNotMatch(square, /onToken\([^)]*amountCents/);
 });

@@ -26,6 +26,7 @@ declare
   payment_view jsonb;
   failed_payment_status jsonb;
   event_uuid uuid;
+  abandonment_response jsonb;
 begin
   select id into strict restaurant_uuid
   from public.restaurants where slug = 'armandos' and is_active;
@@ -666,6 +667,102 @@ begin
         where payment_attempt.payment_id = (prepared ->> 'paymentId')::uuid) <> 1
   then
     raise exception 'Explicit late-success refund did not preserve quarantine: %', payment_status;
+  end if;
+
+  -- A pristine requires_payment_method checkout can be abandoned atomically.
+  order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
+  prepared := public.prepare_payment_v1(
+    (order_response ->> 'orderId')::uuid, repeat('c', 64), true, 30, 120
+  );
+  abandonment_response := public.abandon_checkout_v1(
+    (order_response ->> 'orderId')::uuid, repeat('c', 64)
+  );
+  if not (abandonment_response ->> 'abandoned')::boolean
+    or not exists (
+      select 1 from public.orders order_row
+      where order_row.id = (order_response ->> 'orderId')::uuid
+        and order_row.order_status = 'cancelled'
+        and order_row.payment_status = 'failed'
+        and order_row.cancellation_reason = 'checkout_abandoned'
+    )
+    or (select status from public.payments payment
+        where payment.id = (prepared ->> 'paymentId')::uuid) <> 'cancelled'
+    or exists (
+      select 1 from public.payment_checkout_sessions session
+      where session.payment_id = (prepared ->> 'paymentId')::uuid
+        and session.revoked_at is null
+    )
+    or (select count(*) from public.payment_state_transitions transition
+        where transition.payment_id = (prepared ->> 'paymentId')::uuid
+          and transition.event_type = 'checkout.abandoned') <> 1
+  then
+    raise exception 'Safe checkout abandonment did not cancel and revoke atomically: %', abandonment_response;
+  end if;
+
+  begin
+    perform public.reserve_payment_attempt_v1(
+      (order_response ->> 'orderId')::uuid, repeat('c', 64), gen_random_uuid()
+    );
+    raise exception 'Abandoned checkout accepted a later payment attempt';
+  exception when others then
+    if sqlerrm not like 'MM_INVALID_PAYMENT_SESSION|%'
+      and sqlerrm not like 'MM_PAYMENT_NOT_ALLOWED|%'
+    then
+      raise;
+    end if;
+  end;
+
+  -- Once reservation has started provider work, abandonment loses the race.
+  order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
+  prepared := public.prepare_payment_v1(
+    (order_response ->> 'orderId')::uuid, repeat('d', 64), true, 30, 120
+  );
+  attempt := public.reserve_payment_attempt_v1(
+    (order_response ->> 'orderId')::uuid, repeat('d', 64), gen_random_uuid()
+  );
+  begin
+    perform public.abandon_checkout_v1(
+      (order_response ->> 'orderId')::uuid, repeat('d', 64)
+    );
+    raise exception 'Processing payment was abandoned';
+  exception when others then
+    if sqlerrm not like 'MM_PAYMENT_IN_PROGRESS|%' then
+      raise;
+    end if;
+  end;
+
+  perform public.record_payment_command_result_v1(
+    (attempt ->> 'attemptId')::uuid,
+    'unknown',
+    null, null, 'REQUEST_OUTCOME_UNKNOWN',
+    'provider_unavailable', null, null,
+    jsonb_build_object('fixture', 'abandonment-race')
+  );
+  begin
+    perform public.abandon_checkout_v1(
+      (order_response ->> 'orderId')::uuid, repeat('d', 64)
+    );
+    raise exception 'Unknown payment was abandoned';
+  exception when others then
+    if sqlerrm not like 'MM_PAYMENT_IN_PROGRESS|%' then
+      raise;
+    end if;
+  end;
+
+  if not exists (
+    select 1 from public.orders order_row
+    join public.payments payment on payment.order_id = order_row.id
+    join public.payment_attempts payment_attempt on payment_attempt.payment_id = payment.id
+    where order_row.id = (order_response ->> 'orderId')::uuid
+      and order_row.order_status = 'pending_payment'
+      and payment.status = 'processing'
+      and payment_attempt.status = 'unknown'
+  ) or exists (
+    select 1 from public.payment_checkout_sessions session
+    where session.payment_id = (prepared ->> 'paymentId')::uuid
+      and session.revoked_at is not null
+  ) then
+    raise exception 'Rejected abandonment mutated an uncertain payment';
   end if;
 end;
 $$;
