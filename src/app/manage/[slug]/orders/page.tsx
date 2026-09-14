@@ -3,6 +3,7 @@ import { listManagedOrders, listRestaurantMemberships, ManagementError } from "@
 import OrderQueue from "./OrderQueue";
 import sharedStyles from "../../management.module.css";
 import styles from "./orders.module.css";
+import ManagementNav from "../ManagementNav";
 
 export default async function ManagedOrdersPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -20,6 +21,7 @@ export default async function ManagedOrdersPage({ params }: { params: Promise<{ 
   return (
     <main className={sharedStyles.main}>
       <div className={styles.page}>
+        <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Orders</h1></div>
           <div className={styles.headerActions}><span className={styles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={styles.secondaryButton}>Sign out</button></form></div>

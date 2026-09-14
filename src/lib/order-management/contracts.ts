@@ -31,6 +31,59 @@ export const restaurantMembershipSchema = z.object({
 
 export type RestaurantMembership = z.infer<typeof restaurantMembershipSchema>;
 
+export const restaurantTeamMemberSchema = z.object({
+  membershipId: z.uuid(),
+  userId: z.uuid(),
+  email: z.email(),
+  displayName: z.string().min(1).max(200),
+  role: managementRoleSchema,
+  status: z.enum(["invited", "active", "revoked"]),
+  invitedAt: z.iso.datetime({ offset: true }).nullable(),
+  joinedAt: z.iso.datetime({ offset: true }).nullable(),
+  membershipCreatedAt: z.iso.datetime({ offset: true }),
+  revokedAt: z.iso.datetime({ offset: true }).nullable(),
+  capabilities: z.array(managementCapabilitySchema),
+  roleDefaultCapabilities: z.array(managementCapabilitySchema),
+});
+
+export type RestaurantTeamMember = z.infer<typeof restaurantTeamMemberSchema>;
+
+const membershipAssignmentSchema = z.object({
+  displayName: z.string().trim().min(1).max(200),
+  role: managementRoleSchema,
+  capabilities: z.array(managementCapabilitySchema).max(20)
+    .transform((values) => [...new Set(values)].sort()),
+  clientActionId: z.uuid(),
+});
+
+export const inviteRestaurantMemberRequestSchema = membershipAssignmentSchema.extend({
+  email: z.string().trim().transform((value) => value.toLowerCase()).pipe(z.email()),
+});
+
+export const updateRestaurantMemberRequestSchema = membershipAssignmentSchema;
+
+export const revokeRestaurantMemberRequestSchema = z.object({
+  reason: z.string().trim().max(500).default(""),
+  clientActionId: z.uuid(),
+});
+
+export const membershipActionRequestSchema = z.object({ clientActionId: z.uuid() });
+
+export const restaurantAccessEventSchema = z.object({
+  eventId: z.coerce.string(),
+  targetMembershipId: z.uuid(),
+  targetDisplayName: z.string(),
+  actorDisplayName: z.string().nullable(),
+  action: z.string(),
+  previousState: z.record(z.string(), z.unknown()),
+  nextState: z.record(z.string(), z.unknown()),
+  reason: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.iso.datetime({ offset: true }),
+});
+
+export type RestaurantAccessEvent = z.infer<typeof restaurantAccessEventSchema>;
+
 export const managedOrderSummarySchema = z.object({
   orderId: z.uuid(),
   orderNumber: z.string().min(1),

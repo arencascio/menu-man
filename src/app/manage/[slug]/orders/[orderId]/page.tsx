@@ -5,6 +5,7 @@ import { formatQueuePaymentLabel } from "@/lib/order-management/contracts";
 import FulfillmentAction from "./FulfillmentAction";
 import sharedStyles from "../../../management.module.css";
 import styles from "../orders.module.css";
+import ManagementNav from "../../ManagementNav";
 
 function money(cents: number, currency: string) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
@@ -31,6 +32,7 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
   return (
     <main className={sharedStyles.main}>
       <div className={styles.page}>
+        <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
         <Link className={styles.backLink} href={`/manage/${slug}/orders`}>← Back to orders</Link>
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Order #{order.orderNumber}</h1><p className={styles.pickupHero}>{order.pickup.mode === "asap" ? "ASAP pickup" : "Pickup"} · {dateTime(order.pickup.pickupAt, order.pickup.timezone)}</p></div>

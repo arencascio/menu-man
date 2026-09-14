@@ -33,6 +33,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609130003_safe_checkout_abandonment.sql",
     "202609140001_order_management_foundation.sql",
     "202609140002_order_management_refinements.sql",
+    "202609140003_restaurant_user_management.sql",
   ]);
 });
 
@@ -337,6 +338,34 @@ test("order management refinement quarantines backfill and uses placed-time hist
   assert.match(migration, /'correct_fulfillment'/i);
   assert.match(migration, /action <> 'fulfillment\.corrected'[\s\S]*btrim\(coalesce\(reason, ''\)\) <> ''/i);
   assert.doesNotMatch(migration, /delete from public\.order_fulfillment_events/i);
+});
+
+test("restaurant user management is database-authorized, audited, and last-owner safe", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_restaurant_user_management.sql"),
+  )?.sql || "";
+  assert.match(migration, /status in \('invited', 'active', 'revoked'\)/i);
+  for (const functionName of [
+    "authorize_restaurant_member_invite_v1", "provision_restaurant_member_v1",
+    "update_restaurant_member_v1", "revoke_restaurant_member_v1",
+    "reinstate_restaurant_member_v1", "reserve_restaurant_invitation_resend_v1",
+    "record_restaurant_invitation_resend_result_v1",
+    "activate_my_restaurant_memberships_v1", "list_restaurant_team_v1",
+    "list_restaurant_access_events_v1",
+  ]) {
+    assert.match(migration, new RegExp(`create or replace function public\\.${functionName}\\b`, "i"));
+    assert.match(migration, new RegExp(`grant execute on function public\\.${functionName}[\\s\\S]*to authenticated`, "i"));
+  }
+  assert.match(migration, /You cannot grant a permission you do not have/i);
+  assert.match(migration, /Only an owner can manage owners/i);
+  assert.match(migration, /final active owner cannot be (?:demoted|revoked)/i);
+  assert.match(migration, /pg_advisory_xact_lock/i);
+  assert.match(migration, /actor_membership_id uuid/i);
+  assert.match(migration, /unique \(restaurant_id, client_action_id\)/i);
+  assert.match(migration, /membership\.invitation_resent/i);
+  assert.match(migration, /membership\.activated/i);
+  assert.match(migration, /private\.replace_membership_capabilities_v1/i);
+  assert.doesNotMatch(migration, /grant\s+(?:insert|update|delete)[\s\S]*restaurant_memberships[\s\S]*to authenticated/i);
 });
 
 test("staging fixture values never appear in schema migrations", () => {

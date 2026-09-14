@@ -53,3 +53,20 @@ test("order detail renders the immutable operational snapshot and sanitized time
   assert.match(detail, /order\.items\.map/);
   assert.match(detail, /data-exception-actions-slot="reserved"/);
 });
+
+test("team management uses trusted routes, final permissions, and an audited lifecycle", () => {
+  const team = source("src", "app", "manage", "[slug]", "team", "TeamManager.tsx");
+  const teamServer = source("src", "lib", "order-management", "team-server.ts");
+  const teamRoute = source("src", "app", "api", "manage", "restaurants", "[slug]", "team", "route.ts");
+  const callback = source("src", "app", "auth", "callback", "route.ts");
+  assert.match(team, /Final permissions/);
+  assert.match(team, /Sensitive/);
+  assert.match(team, /Resend invite/);
+  assert.match(team, /Reinstate/);
+  assert.match(teamServer, /auth\.admin\.inviteUserByEmail/);
+  assert.match(teamServer, /authorize_restaurant_member_invite_v1/);
+  assert.match(teamServer, /provision_restaurant_member_v1/);
+  assert.match(teamRoute, /private, no-store/);
+  assert.match(callback, /activate_my_restaurant_memberships_v1/);
+  assert.doesNotMatch(team, /SUPABASE_SERVICE_ROLE_KEY/);
+});

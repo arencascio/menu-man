@@ -5,6 +5,7 @@ import {
   formatQueuePaymentLabel,
   managedOrdersQuerySchema,
   nextFulfillmentStatus,
+  inviteRestaurantMemberRequestSchema,
   restaurantMembershipSchema,
   timingState,
 } from "./contracts";
@@ -22,6 +23,22 @@ test("restaurant roles carry validated granular capabilities", () => {
   });
   assert.equal(membership.memberRole, "staff");
   assert.deepEqual(membership.capabilities, ["view_orders", "advance_fulfillment"]);
+});
+
+test("team invitations validate identity, role, final permissions, and idempotency", () => {
+  const invite = inviteRestaurantMemberRequestSchema.parse({
+    email: " Employee@Example.com ",
+    displayName: "Kitchen Lead",
+    role: "manager",
+    capabilities: ["view_orders", "manage_memberships", "view_orders"],
+    clientActionId: "33333333-3333-4333-8333-333333333333",
+  });
+  assert.equal(invite.email, "employee@example.com");
+  assert.deepEqual(invite.capabilities, ["manage_memberships", "view_orders"]);
+  assert.equal(inviteRestaurantMemberRequestSchema.safeParse({
+    ...invite,
+    role: "administrator",
+  }).success, false);
 });
 
 test("fulfillment progression is forward-only and has no accepted state", () => {

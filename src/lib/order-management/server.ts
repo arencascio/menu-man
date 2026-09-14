@@ -29,7 +29,7 @@ export class ManagementError extends Error {
   }
 }
 
-function rpcError(error: { message: string; code?: string | null }) {
+export function rpcError(error: { message: string; code?: string | null }) {
   const match = error.message.match(/MM_MANAGEMENT_([A-Z_]+)\|([^\n]+)/);
   if (match) {
     const code = match[1] as ManagementErrorCode;
@@ -43,7 +43,7 @@ function rpcError(error: { message: string; code?: string | null }) {
   return new ManagementError("UNAVAILABLE", "Order management is temporarily unavailable.");
 }
 
-async function authenticatedClient() {
+export async function authenticatedClient() {
   const client = await createAdminServerClient();
   const { data, error } = await client.auth.getClaims();
   if (error || typeof data?.claims?.sub !== "string") {

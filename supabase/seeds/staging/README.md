@@ -18,7 +18,7 @@ Run the sequence only against the separately created staging project:
    contract temporarily selects the fake route inside its rolled-back
    transaction; the Square contract uses the selected Square route.
 8. After the order-management migration is applied, invite and bootstrap the
-   first owner with the guarded staging command below. Then run `007`.
+   first owner with the guarded staging command below. Then run `007` and `008`.
 
 One explicit hosted-staging command sequence is:
 
@@ -44,6 +44,7 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/005
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/006_pickup_availability_contract.sql
 npm run bootstrap-owner:staging -- --restaurant armandos --email '<owner-email>' --display-name '<owner-name>' --app-origin 'https://<preview-host>'
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/007_order_management_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/008_restaurant_user_management_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new
@@ -77,6 +78,20 @@ publishable key is intentionally browser-safe; the service-role key remains a
 server-only secret. The bootstrap command validates the staging project host,
 creates the Auth invitation, then uses the restricted one-time owner RPC. It
 does not print credentials or invitation tokens.
+
+For the server-rendered invitation callback, configure the Supabase **Invite
+user** email template link as follows (the application-supplied RedirectTo
+already contains the reset-password destination):
+
+```html
+<a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite">Accept invitation</a>
+```
+
+Keep every Preview `/auth/callback` URL used for invitations in the Auth
+redirect allow list. The callback verifies the token hash server-side, marks
+pending restaurant memberships active, and then sends the invitee to choose a
+password. Do not use the default fragment-session invite link with this SSR
+flow.
 
 The fake provider is rejected when `MENU_MAN_ENV=production`, requires the
 explicit enable flag and signing secret, and only accepts database connections
