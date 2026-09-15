@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { ManagementCapability, RestaurantAccessEvent, RestaurantTeamMember } from "@/lib/order-management/contracts";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { describeRestaurantAccessEvent, type ManagementCapability, type RestaurantAccessEvent, type RestaurantTeamMember } from "@/lib/order-management/contracts";
+import AccessRevoked from "../AccessRevoked";
 import styles from "./team.module.css";
 
 const capabilityInfo: Record<ManagementCapability, { label: string; description: string; sensitive?: boolean }> = {
@@ -30,8 +31,9 @@ function statusLabel(status: RestaurantTeamMember["status"]) {
   return status === "invited" ? "Invitation pending" : status === "active" ? "Active" : "Revoked";
 }
 
-export default function TeamManager({ slug, actorMembershipId, actorRole, actorCapabilities, initialMembers, initialEvents }: {
+export default function TeamManager({ slug, restaurantName, actorMembershipId, actorRole, actorCapabilities, initialMembers, initialEvents }: {
   slug: string;
+  restaurantName: string;
   actorMembershipId: string;
   actorRole: Role;
   actorCapabilities: ManagementCapability[];
@@ -44,15 +46,30 @@ export default function TeamManager({ slug, actorMembershipId, actorRole, actorC
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "error" | "success"; text: string } | null>(null);
+  const [accessLost, setAccessLost] = useState<"revoked" | "signed-out" | null>(null);
   const active = useMemo(() => members.filter((member) => member.status !== "revoked"), [members]);
   const revoked = useMemo(() => members.filter((member) => member.status === "revoked"), [members]);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
+    if (accessLost) return;
     const response = await fetch(`/api/manage/restaurants/${encodeURIComponent(slug)}/team`, { cache: "no-store" });
+    if (response.status === 403 || response.status === 401) {
+      setMembers([]); setEvents([]);
+      setAccessLost(response.status === 403 ? "revoked" : "signed-out");
+      return;
+    }
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "The team could not be refreshed.");
     setMembers(body.members); setEvents(body.events);
-  }
+  }, [accessLost, slug]);
+
+  useEffect(() => {
+    if (accessLost) return;
+    const verify = () => { void refresh().catch(() => undefined); };
+    const poll = window.setInterval(verify, 15_000);
+    window.addEventListener("focus", verify);
+    return () => { window.clearInterval(poll); window.removeEventListener("focus", verify); };
+  }, [accessLost, refresh]);
   function setRole(role: Role) {
     setDraft((current) => ({ ...current, role, capabilities: roleDefaults[role].filter((capability) => actorCapabilities.includes(capability)) }));
   }
@@ -70,6 +87,11 @@ export default function TeamManager({ slug, actorMembershipId, actorRole, actorC
     try {
       const response = await fetch(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json();
+      if (response.status === 403 || response.status === 401) {
+        setMembers([]); setEvents([]);
+        setAccessLost(response.status === 403 ? "revoked" : "signed-out");
+        return;
+      }
       if (!response.ok) throw new Error(result.error || "The request could not be completed.");
       await refresh(); resetForm(); setMessage({ tone: "success", text: success });
     } catch (error) { setMessage({ tone: "error", text: error instanceof Error ? error.message : "The request could not be completed." }); }
@@ -95,6 +117,8 @@ export default function TeamManager({ slug, actorMembershipId, actorRole, actorC
   const canChooseOwner = actorRole === "owner";
   const cannotEditOwner = Boolean(target?.role === "owner" && actorRole !== "owner");
 
+  if (accessLost) return <AccessRevoked restaurantName={restaurantName} signedOut={accessLost === "signed-out"} />;
+
   return <div className={styles.workspace}>
     <section className={styles.editor} aria-label={editingId ? "Edit team member" : "Invite team member"}>
       <div className={styles.sectionHeading}><div><h2>{editingId ? "Edit team member" : "Invite team member"}</h2><p>Role presets establish a starting point. The checked permissions below are the final access this person will receive.</p></div>{editingId ? <button className={styles.textButton} onClick={resetForm}>Cancel edit</button> : null}</div>
@@ -113,6 +137,6 @@ export default function TeamManager({ slug, actorMembershipId, actorRole, actorC
 
     <section className={styles.listSection}><h2>Active team</h2><div className={styles.memberList}>{active.map((member) => <article className={styles.member} key={member.membershipId}><div className={styles.memberIdentity}><div><strong>{member.displayName}{member.membershipId === actorMembershipId ? " (you)" : ""}</strong><span>{member.email}</span></div><span className={`${styles.status} ${member.status === "invited" ? styles.pending : ""}`}>{statusLabel(member.status)}</span></div><div className={styles.memberMeta}><span className={styles.roleBadge}>{member.role}</span><span>{member.capabilities.length} permissions</span><span>{member.status === "invited" ? `Invited ${date(member.invitedAt ?? member.membershipCreatedAt)}` : `Joined ${date(member.joinedAt ?? member.membershipCreatedAt)}`}</span></div><p className={styles.capabilitySummary}>{member.capabilities.map((capability) => capabilityInfo[capability].label).join(" · ") || "No permissions"}</p><div className={styles.memberActions}><button disabled={busy || (member.role === "owner" && actorRole !== "owner")} onClick={() => beginEdit(member)}>Edit</button>{member.status === "invited" ? <button disabled={busy || (member.role === "owner" && actorRole !== "owner")} onClick={() => simpleAction(member, "resend-invitation")}>Resend invite</button> : null}<button className={styles.dangerButton} disabled={busy || (member.role === "owner" && actorRole !== "owner")} onClick={() => revoke(member)}>Revoke</button></div></article>)}</div></section>
     {revoked.length ? <section className={styles.listSection}><h2>Revoked</h2><div className={styles.memberList}>{revoked.map((member) => <article className={`${styles.member} ${styles.revoked}`} key={member.membershipId}><div className={styles.memberIdentity}><div><strong>{member.displayName}</strong><span>{member.email}</span></div><span className={styles.status}>Revoked</span></div><div className={styles.memberMeta}><span className={styles.roleBadge}>{member.role}</span><span>Revoked {date(member.revokedAt)}</span></div><div className={styles.memberActions}><button disabled={busy || (member.role === "owner" && actorRole !== "owner")} onClick={() => simpleAction(member, "reinstate")}>Reinstate</button></div></article>)}</div></section> : null}
-    <section className={styles.audit}><h2>Recent access activity</h2><ol>{events.map((event) => <li key={event.eventId}><div><strong>{event.action.replaceAll(".", " ")}</strong><span>{event.targetDisplayName}{event.actorDisplayName ? ` · by ${event.actorDisplayName}` : " · system"}</span></div><time>{date(event.createdAt)}</time>{event.reason ? <p>{event.reason}</p> : null}</li>)}</ol></section>
+    <section className={styles.audit}><h2>Recent access activity</h2><ol>{events.map((event) => { const presentation = describeRestaurantAccessEvent(event); return <li key={event.eventId}><div><strong>{presentation.title}</strong><span>{event.targetDisplayName}{event.actorDisplayName ? ` · by ${event.actorDisplayName}` : " · system"}</span>{presentation.details.map((detail) => <span className={styles.auditDetail} key={detail}>{detail}</span>)}</div><time>{date(event.createdAt)}</time>{event.reason ? <p>{event.reason}</p> : null}</li>; })}</ol></section>
   </div>;
 }

@@ -45,6 +45,7 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/006
 npm run bootstrap-owner:staging -- --restaurant armandos --email '<owner-email>' --display-name '<owner-name>' --app-origin 'https://<preview-host>'
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/007_order_management_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/008_restaurant_user_management_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/009_order_management_export_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new

@@ -22,6 +22,10 @@
 .managementNav { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid #d6d3d1; }
 .managementNavLink, .managementNavActive { padding: 9px 12px; color: #57534e; font-size: 13px; font-weight: 750; }
 .managementNavActive { margin-bottom: -1px; border-bottom: 2px solid #171717; color: #171717; }
+.accessRevoked { max-width: 640px; margin: 72px auto; padding: 28px; border: 1px solid #d6d3d1; border-radius: 10px; background: #fff; }
+.accessRevoked h2 { font-size: 22px; letter-spacing: -.025em; }
+.accessRevoked p { margin-top: 8px; color: #57534e; font-size: 14px; }
+.accessRevoked div { display: flex; gap: 9px; margin-top: 20px; }
 
 .authMain {
   min-height: calc(100vh - 59px);

@@ -24,9 +24,9 @@ export default async function ManagedOrdersPage({ params }: { params: Promise<{ 
         <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Orders</h1></div>
-          <div className={styles.headerActions}><span className={styles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={styles.secondaryButton}>Sign out</button></form></div>
+          <div className={styles.headerActions}><span className={styles.identity}>{membership.displayName}</span><span className={styles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={styles.secondaryButton}>Sign out</button></form></div>
         </header>
-        <OrderQueue slug={slug} restaurantId={membership.restaurantId} timezone={membership.restaurantTimezone} canAdvance={membership.capabilities.includes("advance_fulfillment")} initialPage={initialPage} />
+        <OrderQueue slug={slug} restaurantId={membership.restaurantId} restaurantName={membership.restaurantName} timezone={membership.restaurantTimezone} canAdvance={membership.capabilities.includes("advance_fulfillment")} canExport={membership.capabilities.includes("export_order_history")} initialPage={initialPage} />
       </div>
     </main>
   );

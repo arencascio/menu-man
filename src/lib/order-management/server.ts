@@ -3,11 +3,13 @@ import "server-only";
 import { createAdminServerClient } from "@/lib/supabase/admin-server";
 import {
   fulfillmentTransitionResultSchema,
+  managedOrderExportRowSchema,
   managedOrderDetailSchema,
   managedOrderPageSchema,
   managedOrderSummarySchema,
   restaurantMembershipSchema,
   type ManagedOrderDetail,
+  type ManagedOrderExportRow,
   type ManagedOrderPage,
   type ManagedOrdersQuery,
   type RestaurantMembership,
@@ -145,6 +147,67 @@ export async function transitionManagedOrder(
   });
   if (error) throw rpcError(error);
   return fulfillmentTransitionResultSchema.parse(data);
+}
+
+type ManagedOrderExportPageQuery = {
+  from: string;
+  to: string;
+  dateBasis: "placed" | "pickup";
+  cursorAt?: string;
+  cursorOrderId?: string;
+  limit: number;
+};
+
+export async function createManagedOrderExportPager() {
+  const client = await authenticatedClient();
+  return async function listManagedOrderExportRowsPage(
+    slug: string,
+    query: ManagedOrderExportPageQuery,
+  ): Promise<{ rows: ManagedOrderExportRow[]; nextCursor: { at: string; orderId: string } | null }> {
+    const { data, error } = await client.rpc("list_managed_order_export_rows_v1", {
+      p_restaurant_slug: slug,
+      p_from_date: query.from,
+      p_to_date: query.to,
+      p_date_basis: query.dateBasis,
+      p_cursor_at: query.cursorAt ?? null,
+      p_cursor_order_id: query.cursorOrderId ?? null,
+      p_limit: query.limit,
+    });
+    if (error) throw rpcError(error);
+    const parsed = (data ?? []).map((row: Record<string, unknown>) => managedOrderExportRowSchema.parse({
+      orderId: row.order_id,
+      orderNumber: row.order_number,
+      historyAt: row.history_at,
+      placedAt: row.placed_at,
+      pickupAt: row.pickup_at,
+      customerName: row.customer_name,
+      fulfillmentStatus: row.fulfillment_status,
+      paymentStatus: row.payment_status,
+      refundStatus: row.refund_status,
+      itemCount: row.item_count,
+      subtotalCents: row.subtotal_cents,
+      taxCents: row.tax_cents,
+      tipCents: row.tip_cents,
+      totalCents: row.total_cents,
+      refundAmountCents: row.refund_amount_cents,
+      completedAt: row.completed_at,
+    }));
+    const hasMore = parsed.length > query.limit;
+    const rows = hasMore ? parsed.slice(0, query.limit) : parsed;
+    const last = rows.at(-1);
+    return {
+      rows,
+      nextCursor: hasMore && last ? { at: last.historyAt, orderId: last.orderId } : null,
+    };
+  };
+}
+
+export async function listManagedOrderExportRows(
+  slug: string,
+  query: ManagedOrderExportPageQuery,
+): Promise<{ rows: ManagedOrderExportRow[]; nextCursor: { at: string; orderId: string } | null }> {
+  const pager = await createManagedOrderExportPager();
+  return pager(slug, query);
 }
 
 export function managementErrorStatus(error: unknown) {

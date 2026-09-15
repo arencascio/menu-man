@@ -3,13 +3,15 @@
 .eyebrow { color: #78716c; font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .09em; }
 .title { margin-top: 4px; font-size: clamp(26px, 3vw, 38px); letter-spacing: -.04em; }
 .headerActions { display: flex; gap: 8px; align-items: center; }
+.identity { max-width: 220px; overflow: hidden; text-overflow: ellipsis; color: #44403c; font-size: 13px; font-weight: 700; white-space: nowrap; }
 .role { border: 1px solid #d6d3d1; border-radius: 999px; padding: 6px 10px; background: #fff; color: #57534e; font-size: 12px; text-transform: capitalize; }
 .button, .secondaryButton, .advanceButton {
-  min-height: 38px; padding: 8px 12px; border-radius: 7px; font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
+  min-height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 7px; font: inherit; font-size: 13px; font-weight: 750; text-decoration: none; cursor: pointer;
 }
 .button, .advanceButton { border: 1px solid #171717; background: #171717; color: #fff; }
 .secondaryButton { border: 1px solid #a8a29e; background: #fff; color: #171717; }
 .button:disabled, .advanceButton:disabled { opacity: .5; cursor: wait; }
+.disabledButton { min-height: 38px; display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid #d6d3d1; border-radius: 7px; background: #f5f5f4; color: #a8a29e; font-size: 13px; font-weight: 750; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
 .tabs { display: flex; gap: 3px; padding: 3px; border: 1px solid #d6d3d1; border-radius: 9px; background: #e7e5e4; }
 .tab { border: 0; border-radius: 6px; padding: 8px 14px; background: transparent; color: #57534e; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -61,7 +63,7 @@
 .timelineItem::before { position: absolute; left: 0; top: 5px; width: 7px; height: 7px; border-radius: 50%; background: #78716c; content: ""; }
 .timelineMeta { margin-top: 3px; color: #78716c; font-size: 11px; }
 .backLink { display: inline-block; margin-bottom: 14px; color: #57534e; text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
-.detailActions { display: flex; align-items: center; gap: 8px; }
+.detailActions { display: flex; align-items: flex-end; flex-direction: column; gap: 10px; }
 .exceptionActionSlot { width: 0; height: 40px; }
 .contact { display: grid; gap: 7px; font-size: 14px; }
 
@@ -74,6 +76,7 @@
 @media (max-width: 600px) {
   .pageHeader { align-items: stretch; flex-direction: column; }
   .headerActions { justify-content: space-between; }
+  .identity { max-width: 150px; }
   .historyRow { grid-template-columns: 90px 1fr; }
   .historyRow > :nth-child(3), .historyRow > :nth-child(4) { display: none; }
 }

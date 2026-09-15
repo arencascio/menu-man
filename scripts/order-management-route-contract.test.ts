@@ -70,3 +70,46 @@ test("team management uses trusted routes, final permissions, and an audited lif
   assert.match(callback, /activate_my_restaurant_memberships_v1/);
   assert.doesNotMatch(team, /SUPABASE_SERVICE_ROLE_KEY/);
 });
+
+test("order detail fulfillment clears pending state and immediately advances its authoritative action", () => {
+  const action = source("src", "app", "manage", "[slug]", "orders", "[orderId]", "FulfillmentAction.tsx");
+  const route = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "[orderId]", "fulfillment", "route.ts");
+  assert.match(action, /fulfillmentTransitionResultSchema\.parse\(payload\)/);
+  assert.match(action, /setCurrent\(\{ status: result\.status, version: result\.version \}\)/);
+  assert.match(action, /router\.refresh\(\)/);
+  assert.match(action, /finally \{ setPending\(false\); \}/);
+  assert.match(action, /setError\(updateError instanceof Error/);
+  assert.match(route, /revalidatePath\(`\/manage\/\$\{slug\}\/orders\/\$\{orderId\}`\)/);
+});
+
+test("revoked management access clears protected data and stops polling and realtime", () => {
+  const queue = source("src", "app", "manage", "[slug]", "orders", "OrderQueue.tsx");
+  const guard = source("src", "app", "manage", "[slug]", "orders", "[orderId]", "OrderDetailAccessGuard.tsx");
+  assert.match(queue, /setPage\(\{ orders: \[\], nextCursor: null \}\)/);
+  assert.match(queue, /if \(accessLost\) return;/);
+  assert.match(queue, /removeChannel\(channel\)/);
+  assert.match(guard, /response\.status === 403/);
+  assert.match(guard, /if \(accessLost\) return <AccessRevoked/);
+});
+
+test("management headers show member display name and role", () => {
+  for (const parts of [
+    ["src", "app", "manage", "[slug]", "orders", "page.tsx"],
+    ["src", "app", "manage", "[slug]", "team", "page.tsx"],
+  ]) {
+    const page = source(...parts);
+    assert.match(page, /membership\.displayName/);
+    assert.match(page, /membership\.memberRole/);
+  }
+});
+
+test("CSV export is server streamed with attachment and no-store headers", () => {
+  const route = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "export", "route.ts");
+  const queue = source("src", "app", "manage", "[slug]", "orders", "OrderQueue.tsx");
+  assert.match(route, /ReadableStream/);
+  assert.match(route, /Content-Disposition/);
+  assert.match(route, /private, no-store/);
+  assert.match(route, /createManagedOrderExportPager/);
+  assert.match(queue, /Download CSV/);
+  assert.match(queue, /dateBasis/);
+});

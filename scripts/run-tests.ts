@@ -12,6 +12,7 @@ import "../src/lib/payments/view-contracts.test";
 import "../src/lib/payments/providers/fake/adapter.test";
 import "../src/lib/payments/providers/square/adapter.test";
 import "../src/lib/order-management/contracts.test";
+import "../src/lib/order-management/csv.test";
 import "./staging-safety.test";
 import "./route-checkout-contract.test";
 import "./order-management-route-contract.test";

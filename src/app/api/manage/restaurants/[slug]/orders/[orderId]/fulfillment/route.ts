@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fulfillmentTransitionRequestSchema } from "@/lib/order-management/contracts";
 import { managementErrorStatus, transitionManagedOrder } from "@/lib/order-management/server";
@@ -18,6 +19,8 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
   }
   try {
     const result = await transitionManagedOrder(slug, orderId, parsed.data);
+    revalidatePath(`/manage/${slug}/orders/${orderId}`);
+    revalidatePath(`/manage/${slug}/orders`);
     return NextResponse.json(result, { headers: noStore });
   } catch (error) {
     const status = managementErrorStatus(error);

@@ -34,6 +34,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609140001_order_management_foundation.sql",
     "202609140002_order_management_refinements.sql",
     "202609140003_restaurant_user_management.sql",
+    "202609140004_order_management_polish_export.sql",
   ]);
 });
 
@@ -366,6 +367,21 @@ test("restaurant user management is database-authorized, audited, and last-owner
   assert.match(migration, /membership\.activated/i);
   assert.match(migration, /private\.replace_membership_capabilities_v1/i);
   assert.doesNotMatch(migration, /grant\s+(?:insert|update|delete)[\s\S]*restaurant_memberships[\s\S]*to authenticated/i);
+});
+
+test("order history export is capability-gated, tenant-scoped, redacted, and cursor bounded", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_order_management_polish_export.sql"),
+  )?.sql || "";
+  assert.match(migration, /private\.require_restaurant_capability_v1\([\s\S]*'export_order_history'/i);
+  assert.match(migration, /p_date_basis not in \('placed', 'pickup'\)/i);
+  assert.match(migration, /case when access_record\.can_view_contact[\s\S]*customer_name else null end/i);
+  assert.match(migration, /fulfillment\.restaurant_id = access_record\.restaurant_id/i);
+  assert.match(migration, /fulfillment\.status = 'completed'/i);
+  assert.match(migration, /sum\(item\.quantity\)::integer/i);
+  assert.match(migration, /p_cursor_at[\s\S]*p_cursor_order_id/i);
+  assert.match(migration, /limit p_limit \+ 1/i);
+  assert.match(migration, /grant execute on function public\.list_managed_order_export_rows_v1[\s\S]*to authenticated/i);
 });
 
 test("staging fixture values never appear in schema migrations", () => {

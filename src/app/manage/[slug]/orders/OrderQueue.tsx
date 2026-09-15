@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createAdminBrowserClient } from "@/lib/supabase/admin-browser";
 import { formatQueuePaymentLabel, managedOrderPageSchema, nextFulfillmentStatus, timingState, type ManagedOrderPage, type ManagedOrderSummary, type OrderListView } from "@/lib/order-management/contracts";
+import AccessRevoked from "../AccessRevoked";
 import styles from "./orders.module.css";
 
 type HistoryPreset = "today" | "7" | "30" | "90" | "custom";
@@ -31,19 +32,21 @@ function historyPickupLabel(order: ManagedOrderSummary) {
   return new Intl.DateTimeFormat("en-US", { timeZone: order.pickupTimezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(order.pickupAt));
 }
 
-export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, initialPage }: { slug: string; restaurantId: string; timezone: string; canAdvance: boolean; initialPage: ManagedOrderPage }) {
+export default function OrderQueue({ slug, restaurantId, restaurantName, timezone, canAdvance, canExport, initialPage }: { slug: string; restaurantId: string; restaurantName: string; timezone: string; canAdvance: boolean; canExport: boolean; initialPage: ManagedOrderPage }) {
   const [view, setView] = useState<OrderListView>("active");
   const [page, setPage] = useState(initialPage);
   const [preset, setPreset] = useState<HistoryPreset>("today");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [dateBasis, setDateBasis] = useState<"placed" | "pickup">("placed");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [accessLost, setAccessLost] = useState<"revoked" | "signed-out" | null>(null);
 
   const buildUrl = useCallback((targetView: OrderListView, cursor?: ManagedOrderPage["nextCursor"]) => {
-    const params = new URLSearchParams({ view: targetView, dateBasis: "placed", limit: "50" });
+    const params = new URLSearchParams({ view: targetView, dateBasis, limit: "50" });
     if (targetView === "history") {
       const range = dateRange(preset, timezone, customFrom, customTo);
       if (range.from) params.set("from", range.from);
@@ -54,14 +57,20 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
       params.set("cursorOrderId", cursor.orderId);
     }
     return `/api/manage/restaurants/${encodeURIComponent(slug)}/orders?${params}`;
-  }, [customFrom, customTo, preset, slug, timezone]);
+  }, [customFrom, customTo, dateBasis, preset, slug, timezone]);
 
   const refresh = useCallback(async (targetView: OrderListView, cursor: ManagedOrderPage["nextCursor"] = null) => {
+    if (accessLost) return;
     if (targetView === "history" && preset === "custom" && (!customFrom || !customTo)) return;
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(buildUrl(targetView, cursor), { cache: "no-store" });
+      if (response.status === 403 || response.status === 401) {
+        setPage({ orders: [], nextCursor: null });
+        setAccessLost(response.status === 403 ? "revoked" : "signed-out");
+        return;
+      }
       const payload: unknown = await response.json();
       if (!response.ok) throw new Error(typeof payload === "object" && payload && "error" in payload ? String(payload.error) : "Orders could not be loaded.");
       const next = managedOrderPageSchema.parse(payload);
@@ -69,21 +78,24 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Orders could not be loaded.");
     } finally { setLoading(false); }
-  }, [buildUrl, customFrom, customTo, preset]);
+  }, [accessLost, buildUrl, customFrom, customTo, preset]);
 
   useEffect(() => {
+    if (accessLost) return;
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [accessLost]);
 
   useEffect(() => {
+    if (accessLost) return;
     const poll = window.setInterval(() => { void refresh(view); }, 15_000);
     const focus = () => { void refresh(view); };
     window.addEventListener("focus", focus);
     return () => { window.clearInterval(poll); window.removeEventListener("focus", focus); };
-  }, [refresh, view]);
+  }, [accessLost, refresh, view]);
 
   useEffect(() => {
+    if (accessLost) return;
     const supabase = createAdminBrowserClient();
     const channel = supabase.channel(`restaurant:${restaurantId}:orders`, { config: { private: true } })
       .on("broadcast", { event: "order_changed" }, () => { void refresh(view); })
@@ -91,7 +103,7 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
     const browserChannel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(`menu-man-orders:${restaurantId}`);
     if (browserChannel) browserChannel.onmessage = () => { void refresh(view); };
     return () => { void supabase.removeChannel(channel); browserChannel?.close(); };
-  }, [refresh, restaurantId, view]);
+  }, [accessLost, refresh, restaurantId, view]);
 
   async function advance(order: ManagedOrderSummary) {
     const nextStatus = nextFulfillmentStatus(order.fulfillmentStatus);
@@ -105,6 +117,11 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
         body: JSON.stringify({ expectedVersion: order.fulfillmentVersion, nextStatus, clientActionId: crypto.randomUUID() }),
       });
       const payload: unknown = await response.json();
+      if (response.status === 403 || response.status === 401) {
+        setPage({ orders: [], nextCursor: null });
+        setAccessLost(response.status === 403 ? "revoked" : "signed-out");
+        return;
+      }
       if (!response.ok) throw new Error(typeof payload === "object" && payload && "error" in payload ? String(payload.error) : "Fulfillment could not be updated.");
       if (typeof BroadcastChannel !== "undefined") {
         const channel = new BroadcastChannel(`menu-man-orders:${restaurantId}`);
@@ -127,6 +144,13 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
 
   const columns = useMemo(() => (["new", "preparing", "ready"] as const).map((status) => ({ status, orders: page.orders.filter((order) => order.fulfillmentStatus === status) })), [page.orders]);
   const actionLabels = { preparing: "Start preparing", ready: "Mark ready", completed: "Complete order" } as const;
+  const selectedRange = dateRange(preset, timezone, customFrom, customTo);
+  const canDownload = canExport && Boolean(selectedRange.from && selectedRange.to);
+  const exportUrl = canDownload
+    ? `/api/manage/restaurants/${encodeURIComponent(slug)}/orders/export?${new URLSearchParams({ from: selectedRange.from, to: selectedRange.to, dateBasis }).toString()}`
+    : null;
+
+  if (accessLost) return <AccessRevoked restaurantName={restaurantName} signedOut={accessLost === "signed-out"} />;
 
   return (
     <>
@@ -163,7 +187,9 @@ export default function OrderQueue({ slug, restaurantId, timezone, canAdvance, i
           <div className={styles.filters}>
             <label className={styles.filterLabel}>Date range<select className={styles.select} value={preset} onChange={(event) => setPreset(event.target.value as HistoryPreset)}><option value="today">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="custom">Custom</option></select></label>
             {preset === "custom" ? <><label className={styles.filterLabel}>From<input className={styles.dateInput} type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} /></label><label className={styles.filterLabel}>To<input className={styles.dateInput} type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} /></label></> : null}
+            <label className={styles.filterLabel}>Date basis<select className={styles.select} value={dateBasis} onChange={(event) => setDateBasis(event.target.value as "placed" | "pickup")}><option value="placed">Order placed</option><option value="pickup">Pickup date</option></select></label>
             <button className={styles.secondaryButton} onClick={() => void refresh("history")}>Apply</button>
+            {exportUrl ? <a className={styles.secondaryButton} href={exportUrl}>Download CSV</a> : canExport ? <span className={styles.disabledButton} aria-disabled="true">Download CSV</span> : null}
           </div>
           <div className={styles.history} style={{ marginTop: 14 }}>
             <div className={`${styles.historyRow} ${styles.historyHeader}`}><span>Order</span><span>Customer / items</span><span>Placed</span><span>Pickup</span><span>Payment</span><span>Total</span></div>

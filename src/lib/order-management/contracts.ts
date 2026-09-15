@@ -84,6 +84,95 @@ export const restaurantAccessEventSchema = z.object({
 
 export type RestaurantAccessEvent = z.infer<typeof restaurantAccessEventSchema>;
 
+export const managedOrderExportQuerySchema = z.object({
+  from: z.iso.date(),
+  to: z.iso.date(),
+  dateBasis: z.enum(["placed", "pickup"]).default("placed"),
+}).refine((value) => value.from <= value.to, {
+  message: "The export date range is invalid.",
+});
+
+export const managedOrderExportRowSchema = z.object({
+  orderId: z.uuid(),
+  orderNumber: z.string().min(1),
+  historyAt: z.iso.datetime({ offset: true }),
+  placedAt: z.iso.datetime({ offset: true }),
+  pickupAt: z.iso.datetime({ offset: true }),
+  customerName: z.string().nullable(),
+  fulfillmentStatus: fulfillmentStatusSchema,
+  paymentStatus: z.string(),
+  refundStatus: z.string().nullable(),
+  itemCount: z.number().int().nonnegative(),
+  subtotalCents: z.number().int().nonnegative(),
+  taxCents: z.number().int().nonnegative(),
+  tipCents: z.number().int().nonnegative(),
+  totalCents: z.number().int().nonnegative(),
+  refundAmountCents: z.number().int().nonnegative(),
+  completedAt: z.iso.datetime({ offset: true }).nullable(),
+});
+
+export type ManagedOrderExportRow = z.infer<typeof managedOrderExportRowSchema>;
+
+const capabilityLabels: Record<ManagementCapability, string> = {
+  view_orders: "View orders",
+  advance_fulfillment: "Advance fulfillment",
+  view_customer_contact: "View customer contact",
+  export_order_history: "Export order history",
+  issue_refunds: "Issue refunds",
+  correct_fulfillment: "Correct fulfillment",
+  manage_memberships: "Manage team",
+};
+
+function stateCapabilities(state: Record<string, unknown>) {
+  if (!Array.isArray(state.capabilities)) return [] as ManagementCapability[];
+  return state.capabilities.filter((value): value is ManagementCapability =>
+    managementCapabilitySchema.safeParse(value).success,
+  );
+}
+
+function titleCaseRole(value: unknown) {
+  return typeof value === "string" && managementRoleSchema.safeParse(value).success
+    ? value.charAt(0).toUpperCase() + value.slice(1)
+    : null;
+}
+
+export function describeRestaurantAccessEvent(event: RestaurantAccessEvent) {
+  const titles: Record<string, string> = {
+    "membership.bootstrapped": "Owner access created",
+    "membership.created": "Team member created",
+    "membership.updated": "Team member updated",
+    "membership.invited": "Invitation sent",
+    "membership.invitation_resend_requested": "Invitation resend requested",
+    "membership.invitation_resent": "Invitation resent",
+    "membership.invitation_resend_failed": "Invitation resend failed",
+    "membership.activated": "Access activated",
+    "membership.reinstated": "Access reinstated",
+    "membership.role_changed": "Role changed",
+    "membership.capabilities_changed": "Permissions changed",
+    "membership.revoked": "Access revoked",
+    "permission.changed": "Permissions changed",
+  };
+  const details: string[] = [];
+  const previousRole = titleCaseRole(event.previousState.role);
+  const nextRole = titleCaseRole(event.nextState.role);
+  if (previousRole && nextRole && previousRole !== nextRole) {
+    details.push(`${previousRole} → ${nextRole}`);
+  }
+  const previous = new Set(stateCapabilities(event.previousState));
+  const next = new Set(stateCapabilities(event.nextState));
+  const showPermissionDelta = [
+    "membership.updated", "membership.role_changed",
+    "membership.capabilities_changed", "permission.changed",
+  ].includes(event.action);
+  if (showPermissionDelta) {
+    const added = [...next].filter((capability) => !previous.has(capability));
+    const removed = [...previous].filter((capability) => !next.has(capability));
+    if (added.length) details.push(`Added: ${added.map((capability) => capabilityLabels[capability]).join(", ")}`);
+    if (removed.length) details.push(`Removed: ${removed.map((capability) => capabilityLabels[capability]).join(", ")}`);
+  }
+  return { title: titles[event.action] ?? "Team access updated", details };
+}
+
 export const managedOrderSummarySchema = z.object({
   orderId: z.uuid(),
   orderNumber: z.string().min(1),

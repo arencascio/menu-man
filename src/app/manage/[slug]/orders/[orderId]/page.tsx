@@ -6,6 +6,7 @@ import FulfillmentAction from "./FulfillmentAction";
 import sharedStyles from "../../../management.module.css";
 import styles from "../orders.module.css";
 import ManagementNav from "../../ManagementNav";
+import OrderDetailAccessGuard from "./OrderDetailAccessGuard";
 
 function money(cents: number, currency: string) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
@@ -31,13 +32,15 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
 
   return (
     <main className={sharedStyles.main}>
+      <OrderDetailAccessGuard slug={slug} orderId={orderId} restaurantName={membership.restaurantName}>
       <div className={styles.page}>
         <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
         <Link className={styles.backLink} href={`/manage/${slug}/orders`}>← Back to orders</Link>
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Order #{order.orderNumber}</h1><p className={styles.pickupHero}>{order.pickup.mode === "asap" ? "ASAP pickup" : "Pickup"} · {dateTime(order.pickup.pickupAt, order.pickup.timezone)}</p></div>
           <div className={styles.detailActions}>
-            {membership.capabilities.includes("advance_fulfillment") ? <FulfillmentAction slug={slug} orderId={order.orderId} status={order.fulfillment.status} version={order.fulfillment.version} /> : null}
+            <div className={styles.headerActions}><span className={styles.identity}>{membership.displayName}</span><span className={styles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={styles.secondaryButton}>Sign out</button></form></div>
+            {membership.capabilities.includes("advance_fulfillment") ? <FulfillmentAction key={`${order.fulfillment.status}:${order.fulfillment.version}`} slug={slug} orderId={order.orderId} status={order.fulfillment.status} version={order.fulfillment.version} /> : null}
             <div className={styles.exceptionActionSlot} data-exception-actions-slot="reserved" aria-hidden="true" />
           </div>
         </header>
@@ -53,6 +56,7 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
           </aside>
         </div>
       </div>
+      </OrderDetailAccessGuard>
     </main>
   );
 }

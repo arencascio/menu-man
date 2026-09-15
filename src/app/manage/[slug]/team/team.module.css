@@ -45,5 +45,6 @@
 .audit li div { display: grid; gap: 3px; }
 .audit li strong { text-transform: capitalize; }
 .audit li span, .audit time, .audit li p { color: #78716c; }
+.audit li .auditDetail { color: #292524; font-weight: 650; }
 .audit li p { grid-column: 1 / -1; }
 @media (max-width: 760px) { .fields, .permissions { grid-template-columns: 1fr; } .memberIdentity { align-items: stretch; flex-direction: column; } .status { align-self: flex-start; } }
