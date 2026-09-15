@@ -103,6 +103,22 @@ test("management headers show member display name and role", () => {
   }
 });
 
+test("management home exposes a selector for users with multiple restaurant memberships", () => {
+  const page = source("src", "app", "manage", "page.tsx");
+  assert.match(page, /memberships\.length === 1/);
+  assert.match(page, /Choose a restaurant/);
+  assert.match(page, /memberships\.map/);
+  assert.match(page, /membership\.restaurantSlug/);
+});
+
+test("restaurant staging fixtures can be excluded from indexing across customer routes", () => {
+  const layout = source("src", "app", "r", "[slug]", "layout.tsx");
+  const sitemap = source("src", "app", "sitemap.ts");
+  assert.match(layout, /is_indexable/);
+  assert.match(layout, /index: false, follow: false/);
+  assert.match(sitemap, /\.eq\("is_indexable", true\)/);
+});
+
 test("CSV export is server streamed with attachment and no-store headers", () => {
   const route = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "export", "route.ts");
   const queue = source("src", "app", "manage", "[slug]", "orders", "OrderQueue.tsx");
@@ -112,4 +128,27 @@ test("CSV export is server streamed with attachment and no-store headers", () =>
   assert.match(route, /createManagedOrderExportPager/);
   assert.match(queue, /Download CSV/);
   assert.match(queue, /dateBasis/);
+});
+
+test("notification settings and delivery stay behind server authorization", () => {
+  const settings = source("src", "app", "api", "manage", "restaurants", "[slug]", "settings", "notifications", "route.ts");
+  const worker = source("src", "app", "api", "internal", "notifications", "deliver", "route.ts");
+  const delivery = source("src", "lib", "notifications", "worker.ts");
+  const nav = source("src", "app", "manage", "[slug]", "ManagementNav.tsx");
+  assert.match(settings, /updateNotificationSettingsRequestSchema\.safeParse/);
+  assert.match(settings, /private, no-store/);
+  assert.match(worker, /process\.env\.CRON_SECRET/);
+  assert.match(delivery, /process\.env\.RESEND_API_KEY/);
+  assert.match(delivery, /process\.env\.MENU_MAN_ORDER_EMAIL_FROM/);
+  assert.doesNotMatch(nav, /RESEND_API_KEY/);
+  assert.match(nav, /manage_notifications/);
+});
+
+test("revoked access can recover only after an authoritative membership refetch", () => {
+  const revoked = source("src", "app", "manage", "[slug]", "AccessRevoked.tsx");
+  const route = source("src", "app", "api", "manage", "memberships", "route.ts");
+  assert.match(revoked, /fetch\("\/api\/manage\/memberships", \{ cache: "no-store" \}\)/);
+  assert.match(revoked, /window\.location\.reload\(\)/);
+  assert.match(route, /listRestaurantMemberships/);
+  assert.match(route, /private, no-store/);
 });

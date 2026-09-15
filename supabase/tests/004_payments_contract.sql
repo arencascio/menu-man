@@ -84,7 +84,7 @@ begin
     'customer', jsonb_build_object(
       'name', 'Payment Contract Test',
       'phone', '555-0100',
-      'email', null
+      'email', 'payments-contract@example.invalid'
     ),
     'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
     'tipChoice', 'none',
@@ -139,6 +139,12 @@ begin
   then
     raise exception 'Verified success did not create exactly one purchase outbox event';
   end if;
+  if (select count(*) from public.notification_outbox
+      where order_id = (order_response ->> 'orderId')::uuid
+        and notification_type = 'customer.order_confirmed') <> 1
+  then
+    raise exception 'Verified success did not create exactly one order-confirmation email';
+  end if;
 
   webhook_response := public.ingest_payment_webhook_v1(
     'fake', 'test', 'contract-success', connection_uuid, repeat('b', 64),
@@ -150,6 +156,12 @@ begin
     raise exception 'Duplicate provider event was inserted twice';
   end if;
   perform public.apply_payment_event_v1((webhook_response ->> 'webhookEventId')::uuid);
+  if (select count(*) from public.notification_outbox
+      where order_id = (order_response ->> 'orderId')::uuid
+        and notification_type = 'customer.order_confirmed') <> 1
+  then
+    raise exception 'Duplicate payment webhook duplicated the order-confirmation email';
+  end if;
 
   webhook_response := public.ingest_payment_webhook_v1(
     'fake', 'test', 'contract-old-processing', connection_uuid, repeat('c', 64),
@@ -190,6 +202,12 @@ begin
     or (select payment_status from public.orders where id = (order_response ->> 'orderId')::uuid) <> 'refunded'
   then
     raise exception 'Verified refund did not update payment summaries';
+  end if;
+  if (select count(*) from public.notification_outbox
+      where order_id = (order_response ->> 'orderId')::uuid
+        and notification_type = 'customer.refund_confirmed') <> 1
+  then
+    raise exception 'Verified refund did not create exactly one refund-confirmation email';
   end if;
 
   payment_view := public.get_order_payment_view_v1(

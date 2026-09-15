@@ -37,6 +37,6 @@ export default function OrderDetailAccessGuard({ slug, orderId, restaurantName, 
     };
   }, [accessLost, orderId, slug]);
 
-  if (accessLost) return <AccessRevoked restaurantName={restaurantName} signedOut={accessLost === "signed-out"} />;
+  if (accessLost) return <AccessRevoked restaurantName={restaurantName} slug={slug} signedOut={accessLost === "signed-out"} />;
   return children;
 }

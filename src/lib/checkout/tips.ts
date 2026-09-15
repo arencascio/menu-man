@@ -1,4 +1,6 @@
-export const MAX_CUSTOM_TIP_CENTS = 2_147_483_647;
+// Browser validation mirrors the absolute policy ceiling for useful feedback.
+// The database independently enforces both this and the authoritative-subtotal cap.
+export const MAX_CUSTOM_TIP_CENTS = 50_000;
 
 export function parseCustomTipCents(value: string): number | null {
   const normalized = value.trim();

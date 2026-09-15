@@ -18,6 +18,7 @@ declare
   base_price integer;
   expected_tax integer;
   custom_response jsonb;
+  rejected_tip_key text;
 begin
   select id into strict restaurant_uuid
   from public.restaurants
@@ -153,6 +154,37 @@ begin
     raise exception 'Expected a negative custom tip to be rejected';
   exception when others then
     if position('MM_INVALID_REQUEST' in sqlerrm) = 0 then raise; end if;
+  end;
+
+  rejected_tip_key := gen_random_uuid()::text;
+  begin
+    perform public.create_order_v1(
+      'armandos', rejected_tip_key,
+      jsonb_set(jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
+        '{customTipCents}', to_jsonb((base_price + 1)::integer))
+    );
+    raise exception 'Expected a custom tip above subtotal to be rejected';
+  exception when others then
+    if sqlerrm not like 'MM_INVALID_REQUEST|Custom tip cannot exceed%' then raise; end if;
+  end;
+  if exists (select 1 from public.orders where idempotency_key = rejected_tip_key) then
+    raise exception 'Rejected custom tip committed an order';
+  end if;
+
+  begin
+    perform public.create_order_v1(
+      'armandos', gen_random_uuid()::text,
+      jsonb_set(
+        jsonb_set(
+          jsonb_set(request_payload, '{items,0,quantity}', '99'::jsonb),
+          '{tipChoice}', '"custom"'::jsonb
+        ),
+        '{customTipCents}', '50001'::jsonb
+      )
+    );
+    raise exception 'Expected a custom tip above $500 to be rejected';
+  exception when others then
+    if sqlerrm not like 'MM_INVALID_REQUEST|Custom tip cannot exceed%' then raise; end if;
   end;
 
   if (

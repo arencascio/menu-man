@@ -8,6 +8,7 @@ export const managementCapabilitySchema = z.enum([
   "issue_refunds",
   "correct_fulfillment",
   "manage_memberships",
+  "manage_notifications",
 ]);
 
 export const managementRoleSchema = z.enum(["owner", "manager", "staff"]);
@@ -98,6 +99,7 @@ export const managedOrderExportRowSchema = z.object({
   historyAt: z.iso.datetime({ offset: true }),
   placedAt: z.iso.datetime({ offset: true }),
   pickupAt: z.iso.datetime({ offset: true }),
+  pickupMode: z.enum(["asap", "scheduled"]),
   customerName: z.string().nullable(),
   fulfillmentStatus: fulfillmentStatusSchema,
   paymentStatus: z.string(),
@@ -108,6 +110,8 @@ export const managedOrderExportRowSchema = z.object({
   tipCents: z.number().int().nonnegative(),
   totalCents: z.number().int().nonnegative(),
   refundAmountCents: z.number().int().nonnegative(),
+  readyAt: z.iso.datetime({ offset: true }).nullable(),
+  readyOnTime: z.boolean().nullable(),
   completedAt: z.iso.datetime({ offset: true }).nullable(),
 });
 
@@ -121,6 +125,7 @@ const capabilityLabels: Record<ManagementCapability, string> = {
   issue_refunds: "Issue refunds",
   correct_fulfillment: "Correct fulfillment",
   manage_memberships: "Manage team",
+  manage_notifications: "Manage notifications",
 };
 
 function stateCapabilities(state: Record<string, unknown>) {

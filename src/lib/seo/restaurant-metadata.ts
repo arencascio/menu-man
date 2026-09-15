@@ -18,6 +18,7 @@ export function createRestaurantMetadata({
   heroImageUrl,
   logoUrl,
   primaryDomain,
+  indexable = true,
 }: {
   name: string;
   slug: string;
@@ -26,6 +27,7 @@ export function createRestaurantMetadata({
   heroImageUrl: string | null;
   logoUrl: string | null;
   primaryDomain: string | null;
+  indexable?: boolean;
 }): Metadata {
   const title = `${name} | Menu`;
   const metaDescription = tagline || description || `${name} menu`;
@@ -35,6 +37,7 @@ export function createRestaurantMetadata({
   return {
     title,
     description: metaDescription,
+    robots: indexable ? undefined : { index: false, follow: false },
     alternates: { canonical: url },
     openGraph: {
       title,

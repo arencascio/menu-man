@@ -35,6 +35,8 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609140002_order_management_refinements.sql",
     "202609140003_restaurant_user_management.sql",
     "202609140004_order_management_polish_export.sql",
+    "202609150001_notifications_multitenant.sql",
+    "202609150002_custom_tip_cap.sql",
   ]);
 });
 
@@ -72,6 +74,10 @@ test("baseline creates every documented application table", () => {
     "restaurant_refund_policies",
     "order_fulfillments",
     "order_fulfillment_events",
+    "restaurant_notification_settings",
+    "restaurant_notification_setting_events",
+    "notification_outbox",
+    "notification_delivery_attempts",
   ];
 
   for (const table of tables) {
@@ -96,6 +102,7 @@ test("baseline contains required source, image, theme, SEO, and ordering fields"
     "tax_rate_basis_points",
     "pickup_slot_interval_minutes",
     "advance_order_days",
+    "is_indexable",
   ]) {
     assert.match(completeSchema, new RegExp(`\\b${field}\\b`, "i"));
   }
@@ -382,6 +389,44 @@ test("order history export is capability-gated, tenant-scoped, redacted, and cur
   assert.match(migration, /p_cursor_at[\s\S]*p_cursor_order_id/i);
   assert.match(migration, /limit p_limit \+ 1/i);
   assert.match(migration, /grant execute on function public\.list_managed_order_export_rows_v1[\s\S]*to authenticated/i);
+});
+
+test("notification foundation is capability-gated, audited, idempotent, and retry-safe", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_notifications_multitenant.sql"),
+  )?.sql || "";
+  assert.match(migration, /'manage_notifications'/i);
+  assert.match(migration, /\('owner', 'manage_notifications', true\)/i);
+  assert.match(migration, /\('manager', 'manage_notifications', true\)/i);
+  assert.match(migration, /\('staff', 'manage_notifications', false\)/i);
+  assert.match(migration, /private\.require_restaurant_capability_v1\([\s\S]*'manage_notifications'/i);
+  assert.match(migration, /restaurant_notification_setting_events_action_key[\s\S]*unique \(restaurant_id, client_action_id\)/i);
+  assert.match(migration, /notification_outbox_idempotency_key_key unique \(idempotency_key\)/i);
+  assert.match(migration, /'customer\.order_confirmed\/' \|\| new\.id::text/i);
+  assert.match(migration, /'customer\.ready_for_pickup\/' \|\| new\.order_id::text/i);
+  assert.match(migration, /for update skip locked/i);
+  assert.match(migration, /outbox\.attempt_count < 8/i);
+  assert.match(migration, /status = 'delivering'/i);
+  assert.match(migration, /grant execute on function public\.claim_notification_outbox_v1\(integer\)[\s\S]*to service_role/i);
+  assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[\s\S]*notification_outbox[\s\S]*to authenticated/i);
+});
+
+test("custom tips are capped against authoritative subtotal and $500", () => {
+  const migration = migrations.find(({ file }) => file.endsWith("_custom_tip_cap.sql"))?.sql || "";
+  assert.match(migration, /authoritative_subtotal := \(base_response ->> 'subtotalCents'\)::bigint/i);
+  assert.match(migration, /least\(authoritative_subtotal, 50000::bigint\)/i);
+  assert.match(migration, /Custom tip cannot exceed the pre-tax subtotal or \$500/i);
+  assert.match(migration, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("Test Kitchen staging seed is fake-only, noindex, and independently configured", () => {
+  const seed = readFileSync(join(process.cwd(), "supabase", "seeds", "staging", "006_test_kitchen.sql"), "utf8");
+  assert.match(seed, /Menu Man Test Kitchen/);
+  assert.match(seed, /'test-kitchen'/);
+  assert.match(seed, /is_indexable[\s\S]*false/i);
+  assert.match(seed, /pickup_lead_time_minutes[\s\S]*10, 10, 10, 1/i);
+  assert.match(seed, /'fake', 'test'/i);
+  assert.doesNotMatch(seed, /'square'|'sandbox'|SQUARE_/i);
 });
 
 test("staging fixture values never appear in schema migrations", () => {

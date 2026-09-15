@@ -1,0 +1,18 @@
+.page { max-width: 1120px; margin: 0 auto; }
+.intro { margin-top: 6px; color: #57534e; font-size: 14px; }
+.form { display: grid; gap: 14px; max-width: 760px; }
+.panel { padding: 20px; border: 1px solid #d6d3d1; border-radius: 9px; background: #fff; }
+.panel h2 { font-size: 17px; }
+.panel > p { margin: 4px 0 16px; color: #57534e; font-size: 13px; }
+.option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-top: 1px solid #e7e5e4; cursor: pointer; }
+.option input { width: 17px; height: 17px; margin-top: 2px; accent-color: #171717; }
+.option span, .emailField { display: grid; gap: 3px; }
+.option strong { font-size: 14px; }
+.option small, .emailField small { color: #78716c; line-height: 1.35; }
+.emailField { margin-top: 14px; color: #292524; font-size: 13px; font-weight: 700; }
+.emailField input { min-height: 40px; padding: 8px 10px; border: 1px solid #a8a29e; border-radius: 7px; font: inherit; font-weight: 400; }
+.save { justify-self: start; min-height: 40px; padding: 8px 14px; border: 1px solid #171717; border-radius: 7px; background: #171717; color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.save:disabled { cursor: wait; opacity: .6; }
+.error, .success { padding: 10px 12px; border-radius: 7px; font-size: 13px; }
+.error { border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b; }
+.success { border: 1px solid #86efac; background: #f0fdf4; color: #166534; }

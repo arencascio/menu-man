@@ -150,7 +150,7 @@ export default function OrderQueue({ slug, restaurantId, restaurantName, timezon
     ? `/api/manage/restaurants/${encodeURIComponent(slug)}/orders/export?${new URLSearchParams({ from: selectedRange.from, to: selectedRange.to, dateBasis }).toString()}`
     : null;
 
-  if (accessLost) return <AccessRevoked restaurantName={restaurantName} signedOut={accessLost === "signed-out"} />;
+  if (accessLost) return <AccessRevoked restaurantName={restaurantName} slug={slug} signedOut={accessLost === "signed-out"} />;
 
   return (
     <>

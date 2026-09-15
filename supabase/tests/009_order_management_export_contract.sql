@@ -68,6 +68,9 @@ begin
       'armandos', placed_date, placed_date, 'placed'
     ) export where export.order_id = order_uuid
       and export.item_count = 0
+      and export.pickup_mode = 'scheduled'
+      and export.ready_at is not null
+      and export.ready_on_time
       and export.customer_name = 'Export, "Contract" Customer'
   ) then raise exception 'Placed-date export omitted or corrupted the completed order'; end if;
 

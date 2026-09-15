@@ -35,6 +35,10 @@ begin
     ,('refunds')
     ,('payment_state_transitions')
     ,('analytics_outbox')
+    ,('restaurant_notification_settings')
+    ,('restaurant_notification_setting_events')
+    ,('notification_outbox')
+    ,('notification_delivery_attempts')
   ) required_table(name)
   where to_regclass('public.' || required_table.name) is null;
 
@@ -49,6 +53,7 @@ begin
     ('restaurants', 'theme_preset'),
     ('restaurants', 'theme_overrides'),
     ('restaurants', 'primary_domain'),
+    ('restaurants', 'is_indexable'),
     ('menu_items', 'restaurant_id'),
     ('menu_items', 'source_system'),
     ('menu_items', 'source_item_id'),
@@ -70,6 +75,9 @@ begin
     ,('refunds', 'failure_category')
     ,('refunds', 'failure_code')
     ,('refunds', 'failure_message')
+    ,('notification_outbox', 'idempotency_key')
+    ,('notification_outbox', 'next_attempt_at')
+    ,('notification_outbox', 'provider_message_id')
   ) required_column(table_name, column_name)
   where not exists (
     select 1
@@ -97,7 +105,9 @@ begin
         ,'restaurant_payment_connections', 'payment_provider_references',
         'payments', 'payment_checkout_sessions', 'payment_attempts',
         'payment_webhook_events', 'refunds', 'payment_state_transitions',
-        'analytics_outbox'
+        'analytics_outbox', 'restaurant_notification_settings',
+        'restaurant_notification_setting_events', 'notification_outbox',
+        'notification_delivery_attempts'
       )
       and not relation.relrowsecurity
   ) then
@@ -132,6 +142,7 @@ begin
 
   if position('customtipcents' in checkout_wrapper_definition) = 0
     or position('custom_tip_value' in checkout_wrapper_definition) = 0
+    or position('least(authoritative_subtotal, 50000::bigint)' in checkout_wrapper_definition) = 0
   then
     raise exception 'Checkout wrapper does not authoritatively handle custom tips';
   end if;
@@ -147,6 +158,10 @@ begin
     or to_regprocedure('public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)') is null
     or to_regprocedure('public.touch_payment_reconciliation_v1(uuid,text)') is null
     or to_regprocedure('public.abandon_checkout_v1(uuid,text)') is null
+    or to_regprocedure('public.get_restaurant_notification_settings_v1(text)') is null
+    or to_regprocedure('public.update_restaurant_notification_settings_v1(text,jsonb,uuid)') is null
+    or to_regprocedure('public.claim_notification_outbox_v1(integer)') is null
+    or to_regprocedure('public.complete_notification_delivery_v1(uuid,uuid,boolean,boolean,integer,text,text,text)') is null
   then
     raise exception 'Required payment functions are missing';
   end if;
@@ -169,6 +184,8 @@ begin
     or has_function_privilege('authenticated', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
     or has_function_privilege('anon', 'public.abandon_checkout_v1(uuid,text)', 'EXECUTE')
     or has_function_privilege('authenticated', 'public.abandon_checkout_v1(uuid,text)', 'EXECUTE')
+    or has_function_privilege('authenticated', 'public.claim_notification_outbox_v1(integer)', 'EXECUTE')
+    or has_function_privilege('anon', 'public.get_restaurant_notification_settings_v1(text)', 'EXECUTE')
   then
     raise exception 'Checkout RPC must not be executable by anon/authenticated';
   end if;
@@ -178,6 +195,8 @@ begin
     or not has_function_privilege('service_role', 'public.ingest_payment_reconciliation_v1(text,text,text,uuid,jsonb,timestamp with time zone)', 'EXECUTE')
     or not has_function_privilege('service_role', 'public.touch_payment_reconciliation_v1(uuid,text)', 'EXECUTE')
     or not has_function_privilege('service_role', 'public.abandon_checkout_v1(uuid,text)', 'EXECUTE')
+    or not has_function_privilege('service_role', 'public.claim_notification_outbox_v1(integer)', 'EXECUTE')
+    or not has_function_privilege('service_role', 'public.complete_notification_delivery_v1(uuid,uuid,boolean,boolean,integer,text,text,text)', 'EXECUTE')
   then
     raise exception 'service_role cannot execute a required checkout/payment RPC';
   end if;

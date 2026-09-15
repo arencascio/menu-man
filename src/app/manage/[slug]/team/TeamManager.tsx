@@ -13,11 +13,12 @@ const capabilityInfo: Record<ManagementCapability, { label: string; description:
   issue_refunds: { label: "Issue refunds", description: "Reserved for future provider-confirmed refund tools.", sensitive: true },
   correct_fulfillment: { label: "Correct fulfillment", description: "Reserved for audited fulfillment corrections.", sensitive: true },
   manage_memberships: { label: "Manage team", description: "Invite, edit, revoke, and reinstate non-owner team members.", sensitive: true },
+  manage_notifications: { label: "Manage notifications", description: "Configure customer and restaurant operational emails.", sensitive: true },
 };
 const allCapabilities = Object.keys(capabilityInfo) as ManagementCapability[];
 const roleDefaults: Record<"owner" | "manager" | "staff", ManagementCapability[]> = {
   owner: allCapabilities,
-  manager: ["view_orders", "advance_fulfillment", "view_customer_contact", "export_order_history"],
+  manager: ["view_orders", "advance_fulfillment", "view_customer_contact", "export_order_history", "manage_notifications"],
   staff: ["view_orders", "advance_fulfillment", "view_customer_contact"],
 };
 type Role = "owner" | "manager" | "staff";
@@ -117,7 +118,7 @@ export default function TeamManager({ slug, restaurantName, actorMembershipId, a
   const canChooseOwner = actorRole === "owner";
   const cannotEditOwner = Boolean(target?.role === "owner" && actorRole !== "owner");
 
-  if (accessLost) return <AccessRevoked restaurantName={restaurantName} signedOut={accessLost === "signed-out"} />;
+  if (accessLost) return <AccessRevoked restaurantName={restaurantName} slug={slug} signedOut={accessLost === "signed-out"} />;
 
   return <div className={styles.workspace}>
     <section className={styles.editor} aria-label={editingId ? "Edit team member" : "Invite team member"}>

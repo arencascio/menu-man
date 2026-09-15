@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: RestaurantPageProps): Promise
   const { slug } = await params;
   const { data: restaurant } = await supabaseServer
     .from("restaurants")
-    .select("name, slug, tagline, description, logo_url, hero_image_url, primary_domain")
+    .select("name, slug, tagline, description, logo_url, hero_image_url, primary_domain, is_indexable")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -44,6 +44,7 @@ export async function generateMetadata({ params }: RestaurantPageProps): Promise
     heroImageUrl: restaurant.hero_image_url,
     logoUrl: restaurant.logo_url,
     primaryDomain: restaurant.primary_domain,
+    indexable: restaurant.is_indexable,
   });
 }
 
@@ -81,7 +82,8 @@ export default async function RestaurantPage({
         accent_color,
         theme_preset,
         theme_overrides,
-        primary_domain
+        primary_domain,
+        is_indexable
       `)
       .eq("slug", slug)
       .eq("is_active", true)

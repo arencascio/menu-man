@@ -3,6 +3,7 @@ import type { ManagedOrderExportRow } from "./contracts";
 export const orderHistoryCsvHeaders = [
   "Order Number",
   "Placed Timestamp",
+  "Pickup Mode",
   "Pickup Timestamp",
   "Customer Name",
   "Fulfillment Status",
@@ -14,6 +15,8 @@ export const orderHistoryCsvHeaders = [
   "Tip",
   "Total",
   "Refunded Amount",
+  "Ready Timestamp",
+  "Ready On Time",
   "Completed Timestamp",
 ] as const;
 
@@ -36,6 +39,7 @@ export function orderHistoryCsvRow(row: ManagedOrderExportRow) {
   return csvLine([
     row.orderNumber,
     row.placedAt,
+    row.pickupMode === "asap" ? "ASAP" : "Scheduled",
     row.pickupAt,
     row.customerName,
     row.fulfillmentStatus,
@@ -47,6 +51,8 @@ export function orderHistoryCsvRow(row: ManagedOrderExportRow) {
     money(row.tipCents),
     money(row.totalCents),
     money(row.refundAmountCents),
+    row.readyAt,
+    row.readyOnTime === null ? null : row.readyOnTime ? "Yes" : "No",
     row.completedAt,
   ]);
 }

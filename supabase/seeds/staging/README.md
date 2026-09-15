@@ -1,4 +1,4 @@
-# Armando staging seed
+# Menu Man staging fixtures
 
 These files contain staging-only test data. They are intentionally outside
 `supabase/seed.sql`, so normal migration or production deployment commands do
@@ -14,11 +14,15 @@ Run the sequence only against the separately created staging project:
 5. Apply `004_armandos_fake_payments.sql`.
 6. To route Armando's to Square Sandbox, apply `005_armandos_square_sandbox.sql`
    with the fixed Sandbox merchant and location IDs.
-7. Run the SQL files under `supabase/tests/` in filename order. The fake
+7. Apply `006_test_kitchen.sql` with the explicit staging marker. This creates
+   the noindex, fake-provider-only Menu Man Test Kitchen tenant.
+8. Run SQL contracts `001` through `006` in filename order. The fake
    contract temporarily selects the fake route inside its rolled-back
    transaction; the Square contract uses the selected Square route.
-8. After the order-management migration is applied, invite and bootstrap the
-   first owner with the guarded staging command below. Then run `007` and `008`.
+9. After the order-management migration is applied, invite and bootstrap the
+   first owner with the guarded staging command below. Apply
+   `007_test_kitchen_memberships.sql` to link that same user to Test Kitchen,
+   then run management tests `007` through `010`.
 
 One explicit hosted-staging command sequence is:
 
@@ -36,6 +40,7 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/sta
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/003_armandos_test_modifiers.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/004_armandos_fake_payments.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -v menu_man_environment=staging -v square_merchant_id='<sandbox-merchant-id>' -v square_location_id='<sandbox-location-id>' -f supabase/seeds/staging/005_armandos_square_sandbox.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -v menu_man_environment=staging -f supabase/seeds/staging/006_test_kitchen.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/001_schema_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/002_checkout_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/003_armandos_fixture.sql
@@ -43,9 +48,11 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/004
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/005_square_payments_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/006_pickup_availability_contract.sql
 npm run bootstrap-owner:staging -- --restaurant armandos --email '<owner-email>' --display-name '<owner-name>' --app-origin 'https://<preview-host>'
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -v menu_man_environment=staging -f supabase/seeds/staging/007_test_kitchen_memberships.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/007_order_management_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/008_restaurant_user_management_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/009_order_management_export_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/010_multitenant_notifications_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new
@@ -71,6 +78,25 @@ SQUARE_SANDBOX_MERCHANT_ID=<sandbox-merchant-id>
 SQUARE_SANDBOX_LOCATION_ID=<sandbox-location-id>
 SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY=<sandbox-webhook-signature-key>
 SQUARE_SANDBOX_WEBHOOK_NOTIFICATION_URL=https://<preview-host>/api/webhooks/payments/square/sandbox
+RESEND_API_KEY=<server-only-resend-api-key>
+MENU_MAN_ORDER_EMAIL_FROM="Menu Man <orders@getmenuman.com>"
+CRON_SECRET=<at-least-16-random-characters>
+```
+
+`RESEND_API_KEY` and `CRON_SECRET` are server-only Vercel secrets.
+`MENU_MAN_ORDER_EMAIL_FROM` is non-secret configuration. Keep Supabase Auth
+SMTP separate from these operational-order emails. Verify the sending domain
+in Resend before smoke testing delivery.
+
+The retry-safe worker is `GET /api/internal/notifications/deliver`. It requires
+`Authorization: Bearer $CRON_SECRET`, claims at most five due rows, and can be
+invoked repeatedly. `vercel.json` schedules it every minute for a production
+deployment. Vercel Cron does not invoke Preview deployments, so staging needs a
+separately authorized external scheduler or a manual invocation during QA:
+
+```powershell
+$headers = @{ Authorization = "Bearer $env:CRON_SECRET" }
+Invoke-RestMethod -Headers $headers -Uri 'https://<preview-host>/api/internal/notifications/deliver'
 ```
 
 In Supabase Authentication settings, disable public user signups, set the Site

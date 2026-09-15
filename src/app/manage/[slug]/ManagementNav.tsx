@@ -4,13 +4,14 @@ import sharedStyles from "../management.module.css";
 
 export default function ManagementNav({ slug, active, capabilities }: {
   slug: string;
-  active: "orders" | "team";
+  active: "orders" | "team" | "notifications";
   capabilities: ManagementCapability[];
 }) {
   return (
     <nav className={sharedStyles.managementNav} aria-label="Restaurant management">
       {capabilities.includes("view_orders") ? <Link className={active === "orders" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/orders`}>Orders</Link> : null}
       {capabilities.includes("manage_memberships") ? <Link className={active === "team" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/team`}>Team</Link> : null}
+      {capabilities.includes("manage_notifications") ? <Link className={active === "notifications" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/settings/notifications`}>Notifications</Link> : null}
     </nav>
   );
 }

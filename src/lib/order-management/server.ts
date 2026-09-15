@@ -178,8 +178,9 @@ export async function createManagedOrderExportPager() {
       orderId: row.order_id,
       orderNumber: row.order_number,
       historyAt: row.history_at,
-      placedAt: row.placed_at,
-      pickupAt: row.pickup_at,
+    placedAt: row.placed_at,
+    pickupMode: row.pickup_mode,
+    pickupAt: row.pickup_at,
       customerName: row.customer_name,
       fulfillmentStatus: row.fulfillment_status,
       paymentStatus: row.payment_status,
@@ -189,8 +190,10 @@ export async function createManagedOrderExportPager() {
       taxCents: row.tax_cents,
       tipCents: row.tip_cents,
       totalCents: row.total_cents,
-      refundAmountCents: row.refund_amount_cents,
-      completedAt: row.completed_at,
+    refundAmountCents: row.refund_amount_cents,
+    readyAt: row.ready_at,
+    readyOnTime: row.ready_on_time,
+    completedAt: row.completed_at,
     }));
     const hasMore = parsed.length > query.limit;
     const rows = hasMore ? parsed.slice(0, query.limit) : parsed;

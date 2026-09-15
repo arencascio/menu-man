@@ -14,6 +14,7 @@ test("order history CSV leaves customer name empty when the DB redacts it", () =
     orderNumber: "1042",
     historyAt: "2026-09-14T18:00:00Z",
     placedAt: "2026-09-14T18:00:00Z",
+    pickupMode: "scheduled",
     pickupAt: "2026-09-14T18:30:00Z",
     customerName: null,
     fulfillmentStatus: "completed",
@@ -25,7 +26,9 @@ test("order history CSV leaves customer name empty when the DB redacts it", () =
     tipCents: 200,
     totalCents: 1288,
     refundAmountCents: 0,
+    readyAt: "2026-09-14T18:25:00Z",
+    readyOnTime: true,
     completedAt: "2026-09-14T19:00:00Z",
   });
-  assert.equal(line, "1042,2026-09-14T18:00:00Z,2026-09-14T18:30:00Z,,completed,paid,,2,10.00,0.88,2.00,12.88,0.00,2026-09-14T19:00:00Z\r\n");
+  assert.equal(line, "1042,2026-09-14T18:00:00Z,Scheduled,2026-09-14T18:30:00Z,,completed,paid,,2,10.00,0.88,2.00,12.88,0.00,2026-09-14T18:25:00Z,Yes,2026-09-14T19:00:00Z\r\n");
 });

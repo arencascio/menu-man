@@ -9,8 +9,8 @@ test("custom tip input converts dollars to exact integer cents", () => {
   assert.equal(parseCustomTipCents("0"), 0);
 });
 
-test("custom tip input rejects fractional cents, negative, blank, and oversized values", () => {
-  for (const value of ["", "-1", "1.001", "abc", "21474836.48"]) {
+test("custom tip input rejects fractional cents, negative, blank, and amounts above $500", () => {
+  for (const value of ["", "-1", "1.001", "abc", "500.01", "21474836.48"]) {
     assert.equal(parseCustomTipCents(value), null);
   }
 });

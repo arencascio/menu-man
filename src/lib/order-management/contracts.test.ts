@@ -20,10 +20,10 @@ test("restaurant roles carry validated granular capabilities", () => {
     restaurantTimezone: "America/Los_Angeles",
     memberRole: "staff",
     displayName: "Test Staff",
-    capabilities: ["view_orders", "advance_fulfillment"],
+    capabilities: ["view_orders", "advance_fulfillment", "manage_notifications"],
   });
   assert.equal(membership.memberRole, "staff");
-  assert.deepEqual(membership.capabilities, ["view_orders", "advance_fulfillment"]);
+  assert.deepEqual(membership.capabilities, ["view_orders", "advance_fulfillment", "manage_notifications"]);
 });
 
 test("membership audit presentation shows friendly role and permission deltas", () => {
@@ -34,7 +34,7 @@ test("membership audit presentation shows friendly role and permission deltas", 
     actorDisplayName: "Test Owner",
     action: "membership.role_changed",
     previousState: { role: "staff", capabilities: ["view_orders", "view_customer_contact"] },
-    nextState: { role: "manager", capabilities: ["view_orders", "manage_memberships"] },
+    nextState: { role: "manager", capabilities: ["view_orders", "manage_memberships", "manage_notifications"] },
     reason: null,
     metadata: {},
     createdAt: "2026-09-14T18:00:00Z",
@@ -42,7 +42,7 @@ test("membership audit presentation shows friendly role and permission deltas", 
   assert.equal(presentation.title, "Role changed");
   assert.deepEqual(presentation.details, [
     "Staff → Manager",
-    "Added: Manage team",
+    "Added: Manage team, Manage notifications",
     "Removed: View customer contact",
   ]);
 });
