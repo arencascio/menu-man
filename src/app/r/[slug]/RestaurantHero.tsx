@@ -1,5 +1,5 @@
 import styles from "./restaurant-page.module.css";
-import { trackEvent } from "@/lib/analytics/client";
+import TrackedRestaurantLink from "./TrackedRestaurantLink";
 
 type RestaurantHeroProps = {
   restaurantId: string;
@@ -43,16 +43,30 @@ export default function RestaurantHero({
         {tagline ? <p className={styles.tagline}>{tagline}</p> : <p className={styles.tagline}>Menu and restaurant information</p>}
         <div className={styles.heroActions}>
           {orderUrl ? (
-            <a className={styles.primaryAction} href={orderUrl} target="_blank" rel="noreferrer" onClick={() => trackEvent({ name: orderEvent, restaurantId })}>
+            <TrackedRestaurantLink
+              className={styles.primaryAction}
+              href={orderUrl}
+              target="_blank"
+              rel="noreferrer"
+              eventName={orderEvent}
+              restaurantId={restaurantId}
+            >
               Order online
-            </a>
+            </TrackedRestaurantLink>
           ) : (
             <span className={`${styles.primaryAction} ${styles.disabledAction}`}>Order online unavailable</span>
           )}
           {directionsUrl ? (
-            <a className={styles.secondaryAction} href={directionsUrl} target="_blank" rel="noreferrer" onClick={() => trackEvent({ name: "directions_clicked", restaurantId })}>
+            <TrackedRestaurantLink
+              className={styles.secondaryAction}
+              href={directionsUrl}
+              target="_blank"
+              rel="noreferrer"
+              eventName="directions_clicked"
+              restaurantId={restaurantId}
+            >
               Get directions
-            </a>
+            </TrackedRestaurantLink>
           ) : (
             <span className={`${styles.secondaryAction} ${styles.disabledAction}`}>Directions unavailable</span>
           )}

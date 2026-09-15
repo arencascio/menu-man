@@ -1,6 +1,6 @@
 import BusinessHours, { type BusinessHour } from "./BusinessHours";
 import styles from "./restaurant-page.module.css";
-import { trackEvent } from "@/lib/analytics/client";
+import TrackedRestaurantLink from "./TrackedRestaurantLink";
 
 type RestaurantInfoProps = {
   restaurantId: string;
@@ -42,7 +42,15 @@ export default function RestaurantInfo({
         </div>
         <div className={styles.detail}>
           <strong>Contact</strong>
-          {phone ? <a href={`tel:${phone}`} onClick={() => trackEvent({ name: "phone_clicked", restaurantId })}>{phone}</a> : <span className={styles.placeholderText}>Phone not provided</span>}
+          {phone ? (
+            <TrackedRestaurantLink
+              href={`tel:${phone}`}
+              eventName="phone_clicked"
+              restaurantId={restaurantId}
+            >
+              {phone}
+            </TrackedRestaurantLink>
+          ) : <span className={styles.placeholderText}>Phone not provided</span>}
         </div>
         <BusinessHours hours={hours} timezone={timezone} />
       </div>

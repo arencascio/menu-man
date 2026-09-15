@@ -131,3 +131,20 @@ test("Square card readiness is presentation-only and never submits a client tota
   assert.match(square, /disabled=\{!cardReady \|\| !cardComplete \|\| submitting\}/);
   assert.doesNotMatch(square, /onToken\([^)]*amountCents/);
 });
+
+test("restaurant server components pass serializable analytics data to a client link boundary", () => {
+  const hero = read("src", "app", "r", "[slug]", "RestaurantHero.tsx");
+  const info = read("src", "app", "r", "[slug]", "RestaurantInfo.tsx");
+  const trackedLink = read("src", "app", "r", "[slug]", "TrackedRestaurantLink.tsx");
+
+  for (const serverComponent of [hero, info]) {
+    assert.doesNotMatch(serverComponent, /onClick=/);
+    assert.doesNotMatch(serverComponent, /@\/lib\/analytics\/client/);
+    assert.match(serverComponent, /TrackedRestaurantLink/);
+  }
+
+  assert.match(trackedLink, /^"use client";/);
+  assert.match(trackedLink, /onClick=\{\(\) => trackEvent\(\{ name: eventName, restaurantId \}\)\}/);
+  assert.match(trackedLink, /target=\{target\}/);
+  assert.match(trackedLink, /rel=\{rel\}/);
+});
