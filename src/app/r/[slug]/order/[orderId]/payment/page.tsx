@@ -9,6 +9,11 @@ import styles from "../../../menu-browser.module.css";
 
 export const dynamic = "force-dynamic";
 
+function formatStatus(status: string) {
+  const words = status.replaceAll("_", " ");
+  return `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+}
+
 export default async function PaymentPage({
   params,
   searchParams,
@@ -29,19 +34,22 @@ export default async function PaymentPage({
   }
   const viewIsPlaced = view.payment.orderStatus === "placed"
     && ["paid", "partially_refunded", "refunded"].includes(view.payment.paymentStatus);
-  if (viewIsPlaced && detailsRequested) {
+  if (detailsRequested) {
+    const returnHref = viewIsPlaced
+      ? `/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`
+      : `/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/payment`;
     return (
       <main className={styles.page}>
         <section className={styles.checkoutPanel} aria-labelledby="order-details-title">
           <p className={styles.expandedLabel}>Order details</p>
           <h1 id="order-details-title">Order #{view.order.orderNumber}</h1>
           <dl className={styles.confirmationStatus}>
-            <div><dt>Order status</dt><dd>Order placed</dd></div>
-            <div><dt>Payment status</dt><dd>{view.payment.paymentStatus === "paid" ? "Paid" : view.payment.paymentStatus === "refunded" ? "Refunded" : "Partially refunded"}</dd></div>
+            <div><dt>Order status</dt><dd>{formatStatus(view.payment.orderStatus)}</dd></div>
+            <div><dt>Payment status</dt><dd>{formatStatus(view.payment.paymentStatus)}</dd></div>
           </dl>
           <OrderSnapshot order={view.order} />
           <nav aria-label="Order detail actions">
-            <Link className={styles.checkoutButton} href={`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`}>Return to Confirmation</Link>
+            <Link className={styles.checkoutButton} href={returnHref}>{viewIsPlaced ? "Return to Confirmation" : "Return to Payment"}</Link>
           </nav>
         </section>
       </main>
@@ -58,7 +66,7 @@ export default async function PaymentPage({
   const currentView = { ...view, payment: session.payment };
   const isPlaced = currentView.payment.orderStatus === "placed"
     && ["paid", "partially_refunded", "refunded"].includes(currentView.payment.paymentStatus);
-  if (isPlaced && !detailsRequested) {
+  if (isPlaced) {
     redirect(`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`);
   }
   const { data: restaurant } = await supabaseServer.from("restaurants").select("id").eq("slug", slug).maybeSingle();

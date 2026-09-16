@@ -32,7 +32,7 @@ const checkoutLineSchema = z.strictObject({
 const customerNameSchema = z.union([z.string().max(500), z.null()]).optional()
   .transform(normalizeCustomerName)
   .refine((value) => value == null || isValidCustomerName(value, false), {
-    message: "Enter a valid name using at least one letter and no more than 100 characters.",
+    message: "Enter a valid name with at least one letter and no more than 100 characters. When a name is required, Latin-script names must be at least 2 characters; single-character non-Latin names are allowed.",
   });
 
 const customerEmailSchema = z.union([z.string().max(500), z.null()]).optional()

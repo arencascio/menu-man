@@ -59,7 +59,7 @@ export function customerValidationError(
   if (!customer.name) {
     if (requirements.customerNameRequired) return "Enter your name.";
   } else if (!isValidCustomerName(customer.name, requirements.customerNameRequired)) {
-    return "Enter a valid name using at least one letter and no more than 100 characters.";
+    return "Enter a valid name with at least one letter and no more than 100 characters. When a name is required, Latin-script names must be at least 2 characters; single-character non-Latin names are allowed.";
   }
 
   if (!customer.email) {

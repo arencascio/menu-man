@@ -286,6 +286,9 @@ export default function PaymentPanel({
   const canSafelyAbandon = payment.status === "requires_payment_method"
     && payment.orderStatus === "pending_payment"
     && payment.latestAttempt === null;
+  const showCardPayment = paymentSession.browserSession.provider === "square"
+    && payment.status === "requires_payment_method"
+    && payment.orderStatus === "pending_payment";
   const authorizationVoided = terminalFailure
     && payment.latestAttempt?.failureCategory === "authorization_voided";
   const terminalDecline = terminalFailure
@@ -295,6 +298,20 @@ export default function PaymentPanel({
   const cancelledPendingReconciliation = payment.status === "cancelled"
     && payment.orderStatus === "cancelled"
     && paymentLocksCart(payment);
+  const paymentSecondaryActions = (
+    <nav className={styles.paymentSecondaryActions} aria-label="Payment navigation">
+      <Link href={`/r/${encodeURIComponent(restaurantSlug)}/order/${encodeURIComponent(order.orderId)}/payment?view=details`}>
+        Return to Order Details
+      </Link>
+      {canSafelyAbandon ? (
+        <button type="button" disabled={abandoning} aria-busy={abandoning} onClick={() => void abandonCheckout()}>
+          Return to Menu
+        </button>
+      ) : (
+        <Link href={`/r/${encodeURIComponent(restaurantSlug)}`}>Return to Menu</Link>
+      )}
+    </nav>
+  );
 
   return (
     <main className={styles.page} aria-label="Order payment">
@@ -351,7 +368,7 @@ export default function PaymentPanel({
         )}
         {isLateSuccessRefunded && <div className={styles.paymentNoticePanel}><h3>Payment refunded</h3><p>The payment was refunded and the order was not placed. Your cart is unlocked.</p></div>}
 
-        {paymentSession.browserSession.provider === "square" && payment.status === "requires_payment_method" && payment.orderStatus === "pending_payment" && (
+        {showCardPayment && (
           <SquarePaymentForm
             orderId={order.orderId}
             amountCents={payment.amountCents}
@@ -360,6 +377,7 @@ export default function PaymentPanel({
             submitting={submitting}
             onToken={submitPaymentMethodToken}
             onError={setError}
+            secondaryActions={paymentSecondaryActions}
           />
         )}
 
@@ -373,7 +391,7 @@ export default function PaymentPanel({
         )}
         {error && <p className={styles.formError} role="alert">{error}</p>}
         {(terminalFailure || isExpired || isLateSuccessRefunded) && <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}/checkout`}>Back to Checkout Details</Link>}
-        {canSafelyAbandon ? (
+        {!showCardPayment && (canSafelyAbandon ? (
           <button
             className={styles.checkoutButton}
             type="button"
@@ -384,7 +402,7 @@ export default function PaymentPanel({
           </button>
         ) : (
           <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}`}>Return to Menu</Link>
-        )}
+        ))}
       </section>
     </main>
   );

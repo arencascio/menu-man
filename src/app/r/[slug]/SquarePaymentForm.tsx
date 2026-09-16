@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Script from "next/script";
 import styles from "./menu-browser.module.css";
 
@@ -47,6 +47,7 @@ type SquarePaymentFormProps = {
   submitting: boolean;
   onToken: (token: string) => Promise<void>;
   onError: (message: string) => void;
+  secondaryActions: ReactNode;
 };
 
 export default function SquarePaymentForm({
@@ -57,6 +58,7 @@ export default function SquarePaymentForm({
   submitting,
   onToken,
   onError,
+  secondaryActions,
 }: SquarePaymentFormProps) {
   const applicationId = typeof publicConfig.applicationId === "string" ? publicConfig.applicationId : "";
   const locationId = typeof publicConfig.locationId === "string" ? publicConfig.locationId : "";
@@ -169,6 +171,7 @@ export default function SquarePaymentForm({
         <button className={styles.checkoutButton} type="submit" disabled={!cardReady || !cardComplete || submitting}>
           {submitting ? "Submitting Payment…" : "Pay with Card"}
         </button>
+        {secondaryActions}
       </form>
     </>
   );

@@ -158,6 +158,33 @@ test("Square card readiness is presentation-only and never submits a client tota
   assert.doesNotMatch(square, /onToken\([^)]*amountCents/);
 });
 
+test("card payment keeps a dominant CTA with equal neutral navigation below it", () => {
+  const square = read("src", "app", "r", "[slug]", "SquarePaymentForm.tsx");
+  const panel = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  const styles = read("src", "app", "r", "[slug]", "menu-browser.module.css");
+  const payButton = square.indexOf("Pay with Card");
+  const secondaryActions = square.indexOf("{secondaryActions}");
+
+  assert.ok(payButton >= 0 && secondaryActions > payButton);
+  assert.match(panel, /paymentSecondaryActions/);
+  assert.match(panel, /Return to Order Details/);
+  assert.match(panel, /payment\?view=details/);
+  assert.match(panel, /Return to Menu/);
+  assert.match(styles, /\.paymentSecondaryActions \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
+  assert.match(styles, /\.paymentSecondaryActions a, \.paymentSecondaryActions button \{[^}]*width: 180px;[^}]*max-width: 100%;/);
+});
+
+test("read-only order details preserve capability checks and skip payment browser sessions", () => {
+  const page = read("src", "app", "r", "[slug]", "order", "[orderId]", "payment", "page.tsx");
+  const capabilityCheck = page.indexOf("getGuestPaymentCapability(orderId)");
+  const detailsBranch = page.indexOf("if (detailsRequested)");
+  const providerSession = page.indexOf("getPaymentSession(orderId, checkoutToken)");
+
+  assert.ok(capabilityCheck >= 0 && detailsBranch > capabilityCheck);
+  assert.ok(providerSession > detailsBranch);
+  assert.match(page, /viewIsPlaced \? "Return to Confirmation" : "Return to Payment"/);
+});
+
 test("restaurant server components pass serializable analytics data to a client link boundary", () => {
   const hero = read("src", "app", "r", "[slug]", "RestaurantHero.tsx");
   const info = read("src", "app", "r", "[slug]", "RestaurantInfo.tsx");

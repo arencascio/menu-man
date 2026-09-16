@@ -28,6 +28,10 @@ test("customer name normalization and required/optional behavior", () => {
   assert.equal(customerValidationError({ name: null, email: null, phone: null }, optional), null);
   assert.equal(isValidCustomerName("123456", true), false);
   assert.equal(isValidCustomerName("!!!", true), false);
+  assert.match(
+    customerValidationError({ name: "A", email: "a@b.co", phone: "+19515551234" }, required) || "",
+    /Latin-script names must be at least 2 characters; single-character non-Latin names are allowed/,
+  );
 });
 
 test("customer names allow apostrophes, hyphens, accents, and non-Latin scripts", () => {
