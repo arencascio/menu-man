@@ -64,9 +64,33 @@ test("canonicalizes equivalent accepted checkout requests identically", () => {
 test("accepts a custom tip only as a validated nonnegative integer-cent amount", () => {
   const custom = { ...requestFixture(), tipChoice: "custom", customTipCents: 425 };
   assert.equal(checkoutRequestSchema.parse(custom).customTipCents, 425);
+  assert.equal(checkoutRequestSchema.parse(custom).largeTipConfirmed, false);
+  assert.equal(
+    checkoutRequestSchema.parse({
+      ...custom,
+      largeTipConfirmed: true,
+      largeTipConfirmedSubtotalCents: 300,
+    }).largeTipConfirmed,
+    true,
+  );
+  assert.equal(checkoutRequestSchema.safeParse({
+    ...custom,
+    largeTipConfirmed: true,
+  }).success, false);
 
   assert.equal(checkoutRequestSchema.safeParse({ ...custom, customTipCents: -1 }).success, false);
   assert.equal(checkoutRequestSchema.safeParse({ ...custom, customTipCents: 1.5 }).success, false);
+});
+
+test("preset percentage tips ignore the large-tip confirmation marker", () => {
+  const preset = checkoutRequestSchema.parse({
+    ...requestFixture(),
+    largeTipConfirmed: true,
+    largeTipConfirmedSubtotalCents: 1,
+  });
+  assert.equal(preset.tipChoice, "15_percent");
+  assert.equal(preset.largeTipConfirmed, false);
+  assert.equal(preset.largeTipConfirmedSubtotalCents, null);
 });
 
 test("rejects client prices and duplicate modifier option IDs", () => {

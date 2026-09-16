@@ -29,6 +29,7 @@ export const orderPaymentViewSchema = z.strictObject({
     taxCents: z.int().nonnegative(),
     tipCents: z.int().nonnegative(),
     totalCents: z.int().nonnegative(),
+    customerEmail: z.email().nullable(),
     pickup: z.strictObject({
       mode: z.enum(["asap", "scheduled"]),
       pickupAt: z.string().datetime({ offset: true }),

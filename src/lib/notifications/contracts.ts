@@ -40,6 +40,12 @@ export const claimedNotificationSchema = z.object({
   pickupMode: z.enum(["asap", "scheduled"]),
   pickupAt: z.iso.datetime({ offset: true }),
   pickupTimezone: z.string().min(1),
+  restaurantAddressLine1: z.string().nullable(),
+  restaurantCity: z.string().nullable(),
+  restaurantState: z.string().nullable(),
+  restaurantPostalCode: z.string().nullable(),
+  googleMapsUrl: z.string().nullable(),
+  customerEmail: z.email().nullable(),
 });
 
 export type ClaimedNotification = z.infer<typeof claimedNotificationSchema>;

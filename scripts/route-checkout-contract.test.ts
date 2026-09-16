@@ -86,6 +86,17 @@ test("checkout pickup availability is uncached and stale failures retain the edi
   assert.doesNotMatch(checkout, /cart\.clear\(/);
 });
 
+test("large custom tips require an inline, resettable confirmation before checkout", () => {
+  const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
+  assert.match(checkout, /That&apos;s a very generous tip!/);
+  assert.match(checkout, /Yes, continue with/);
+  assert.match(checkout, /Change tip/);
+  assert.match(checkout, /largeTipConfirmed: isLargeTipConfirmed/);
+  assert.match(checkout, /reconcileLargeTipConfirmation/);
+  assert.match(checkout, /data-large-tip-confirmed="true"/);
+  assert.doesNotMatch(checkout, /window\.confirm|\bconfirm\(/);
+});
+
 test("checkout draft PII is session scoped and cleared only on verified completion", () => {
   const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
   const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");

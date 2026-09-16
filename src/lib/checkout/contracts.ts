@@ -44,6 +44,11 @@ const checkoutInputSchema = z.strictObject({
   pickup: pickupSchema,
   tipChoice: z.enum(["none", "10_percent", "15_percent", "20_percent", "custom"]),
   customTipCents: z.union([z.int().nonnegative().max(2_147_483_647), z.null()]).optional(),
+  largeTipConfirmed: z.boolean().optional().default(false),
+  largeTipConfirmedSubtotalCents: z.union([
+    z.int().nonnegative().max(2_147_483_647),
+    z.null(),
+  ]).optional(),
   orderNotes: optionalTrimmedText(1000),
 }).superRefine((request, context) => {
   if (request.tipChoice === "custom" && request.customTipCents == null) {
@@ -51,6 +56,17 @@ const checkoutInputSchema = z.strictObject({
       code: "custom",
       path: ["customTipCents"],
       message: "Enter a valid custom tip with no more than two decimal places.",
+    });
+  }
+  if (
+    request.tipChoice === "custom"
+    && request.largeTipConfirmed
+    && request.largeTipConfirmedSubtotalCents == null
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["largeTipConfirmedSubtotalCents"],
+      message: "The confirmed subtotal is required for a large custom tip.",
     });
   }
 });
@@ -78,6 +94,10 @@ export const checkoutRequestSchema = checkoutInputSchema.transform((request) => 
   pickup: request.pickup,
   tipChoice: request.tipChoice,
   customTipCents: request.tipChoice === "custom" ? request.customTipCents! : null,
+  largeTipConfirmed: request.tipChoice === "custom" && request.largeTipConfirmed,
+  largeTipConfirmedSubtotalCents: request.tipChoice === "custom" && request.largeTipConfirmed
+    ? request.largeTipConfirmedSubtotalCents!
+    : null,
   orderNotes: request.orderNotes,
 }));
 
@@ -181,6 +201,7 @@ export type CheckoutErrorCode =
   | "ITEM_NOT_ON_MENU"
   | "INVALID_MODIFIERS"
   | "PICKUP_UNAVAILABLE"
+  | "LARGE_TIP_CONFIRMATION_REQUIRED"
   | "TOTAL_TOO_LARGE"
   | "IDEMPOTENCY_CONFLICT"
   | "CHECKOUT_FAILED";
@@ -189,6 +210,7 @@ export type CheckoutErrorResponse = {
   error: {
     code: CheckoutErrorCode;
     message: string;
+    authoritativeSubtotalCents?: number;
     issues?: Array<{ path: string; message: string }>;
   };
 };

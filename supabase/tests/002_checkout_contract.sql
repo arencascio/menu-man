@@ -161,31 +161,73 @@ begin
     perform public.create_order_v1(
       'armandos', rejected_tip_key,
       jsonb_set(jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
-        '{customTipCents}', to_jsonb((base_price + 1)::integer))
+        '{customTipCents}', to_jsonb((first_response ->> 'subtotalCents')::integer + 1))
     );
-    raise exception 'Expected a custom tip above subtotal to be rejected';
+    raise exception 'Expected a custom tip above subtotal to require confirmation';
   exception when others then
-    if sqlerrm not like 'MM_INVALID_REQUEST|Custom tip cannot exceed%' then raise; end if;
+    if sqlerrm not like 'MM_LARGE_TIP_CONFIRMATION_REQUIRED|%' then raise; end if;
   end;
   if exists (select 1 from public.orders where idempotency_key = rejected_tip_key) then
-    raise exception 'Rejected custom tip committed an order';
+    raise exception 'Unconfirmed large tip committed an order';
   end if;
+
+  custom_response := public.create_order_v1(
+    'armandos', gen_random_uuid()::text,
+    jsonb_set(jsonb_set(
+      jsonb_set(
+        jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
+        '{customTipCents}', to_jsonb((first_response ->> 'subtotalCents')::integer + 1)
+      ),
+      '{largeTipConfirmed}', 'true'::jsonb
+    ), '{largeTipConfirmedSubtotalCents}',
+      to_jsonb((first_response ->> 'subtotalCents')::integer))
+  );
+  if (custom_response ->> 'tipCents')::integer
+    <> (first_response ->> 'subtotalCents')::integer + 1
+  then raise exception 'Confirmed large tip did not proceed'; end if;
+
+  -- Equality does not require confirmation.
+  perform public.create_order_v1(
+    'armandos', gen_random_uuid()::text,
+    jsonb_set(jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
+      '{customTipCents}', to_jsonb((first_response ->> 'subtotalCents')::integer))
+  );
 
   begin
     perform public.create_order_v1(
       'armandos', gen_random_uuid()::text,
-      jsonb_set(
+      jsonb_set(jsonb_set(
         jsonb_set(
-          jsonb_set(request_payload, '{items,0,quantity}', '99'::jsonb),
-          '{tipChoice}', '"custom"'::jsonb
+          jsonb_set(request_payload, '{tipChoice}', '"custom"'::jsonb),
+          '{customTipCents}',
+          to_jsonb((first_response ->> 'subtotalCents')::integer + 50001)
         ),
-        '{customTipCents}', '50001'::jsonb
-      )
+        '{largeTipConfirmed}', 'true'::jsonb
+      ), '{largeTipConfirmedSubtotalCents}',
+        to_jsonb((first_response ->> 'subtotalCents')::integer))
     );
-    raise exception 'Expected a custom tip above $500 to be rejected';
+    raise exception 'Expected a custom tip above subtotal plus $500 to be rejected';
   exception when others then
     if sqlerrm not like 'MM_INVALID_REQUEST|Custom tip cannot exceed%' then raise; end if;
   end;
+
+  custom_response := public.create_order_v1(
+    'armandos', gen_random_uuid()::text,
+    jsonb_set(jsonb_set(
+      jsonb_set(
+        jsonb_set(request_payload,
+          '{tipChoice}', '"custom"'::jsonb
+        ),
+        '{customTipCents}',
+        to_jsonb((first_response ->> 'subtotalCents')::integer + 50000)
+      ),
+      '{largeTipConfirmed}', 'true'::jsonb
+    ), '{largeTipConfirmedSubtotalCents}',
+      to_jsonb((first_response ->> 'subtotalCents')::integer))
+  );
+  if (custom_response ->> 'tipCents')::integer
+    <> (first_response ->> 'subtotalCents')::integer + 50000
+  then raise exception 'Custom tip at subtotal plus $500 was rejected'; end if;
 
   if (
     select count(*)

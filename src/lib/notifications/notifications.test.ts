@@ -16,14 +16,41 @@ const claim = claimedNotificationSchema.parse({
   pickupMode: "scheduled",
   pickupAt: "2026-09-15T19:30:00Z",
   pickupTimezone: "America/Los_Angeles",
+  restaurantAddressLine1: "123 Main St",
+  restaurantCity: "Los Angeles",
+  restaurantState: "CA",
+  restaurantPostalCode: "90001",
+  googleMapsUrl: "https://maps.google.com/?q=123+Main+St",
+  customerEmail: "diner@example.com",
 });
 
-test("customer operational email contains only concise order and pickup context", () => {
+test("order confirmation email renders responsive customer pickup details and plain text", () => {
   const email = renderNotificationEmail(claim);
   assert.match(email.subject, /Order #1042 confirmed/);
+  assert.match(email.html, /name="viewport"/);
+  assert.match(email.html, /MENU MAN/);
   assert.match(email.html, /Test &amp; Kitchen/);
-  assert.match(email.text, /Pickup:/);
+  assert.match(email.html, /123 Main St, Los Angeles, CA 90001/);
+  assert.match(email.html, /Get directions/);
+  assert.match(email.html, /diner@example\.com/);
+  assert.match(email.text, /Pickup mode: Scheduled pickup/);
+  assert.match(email.text, /Pickup date & time:/);
+  assert.match(email.text, /Directions: https:\/\/maps\.google\.com/);
   assert.doesNotMatch(email.html, /payment token|provider reference|card/i);
+});
+
+test("ready-for-pickup email uses the polished customer template", () => {
+  const ready = claimedNotificationSchema.parse({
+    ...claim,
+    notificationType: "customer.ready_for_pickup",
+    idempotencyKey: "customer.ready_for_pickup/33333333-3333-4333-8333-333333333333",
+  });
+  const email = renderNotificationEmail(ready);
+  assert.match(email.subject, /ready for pickup/);
+  assert.match(email.html, /Your order is ready/);
+  assert.match(email.html, /Test &amp; Kitchen/);
+  assert.match(email.text, /Email on order: diner@example\.com/);
+  assert.doesNotMatch(email.text, /promotion|subscribe|marketing/i);
 });
 
 test("Resend delivery sends a stable idempotency key and recognizes success", async () => {

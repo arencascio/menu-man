@@ -13,6 +13,12 @@ function mapClaim(row: Record<string, unknown>): ClaimedNotification {
     restaurantName: row.restaurant_name, orderNumber: row.order_number,
     pickupMode: row.pickup_mode, pickupAt: row.pickup_at,
     pickupTimezone: row.pickup_timezone,
+    restaurantAddressLine1: row.restaurant_address_line1,
+    restaurantCity: row.restaurant_city,
+    restaurantState: row.restaurant_state,
+    restaurantPostalCode: row.restaurant_postal_code,
+    googleMapsUrl: row.google_maps_url,
+    customerEmail: row.customer_email,
   });
 }
 

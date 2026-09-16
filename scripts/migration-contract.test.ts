@@ -37,6 +37,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609140004_order_management_polish_export.sql",
     "202609150001_notifications_multitenant.sql",
     "202609150002_custom_tip_cap.sql",
+    "202609160001_customer_post_order_polish.sql",
   ]);
 });
 
@@ -411,12 +412,30 @@ test("notification foundation is capability-gated, audited, idempotent, and retr
   assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[\s\S]*notification_outbox[\s\S]*to authenticated/i);
 });
 
-test("custom tips are capped against authoritative subtotal and $500", () => {
-  const migration = migrations.find(({ file }) => file.endsWith("_custom_tip_cap.sql"))?.sql || "";
+test("custom tips use authoritative large-tip confirmation and subtotal plus $500 cap", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_customer_post_order_polish.sql"),
+  )?.sql || "";
   assert.match(migration, /authoritative_subtotal := \(base_response ->> 'subtotalCents'\)::bigint/i);
-  assert.match(migration, /least\(authoritative_subtotal, 50000::bigint\)/i);
-  assert.match(migration, /Custom tip cannot exceed the pre-tax subtotal or \$500/i);
+  assert.match(migration, /maximum_custom_tip := authoritative_subtotal \+ 50000::bigint/i);
+  assert.match(migration, /custom_tip_value > maximum_custom_tip/i);
+  assert.match(migration, /Custom tip cannot exceed the pre-tax subtotal plus \$500/i);
+  assert.match(migration, /confirmed_subtotal is distinct from authoritative_subtotal/i);
+  assert.match(migration, /MM_LARGE_TIP_CONFIRMATION_REQUIRED/i);
+  assert.match(migration, /p_request - 'largeTipConfirmed'/i);
   assert.match(migration, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("customer-safe payment view and outbox claims include post-order presentation fields", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_customer_post_order_polish.sql"),
+  )?.sql || "";
+  assert.match(migration, /create or replace function public\.get_order_payment_view_v1/i);
+  assert.match(migration, /'customerEmail'[\s\S]*customer_email/i);
+  assert.match(migration, /restaurant\.google_maps_url/i);
+  assert.match(migration, /order_record\.customer_email/i);
+  assert.match(migration, /grant execute on function public\.claim_notification_outbox_v1\(integer\)[\s\S]*to service_role/i);
+  assert.doesNotMatch(migration, /grant execute on function public\.claim_notification_outbox_v1\(integer\)[\s\S]*to authenticated/i);
 });
 
 test("Test Kitchen staging seed is fake-only, noindex, and independently configured", () => {

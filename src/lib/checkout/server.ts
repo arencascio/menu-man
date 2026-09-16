@@ -18,6 +18,7 @@ const knownErrorCodes = new Set<CheckoutErrorCode>([
   "ITEM_NOT_ON_MENU",
   "INVALID_MODIFIERS",
   "PICKUP_UNAVAILABLE",
+  "LARGE_TIP_CONFIRMATION_REQUIRED",
   "TOTAL_TOO_LARGE",
   "IDEMPOTENCY_CONFLICT",
   "CHECKOUT_FAILED",
@@ -27,6 +28,7 @@ export class CheckoutServerError extends Error {
   constructor(
     public readonly code: CheckoutErrorCode,
     message: string,
+    public readonly authoritativeSubtotalCents?: number,
   ) {
     super(message);
   }
@@ -36,6 +38,16 @@ function parseDatabaseError(message: string) {
   const match = message.match(/MM_([A-Z_]+)\|([^\n]*)/);
   const code = match?.[1] as CheckoutErrorCode | undefined;
   if (code && knownErrorCodes.has(code)) {
+    if (code === "LARGE_TIP_CONFIRMATION_REQUIRED") {
+      const authoritativeSubtotalCents = Number(match?.[2]);
+      return new CheckoutServerError(
+        code,
+        "Please confirm this custom tip before continuing.",
+        Number.isSafeInteger(authoritativeSubtotalCents) && authoritativeSubtotalCents >= 0
+          ? authoritativeSubtotalCents
+          : undefined,
+      );
+    }
     return new CheckoutServerError(code, match?.[2] || "Checkout could not be completed.");
   }
   return new CheckoutServerError("CHECKOUT_FAILED", "Checkout could not be completed.");

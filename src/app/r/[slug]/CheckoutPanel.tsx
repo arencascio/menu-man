@@ -18,7 +18,12 @@ import {
   resolvePickupSelection,
 } from "@/lib/checkout/pickup-selection";
 import { formatPickupDateTime } from "@/lib/checkout/pickup-presentation";
-import { parseCustomTipCents } from "@/lib/checkout/tips";
+import {
+  parseCustomTipCents,
+  reconcileLargeTipConfirmation,
+  requiresLargeTipConfirmation,
+  type LargeTipConfirmation,
+} from "@/lib/checkout/tips";
 import {
   broadcastCheckoutEvent,
   fingerprintCart,
@@ -70,7 +75,10 @@ export default function CheckoutPanel({
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [largeTipConfirmation, setLargeTipConfirmation] = useState<LargeTipConfirmation | null>(null);
   const attempt = useRef<IdempotencyAttempt | null>(null);
+  const customTipInput = useRef<HTMLInputElement>(null);
+  const largeTipPrompt = useRef<HTMLDivElement>(null);
   const restoredPickup = useRef<{ mode: "asap" } | { mode: "scheduled"; pickupAt: string } | undefined>(undefined);
   const attemptStorageKey = `menu-man:checkout-attempt:v1:${restaurantId}`;
 
@@ -146,9 +154,27 @@ export default function CheckoutPanel({
     ? formatPickupDateTime(selectedPickupAt, availability.timezone)
     : null;
 
+  const parsedCustomTipCents = tipChoice === "custom"
+    ? parseCustomTipCents(customTipAmount)
+    : null;
+
+  const activeLargeTipConfirmation = reconcileLargeTipConfirmation(
+    largeTipConfirmation,
+    tipChoice,
+    parsedCustomTipCents,
+    cart.subtotalCents,
+  );
+
+  useEffect(() => {
+    if (activeLargeTipConfirmation) largeTipPrompt.current?.focus();
+  }, [activeLargeTipConfirmation]);
+
   async function submitCheckout(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const isLargeTipConfirmed = submitter instanceof HTMLButtonElement
+      && submitter.dataset.largeTipConfirmed === "true";
     const submittedLines = [...cart.lines];
     const parsedRequest = checkoutRequestSchema.safeParse({
       menuId,
@@ -162,11 +188,38 @@ export default function CheckoutPanel({
       pickup: pickupMode === "asap" ? { mode: "asap" } : { mode: "scheduled", pickupAt },
       tipChoice,
       customTipCents: tipChoice === "custom" ? parseCustomTipCents(customTipAmount) : null,
+      largeTipConfirmed: isLargeTipConfirmed,
+      largeTipConfirmedSubtotalCents: isLargeTipConfirmed
+        ? activeLargeTipConfirmation?.subtotalCents
+        : null,
       orderNotes,
     });
     if (!parsedRequest.success) {
       setSubmitError(parsedRequest.error.issues[0]?.message || "Check the checkout form and try again.");
       return;
+    }
+
+    const confirmationSubtotal = activeLargeTipConfirmation?.subtotalCents
+      ?? cart.subtotalCents;
+    if (requiresLargeTipConfirmation(
+      parsedRequest.data.tipChoice,
+      parsedRequest.data.customTipCents || 0,
+      confirmationSubtotal,
+    )) {
+      const matchingConfirmation = reconcileLargeTipConfirmation(
+        activeLargeTipConfirmation,
+        parsedRequest.data.tipChoice,
+        parsedRequest.data.customTipCents,
+        cart.subtotalCents,
+      );
+      if (!isLargeTipConfirmed || !matchingConfirmation) {
+        setLargeTipConfirmation({
+          tipCents: parsedRequest.data.customTipCents || 0,
+          subtotalCents: confirmationSubtotal,
+          cartSubtotalCents: cart.subtotalCents,
+        });
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -203,7 +256,25 @@ export default function CheckoutPanel({
       });
       const body = await response.json() as unknown;
       if (!response.ok) {
-        const errorBody = body as { error?: { message?: string } };
+        const errorBody = body as {
+          error?: {
+            code?: string;
+            message?: string;
+            authoritativeSubtotalCents?: number;
+          };
+        };
+        if (
+          errorBody.error?.code === "LARGE_TIP_CONFIRMATION_REQUIRED"
+          && Number.isSafeInteger(errorBody.error.authoritativeSubtotalCents)
+          && (errorBody.error.authoritativeSubtotalCents || 0) >= 0
+        ) {
+          setLargeTipConfirmation({
+            tipCents: parsedRequest.data.customTipCents || 0,
+            subtotalCents: errorBody.error.authoritativeSubtotalCents!,
+            cartSubtotalCents: cart.subtotalCents,
+          });
+          return;
+        }
         throw new Error(errorBody.error?.message || "Checkout could not be completed.");
       }
       const order = checkoutResponseSchema.parse(body);
@@ -245,6 +316,11 @@ export default function CheckoutPanel({
     }
   }
 
+  function changeLargeTip() {
+    setLargeTipConfirmation(null);
+    customTipInput.current?.focus();
+  }
+
   return (
     <main className={styles.page} aria-label="Checkout details">
       <section className={styles.checkoutPanel}>
@@ -258,10 +334,10 @@ export default function CheckoutPanel({
             <div className={styles.checkoutReviewLine} key={line.lineId}>
               <span>{line.itemName}</span>
               <span className={styles.checkoutQuantityActions}>
-                <button type="button" disabled={submitting} onClick={() => cart.setLineQuantity(line.lineId, line.quantity - 1)} aria-label={`Decrease ${line.itemName}`}>−</button>
+                <button type="button" disabled={submitting} onClick={() => { setLargeTipConfirmation(null); cart.setLineQuantity(line.lineId, line.quantity - 1); }} aria-label={`Decrease ${line.itemName}`}>−</button>
                 {line.quantity}
-                <button type="button" disabled={submitting} onClick={() => cart.setLineQuantity(line.lineId, line.quantity + 1)} aria-label={`Increase ${line.itemName}`}>+</button>
-                <button type="button" disabled={submitting} onClick={() => cart.removeLine(line.lineId)}>Remove</button>
+                <button type="button" disabled={submitting} onClick={() => { setLargeTipConfirmation(null); cart.setLineQuantity(line.lineId, line.quantity + 1); }} aria-label={`Increase ${line.itemName}`}>+</button>
+                <button type="button" disabled={submitting} onClick={() => { setLargeTipConfirmation(null); cart.removeLine(line.lineId); }}>Remove</button>
               </span>
               <strong>{formatPrice(calculateLineTotalCents(line), currency)}</strong>
             </div>
@@ -301,19 +377,47 @@ export default function CheckoutPanel({
           </fieldset>
           <fieldset className={styles.checkoutFieldset}>
             <legend>Tip</legend>
-            <div className={styles.tipChoices}>{tipChoices.map((choice) => <label key={choice.value}><input type="radio" name="tip" checked={tipChoice === choice.value} onChange={() => setTipChoice(choice.value)} />{choice.label}</label>)}</div>
+            <div className={styles.tipChoices}>{tipChoices.map((choice) => <label key={choice.value}><input type="radio" name="tip" checked={tipChoice === choice.value} onChange={() => { setLargeTipConfirmation(null); setTipChoice(choice.value); }} />{choice.label}</label>)}</div>
             {tipChoice === "custom" && (
               <label className={styles.customTipField}>Custom tip
-                <span><span aria-hidden="true">$</span><input required inputMode="decimal" placeholder="0.00" value={customTipAmount} onChange={(event) => setCustomTipAmount(event.target.value)} aria-label="Custom tip amount in dollars" /></span>
+                <span><span aria-hidden="true">$</span><input ref={customTipInput} required inputMode="decimal" placeholder="0.00" value={customTipAmount} onChange={(event) => { setLargeTipConfirmation(null); setCustomTipAmount(event.target.value); }} aria-label="Custom tip amount in dollars" /></span>
               </label>
             )}
           </fieldset>
           <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={1000} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
           {submitError && <p className={styles.formError} role="alert">{submitError}</p>}
-          <small className={styles.checkoutActionHint}>You&apos;ll enter payment details next. You won&apos;t be charged yet.</small>
-          <button className={styles.checkoutButton} type="submit" disabled={submitting || !canPickup || cart.lines.length === 0 || !cart.hydrated}>
-            {submitting ? "Continuing to Payment…" : "Continue to Payment"}
-          </button>
+          {activeLargeTipConfirmation ? (
+            <div
+              ref={largeTipPrompt}
+              className={styles.largeTipConfirmation}
+              role="alert"
+              aria-live="polite"
+              tabIndex={-1}
+            >
+              <strong>That&apos;s a very generous tip!</strong>
+              <p>
+                You&apos;re tipping {formatPrice(activeLargeTipConfirmation.tipCents, currency)} on a{" "}
+                {formatPrice(activeLargeTipConfirmation.subtotalCents, currency)} order. Are you sure?
+              </p>
+              <div>
+                <button className={styles.checkoutButton} type="submit" data-large-tip-confirmed="true" disabled={submitting}>
+                  {submitting
+                    ? "Continuing to Payment…"
+                    : `Yes, continue with ${formatPrice(activeLargeTipConfirmation.tipCents, currency)} tip`}
+                </button>
+                <button className={styles.secondaryCheckoutButton} type="button" onClick={changeLargeTip} disabled={submitting}>
+                  Change tip
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <small className={styles.checkoutActionHint}>You&apos;ll enter payment details next. You won&apos;t be charged yet.</small>
+              <button className={styles.checkoutButton} type="submit" disabled={submitting || !canPickup || cart.lines.length === 0 || !cart.hydrated}>
+                {submitting ? "Continuing to Payment…" : "Continue to Payment"}
+              </button>
+            </>
+          )}
         </form>
       </section>
     </main>

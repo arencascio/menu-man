@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { orderPaymentViewSchema } from "./view-contracts";
 
-test("order payment view accepts frozen snapshots without diner identity", () => {
+test("order payment view accepts the capability-scoped customer email and frozen snapshots", () => {
   const parsed = orderPaymentViewSchema.safeParse({
     order: {
       orderId: "10000000-0000-4000-8000-000000000001",
@@ -14,6 +14,7 @@ test("order payment view accepts frozen snapshots without diner identity", () =>
       taxCents: 80,
       tipCents: 170,
       totalCents: 1250,
+      customerEmail: "diner@example.com",
       pickup: { mode: "asap", pickupAt: "2026-09-11T20:00:00.000Z", timezone: "America/Los_Angeles" },
       items: [{
         orderItemId: "20000000-0000-4000-8000-000000000001",

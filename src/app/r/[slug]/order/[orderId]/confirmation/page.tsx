@@ -6,6 +6,7 @@ import OrderSnapshot from "../../../OrderSnapshot";
 import ConfirmationEffects from "../../../ConfirmationEffects";
 import styles from "../../../menu-browser.module.css";
 import { supabaseServer } from "@/lib/supabase/server";
+import CustomerEmailLine from "./CustomerEmailLine";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
           <p className={styles.expandedLabel}>Order placed</p>
           <h1 id="confirmation-title">Order #{view.order.orderNumber}</h1>
           <p>Your payment is confirmed and the restaurant has received your pickup order.</p>
+          <CustomerEmailLine email={view.order.customerEmail} />
         </header>
         <dl className={styles.confirmationStatus}>
           <div><dt>Pickup status</dt><dd>Order placed</dd></div>

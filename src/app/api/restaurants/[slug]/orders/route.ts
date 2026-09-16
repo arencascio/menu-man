@@ -200,7 +200,13 @@ export async function POST(
 
     if (error instanceof CheckoutServerError) {
       return NextResponse.json({
-        error: { code: error.code, message: error.message },
+        error: {
+          code: error.code,
+          message: error.message,
+          ...(error.authoritativeSubtotalCents === undefined
+            ? {}
+            : { authoritativeSubtotalCents: error.authoritativeSubtotalCents }),
+        },
       }, { status: statusForError(error.code), headers: responseHeaders });
     }
 
