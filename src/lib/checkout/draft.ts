@@ -52,13 +52,13 @@ export function loadCheckoutDraft(
       || !isString(draft.expiresAt, 100)
       || !Number.isFinite(Date.parse(draft.expiresAt))
       || Date.parse(draft.expiresAt) <= now
-      || !isString(draft.customerName, 200)
-      || !isString(draft.phone, 50)
-      || !isString(draft.email, 320)
+      || !isString(draft.customerName, 100)
+      || !isString(draft.phone, 30)
+      || !isString(draft.email, 254)
       || !isPickupSelection(draft.pickup)
       || !tipChoices.has(draft.tipChoice as TipChoice)
       || !isString(draft.customTipAmount, 30)
-      || !isString(draft.orderNotes, 1_000)
+      || !isString(draft.orderNotes, 500)
     ) {
       storage.removeItem(storageKey);
       return null;

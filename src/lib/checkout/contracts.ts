@@ -1,5 +1,14 @@
 import { z } from "zod";
 import { paymentSessionResponseSchema } from "@/lib/payments/contracts";
+import {
+  isValidCustomerEmail,
+  isValidCustomerName,
+  isValidCustomerNotes,
+  normalizeCustomerEmail,
+  normalizeCustomerName,
+  normalizeCustomerNotes,
+  normalizeUsPhone,
+} from "./customer-details";
 
 const uuidSchema = z.uuid().transform((value) => value.toLowerCase());
 
@@ -20,14 +29,40 @@ const checkoutLineSchema = z.strictObject({
   specialInstructions: optionalTrimmedText(500),
 });
 
+const customerNameSchema = z.union([z.string().max(500), z.null()]).optional()
+  .transform(normalizeCustomerName)
+  .refine((value) => value == null || isValidCustomerName(value, false), {
+    message: "Enter a valid name using at least one letter and no more than 100 characters.",
+  });
+
+const customerEmailSchema = z.union([z.string().max(500), z.null()]).optional()
+  .transform(normalizeCustomerEmail)
+  .refine((value) => value == null || isValidCustomerEmail(value), {
+    message: "Enter a valid email address.",
+  });
+
+const customerPhoneSchema = z.union([z.string().max(100), z.null()]).optional()
+  .transform((value, context) => {
+    if (!value?.trim()) return null;
+    const normalized = normalizeUsPhone(value);
+    if (!normalized) {
+      context.addIssue({ code: "custom", message: "Enter a valid 10-digit US phone number." });
+      return z.NEVER;
+    }
+    return normalized;
+  });
+
 const customerSchema = z.strictObject({
-  name: z.string().trim().min(1).max(200),
-  phone: z.string().trim().min(1).max(50),
-  email: z.preprocess(
-    (value) => typeof value === "string" ? value.trim().toLowerCase() : value,
-    z.union([z.email().max(320), z.literal(""), z.null()]).optional(),
-  ).transform((value) => value || null),
+  name: customerNameSchema,
+  phone: customerPhoneSchema,
+  email: customerEmailSchema,
 });
+
+const customerNotesSchema = z.union([z.string().max(2_000), z.null()]).optional()
+  .transform(normalizeCustomerNotes)
+  .refine((value) => value == null || isValidCustomerNotes(value), {
+    message: "Order notes must be 500 characters or fewer and contain only normal text.",
+  });
 
 const pickupSchema = z.discriminatedUnion("mode", [
   z.strictObject({ mode: z.literal("asap") }),
@@ -49,7 +84,7 @@ const checkoutInputSchema = z.strictObject({
     z.int().nonnegative().max(2_147_483_647),
     z.null(),
   ]).optional(),
-  orderNotes: optionalTrimmedText(1000),
+  orderNotes: customerNotesSchema,
 }).superRefine((request, context) => {
   if (request.tipChoice === "custom" && request.customTipCents == null) {
     context.addIssue({

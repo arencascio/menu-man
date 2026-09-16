@@ -31,7 +31,7 @@ function requestFixture() {
     ],
     customer: {
       name: "  Ada Lovelace  ",
-      phone: "  555-0100  ",
+      phone: "  (951) 555-0100  ",
       email: "  ADA@EXAMPLE.COM  ",
     },
     pickup: {
@@ -58,6 +58,7 @@ test("canonicalizes equivalent accepted checkout requests identically", () => {
   assert.equal(JSON.stringify(first), JSON.stringify(second));
   assert.deepEqual(first.items[1].modifierOptionIds, [OPTION_A_ID, OPTION_B_ID]);
   assert.equal(first.customer.email, "ada@example.com");
+  assert.equal(first.customer.phone, "+19515550100");
   assert.equal(first.items[0].specialInstructions, null);
 });
 

@@ -83,7 +83,7 @@ begin
     )),
     'customer', jsonb_build_object(
       'name', 'Payment Contract Test',
-      'phone', '555-0100',
+      'phone', '(951) 555-0100',
       'email', 'payments-contract@example.invalid'
     ),
     'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
@@ -418,8 +418,8 @@ begin
     )),
     'customer', jsonb_build_object(
       'name', 'Payment Exceptional State Test',
-      'phone', '555-0100',
-      'email', null
+      'phone', '(951) 555-0100',
+      'email', 'payment-exception@example.invalid'
     ),
     'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
     'tipChoice', 'none',

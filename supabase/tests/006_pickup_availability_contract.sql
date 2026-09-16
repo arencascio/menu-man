@@ -314,7 +314,7 @@ begin
       'modifierOptionIds', '[]'::jsonb,
       'specialInstructions', null
     )),
-    'customer', jsonb_build_object('name', 'Pickup QA', 'phone', '555-0100', 'email', null),
+    'customer', jsonb_build_object('name', 'Pickup QA', 'phone', '(951) 555-0100', 'email', 'pickup-qa@example.invalid'),
     'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
     'tipChoice', 'none',
     'orderNotes', null

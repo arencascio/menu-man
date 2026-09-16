@@ -1,14 +1,8 @@
-export const CUSTOM_TIP_HEADROOM_CENTS = 50_000;
-
 export type LargeTipConfirmation = {
   tipCents: number;
   subtotalCents: number;
   cartSubtotalCents: number;
 };
-
-export function maximumCustomTipCents(subtotalCents: number) {
-  return subtotalCents + CUSTOM_TIP_HEADROOM_CENTS;
-}
 
 export function requiresLargeTipConfirmation(
   tipChoice: string,

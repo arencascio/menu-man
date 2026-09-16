@@ -38,6 +38,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609150001_notifications_multitenant.sql",
     "202609150002_custom_tip_cap.sql",
     "202609160001_customer_post_order_polish.sql",
+    "202609160002_checkout_customer_requirements.sql",
   ]);
 });
 
@@ -412,18 +413,36 @@ test("notification foundation is capability-gated, audited, idempotent, and retr
   assert.doesNotMatch(migration, /grant\s+(?:select|insert|update|delete)[\s\S]*notification_outbox[\s\S]*to authenticated/i);
 });
 
-test("custom tips use authoritative large-tip confirmation and subtotal plus $500 cap", () => {
+test("custom tips use authoritative large-tip confirmation and configurable additive cap", () => {
   const migration = migrations.find(
-    ({ file }) => file.endsWith("_customer_post_order_polish.sql"),
+    ({ file }) => file.endsWith("_checkout_customer_requirements.sql"),
   )?.sql || "";
   assert.match(migration, /authoritative_subtotal := \(base_response ->> 'subtotalCents'\)::bigint/i);
-  assert.match(migration, /maximum_custom_tip := authoritative_subtotal \+ 50000::bigint/i);
+  assert.match(migration, /custom_tip_additive_cap_cents integer not null default 50000/i);
+  assert.match(migration, /maximum_custom_tip := authoritative_subtotal \+ additive_tip_cap/i);
   assert.match(migration, /custom_tip_value > maximum_custom_tip/i);
-  assert.match(migration, /Custom tip cannot exceed the pre-tax subtotal plus \$500/i);
   assert.match(migration, /confirmed_subtotal is distinct from authoritative_subtotal/i);
   assert.match(migration, /MM_LARGE_TIP_CONFIRMATION_REQUIRED/i);
   assert.match(migration, /p_request - 'largeTipConfirmed'/i);
   assert.match(migration, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("checkout customer requirements and normalization are restaurant configured and server authoritative", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_checkout_customer_requirements.sql"),
+  )?.sql || "";
+  for (const column of [
+    "customer_name_required", "customer_email_required", "customer_phone_required",
+  ]) assert.match(migration, new RegExp(`${column} boolean not null default true`, "i"));
+  assert.match(migration, /normalize_checkout_customer_name_v1/i);
+  assert.match(migration, /normalize_checkout_customer_email_v1/i);
+  assert.match(migration, /normalize_checkout_customer_phone_v1/i);
+  assert.match(migration, /normalize_checkout_notes_v1/i);
+  assert.match(migration, /create function public\.create_order_base_v1/i);
+  assert.match(migration, /settings\.customer_name_required/i);
+  assert.match(migration, /settings\.customer_email_required/i);
+  assert.match(migration, /settings\.customer_phone_required/i);
+  assert.doesNotMatch(migration, /execute\s+format|format\s*\(/i);
 });
 
 test("customer-safe payment view and outbox claims include post-order presentation fields", () => {

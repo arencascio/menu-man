@@ -97,8 +97,8 @@ begin
     )),
     'customer', jsonb_build_object(
       'name', 'Square Payment Contract Test',
-      'phone', '555-0100',
-      'email', null
+      'phone', '(951) 555-0100',
+      'email', 'square-contract@example.invalid'
     ),
     'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
     'tipChoice', 'none',

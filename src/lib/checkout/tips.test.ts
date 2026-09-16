@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  maximumCustomTipCents,
   parseCustomTipCents,
   reconcileLargeTipConfirmation,
   requiresLargeTipConfirmation,
@@ -36,9 +35,4 @@ test("large-tip confirmation resets when tip or subtotal changes", () => {
   assert.equal(reconcileLargeTipConfirmation(confirmation, "custom", 4_400, 3_000), null);
   assert.equal(reconcileLargeTipConfirmation(confirmation, "custom", 4_500, 3_100), null);
   assert.equal(reconcileLargeTipConfirmation(confirmation, "custom", 3_000, 3_000), null);
-});
-
-test("custom tip hard cap is subtotal plus $500", () => {
-  assert.equal(maximumCustomTipCents(2_000), 52_000);
-  assert.equal(maximumCustomTipCents(10_000), 60_000);
 });

@@ -37,12 +37,23 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
     .maybeSingle();
   if (!menu) notFound();
 
+  const { data: orderingSettings } = await supabaseServer
+    .from("restaurant_ordering_settings")
+    .select("customer_name_required, customer_email_required, customer_phone_required")
+    .eq("restaurant_id", restaurant.id)
+    .maybeSingle();
+
   return (
     <CheckoutPanel
       restaurantId={restaurant.id}
       restaurantSlug={restaurant.slug}
       menuId={menu.id}
       currency={restaurant.currency || "USD"}
+      customerRequirements={{
+        customerNameRequired: orderingSettings?.customer_name_required ?? true,
+        customerEmailRequired: orderingSettings?.customer_email_required ?? true,
+        customerPhoneRequired: orderingSettings?.customer_phone_required ?? true,
+      }}
     />
   );
 }

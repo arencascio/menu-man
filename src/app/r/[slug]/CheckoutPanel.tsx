@@ -19,6 +19,12 @@ import {
 } from "@/lib/checkout/pickup-selection";
 import { formatPickupDateTime } from "@/lib/checkout/pickup-presentation";
 import {
+  customerValidationError,
+  isValidCustomerEmail,
+  normalizeCustomerEmail,
+  type CheckoutCustomerRequirements,
+} from "@/lib/checkout/customer-details";
+import {
   parseCustomTipCents,
   reconcileLargeTipConfirmation,
   requiresLargeTipConfirmation,
@@ -37,6 +43,7 @@ type CheckoutPanelProps = {
   restaurantSlug: string;
   menuId: string;
   currency: string;
+  customerRequirements: CheckoutCustomerRequirements;
 };
 
 type IdempotencyAttempt = { fingerprint: string; key: string };
@@ -59,6 +66,7 @@ export default function CheckoutPanel({
   restaurantSlug,
   menuId,
   currency,
+  customerRequirements,
 }: CheckoutPanelProps) {
   const router = useRouter();
   const cart = useRestaurantCart(restaurantId, currency);
@@ -157,6 +165,11 @@ export default function CheckoutPanel({
   const parsedCustomTipCents = tipChoice === "custom"
     ? parseCustomTipCents(customTipAmount)
     : null;
+  const normalizedConfirmationEmail = normalizeCustomerEmail(email);
+  const confirmationEmail = normalizedConfirmationEmail
+    && isValidCustomerEmail(normalizedConfirmationEmail)
+    ? normalizedConfirmationEmail
+    : null;
 
   const activeLargeTipConfirmation = reconcileLargeTipConfirmation(
     largeTipConfirmation,
@@ -196,6 +209,11 @@ export default function CheckoutPanel({
     });
     if (!parsedRequest.success) {
       setSubmitError(parsedRequest.error.issues[0]?.message || "Check the checkout form and try again.");
+      return;
+    }
+    const customerError = customerValidationError(parsedRequest.data.customer, customerRequirements);
+    if (customerError) {
+      setSubmitError(customerError);
       return;
     }
 
@@ -356,9 +374,9 @@ export default function CheckoutPanel({
             <a className={styles.pickupEditLink} href="#pickup-details">Edit</a>
           </section>
           <div className={styles.checkoutFields}>
-            <label>Name<input required maxLength={200} autoComplete="name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
-            <label>Phone<input required maxLength={50} autoComplete="tel" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
-            <label>Email <small>Optional</small><input maxLength={320} autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+            <label>Name {!customerRequirements.customerNameRequired && <small>Optional</small>}<input required={customerRequirements.customerNameRequired} maxLength={100} autoComplete="name" type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
+            <label>Phone {!customerRequirements.customerPhoneRequired && <small>Optional</small>}<input required={customerRequirements.customerPhoneRequired} maxLength={30} autoComplete="tel" inputMode="tel" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
+            <label>Email {!customerRequirements.customerEmailRequired && <small>Optional</small>}<input required={customerRequirements.customerEmailRequired} maxLength={254} autoComplete="email" inputMode="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           </div>
           <fieldset className={styles.checkoutFieldset} id="pickup-details">
             <legend>Pickup</legend>
@@ -384,7 +402,10 @@ export default function CheckoutPanel({
               </label>
             )}
           </fieldset>
-          <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={1000} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
+          <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={500} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
+          {confirmationEmail && (
+            <p className={styles.emailConfirmation}>A confirmation email will be sent to <strong>{confirmationEmail}</strong></p>
+          )}
           {submitError && <p className={styles.formError} role="alert">{submitError}</p>}
           {activeLargeTipConfirmation ? (
             <div

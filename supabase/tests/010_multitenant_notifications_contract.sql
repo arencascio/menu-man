@@ -73,7 +73,7 @@ begin
         'specialInstructions', null
       )),
       'customer', jsonb_build_object(
-        'name', 'Test Kitchen Checkout', 'phone', '555-0110', 'email', null
+        'name', 'Test Kitchen Checkout', 'phone', '(951) 555-0110', 'email', 'checkout@example.invalid'
       ),
       'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', checkout_pickup),
       'tipChoice', 'none', 'orderNotes', null

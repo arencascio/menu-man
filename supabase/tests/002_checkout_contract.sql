@@ -70,8 +70,8 @@ begin
     )),
     'customer', jsonb_build_object(
       'name', 'Checkout Contract Test',
-      'phone', '555-0100',
-      'email', null
+      'phone', '(951) 555-0100',
+      'email', 'checkout-contract@example.invalid'
     ),
     'pickup', jsonb_build_object(
       'mode', 'scheduled',
@@ -121,6 +121,35 @@ begin
   ) <> 1 then
     raise exception 'Idempotent checkout created more than one order';
   end if;
+
+  begin
+    perform public.create_order_v1(
+      'armandos', gen_random_uuid()::text,
+      jsonb_set(request_payload, '{customer}', jsonb_build_object(
+        'name', null, 'phone', null, 'email', null
+      ))
+    );
+    raise exception 'Expected default customer requirements to reject missing fields';
+  exception when others then
+    if sqlerrm not like 'MM_INVALID_REQUEST|%' then raise; end if;
+  end;
+
+  update public.restaurant_ordering_settings
+  set customer_name_required = false,
+      customer_email_required = false,
+      customer_phone_required = false
+  where restaurant_id = restaurant_uuid;
+  perform public.create_order_v1(
+    'armandos', gen_random_uuid()::text,
+    jsonb_set(request_payload, '{customer}', jsonb_build_object(
+      'name', null, 'phone', null, 'email', null
+    ))
+  );
+  update public.restaurant_ordering_settings
+  set customer_name_required = true,
+      customer_email_required = true,
+      customer_phone_required = true
+  where restaurant_id = restaurant_uuid;
 
   custom_response := public.create_order_v1(
     'armandos',
@@ -228,6 +257,26 @@ begin
   if (custom_response ->> 'tipCents')::integer
     <> (first_response ->> 'subtotalCents')::integer + 50000
   then raise exception 'Custom tip at subtotal plus $500 was rejected'; end if;
+
+  update public.restaurant_ordering_settings
+  set custom_tip_additive_cap_cents = 1000
+  where restaurant_id = restaurant_uuid;
+  begin
+    perform public.create_order_v1(
+      'armandos', gen_random_uuid()::text,
+      jsonb_set(jsonb_set(jsonb_set(jsonb_set(
+        request_payload,
+        '{tipChoice}', '"custom"'::jsonb
+      ), '{customTipCents}',
+        to_jsonb((first_response ->> 'subtotalCents')::integer + 1001)
+      ), '{largeTipConfirmed}', 'true'::jsonb
+      ), '{largeTipConfirmedSubtotalCents}',
+        to_jsonb((first_response ->> 'subtotalCents')::integer))
+    );
+    raise exception 'Expected restaurant custom-tip allowance to be authoritative';
+  exception when others then
+    if sqlerrm not like 'MM_INVALID_REQUEST|Custom tip exceeds%' then raise; end if;
+  end;
 
   if (
     select count(*)

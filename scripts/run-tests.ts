@@ -1,5 +1,6 @@
 import "../src/lib/cart/cart.test";
 import "../src/lib/checkout/contracts.test";
+import "../src/lib/checkout/customer-details.test";
 import "../src/lib/checkout/draft.test";
 import "../src/lib/checkout/pickup-selection.test";
 import "../src/lib/checkout/pickup-presentation.test";

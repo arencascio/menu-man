@@ -121,8 +121,23 @@ test("pickup snapshots and confirmation status are rendered from the frozen orde
   assert.match(confirmation, /Pickup status/);
   assert.match(confirmation, /Order number/);
   assert.match(confirmation, /confirmationPanel/);
+  assert.match(confirmation, /Return to Order Details/);
+  assert.match(confirmation, /payment\?view=details/);
+  assert.match(confirmation, /secondaryConfirmationButton/);
   assert.match(payment, /Confirming your payment&hellip;/);
   assert.doesNotMatch(payment, /provider confirms it/i);
+});
+
+test("checkout mirrors customer requirements, mobile autofill, and normalized email copy", () => {
+  const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
+  assert.match(checkout, /customerRequirements\.customerNameRequired/);
+  assert.match(checkout, /customerRequirements\.customerEmailRequired/);
+  assert.match(checkout, /customerRequirements\.customerPhoneRequired/);
+  assert.match(checkout, /autoComplete="name"/);
+  assert.match(checkout, /autoComplete="email" inputMode="email" type="email"/);
+  assert.match(checkout, /autoComplete="tel" inputMode="tel" type="tel"/);
+  assert.match(checkout, /A confirmation email will be sent to/);
+  assert.match(checkout, /normalizedConfirmationEmail/);
 });
 
 test("payment and confirmation keep receipt totals without duplicate headline totals or developer copy", () => {

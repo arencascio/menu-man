@@ -132,6 +132,7 @@
 .checkoutReview > div:last-of-type { margin-top: 6px; padding-top: 10px; border-top: 1px solid #ccc; }
 .checkoutReview small, .checkoutForm > small, .checkoutFieldset > small { color: var(--muted); }
 .checkoutActionHint { display: block; margin: 0 0 -10px; font-weight: 700; }
+.emailConfirmation { margin: 0; padding: 12px 14px; border-radius: 8px; background: #f4f4f4; color: #38332e; font-size: 14px; }
 .largeTipConfirmation { padding: 16px; border: 1px solid #d59b2d; border-radius: 10px; background: #fff8e7; }
 .largeTipConfirmation:focus { outline: 3px solid var(--theme-accent, var(--accent)); outline-offset: 3px; }
 .largeTipConfirmation > strong { display: block; font-size: 18px; }
@@ -181,6 +182,8 @@
 .confirmationStatus div { padding: 14px; border: 1px solid #b9ddc3; border-radius: 10px; background: #f5fcf7; }
 .confirmationStatus dt { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .confirmationStatus dd { margin: 5px 0 0; color: #145c32; font-size: 18px; font-weight: 800; }
+.secondaryConfirmationButton { display: block; width: fit-content; margin: 10px auto 0; padding: 7px 10px; color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.secondaryConfirmationButton:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .paymentErrorPanel li + li { margin-top: 4px; }
 .fakeRecoveryControls { margin-top: 13px; padding-top: 12px; border-top: 1px solid #cf9d3e; }
 .fakeRecoveryControls button { margin: 8px 8px 0 0; border: 1px solid #111; border-radius: 7px; padding: 9px 12px; color: #111; background: #fff; cursor: pointer; font: inherit; font-weight: 700; }
