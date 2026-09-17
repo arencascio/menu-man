@@ -6,6 +6,7 @@ import {
   formatQueuePaymentLabel,
   managedOrdersQuerySchema,
   managedRefundRequestSchema,
+  mergeManagedOrderTimeline,
   nextFulfillmentStatus,
   inviteRestaurantMemberRequestSchema,
   restaurantMembershipSchema,
@@ -108,4 +109,28 @@ test("managed refund intent requires positive cents, a trimmed reason, and a sta
   }
   assert.equal(managedRefundRequestSchema.safeParse({ ...parsed, reason: "   " }).success, false);
   assert.equal(managedRefundRequestSchema.safeParse({ ...parsed, reason: "x".repeat(501) }).success, false);
+});
+
+test("management timeline dedupes semantic refund states and the original payment milestone", () => {
+  const base = [
+    { id: "payment:1", kind: "payment" as const, label: "Payment confirmed", actorName: null, occurredAt: "2026-09-16T18:00:00Z" },
+    { id: "payment:2", kind: "payment" as const, label: "Payment confirmed", actorName: null, occurredAt: "2026-09-16T18:02:00Z" },
+  ];
+  const refund = (refundId: string, state: string, occurredAt: string) => ({
+    id: `refund:${refundId}:${state}`,
+    kind: "refund" as const,
+    label: `Refund ${state} — $5.00`,
+    actorName: null,
+    occurredAt,
+  });
+  const merged = mergeManagedOrderTimeline(base, [
+    refund("a", "processing", "2026-09-16T18:03:00Z"),
+    refund("a", "processing", "2026-09-16T18:03:01Z"),
+    refund("a", "completed", "2026-09-16T18:04:00Z"),
+    refund("b", "completed", "2026-09-16T18:05:00Z"),
+    refund("c", "completed", "2026-09-16T18:06:00Z"),
+  ]);
+  assert.equal(merged.filter((event) => event.label === "Payment confirmed").length, 1);
+  assert.equal(merged.filter((event) => event.id === "refund:a:processing").length, 1);
+  assert.equal(merged.filter((event) => event.label.includes("completed")).length, 3);
 });

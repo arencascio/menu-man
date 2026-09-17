@@ -161,7 +161,7 @@ export default function PaymentPanel({
     await submitPaymentMethodToken(`fake:${fakeScenario}`);
   }
 
-  async function abandonCheckout() {
+  async function abandonCheckout(destination: "checkout" | "menu") {
     if (
       abandoning
       || payment.status !== "requires_payment_method"
@@ -189,7 +189,9 @@ export default function PaymentPanel({
       // Keep the marker until every tab performs its own authoritative status
       // refetch. The revoked server session then causes each tab to unlock.
       broadcastCheckoutEvent(restaurantId, "payment_changed");
-      router.push(`/r/${encodeURIComponent(restaurantSlug)}`);
+      router.push(destination === "checkout"
+        ? `/r/${encodeURIComponent(restaurantSlug)}/checkout`
+        : `/r/${encodeURIComponent(restaurantSlug)}`);
     } catch (abandonmentError) {
       setError(abandonmentError instanceof Error
         ? abandonmentError.message
@@ -300,16 +302,23 @@ export default function PaymentPanel({
     && paymentLocksCart(payment);
   const paymentSecondaryActions = (
     <nav className={styles.paymentSecondaryActions} aria-label="Payment navigation">
-      <Link href={`/r/${encodeURIComponent(restaurantSlug)}/order/${encodeURIComponent(order.orderId)}/payment?view=details`}>
+      <button
+        type="button"
+        disabled={!canSafelyAbandon || abandoning}
+        aria-busy={abandoning}
+        aria-describedby={!canSafelyAbandon ? "editable-return-unavailable" : undefined}
+        onClick={() => void abandonCheckout("checkout")}
+      >
         Return to Order Details
-      </Link>
+      </button>
       {canSafelyAbandon ? (
-        <button type="button" disabled={abandoning} aria-busy={abandoning} onClick={() => void abandonCheckout()}>
+        <button type="button" disabled={abandoning} aria-busy={abandoning} onClick={() => void abandonCheckout("menu")}>
           Return to Menu
         </button>
       ) : (
         <Link href={`/r/${encodeURIComponent(restaurantSlug)}`}>Return to Menu</Link>
       )}
+      {!canSafelyAbandon ? <span className={styles.visuallyHidden} id="editable-return-unavailable">Order details cannot be edited while payment is in progress.</span> : null}
     </nav>
   );
 
@@ -396,7 +405,7 @@ export default function PaymentPanel({
             className={styles.checkoutButton}
             type="button"
             disabled={abandoning}
-            onClick={() => void abandonCheckout()}
+            onClick={() => void abandonCheckout("menu")}
           >
             {abandoning ? "Returning to Menu…" : "Return to Menu"}
           </button>

@@ -33,7 +33,7 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
 
   return (
     <main className={sharedStyles.main}>
-      <OrderDetailAccessGuard slug={slug} orderId={orderId} restaurantName={membership.restaurantName}>
+      <OrderDetailAccessGuard slug={slug} orderId={orderId} restaurantId={membership.restaurantId} restaurantName={membership.restaurantName}>
       <div className={styles.page}>
         <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
         <Link className={styles.backLink} href={`/manage/${slug}/orders`}>← Back to orders</Link>
@@ -42,7 +42,7 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
           <div className={styles.detailActions}>
             <div className={styles.headerActions}><span className={styles.identity}>{membership.displayName}</span><span className={styles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={styles.secondaryButton}>Sign out</button></form></div>
             {membership.capabilities.includes("advance_fulfillment") ? <FulfillmentAction key={`${order.fulfillment.status}:${order.fulfillment.version}`} slug={slug} orderId={order.orderId} status={order.fulfillment.status} version={order.fulfillment.version} /> : null}
-            {membership.capabilities.includes("issue_refunds") ? <RefundAction slug={slug} orderId={order.orderId} originalTotalCents={order.totalCents} refundedCents={order.payment.refundedCents} refundableCents={order.payment.refundableCents} pendingRefundCents={order.payment.pendingRefundCents} currency={order.currency} policyEligible={order.payment.refundPolicyEligible} providerAvailable={order.payment.refundProviderAvailable} /> : null}
+            {membership.capabilities.includes("issue_refunds") ? <RefundAction slug={slug} restaurantId={membership.restaurantId} orderId={order.orderId} originalTotalCents={order.totalCents} refundedCents={order.payment.refundedCents} refundableCents={order.payment.refundableCents} pendingRefundCents={order.payment.pendingRefundCents} currency={order.currency} policyEligible={order.payment.refundPolicyEligible} providerAvailable={order.payment.refundProviderAvailable} /> : null}
             <div className={styles.exceptionActionSlot} data-exception-actions-slot="reserved" aria-hidden="true" />
           </div>
         </header>

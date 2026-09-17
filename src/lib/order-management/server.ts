@@ -1,5 +1,6 @@
 import "server-only";
 
+import { z } from "zod";
 import { createAdminServerClient } from "@/lib/supabase/admin-server";
 import {
   fulfillmentTransitionResultSchema,
@@ -8,6 +9,8 @@ import {
   managedOrderDetailSchema,
   managedOrderPageSchema,
   managedOrderSummarySchema,
+  managedOrderTimelineEventSchema,
+  mergeManagedOrderTimeline,
   restaurantMembershipSchema,
   type ManagedOrderDetail,
   type ManagedOrderExportRow,
@@ -135,14 +138,16 @@ export async function getManagedOrderDetail(
     p_order_id: orderId,
   });
   if (refundError) throw rpcError(refundError);
+  const { data: refundTimelineData, error: refundTimelineError } = await client.rpc(
+    "get_managed_order_refund_timeline_v2",
+    { p_restaurant_slug: slug, p_order_id: orderId },
+  );
+  if (refundTimelineError) throw rpcError(refundTimelineError);
   const base = data as Record<string, unknown>;
-  const refundView = refundData as { payment?: unknown; timeline?: unknown } | null;
-  const originalTimeline = Array.isArray(base.timeline) ? base.timeline as Array<Record<string, unknown>> : [];
-  const timeline = [
-    ...originalTimeline.filter((event) => !String(event.label).startsWith("Refund")),
-    ...(Array.isArray(refundView?.timeline) ? refundView.timeline : []),
-  ].sort((left, right) => String((left as Record<string, unknown>).occurredAt)
-    .localeCompare(String((right as Record<string, unknown>).occurredAt)));
+  const refundView = refundData as { payment?: unknown } | null;
+  const originalTimeline = z.array(managedOrderTimelineEventSchema).parse(base.timeline);
+  const refundTimeline = z.array(managedOrderTimelineEventSchema).parse(refundTimelineData);
+  const timeline = mergeManagedOrderTimeline(originalTimeline, refundTimeline);
   return managedOrderDetailSchema.parse({ ...base, payment: refundView?.payment, timeline });
 }
 

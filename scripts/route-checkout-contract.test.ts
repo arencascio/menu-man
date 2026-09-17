@@ -37,7 +37,7 @@ test("multi-tab messages are advisory and trigger authoritative status fetches",
   assert.match(menu, /response\.status === 401 \|\| response\.status === 404/);
 });
 
-test("safe return-to-menu abandons server-side before navigation", () => {
+test("safe editable return and return-to-menu abandon server-side before navigation", () => {
   const route = read(
     "src", "app", "api", "orders", "[orderId]", "checkout-abandonment", "route.ts",
   );
@@ -48,9 +48,15 @@ test("safe return-to-menu abandons server-side before navigation", () => {
   assert.match(payment, /payment\.status === "requires_payment_method"/);
   assert.match(payment, /payment\.latestAttempt === null/);
   assert.match(payment, /checkout-abandonment/);
+  assert.match(payment, /abandonCheckout\(destination: "checkout" \| "menu"\)/);
+  assert.match(payment, /destination === "checkout"/);
+  assert.match(payment, /router\.push\(destination === "checkout"/);
+  assert.match(payment, /disabled=\{!canSafelyAbandon \|\| abandoning\}/);
+  assert.match(payment, /payment\.latestAttempt === null/);
+  assert.doesNotMatch(payment, /payment\?view=details/);
   assert.match(payment, /if \(!response\.ok\)/);
   assert.match(payment, /broadcastCheckoutEvent\(restaurantId, "payment_changed"\)/);
-  assert.match(payment, /router\.push\(`\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}`\)/);
+  assert.match(payment, /: `\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}`/);
 });
 
 test("staging exceptional-state controls use server routes and retain safe navigation", () => {
@@ -121,8 +127,9 @@ test("pickup snapshots and confirmation status are rendered from the frozen orde
   assert.match(confirmation, /Pickup status/);
   assert.match(confirmation, /Order number/);
   assert.match(confirmation, /confirmationPanel/);
-  assert.match(confirmation, /Return to Order Details/);
-  assert.match(confirmation, /payment\?view=details/);
+  assert.doesNotMatch(confirmation, /Return to Order Details/);
+  assert.doesNotMatch(confirmation, /payment\?view=details/);
+  assert.match(confirmation, /Return to Menu/);
   assert.match(confirmation, /secondaryConfirmationButton/);
   assert.match(payment, /Confirming your payment&hellip;/);
   assert.doesNotMatch(payment, /provider confirms it/i);
@@ -152,8 +159,12 @@ test("payment and confirmation keep receipt totals without duplicate headline to
 
 test("Square card readiness is presentation-only and never submits a client total", () => {
   const square = read("src", "app", "r", "[slug]", "SquarePaymentForm.tsx");
+  const styles = read("src", "app", "r", "[slug]", "menu-browser.module.css");
   assert.match(square, /isCompletelyValid/);
-  assert.match(square, /squareCardContainerComplete/);
+  assert.match(square, /squareCardFieldComplete/);
+  assert.doesNotMatch(square, /squareCardContainerComplete/);
+  assert.match(styles, /\.squareCardFieldComplete::after[^}]*height: 56px/);
+  assert.match(styles, /\.squareCardContainer \{ min-height: 90px/);
   assert.match(square, /disabled=\{!cardReady \|\| !cardComplete \|\| submitting\}/);
   assert.doesNotMatch(square, /onToken\([^)]*amountCents/);
 });
@@ -168,7 +179,7 @@ test("card payment keeps a dominant CTA with equal neutral navigation below it",
   assert.ok(payButton >= 0 && secondaryActions > payButton);
   assert.match(panel, /paymentSecondaryActions/);
   assert.match(panel, /Return to Order Details/);
-  assert.match(panel, /payment\?view=details/);
+  assert.doesNotMatch(panel, /payment\?view=details/);
   assert.match(panel, /Return to Menu/);
   assert.match(styles, /\.paymentSecondaryActions \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
   assert.match(styles, /\.paymentSecondaryActions a, \.paymentSecondaryActions button \{[^}]*width: 180px;[^}]*max-width: 100%;/);

@@ -105,6 +105,11 @@ test("revoked management access clears protected data and stops polling and real
   assert.match(queue, /removeChannel\(channel\)/);
   assert.match(guard, /response\.status === 403/);
   assert.match(guard, /if \(accessLost\) return <AccessRevoked/);
+  assert.match(guard, /supabase\.channel\(`restaurant:\$\{restaurantId\}:orders`/);
+  assert.match(guard, /event: "order_changed"/);
+  assert.match(guard, /changedOrderId === orderId/);
+  assert.match(guard, /router\.refresh\(\)/);
+  assert.match(guard, /window\.addEventListener\("online"/);
 });
 
 test("management headers show member display name and role", () => {

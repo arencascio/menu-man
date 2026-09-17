@@ -18,6 +18,7 @@ function centsFromInput(value: string) {
 
 export default function RefundAction({
   slug,
+  restaurantId,
   orderId,
   originalTotalCents,
   refundedCents,
@@ -28,6 +29,7 @@ export default function RefundAction({
   providerAvailable,
 }: {
   slug: string;
+  restaurantId: string;
   orderId: string;
   originalTotalCents: number;
   refundedCents: number;
@@ -106,6 +108,11 @@ export default function RefundAction({
           : result.status === "unknown"
             ? "The provider outcome is unknown and requires review."
             : "Refund submitted to the payment provider.");
+      if (typeof BroadcastChannel !== "undefined") {
+        const channel = new BroadcastChannel(`menu-man-orders:${restaurantId}`);
+        channel.postMessage({ orderId });
+        channel.close();
+      }
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Refund could not be submitted.");

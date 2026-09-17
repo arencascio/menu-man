@@ -40,6 +40,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609160001_customer_post_order_polish.sql",
     "202609160002_checkout_customer_requirements.sql",
     "202609160003_refund_management_v1.sql",
+    "202609160004_refund_timeline_realtime_polish.sql",
   ]);
 });
 
@@ -445,6 +446,17 @@ test("refund management is capability-gated, serialized, idempotent, and provide
   assert.match(migration, /'customer\.refund_confirmed\/' \|\| new\.id::text/i);
   assert.match(migration, /new\.status = 'succeeded'/i);
   assert.match(migration, /refundAmountCents/i);
+});
+
+test("refund timeline presentation dedupes semantic states and broadcasts safe invalidations", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_refund_timeline_realtime_polish.sql"),
+  )?.sql || "";
+  assert.match(migration, /distinct on \(transition\.refund_id, semantic\.semantic_state\)/i);
+  assert.match(migration, /'refund:' \|\| timeline\.refund_id::text \|\| ':' \|\| timeline\.semantic_state/i);
+  assert.match(migration, /create trigger refunds_broadcast_management_change/i);
+  assert.match(migration, /jsonb_build_object\('orderId', order_uuid, 'change', 'order_changed'\)/i);
+  assert.doesNotMatch(migration, /reason|provider_refund_reference|amount_cents[^\n]*realtime\.send/i);
 });
 
 test("checkout customer requirements and normalization are restaurant configured and server authoritative", () => {

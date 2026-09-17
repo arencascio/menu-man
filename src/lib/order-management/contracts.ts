@@ -230,6 +230,36 @@ const orderItemSchema = z.object({
   modifiers: z.array(orderModifierSchema),
 });
 
+export const managedOrderTimelineEventSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["fulfillment", "payment", "refund"]),
+  label: z.string(),
+  actorName: z.string().nullable(),
+  occurredAt: z.iso.datetime({ offset: true }),
+});
+
+export type ManagedOrderTimelineEvent = z.infer<typeof managedOrderTimelineEventSchema>;
+
+export function mergeManagedOrderTimeline(
+  baseEvents: ManagedOrderTimelineEvent[],
+  refundEvents: ManagedOrderTimelineEvent[],
+) {
+  const seen = new Set<string>();
+  let paymentConfirmedSeen = false;
+  return [...baseEvents.filter((event) => !event.label.startsWith("Refund")), ...refundEvents]
+    .sort((left, right) => left.occurredAt.localeCompare(right.occurredAt))
+    .filter((event) => {
+      if (event.kind === "payment" && event.label === "Payment confirmed") {
+        if (paymentConfirmedSeen) return false;
+        paymentConfirmedSeen = true;
+      }
+      const key = event.kind === "refund" ? event.id : `${event.kind}:${event.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 export const managedOrderDetailSchema = z.object({
   orderId: z.uuid(),
   orderNumber: z.string().min(1),
@@ -277,13 +307,7 @@ export const managedOrderDetailSchema = z.object({
     completedAt: z.iso.datetime({ offset: true }).nullable(),
   }),
   items: z.array(orderItemSchema),
-  timeline: z.array(z.object({
-    id: z.string(),
-    kind: z.enum(["fulfillment", "payment", "refund"]),
-    label: z.string(),
-    actorName: z.string().nullable(),
-    occurredAt: z.iso.datetime({ offset: true }),
-  })),
+  timeline: z.array(managedOrderTimelineEventSchema),
 });
 
 export type ManagedOrderDetail = z.infer<typeof managedOrderDetailSchema>;

@@ -163,11 +163,13 @@ export default function SquarePaymentForm({
       <form className={styles.squarePaymentForm} onSubmit={(event) => void submit(event)}>
         <h2>Card details</h2>
         <p>Card information is entered securely with Square and is never sent directly to Menu Man.</p>
-        <div
-          id={cardContainerId}
-          className={`${styles.squareCardContainer} ${cardComplete ? styles.squareCardContainerComplete : ""}`}
-          aria-label="Secure card details"
-        />
+        <div className={`${styles.squareCardField} ${cardComplete ? styles.squareCardFieldComplete : ""}`}>
+          <div
+            id={cardContainerId}
+            className={styles.squareCardContainer}
+            aria-label="Secure card details"
+          />
+        </div>
         <button className={styles.checkoutButton} type="submit" disabled={!cardReady || !cardComplete || submitting}>
           {submitting ? "Submitting Payment…" : "Pay with Card"}
         </button>
