@@ -74,7 +74,7 @@ test("staging exceptional-state controls use server routes and retain safe navig
   assert.match(payment, /Please don&apos;t submit another payment while we confirm the order with the restaurant/);
   assert.match(payment, /Back to Checkout Details/);
   assert.match(payment, /href={`\/r\/\$\{restaurantSlug\}\/checkout`}/);
-  assert.match(payment, /href={`\/r\/\$\{restaurantSlug\}`}/);
+  assert.match(payment, /href={`\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}`}/);
   assert.doesNotMatch(payment, /Edit Cart and Start Fresh/);
   assert.doesNotMatch(payment, /requires restaurant review or a refund/i);
 });
@@ -169,20 +169,28 @@ test("Square card readiness is presentation-only and never submits a client tota
   assert.doesNotMatch(square, /onToken\([^)]*amountCents/);
 });
 
-test("card payment keeps a dominant CTA with equal neutral navigation below it", () => {
+test("Square and fake payments share equal neutral navigation below their provider CTAs", () => {
   const square = read("src", "app", "r", "[slug]", "SquarePaymentForm.tsx");
   const panel = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
   const styles = read("src", "app", "r", "[slug]", "menu-browser.module.css");
-  const payButton = square.indexOf("Pay with Card");
-  const secondaryActions = square.indexOf("{secondaryActions}");
+  const squareProvider = panel.indexOf("<SquarePaymentForm");
+  const fakeProvider = panel.lastIndexOf('paymentSession.browserSession.provider === "fake"');
+  const sharedNavigation = panel.lastIndexOf("{paymentSecondaryActions}");
 
-  assert.ok(payButton >= 0 && secondaryActions > payButton);
+  assert.match(square, /Pay with Card/);
+  assert.doesNotMatch(square, /secondaryActions|Return to Order Details|Return to Menu/);
+  assert.ok(squareProvider >= 0 && fakeProvider > squareProvider && sharedNavigation > fakeProvider);
+  assert.equal(panel.match(/\{paymentSecondaryActions\}/g)?.length, 1);
+  assert.doesNotMatch(panel, /secondaryActions=\{/);
+  assert.match(panel, /Submit Test Payment/);
   assert.match(panel, /paymentSecondaryActions/);
   assert.match(panel, /Return to Order Details/);
   assert.doesNotMatch(panel, /payment\?view=details/);
   assert.match(panel, /Return to Menu/);
   assert.match(styles, /\.paymentSecondaryActions \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
   assert.match(styles, /\.paymentSecondaryActions a, \.paymentSecondaryActions button \{[^}]*width: 180px;[^}]*max-width: 100%;/);
+  assert.match(styles, /\.checkoutButton \{[^}]*padding: 14px 18px/);
+  assert.match(styles, /\.paymentSecondaryActions a, \.paymentSecondaryActions button \{[^}]*padding: 8px 11px/);
 });
 
 test("read-only order details preserve capability checks and skip payment browser sessions", () => {

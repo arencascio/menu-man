@@ -191,7 +191,7 @@
 .squarePaymentForm { display: grid; gap: 12px; margin: 18px 0; padding: 16px; border: 1px solid #ccc; border-radius: 10px; }
 .squarePaymentForm h2, .squarePaymentForm p { margin: 0; }
 .squarePaymentForm p { color: var(--muted); font-size: 13px; line-height: 1.45; }
-.paymentSecondaryActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.paymentSecondaryActions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
 .paymentSecondaryActions a, .paymentSecondaryActions button { box-sizing: border-box; width: 180px; max-width: 100%; flex: 0 0 auto; margin: 0; border: 1px solid #777; border-radius: 7px; padding: 8px 11px; color: #333; background: #fff; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; }
 .paymentSecondaryActions a:hover, .paymentSecondaryActions button:not(:disabled):hover { background: #f1f1f1; }
 .paymentSecondaryActions a:focus-visible, .paymentSecondaryActions button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }

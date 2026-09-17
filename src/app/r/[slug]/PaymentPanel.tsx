@@ -386,7 +386,6 @@ export default function PaymentPanel({
             submitting={submitting}
             onToken={submitPaymentMethodToken}
             onError={setError}
-            secondaryActions={paymentSecondaryActions}
           />
         )}
 
@@ -398,20 +397,9 @@ export default function PaymentPanel({
             <button className={styles.checkoutButton} type="button" disabled={submitting} onClick={() => void submitFakePayment()}>{submitting ? "Submitting Test Payment…" : "Submit Test Payment"}</button>
           </fieldset>
         )}
+        {paymentSecondaryActions}
         {error && <p className={styles.formError} role="alert">{error}</p>}
         {(terminalFailure || isExpired || isLateSuccessRefunded) && <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}/checkout`}>Back to Checkout Details</Link>}
-        {!showCardPayment && (canSafelyAbandon ? (
-          <button
-            className={styles.checkoutButton}
-            type="button"
-            disabled={abandoning}
-            onClick={() => void abandonCheckout("menu")}
-          >
-            {abandoning ? "Returning to Menu…" : "Return to Menu"}
-          </button>
-        ) : (
-          <Link className={styles.checkoutButton} href={`/r/${restaurantSlug}`}>Return to Menu</Link>
-        ))}
       </section>
     </main>
   );
