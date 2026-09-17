@@ -32,6 +32,7 @@ export const fakePaymentScenarios = [
 ] as const;
 
 type FakeScenario = typeof fakePaymentScenarios[number];
+export type FakeRefundScenario = "success" | "decline" | "timeout_unknown" | "duplicate_webhook";
 
 export type FakeUnknownPaymentResolutionInput = PaymentConnectionContext & {
   attemptId: string;
@@ -58,6 +59,7 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
   constructor(
     private readonly signingSecret: string,
     private readonly allowStagingControls = false,
+    private readonly refundScenario: FakeRefundScenario = "success",
   ) {}
 
   async beginOnboarding(input: PaymentConnectionContext): Promise<OnboardingAction> {
@@ -250,18 +252,38 @@ export class FakePaymentProviderAdapter implements PaymentProviderAdapter {
 
   async createRefund(input: CreateRefundInput): Promise<RefundCommandResult> {
     const providerRefundReference = makeReference("fake_ref", input.refundId);
+    if (this.refundScenario === "timeout_unknown") {
+      return {
+        status: "unknown",
+        providerStatus: "NETWORK_OUTCOME_UNKNOWN",
+        providerRefundReference,
+      };
+    }
+    if (this.refundScenario === "decline") {
+      return {
+        status: "failed",
+        providerStatus: "DECLINED",
+        providerRefundReference,
+        failureCategory: "provider_refund_failed",
+        failureCode: "REFUND_DECLINED",
+        failureMessage: "The fake provider declined this refund.",
+      };
+    }
+    const delivery = this.delivery("refund.succeeded", {
+      connectionId: input.connectionId,
+      refundId: input.refundId,
+      amountCents: input.amountCents,
+      currency: input.currency,
+      providerRefundReference,
+      providerStatus: "SUCCEEDED",
+    });
     return {
       status: "processing",
       providerStatus: "REFUND_SUBMITTED",
       providerRefundReference,
-      developmentWebhookDeliveries: [this.delivery("refund.succeeded", {
-        connectionId: input.connectionId,
-        refundId: input.refundId,
-        amountCents: input.amountCents,
-        currency: input.currency,
-        providerRefundReference,
-        providerStatus: "SUCCEEDED",
-      })],
+      developmentWebhookDeliveries: this.refundScenario === "duplicate_webhook"
+        ? [delivery, delivery]
+        : [delivery],
     };
   }
 

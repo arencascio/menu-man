@@ -46,6 +46,9 @@ export const claimedNotificationSchema = z.object({
   restaurantPostalCode: z.string().nullable(),
   googleMapsUrl: z.string().nullable(),
   customerEmail: z.email().nullable(),
+  refundAmountCents: z.number().int().positive().nullable().default(null),
+  currency: z.string().length(3).nullable().default(null),
+  refundType: z.enum(["partial", "full"]).nullable().default(null),
 });
 
 export type ClaimedNotification = z.infer<typeof claimedNotificationSchema>;

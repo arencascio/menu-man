@@ -151,7 +151,7 @@ export function squareErrorResult(error: unknown): PaymentCommandResult {
 export function squareRefundErrorResult(error: unknown): RefundCommandResult {
   const paymentResult = squareErrorResult(error);
   return {
-    status: paymentResult.status === "failed" ? "failed" : "processing",
+    status: paymentResult.status === "failed" ? "failed" : "unknown",
     providerStatus: paymentResult.providerStatus,
     failureCategory: paymentResult.failureCategory,
     failureCode: paymentResult.failureCode,

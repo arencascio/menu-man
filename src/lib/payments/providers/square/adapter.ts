@@ -185,12 +185,24 @@ export class SquarePaymentProviderAdapter implements PaymentProviderAdapter {
       };
     }
     try {
-      return refundCommandResult(await this.gateway.createRefund({
+      const refund = await this.gateway.createRefund({
         idempotencyKey: input.providerIdempotencyKey,
         amountCents: input.amountCents,
         paymentId: input.providerPaymentReference,
         reason: `Menu Man refund ${input.refundId}`,
-      }));
+      });
+      const result = refundCommandResult(refund);
+      return {
+        ...result,
+        reconciliationEvent: refundEvent(refund, {
+          eventId: `square_command_refund_${refund.id}_${refund.updatedAt || refund.status}`,
+          connectionId: input.connectionId,
+          refundId: input.refundId,
+          providerAccountReference: this.config.merchantId,
+          providerLocationReference: this.config.locationId,
+          providerPaymentReference: input.providerPaymentReference,
+        }),
+      };
     } catch (error) {
       return squareRefundErrorResult(error);
     }

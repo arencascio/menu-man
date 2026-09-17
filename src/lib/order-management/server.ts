@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminServerClient } from "@/lib/supabase/admin-server";
 import {
   fulfillmentTransitionResultSchema,
+  managedRefundReservationSchema,
   managedOrderExportRowSchema,
   managedOrderDetailSchema,
   managedOrderPageSchema,
@@ -129,7 +130,37 @@ export async function getManagedOrderDetail(
     p_order_id: orderId,
   });
   if (error) throw rpcError(error);
-  return managedOrderDetailSchema.parse(data);
+  const { data: refundData, error: refundError } = await client.rpc("get_managed_order_refunds_v1", {
+    p_restaurant_slug: slug,
+    p_order_id: orderId,
+  });
+  if (refundError) throw rpcError(refundError);
+  const base = data as Record<string, unknown>;
+  const refundView = refundData as { payment?: unknown; timeline?: unknown } | null;
+  const originalTimeline = Array.isArray(base.timeline) ? base.timeline as Array<Record<string, unknown>> : [];
+  const timeline = [
+    ...originalTimeline.filter((event) => !String(event.label).startsWith("Refund")),
+    ...(Array.isArray(refundView?.timeline) ? refundView.timeline : []),
+  ].sort((left, right) => String((left as Record<string, unknown>).occurredAt)
+    .localeCompare(String((right as Record<string, unknown>).occurredAt)));
+  return managedOrderDetailSchema.parse({ ...base, payment: refundView?.payment, timeline });
+}
+
+export async function reserveManagedRefund(
+  slug: string,
+  orderId: string,
+  input: { amountCents: number; reason: string; clientActionId: string },
+) {
+  const client = await authenticatedClient();
+  const { data, error } = await client.rpc("reserve_managed_refund_v1", {
+    p_restaurant_slug: slug,
+    p_order_id: orderId,
+    p_amount_cents: input.amountCents,
+    p_reason: input.reason,
+    p_client_action_id: input.clientActionId,
+  });
+  if (error) throw rpcError(error);
+  return managedRefundReservationSchema.parse(data);
 }
 
 export async function transitionManagedOrder(

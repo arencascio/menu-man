@@ -254,6 +254,21 @@ export const managedOrderDetailSchema = z.object({
     status: z.string().min(1),
     paidAt: z.iso.datetime({ offset: true }).nullable(),
     refundedCents: z.number().int().nonnegative(),
+    capturedCents: z.number().int().nonnegative(),
+    refundableCents: z.number().int().nonnegative(),
+    pendingRefundCents: z.number().int().nonnegative(),
+    refundPolicyEligible: z.boolean(),
+    refundPolicyEndsAt: z.iso.datetime({ offset: true }).nullable(),
+    refundProviderAvailable: z.boolean(),
+    refunds: z.array(z.object({
+      refundId: z.uuid(),
+      amountCents: z.number().int().positive(),
+      status: z.enum(["requested", "processing", "unknown", "succeeded", "failed", "cancelled"]),
+      reason: z.string().min(1).max(500),
+      requestedAt: z.iso.datetime({ offset: true }),
+      completedAt: z.iso.datetime({ offset: true }).nullable(),
+      requestedBy: z.string().nullable(),
+    })),
   }),
   fulfillment: z.object({
     status: fulfillmentStatusSchema,
@@ -264,7 +279,7 @@ export const managedOrderDetailSchema = z.object({
   items: z.array(orderItemSchema),
   timeline: z.array(z.object({
     id: z.string(),
-    kind: z.enum(["fulfillment", "payment"]),
+    kind: z.enum(["fulfillment", "payment", "refund"]),
     label: z.string(),
     actorName: z.string().nullable(),
     occurredAt: z.iso.datetime({ offset: true }),
@@ -272,6 +287,32 @@ export const managedOrderDetailSchema = z.object({
 });
 
 export type ManagedOrderDetail = z.infer<typeof managedOrderDetailSchema>;
+
+export const managedRefundRequestSchema = z.object({
+  amountCents: z.number().int().positive(),
+  reason: z.string().trim().min(1).max(500),
+  clientActionId: z.uuid(),
+});
+
+export const managedRefundReservationSchema = z.object({
+  refundId: z.uuid(),
+  paymentId: z.uuid(),
+  connectionId: z.uuid(),
+  provider: z.string().min(1),
+  providerEnvironment: z.enum(["test", "sandbox", "production"]),
+  providerIdempotencyKey: z.string().min(1),
+  providerPaymentReference: z.string().min(1),
+  amountCents: z.number().int().positive(),
+  currency: z.string().length(3),
+  status: z.enum(["requested", "processing", "unknown", "succeeded", "failed", "cancelled"]),
+  replayed: z.boolean(),
+});
+
+export const managedRefundResultSchema = managedRefundReservationSchema.pick({
+  refundId: true,
+  status: true,
+  replayed: true,
+});
 
 export const fulfillmentTransitionRequestSchema = z.object({
   expectedVersion: z.number().int().positive(),

@@ -5,6 +5,7 @@ import {
   describeRestaurantAccessEvent,
   formatQueuePaymentLabel,
   managedOrdersQuerySchema,
+  managedRefundRequestSchema,
   nextFulfillmentStatus,
   inviteRestaurantMemberRequestSchema,
   restaurantMembershipSchema,
@@ -93,4 +94,18 @@ test("queue refund labels show one normalized status and one formatted amount", 
   assert.equal(formatQueuePaymentLabel("refunded", 1494), "REFUNDED · $14.94");
   assert.equal(formatQueuePaymentLabel("partially_refunded", 500), "PARTIALLY REFUNDED · $5.00");
   assert.equal(formatQueuePaymentLabel("paid", 0), "PAID");
+});
+
+test("managed refund intent requires positive cents, a trimmed reason, and a stable action id", () => {
+  const parsed = managedRefundRequestSchema.parse({
+    amountCents: 1250,
+    reason: "  Customer request  ",
+    clientActionId: "11111111-1111-4111-8111-111111111111",
+  });
+  assert.equal(parsed.reason, "Customer request");
+  for (const amountCents of [0, -1, 1.5]) {
+    assert.equal(managedRefundRequestSchema.safeParse({ ...parsed, amountCents }).success, false);
+  }
+  assert.equal(managedRefundRequestSchema.safeParse({ ...parsed, reason: "   " }).success, false);
+  assert.equal(managedRefundRequestSchema.safeParse({ ...parsed, reason: "x".repeat(501) }).success, false);
 });

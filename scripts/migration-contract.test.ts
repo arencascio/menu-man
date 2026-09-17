@@ -39,6 +39,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609150002_custom_tip_cap.sql",
     "202609160001_customer_post_order_polish.sql",
     "202609160002_checkout_customer_requirements.sql",
+    "202609160003_refund_management_v1.sql",
   ]);
 });
 
@@ -425,6 +426,25 @@ test("custom tips use authoritative large-tip confirmation and configurable addi
   assert.match(migration, /MM_LARGE_TIP_CONFIRMATION_REQUIRED/i);
   assert.match(migration, /p_request - 'largeTipConfirmed'/i);
   assert.match(migration, /grant execute on function public\.create_order_v1[\s\S]*to service_role/i);
+});
+
+test("refund management is capability-gated, serialized, idempotent, and provider-confirmed", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_refund_management_v1.sql"),
+  )?.sql || "";
+  assert.match(migration, /private\.require_restaurant_capability_v1\(p_restaurant_slug, 'issue_refunds'\)/i);
+  assert.match(migration, /payment\.order_id = order_record\.id[\s\S]*for update/i);
+  assert.match(migration, /refund\.idempotency_key = p_client_action_id/i);
+  assert.match(migration, /status in \('requested', 'processing', 'unknown', 'succeeded'\)/i);
+  assert.match(migration, /reserved_total \+ p_amount_cents > payment_record\.captured_cents/i);
+  assert.match(migration, /policy_record\.refund_window_days/i);
+  assert.match(migration, /'refunds' = any\(connection_record\.capabilities\)/i);
+  assert.match(migration, /attempt\.provider_payment_reference is not null/i);
+  assert.match(migration, /grant execute on function public\.reserve_managed_refund_v1[\s\S]*to authenticated/i);
+  assert.match(migration, /grant execute on function public\.record_refund_command_result_v1[\s\S]*to service_role/i);
+  assert.match(migration, /'customer\.refund_confirmed\/' \|\| new\.id::text/i);
+  assert.match(migration, /new\.status = 'succeeded'/i);
+  assert.match(migration, /refundAmountCents/i);
 });
 
 test("checkout customer requirements and normalization are restaurant configured and server authoritative", () => {

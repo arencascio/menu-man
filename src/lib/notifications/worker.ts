@@ -19,6 +19,9 @@ function mapClaim(row: Record<string, unknown>): ClaimedNotification {
     restaurantPostalCode: row.restaurant_postal_code,
     googleMapsUrl: row.google_maps_url,
     customerEmail: row.customer_email,
+    refundAmountCents: row.refund_amount_cents,
+    currency: row.currency,
+    refundType: row.refund_type,
   });
 }
 

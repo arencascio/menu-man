@@ -10,7 +10,7 @@ const capabilityInfo: Record<ManagementCapability, { label: string; description:
   advance_fulfillment: { label: "Advance fulfillment", description: "Move orders through preparing, ready, and completed." },
   view_customer_contact: { label: "View customer contact", description: "See customer phone numbers and email addresses.", sensitive: true },
   export_order_history: { label: "Export order history", description: "Export restaurant orders and customer data.", sensitive: true },
-  issue_refunds: { label: "Issue refunds", description: "Reserved for future provider-confirmed refund tools.", sensitive: true },
+  issue_refunds: { label: "Issue refunds", description: "Issue provider-backed refunds from order details.", sensitive: true },
   correct_fulfillment: { label: "Correct fulfillment", description: "Reserved for audited fulfillment corrections.", sensitive: true },
   manage_memberships: { label: "Manage team", description: "Invite, edit, revoke, and reinstate non-owner team members.", sensitive: true },
   manage_notifications: { label: "Manage notifications", description: "Configure customer and restaurant operational emails.", sensitive: true },

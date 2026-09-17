@@ -54,6 +54,21 @@ test("order detail renders the immutable operational snapshot and sanitized time
   assert.match(detail, /data-exception-actions-slot="reserved"/);
 });
 
+test("refund management accepts intent only and keeps provider authority server-side", () => {
+  const action = source("src", "app", "manage", "[slug]", "orders", "[orderId]", "RefundAction.tsx");
+  const route = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "[orderId]", "refunds", "route.ts");
+  const server = source("src", "lib", "order-management", "server.ts");
+  assert.match(action, /Full remaining refund/);
+  assert.match(action, /Partial refund/);
+  assert.match(action, /original payment method/i);
+  assert.doesNotMatch(action, /window\.confirm|confirm\s*\(/);
+  assert.match(route, /managedRefundRequestSchema\.safeParse/);
+  assert.match(route, /executeReservedRefund/);
+  assert.doesNotMatch(route, /providerPaymentReference|payment_status|refunded_cents|currency:/);
+  assert.match(server, /reserve_managed_refund_v1/);
+  assert.match(server, /p_client_action_id: input\.clientActionId/);
+});
+
 test("team management uses trusted routes, final permissions, and an audited lifecycle", () => {
   const team = source("src", "app", "manage", "[slug]", "team", "TeamManager.tsx");
   const teamServer = source("src", "lib", "order-management", "team-server.ts");

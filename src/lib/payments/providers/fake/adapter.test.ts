@@ -116,6 +116,24 @@ test("fake unknown recovery signs terminal events for the original attempt", asy
   }
 });
 
+test("fake refunds cover success, decline, unknown, and duplicate provider events", async () => {
+  const input = {
+    ...CONNECTION,
+    refundId: "50000000-0000-4000-8000-000000000001",
+    paymentId: PAYMENT.paymentId,
+    providerIdempotencyKey: "50000000-0000-4000-8000-000000000001",
+    providerPaymentReference: "fake_pay_example",
+    amountCents: 500,
+    currency: "USD",
+  };
+  assert.equal((await new FakePaymentProviderAdapter(SECRET, false, "success").createRefund(input)).status, "processing");
+  assert.equal((await new FakePaymentProviderAdapter(SECRET, false, "decline").createRefund(input)).status, "failed");
+  assert.equal((await new FakePaymentProviderAdapter(SECRET, false, "timeout_unknown").createRefund(input)).status, "unknown");
+  const duplicate = await new FakePaymentProviderAdapter(SECRET, false, "duplicate_webhook").createRefund(input);
+  assert.equal(duplicate.developmentWebhookDeliveries?.length, 2);
+  assert.equal(duplicate.developmentWebhookDeliveries?.[0].rawBody, duplicate.developmentWebhookDeliveries?.[1].rawBody);
+});
+
 test("fake authorization capture and void emit verified events for the existing attempt", async () => {
   const adapter = new FakePaymentProviderAdapter(SECRET, true);
   const input = {

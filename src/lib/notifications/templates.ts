@@ -41,6 +41,14 @@ function detailRow(label: string, value: string) {
   return `<tr><td style="padding:0 0 6px;color:#6b6259;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(label)}</td></tr><tr><td style="padding:0 0 18px;color:#1f1b16;font-size:16px">${escapeHtml(value)}</td></tr>`;
 }
 
+function refundAmount(notification: ClaimedNotification) {
+  if (notification.refundAmountCents == null || !notification.currency) return null;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: notification.currency,
+  }).format(notification.refundAmountCents / 100);
+}
+
 export function renderNotificationEmail(notification: ClaimedNotification) {
   const copy = {
     "customer.order_confirmed": {
@@ -81,6 +89,13 @@ export function renderNotificationEmail(notification: ClaimedNotification) {
     ["Order", `#${notification.orderNumber}`],
     ["Pickup mode", pickupMode(notification)],
     ["Pickup date & time", pickupDateTime(notification)],
+    ...(notification.notificationType === "customer.refund_confirmed" && refundAmount(notification)
+      ? [
+        ["Refund amount", refundAmount(notification)!],
+        ["Refund type", notification.refundType === "full" ? "Full refund" : "Partial refund"],
+        ["Refund destination", "Original payment method"],
+      ]
+      : []),
     ...(address ? [["Pickup address", address]] : []),
     ...(isPolishedCustomerTemplate && notification.customerEmail
       ? [["Email on order", notification.customerEmail]]

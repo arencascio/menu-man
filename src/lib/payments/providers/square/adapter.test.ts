@@ -248,6 +248,8 @@ test("Square refund uses provider-neutral refund idempotency and authoritative a
   assert.equal(request?.paymentId, completedPayment.id);
   assert.equal(request?.amountCents, 1250);
   assert.equal(result.providerRefundReference, completedRefund.id);
+  assert.equal(result.reconciliationEvent?.kind, "refund.succeeded");
+  assert.equal(result.reconciliationEvent?.refundId, "50000000-0000-4000-8000-000000000001");
 });
 
 test("Square manual capture and void act on the existing provider payment", async () => {

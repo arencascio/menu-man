@@ -57,7 +57,7 @@ export type PaymentCommandResult = {
 };
 
 export type RefundCommandResult = {
-  status: "processing" | "failed";
+  status: "processing" | "unknown" | "failed";
   providerStatus: string;
   providerRefundReference?: string;
   failureCategory?: string;

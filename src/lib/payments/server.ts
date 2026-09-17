@@ -188,7 +188,7 @@ async function recordCommandResult(attemptId: string, result: PaymentCommandResu
 }
 
 async function recordRefundCommandResult(refundId: string, result: {
-  status: "processing" | "failed";
+  status: "processing" | "unknown" | "failed";
   providerStatus: string;
   providerRefundReference?: string;
   failureCategory?: string;
@@ -381,23 +381,87 @@ async function reconcilePaymentIfDue(status: PaymentStatus, checkoutToken: strin
     if (touched.error) throw parseDatabaseError(touched.error.message);
     return status;
   }
-  await applyPaymentReconciliation(result.reconciliationEvent);
+  await applyPaymentReconciliation(result.reconciliationEvent, "square", "sandbox");
   return authorizePaymentStatus(status.orderId, checkoutToken);
 }
 
-async function applyPaymentReconciliation(event: NormalizedPaymentEvent) {
+async function applyPaymentReconciliation(
+  event: NormalizedPaymentEvent,
+  providerKey: string,
+  environment: "test" | "sandbox" | "production",
+) {
   if (!event.connectionId) {
     throw new PaymentServerError("INVALID_PAYMENT_EVENT", "Reconciliation event has no payment connection.");
   }
   const { error } = await supabaseServer.rpc("ingest_payment_reconciliation_v1", {
-    p_provider_key: "square",
-    p_environment: "sandbox",
+    p_provider_key: providerKey,
+    p_environment: environment,
     p_provider_event_id: event.eventId,
     p_connection_id: event.connectionId,
     p_normalized_event: normalizedEventPayload(event),
     p_occurred_at: event.occurredAt,
   });
   if (error) throw parseDatabaseError(error.message);
+}
+
+export type ReservedRefundCommand = {
+  refundId: string;
+  paymentId: string;
+  connectionId: string;
+  provider: string;
+  providerEnvironment: "test" | "sandbox" | "production";
+  providerIdempotencyKey: string;
+  providerPaymentReference: string;
+  amountCents: number;
+  currency: string;
+  status: "requested" | "processing" | "unknown" | "succeeded" | "failed" | "cancelled";
+  replayed: boolean;
+};
+
+export async function executeReservedRefund(refund: ReservedRefundCommand) {
+  if (["succeeded", "failed", "cancelled"].includes(refund.status)) {
+    return { refundId: refund.refundId, status: refund.status, replayed: refund.replayed };
+  }
+
+  let result: import("./types").RefundCommandResult;
+  try {
+    const adapter = getPaymentProvider(refund.provider);
+    result = await adapter.createRefund({
+      connectionId: refund.connectionId,
+      provider: refund.provider,
+      environment: refund.providerEnvironment,
+      refundId: refund.refundId,
+      paymentId: refund.paymentId,
+      providerIdempotencyKey: refund.providerIdempotencyKey,
+      providerPaymentReference: refund.providerPaymentReference,
+      amountCents: refund.amountCents,
+      currency: refund.currency,
+    });
+  } catch {
+    result = {
+      status: "unknown" as const,
+      providerStatus: "REQUEST_OUTCOME_UNKNOWN",
+      failureCategory: "provider_unavailable",
+    };
+  }
+
+  await recordRefundCommandResult(refund.refundId, result);
+  await enqueueDevelopmentDeliveries(refund.provider, result.developmentWebhookDeliveries);
+  if (result.reconciliationEvent) {
+    await applyPaymentReconciliation(
+      result.reconciliationEvent,
+      refund.provider,
+      refund.providerEnvironment,
+    );
+  }
+  await processDuePaymentEvents(refund.provider);
+  return {
+    refundId: refund.refundId,
+    status: result.reconciliationEvent?.kind === "refund.succeeded"
+      ? "succeeded" as const
+      : result.status,
+    replayed: refund.replayed,
+  };
 }
 
 export async function resolveFakeUnknownPayment(

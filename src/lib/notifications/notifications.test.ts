@@ -53,6 +53,22 @@ test("ready-for-pickup email uses the polished customer template", () => {
   assert.doesNotMatch(email.text, /promotion|subscribe|marketing/i);
 });
 
+test("refund confirmation identifies the amount, partial/full state, and original method", () => {
+  const refund = claimedNotificationSchema.parse({
+    ...claim,
+    notificationType: "customer.refund_confirmed",
+    idempotencyKey: "customer.refund_confirmed/44444444-4444-4444-8444-444444444444",
+    refundAmountCents: 1250,
+    currency: "USD",
+    refundType: "partial",
+  });
+  const email = renderNotificationEmail(refund);
+  assert.match(email.subject, /Refund confirmed for order #1042/);
+  assert.match(email.text, /Refund amount: \$12\.50/);
+  assert.match(email.text, /Refund type: Partial refund/);
+  assert.match(email.text, /Refund destination: Original payment method/);
+});
+
 test("Resend delivery sends a stable idempotency key and recognizes success", async () => {
   let request: RequestInit | undefined;
   const result = await sendResendEmail("server-secret", {
