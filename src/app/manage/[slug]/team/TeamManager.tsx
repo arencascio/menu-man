@@ -13,12 +13,13 @@ const capabilityInfo: Record<ManagementCapability, { label: string; description:
   issue_refunds: { label: "Issue refunds", description: "Issue provider-backed refunds from order details.", sensitive: true },
   correct_fulfillment: { label: "Correct fulfillment", description: "Reserved for audited fulfillment corrections.", sensitive: true },
   manage_memberships: { label: "Manage team", description: "Invite, edit, revoke, and reinstate non-owner team members.", sensitive: true },
+  manage_restaurant_settings: { label: "Manage restaurant settings", description: "Configure the restaurant profile, ordering rules, and weekly hours.", sensitive: true },
   manage_notifications: { label: "Manage notifications", description: "Configure customer and restaurant operational emails.", sensitive: true },
 };
 const allCapabilities = Object.keys(capabilityInfo) as ManagementCapability[];
 const roleDefaults: Record<"owner" | "manager" | "staff", ManagementCapability[]> = {
   owner: allCapabilities,
-  manager: ["view_orders", "advance_fulfillment", "view_customer_contact", "export_order_history", "manage_notifications"],
+  manager: ["view_orders", "advance_fulfillment", "view_customer_contact", "export_order_history", "manage_restaurant_settings", "manage_notifications"],
   staff: ["view_orders", "advance_fulfillment", "view_customer_contact"],
 };
 type Role = "owner" | "manager" | "staff";

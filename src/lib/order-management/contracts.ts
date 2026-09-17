@@ -8,6 +8,7 @@ export const managementCapabilitySchema = z.enum([
   "issue_refunds",
   "correct_fulfillment",
   "manage_memberships",
+  "manage_restaurant_settings",
   "manage_notifications",
 ]);
 
@@ -125,6 +126,7 @@ const capabilityLabels: Record<ManagementCapability, string> = {
   issue_refunds: "Issue refunds",
   correct_fulfillment: "Correct fulfillment",
   manage_memberships: "Manage team",
+  manage_restaurant_settings: "Manage restaurant settings",
   manage_notifications: "Manage notifications",
 };
 

@@ -15,6 +15,7 @@ import "../src/lib/payments/providers/square/adapter.test";
 import "../src/lib/order-management/contracts.test";
 import "../src/lib/order-management/csv.test";
 import "../src/lib/notifications/notifications.test";
+import "../src/lib/restaurant-settings/contracts.test";
 import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test";
 import "./staging-safety.test";
 import "./route-checkout-contract.test";

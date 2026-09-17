@@ -164,6 +164,25 @@ test("notification settings and delivery stay behind server authorization", () =
   assert.match(nav, /manage_notifications/);
 });
 
+test("restaurant settings use dedicated authorized routes and preserve the notification integration", () => {
+  const nav = source("src", "app", "manage", "[slug]", "ManagementNav.tsx");
+  const settingsNav = source("src", "app", "manage", "[slug]", "settings", "SettingsNav.tsx");
+  const settingsServer = source("src", "lib", "restaurant-settings", "server.ts");
+  const restaurantRoute = source("src", "app", "api", "manage", "restaurants", "[slug]", "settings", "restaurant", "route.ts");
+  const orderingRoute = source("src", "app", "api", "manage", "restaurants", "[slug]", "settings", "ordering", "route.ts");
+  const hoursRoute = source("src", "app", "api", "manage", "restaurants", "[slug]", "settings", "hours", "route.ts");
+  assert.match(nav, />Settings</);
+  for (const label of ["Restaurant", "Ordering", "Hours", "Notifications"]) assert.match(settingsNav, new RegExp(`"${label}"`));
+  assert.match(settingsServer, /get_managed_restaurant_settings_v1/);
+  assert.match(settingsServer, /update_managed_ordering_settings_v1/);
+  assert.match(settingsServer, /update_managed_hours_settings_v1/);
+  for (const route of [restaurantRoute, orderingRoute, hoursRoute]) {
+    assert.match(route, /safeParse/);
+    assert.match(route, /private, no-store/);
+    assert.match(route, /revalidatePath\(`\/r\/\$\{slug\}`\)/);
+  }
+});
+
 test("revoked access can recover only after an authoritative membership refetch", () => {
   const revoked = source("src", "app", "manage", "[slug]", "AccessRevoked.tsx");
   const route = source("src", "app", "api", "manage", "memberships", "route.ts");

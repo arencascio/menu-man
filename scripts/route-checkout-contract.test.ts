@@ -163,7 +163,7 @@ test("Square card readiness is presentation-only and never submits a client tota
   assert.match(square, /isCompletelyValid/);
   assert.match(square, /squareCardFieldComplete/);
   assert.doesNotMatch(square, /squareCardContainerComplete/);
-  assert.match(styles, /\.squareCardFieldComplete::after[^}]*height: 56px/);
+  assert.match(styles, /\.squareCardFieldComplete::after[^}]*height: 62px/);
   assert.match(styles, /\.squareCardContainer \{ min-height: 90px/);
   assert.match(square, /disabled=\{!cardReady \|\| !cardComplete \|\| submitting\}/);
   assert.doesNotMatch(square, /onToken\([^)]*amountCents/);

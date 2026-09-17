@@ -41,6 +41,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609160002_checkout_customer_requirements.sql",
     "202609160003_refund_management_v1.sql",
     "202609160004_refund_timeline_realtime_polish.sql",
+    "202609170001_restaurant_settings_v1.sql",
   ]);
 });
 
@@ -82,6 +83,7 @@ test("baseline creates every documented application table", () => {
     "restaurant_notification_setting_events",
     "notification_outbox",
     "notification_delivery_attempts",
+    "restaurant_setting_events",
   ];
 
   for (const table of tables) {
@@ -503,4 +505,26 @@ test("staging fixture values never appear in schema migrations", () => {
   assert.doesNotMatch(completeSchema, /\barmandos\b/i);
   assert.doesNotMatch(completeSchema, /\b875\b/);
   assert.doesNotMatch(completeSchema, /time '07:00'/i);
+});
+
+test("restaurant settings are capability-gated, tenant-scoped, audited, and range validated", () => {
+  const migration = migrations.find(({ file }) => file.endsWith("_restaurant_settings_v1.sql"))?.sql || "";
+  assert.match(migration, /'manage_restaurant_settings'/);
+  assert.match(migration, /\('owner', 'manage_restaurant_settings', true\)/);
+  assert.match(migration, /\('manager', 'manage_restaurant_settings', true\)/);
+  assert.match(migration, /\('staff', 'manage_restaurant_settings', false\)/);
+  assert.match(migration, /private\.require_restaurant_capability_v1\(p_restaurant_slug, 'manage_restaurant_settings'\)/i);
+  assert.match(migration, /restaurant_setting_events/);
+  assert.match(migration, /previous_state jsonb not null/);
+  assert.match(migration, /next_state jsonb not null/);
+  assert.match(migration, /client_action_id uuid not null/);
+  assert.match(migration, /pickup_slot_interval_minutes = v_slot_minutes/);
+  assert.match(migration, /v_slot_minutes not between 5 and 1440/);
+  assert.match(migration, /v_advance_days not between 0 and 30/);
+  assert.match(migration, /v_refund_days not between 0 and 365/);
+  assert.match(migration, /custom_tip_additive_cap_cents = v_tip_cap/);
+  assert.match(migration, /delete from public\.restaurant_business_hours where restaurant_id = access_record\.restaurant_id/);
+  assert.match(migration, /opening >= closing/);
+  assert.match(migration, /grant execute on function public\.update_managed_restaurant_settings_v1[\s\S]*to authenticated/i);
+  assert.doesNotMatch(migration, /grant (?:select|insert|update|delete).*restaurant_setting_events.*authenticated/i);
 });
