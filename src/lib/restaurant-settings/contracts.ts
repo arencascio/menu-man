@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-const optionalText = (maximum: number) => z.string().trim().max(maximum)
-  .transform((value) => value === "" ? null : value);
-const optionalHttpsUrl = z.string().trim().max(2048).transform((value, context) => {
-  if (value === "") return null;
+const optionalText = (maximum: number) => z.string().trim().max(maximum).nullable()
+  .transform((value) => value === null || value === "" ? null : value);
+const optionalHttpsUrl = z.string().trim().max(2048).nullable().transform((value, context) => {
+  if (value === null || value === "") return null;
   try {
     const url = new URL(value);
     if (url.protocol !== "https:") throw new Error();

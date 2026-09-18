@@ -3,8 +3,30 @@ import test from "node:test";
 import {
   businessHourSchema,
   orderingSettingsSchema,
+  restaurantSettingsSchema,
   updateRestaurantSettingsRequestSchema,
 } from "./contracts";
+
+test("restaurant settings load every nullable optional profile field", () => {
+  const parsed = restaurantSettingsSchema.parse({
+    name: "Test Kitchen",
+    tagline: null,
+    description: null,
+    phone: null,
+    addressLine1: null,
+    city: null,
+    state: null,
+    postalCode: null,
+    googleMapsUrl: null,
+    instagramUrl: null,
+    facebookUrl: null,
+  });
+  assert.equal(parsed.googleMapsUrl, null);
+  assert.equal(parsed.instagramUrl, null);
+  assert.equal(parsed.facebookUrl, null);
+  assert.equal(parsed.tagline, null);
+  assert.equal(parsed.addressLine1, null);
+});
 
 test("restaurant settings trim values, null blanks, and require HTTPS links", () => {
   const base = {
@@ -17,6 +39,9 @@ test("restaurant settings trim values, null blanks, and require HTTPS links", ()
   assert.equal(parsed.name, "Test Kitchen");
   assert.equal(parsed.tagline, null);
   assert.equal(parsed.googleMapsUrl, "https://maps.google.com/example");
+  assert.equal(updateRestaurantSettingsRequestSchema.parse({
+    ...base, googleMapsUrl: null, instagramUrl: null, facebookUrl: null,
+  }).googleMapsUrl, null);
   assert.equal(updateRestaurantSettingsRequestSchema.safeParse({ ...base, googleMapsUrl: "javascript:alert(1)" }).success, false);
 });
 
