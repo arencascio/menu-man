@@ -12,6 +12,8 @@ declare
   original_armandos_name text;
   result jsonb;
   action_id uuid := gen_random_uuid();
+  special_action_id uuid := gen_random_uuid();
+  special_id uuid := gen_random_uuid();
 begin
   select id, name into strict armandos_uuid, original_armandos_name
   from public.restaurants where slug = 'armandos';
@@ -85,6 +87,31 @@ begin
   if jsonb_array_length(result -> 'days') <> 7
     or (select count(*) from public.restaurant_business_hours where restaurant_id = test_uuid) <> 7
   then raise exception 'Weekly hours did not save and read back'; end if;
+
+  result := public.get_managed_hours_settings_v2('test-kitchen');
+  result := public.update_managed_hours_settings_v2(
+    'test-kitchen', result -> 'days', jsonb_build_array(jsonb_build_object(
+      'id', special_id, 'serviceDate', '2037-12-25', 'label', 'Tenant audit holiday',
+      'isClosed', true, 'openTime', null, 'closeTime', null
+    )), special_action_id
+  );
+  if result #>> '{specialDates,0,label}' <> 'Tenant audit holiday'
+    or not exists (select 1 from public.restaurant_special_hours special
+      where special.id = special_id and special.restaurant_id = test_uuid)
+    or exists (select 1 from public.restaurant_special_hours special
+      where special.restaurant_id = armandos_uuid and special.service_date = date '2037-12-25')
+    or not exists (select 1 from public.restaurant_setting_events event
+      where event.restaurant_id = test_uuid and event.actor_membership_id = test_membership
+        and event.client_action_id = special_action_id
+        and event.previous_state ? 'specialDates' and event.next_state ? 'specialDates')
+  then raise exception 'Special hours were not tenant isolated and audited'; end if;
+
+  result := public.update_managed_hours_settings_v2(
+    'test-kitchen', result -> 'days', '[]'::jsonb, gen_random_uuid()
+  );
+  if exists (select 1 from public.restaurant_special_hours where id = special_id)
+    or jsonb_array_length(result -> 'specialDates') <> 0
+  then raise exception 'Deleting a special-hours exception did not restore the empty state'; end if;
 
   begin
     perform public.update_managed_hours_settings_v1('test-kitchen', jsonb_build_array(

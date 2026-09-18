@@ -169,6 +169,7 @@ export const checkoutResponseSchema = z.strictObject({
 const rawPickupAvailabilitySchema = z.strictObject({
   timezone: z.string().nullable(),
   generatedAt: z.string().datetime({ offset: true }),
+  currentlyOpen: z.boolean(),
   asap: z.strictObject({
     enabled: z.boolean(),
     available: z.boolean(),
@@ -205,6 +206,7 @@ export const pickupAvailabilitySchema = rawPickupAvailabilitySchema.transform((a
   return {
     timezone: availability.timezone,
     generatedAt: new Date(availability.generatedAt).toISOString(),
+    currentlyOpen: availability.currentlyOpen,
     asap: {
       ...availability.asap,
       estimatedPickupAt: availability.asap.estimatedPickupAt

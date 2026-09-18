@@ -14,6 +14,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ slug:
   const { slug } = await context.params;
   const parsed = updateHoursSettingsRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Business hours are invalid." }, { status: 400, headers });
-  try { const result = await updateHoursSettings(slug, parsed.data.days, parsed.data.clientActionId); revalidatePath(`/r/${slug}`); return Response.json(result, { headers }); }
+  try { const result = await updateHoursSettings(slug, { days: parsed.data.days, specialDates: parsed.data.specialDates }, parsed.data.clientActionId); revalidatePath(`/r/${slug}`); return Response.json(result, { headers }); }
   catch (error) { return failure(error, "saved"); }
 }

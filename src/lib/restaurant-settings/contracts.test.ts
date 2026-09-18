@@ -4,6 +4,7 @@ import {
   businessHourSchema,
   orderingSettingsSchema,
   restaurantSettingsSchema,
+  specialHourSchema,
   updateRestaurantSettingsRequestSchema,
 } from "./contracts";
 
@@ -62,4 +63,11 @@ test("hours require valid same-day ranges only on open days", () => {
   assert.equal(businessHourSchema.safeParse({ dayOfWeek: 1, isClosed: true, openTime: null, closeTime: null }).success, true);
   assert.equal(businessHourSchema.safeParse({ dayOfWeek: 1, isClosed: false, openTime: "09:00", closeTime: "17:00" }).success, true);
   assert.equal(businessHourSchema.safeParse({ dayOfWeek: 1, isClosed: false, openTime: "17:00", closeTime: "09:00" }).success, false);
+});
+
+test("special hours accept closed dates and reject overnight custom ranges", () => {
+  const base = { id: "00000000-0000-4000-8000-000000000010", serviceDate: "2026-12-25", label: " Christmas Day " };
+  assert.equal(specialHourSchema.parse({ ...base, isClosed: true, openTime: null, closeTime: null }).label, "Christmas Day");
+  assert.equal(specialHourSchema.safeParse({ ...base, isClosed: false, openTime: "09:00", closeTime: "15:00" }).success, true);
+  assert.equal(specialHourSchema.safeParse({ ...base, isClosed: false, openTime: "20:00", closeTime: "02:00" }).success, false);
 });

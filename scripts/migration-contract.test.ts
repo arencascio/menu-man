@@ -42,6 +42,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609160003_refund_management_v1.sql",
     "202609160004_refund_timeline_realtime_polish.sql",
     "202609170001_restaurant_settings_v1.sql",
+    "202609170002_special_hours_checkout_messaging.sql",
   ]);
 });
 
@@ -84,6 +85,7 @@ test("baseline creates every documented application table", () => {
     "notification_outbox",
     "notification_delivery_attempts",
     "restaurant_setting_events",
+    "restaurant_special_hours",
   ];
 
   for (const table of tables) {
@@ -527,4 +529,19 @@ test("restaurant settings are capability-gated, tenant-scoped, audited, and rang
   assert.match(migration, /opening >= closing/);
   assert.match(migration, /grant execute on function public\.update_managed_restaurant_settings_v1[\s\S]*to authenticated/i);
   assert.doesNotMatch(migration, /grant (?:select|insert|update|delete).*restaurant_setting_events.*authenticated/i);
+});
+
+test("special hours override weekly pickup while preserving authoritative checkout validation", () => {
+  const migration = migrations.find(({ file }) => file.endsWith("_special_hours_checkout_messaging.sql"))?.sql || "";
+  assert.match(migration, /create table public\.restaurant_special_hours/);
+  assert.match(migration, /unique \(restaurant_id, service_date\)/);
+  assert.match(migration, /open_time < close_time/);
+  assert.match(migration, /special\.service_date = service_date/);
+  assert.match(migration, /where not has_special and weekly\.restaurant_id/);
+  assert.match(migration, /'currentlyOpen', currently_open/);
+  assert.match(migration, /update_managed_hours_settings_v2/);
+  assert.match(migration, /restaurant_setting_events/);
+  assert.match(migration, /get_checkout_notification_preferences_v1/);
+  assert.doesNotMatch(migration, /customer_refund_confirmation_email/);
+  assert.match(migration, /grant execute on function public\.get_checkout_notification_preferences_v1\(text\) to service_role/);
 });

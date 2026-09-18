@@ -20,10 +20,9 @@ import {
 import { formatPickupDateTime } from "@/lib/checkout/pickup-presentation";
 import {
   customerValidationError,
-  isValidCustomerEmail,
-  normalizeCustomerEmail,
   type CheckoutCustomerRequirements,
 } from "@/lib/checkout/customer-details";
+import { checkoutNotificationMessage, type CustomerNotificationPreferences } from "@/lib/checkout/notification-message";
 import {
   parseCustomTipCents,
   reconcileLargeTipConfirmation,
@@ -44,6 +43,7 @@ type CheckoutPanelProps = {
   menuId: string;
   currency: string;
   customerRequirements: CheckoutCustomerRequirements;
+  notificationPreferences: CustomerNotificationPreferences;
 };
 
 type IdempotencyAttempt = { fingerprint: string; key: string };
@@ -67,6 +67,7 @@ export default function CheckoutPanel({
   menuId,
   currency,
   customerRequirements,
+  notificationPreferences,
 }: CheckoutPanelProps) {
   const router = useRouter();
   const cart = useRestaurantCart(restaurantId, currency);
@@ -142,6 +143,9 @@ export default function CheckoutPanel({
       if (nextSelection) {
         setPickupMode(nextSelection.mode);
         setPickupAt(nextSelection.mode === "scheduled" ? nextSelection.pickupAt : "");
+      } else {
+        setPickupMode(nextAvailability.scheduled.slots.length > 0 ? "scheduled" : "asap");
+        setPickupAt("");
       }
     }).catch((error) => {
       if (!controller.signal.aborted) {
@@ -165,11 +169,14 @@ export default function CheckoutPanel({
   const parsedCustomTipCents = tipChoice === "custom"
     ? parseCustomTipCents(customTipAmount)
     : null;
-  const normalizedConfirmationEmail = normalizeCustomerEmail(email);
-  const confirmationEmail = normalizedConfirmationEmail
-    && isValidCustomerEmail(normalizedConfirmationEmail)
-    ? normalizedConfirmationEmail
-    : null;
+  const notificationMessage = checkoutNotificationMessage(notificationPreferences, email);
+  const closedWithFuturePickup = Boolean(
+    availability && !availability.currentlyOpen
+      && availability.scheduled.enabled && availability.scheduled.slots.length > 0,
+  );
+  const orderingUnavailable = Boolean(
+    availability && !availability.currentlyOpen && !closedWithFuturePickup,
+  );
 
   const activeLargeTipConfirmation = reconcileLargeTipConfirmation(
     largeTipConfirmation,
@@ -381,16 +388,19 @@ export default function CheckoutPanel({
           <fieldset className={styles.checkoutFieldset} id="pickup-details">
             <legend>Pickup</legend>
             {availabilityError && <p className={styles.formError}>{availabilityError}</p>}
+            {closedWithFuturePickup && <p className={styles.pickupNotice}>We&apos;re currently closed, but you can still place an order for a future pickup time.</p>}
+            {orderingUnavailable && <p className={styles.formError}>Ordering is currently unavailable.</p>}
             {!availability && !availabilityError && <p>Loading current availability…</p>}
             {availability?.asap.enabled && <label><input type="radio" name="pickup-mode" checked={pickupMode === "asap"} disabled={!availability.asap.available} onChange={() => setPickupMode("asap")} /> ASAP</label>}
             {availability?.scheduled.enabled && availability.scheduled.slots.length > 0 && (
               <label><input type="radio" name="pickup-mode" checked={pickupMode === "scheduled"} onChange={() => setPickupMode("scheduled")} /> Scheduled
-                <select value={pickupAt} onChange={(event) => setPickupAt(event.target.value)} disabled={pickupMode !== "scheduled"}>
+                <select required value={pickupAt} onChange={(event) => setPickupAt(event.target.value)} disabled={pickupMode !== "scheduled"}>
+                  <option value="">Choose a pickup date and time</option>
                   {availability.scheduled.slots.map((slot) => <option key={slot.pickupAt} value={slot.pickupAt}>{slot.label}</option>)}
                 </select>
               </label>
             )}
-            {availability && !availability.asap.available && availability.scheduled.slots.length === 0 && <p className={styles.formError}>No pickup times are currently available.</p>}
+            {availability?.currentlyOpen && !availability.asap.available && availability.scheduled.slots.length === 0 && <p className={styles.formError}>No pickup times are currently available.</p>}
             {availability?.timezone && <small>Times shown in {availability.timezone}.</small>}
           </fieldset>
           <fieldset className={styles.checkoutFieldset}>
@@ -403,9 +413,7 @@ export default function CheckoutPanel({
             )}
           </fieldset>
           <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={500} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
-          {confirmationEmail && (
-            <p className={styles.emailConfirmation}>A confirmation email will be sent to <strong>{confirmationEmail}</strong></p>
-          )}
+          {notificationMessage && <p className={styles.emailConfirmation}>{notificationMessage}</p>}
           {submitError && <p className={styles.formError} role="alert">{submitError}</p>}
           {activeLargeTipConfirmation ? (
             <div

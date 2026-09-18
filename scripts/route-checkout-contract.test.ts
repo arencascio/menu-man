@@ -92,6 +92,16 @@ test("checkout pickup availability is uncached and stale failures retain the edi
   assert.doesNotMatch(checkout, /cart\.clear\(/);
 });
 
+test("closed-store scheduling requires an explicit future pickup selection", () => {
+  const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
+  const selection = read("src", "lib", "checkout", "pickup-selection.ts");
+  assert.match(checkout, /currently closed, but you can still place an order for a future pickup time/);
+  assert.match(checkout, /Ordering is currently unavailable/);
+  assert.match(checkout, /Choose a pickup date and time/);
+  assert.match(checkout, /disabled=\{submitting \|\| !canPickup/);
+  assert.doesNotMatch(selection, /scheduled\.slots\[0\]/);
+});
+
 test("large custom tips require an inline, resettable confirmation before checkout", () => {
   const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
   assert.match(checkout, /That&apos;s a very generous tip!/);
@@ -143,8 +153,8 @@ test("checkout mirrors customer requirements, mobile autofill, and normalized em
   assert.match(checkout, /autoComplete="name"/);
   assert.match(checkout, /autoComplete="email" inputMode="email" type="email"/);
   assert.match(checkout, /autoComplete="tel" inputMode="tel" type="tel"/);
-  assert.match(checkout, /A confirmation email will be sent to/);
-  assert.match(checkout, /normalizedConfirmationEmail/);
+  assert.match(checkout, /checkoutNotificationMessage\(notificationPreferences, email\)/);
+  assert.doesNotMatch(checkout, /A confirmation email will be sent to/);
 });
 
 test("payment and confirmation keep receipt totals without duplicate headline totals or developer copy", () => {

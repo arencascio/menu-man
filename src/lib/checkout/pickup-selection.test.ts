@@ -10,6 +10,7 @@ function availability(overrides: Partial<PickupAvailability> = {}): PickupAvaila
   return {
     timezone: "America/Los_Angeles",
     generatedAt: "2026-09-14T17:00:00.000Z",
+    currentlyOpen: true,
     asap: { enabled: true, available: true, estimatedPickupAt: FIRST_SLOT },
     scheduled: {
       enabled: true,
@@ -26,10 +27,11 @@ test("checkout defaults to ASAP when it is currently available", () => {
   assert.deepEqual(resolvePickupSelection(availability()), { mode: "asap" });
 });
 
-test("checkout falls back to the first scheduled slot when ASAP is unavailable", () => {
-  assert.deepEqual(resolvePickupSelection(availability({
+test("checkout requires an explicit scheduled selection when ASAP is unavailable", () => {
+  assert.equal(resolvePickupSelection(availability({
+    currentlyOpen: false,
     asap: { enabled: true, available: false, estimatedPickupAt: null },
-  })), { mode: "scheduled", pickupAt: FIRST_SLOT });
+  })), null);
 });
 
 test("checkout preserves a scheduled selection while the server still offers it", () => {

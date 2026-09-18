@@ -26,6 +26,6 @@ export const getOrderingSettings = (slug: string): Promise<OrderingSettings> =>
 export const updateOrderingSettings = (slug: string, settings: OrderingSettings, clientActionId: string) =>
   call("update_managed_ordering_settings_v1", orderingSettingsSchema, { p_restaurant_slug: slug, p_settings: settings, p_client_action_id: clientActionId });
 export const getHoursSettings = (slug: string): Promise<HoursSettings> =>
-  call("get_managed_hours_settings_v1", hoursSettingsSchema, { p_restaurant_slug: slug });
-export const updateHoursSettings = (slug: string, days: HoursSettings["days"], clientActionId: string) =>
-  call("update_managed_hours_settings_v1", hoursSettingsSchema, { p_restaurant_slug: slug, p_days: days, p_client_action_id: clientActionId });
+  call("get_managed_hours_settings_v2", hoursSettingsSchema, { p_restaurant_slug: slug });
+export const updateHoursSettings = (slug: string, settings: Pick<HoursSettings, "days" | "specialDates">, clientActionId: string) =>
+  call("update_managed_hours_settings_v2", hoursSettingsSchema, { p_restaurant_slug: slug, p_days: settings.days, p_special_dates: settings.specialDates, p_client_action_id: clientActionId });

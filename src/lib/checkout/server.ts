@@ -7,6 +7,7 @@ import {
   type CheckoutErrorCode,
   type CheckoutRequest,
 } from "./contracts";
+import type { CustomerNotificationPreferences } from "./notification-message";
 
 const knownErrorCodes = new Set<CheckoutErrorCode>([
   "INVALID_REQUEST",
@@ -91,6 +92,22 @@ export async function getPickupAvailability(restaurantSlug: string) {
     throw new CheckoutServerError("CHECKOUT_FAILED", "Pickup availability could not be loaded.");
   }
   return parsed.data;
+}
+
+export async function getCustomerNotificationPreferences(
+  restaurantSlug: string,
+): Promise<CustomerNotificationPreferences> {
+  const { data, error } = await supabaseServer.rpc("get_checkout_notification_preferences_v1", {
+    p_restaurant_slug: restaurantSlug,
+  });
+  if (error || !data || typeof data !== "object") {
+    return { orderConfirmationEnabled: false, readyForPickupEnabled: false };
+  }
+  const value = data as Record<string, unknown>;
+  return {
+    orderConfirmationEnabled: value.orderConfirmationEnabled === true,
+    readyForPickupEnabled: value.readyForPickupEnabled === true,
+  };
 }
 
 export async function createAuthoritativeOrder(

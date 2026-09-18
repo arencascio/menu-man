@@ -59,11 +59,32 @@ export const businessHourSchema = z.object({
   }
 });
 
+export const specialHourSchema = z.object({
+  id: z.uuid(),
+  serviceDate: z.iso.date(),
+  label: optionalText(100),
+  isClosed: z.boolean(),
+  openTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+  closeTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+}).superRefine((value, context) => {
+  if (!value.isClosed && (!value.openTime || !value.closeTime)) {
+    context.addIssue({ code: "custom", message: "Open special dates require opening and closing times." });
+  }
+  if (!value.isClosed && value.openTime && value.closeTime && value.openTime >= value.closeTime) {
+    context.addIssue({ code: "custom", message: "Special-hours closing time must be later than opening time." });
+  }
+});
+
 export const hoursSettingsSchema = z.object({
   timezone: z.string().min(1),
   days: z.array(businessHourSchema).length(7).superRefine((days, context) => {
     if (new Set(days.map((day) => day.dayOfWeek)).size !== 7) {
       context.addIssue({ code: "custom", message: "Include each day of the week exactly once." });
+    }
+  }),
+  specialDates: z.array(specialHourSchema).max(100).superRefine((dates, context) => {
+    if (new Set(dates.map((entry) => entry.serviceDate)).size !== dates.length) {
+      context.addIssue({ code: "custom", message: "Only one special-hours entry is allowed per date." });
     }
   }),
   hadMultipleIntervals: z.boolean().default(false),

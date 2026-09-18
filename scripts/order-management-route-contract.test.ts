@@ -175,12 +175,23 @@ test("restaurant settings use dedicated authorized routes and preserve the notif
   for (const label of ["Restaurant", "Ordering", "Hours", "Notifications"]) assert.match(settingsNav, new RegExp(`"${label}"`));
   assert.match(settingsServer, /get_managed_restaurant_settings_v1/);
   assert.match(settingsServer, /update_managed_ordering_settings_v1/);
-  assert.match(settingsServer, /update_managed_hours_settings_v1/);
+  assert.match(settingsServer, /update_managed_hours_settings_v2/);
   for (const route of [restaurantRoute, orderingRoute, hoursRoute]) {
     assert.match(route, /safeParse/);
     assert.match(route, /private, no-store/);
     assert.match(route, /revalidatePath\(`\/r\/\$\{slug\}`\)/);
   }
+});
+
+test("special hours are edited with weekly hours and reserved corrections stay hidden", () => {
+  const hours = source("src", "app", "manage", "[slug]", "settings", "hours", "HoursSettingsForm.tsx");
+  const team = source("src", "app", "manage", "[slug]", "team", "TeamManager.tsx");
+  assert.match(hours, /Special hours/);
+  assert.match(hours, /Add special date/);
+  assert.match(hours, /removeSpecial/);
+  assert.match(hours, /specialDates: editor\.value\.specialDates/);
+  assert.match(team, /editableCapabilities = allCapabilities\.filter\(\(capability\) => capability !== "correct_fulfillment"\)/);
+  assert.match(team, /editableCapabilities\.map/);
 });
 
 test("revoked access can recover only after an authoritative membership refetch", () => {

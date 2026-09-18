@@ -19,6 +19,5 @@ export function resolvePickupSelection(
 ): PickupSelection | null {
   if (current && isPickupSelectionAvailable(availability, current)) return current;
   if (availability.asap.available) return { mode: "asap" };
-  const firstSlot = availability.scheduled.slots[0];
-  return firstSlot ? { mode: "scheduled", pickupAt: firstSlot.pickupAt } : null;
+  return null;
 }

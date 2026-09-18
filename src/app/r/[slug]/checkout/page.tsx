@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
 import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
 import { paymentLocksCart } from "@/lib/payments/state";
+import { getCustomerNotificationPreferences } from "@/lib/checkout/server";
 import CheckoutPanel from "../CheckoutPanel";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
     .select("customer_name_required, customer_email_required, customer_phone_required")
     .eq("restaurant_id", restaurant.id)
     .maybeSingle();
+  const notificationPreferences = await getCustomerNotificationPreferences(slug);
 
   return (
     <CheckoutPanel
@@ -54,6 +56,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
         customerEmailRequired: orderingSettings?.customer_email_required ?? true,
         customerPhoneRequired: orderingSettings?.customer_phone_required ?? true,
       }}
+      notificationPreferences={notificationPreferences}
     />
   );
 }

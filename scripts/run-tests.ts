@@ -4,6 +4,7 @@ import "../src/lib/checkout/customer-details.test";
 import "../src/lib/checkout/draft.test";
 import "../src/lib/checkout/pickup-selection.test";
 import "../src/lib/checkout/pickup-presentation.test";
+import "../src/lib/checkout/notification-message.test";
 import "../src/lib/checkout/tips.test";
 import "../src/lib/payments/contracts.test";
 import "../src/lib/payments/browser-session.test";
