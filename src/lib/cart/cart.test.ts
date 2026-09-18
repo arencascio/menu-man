@@ -11,7 +11,13 @@ import {
   resolveModifierPriceCents,
   shouldShowMaxSelectionGuidance,
 } from "./cart";
-import { CART_STORAGE_KEY, loadRestaurantCart, parseStoredCart } from "./storage";
+import {
+  CART_STORAGE_KEY,
+  loadRestaurantCart,
+  parseStoredCart,
+  restaurantCartStorageKey,
+  saveRestaurantCart,
+} from "./storage";
 import type { CartLine, MenuModifierGroup, MenuModifierOption } from "./types";
 
 const line: CartLine = {
@@ -202,7 +208,24 @@ test("rejects malformed persisted cart data", () => {
   }))?.lines.length, 1);
 });
 
-test("isolates persisted carts by restaurant", () => {
+test("keeps persisted carts isolated when different restaurants are open", () => {
+  const storage = new MemoryStorage();
+  saveRestaurantCart(storage, {
+    restaurantId: "restaurant-1",
+    currency: "USD",
+    lines: [line],
+  });
+
+  const cart = loadRestaurantCart(storage, "restaurant-2", "USD");
+  assert.equal(cart.restaurantId, "restaurant-2");
+  assert.equal(cart.lines.length, 0);
+  assert.equal(
+    parseStoredCart(storage.getItem(restaurantCartStorageKey("restaurant-1")))?.lines.length,
+    1,
+  );
+});
+
+test("migrates the matching legacy cart without deleting another restaurant's legacy cart", () => {
   const storage = new MemoryStorage();
   storage.setItem(CART_STORAGE_KEY, JSON.stringify({
     version: 1,
@@ -212,8 +235,13 @@ test("isolates persisted carts by restaurant", () => {
     updatedAt: new Date(0).toISOString(),
   }));
 
-  const cart = loadRestaurantCart(storage, "restaurant-2", "USD");
-  assert.equal(cart.restaurantId, "restaurant-2");
-  assert.equal(cart.lines.length, 0);
+  assert.equal(loadRestaurantCart(storage, "restaurant-2", "USD").lines.length, 0);
+  assert.notEqual(storage.getItem(CART_STORAGE_KEY), null);
+
+  assert.equal(loadRestaurantCart(storage, "restaurant-1", "USD").lines.length, 1);
   assert.equal(storage.getItem(CART_STORAGE_KEY), null);
+  assert.equal(
+    parseStoredCart(storage.getItem(restaurantCartStorageKey("restaurant-1")))?.lines.length,
+    1,
+  );
 });

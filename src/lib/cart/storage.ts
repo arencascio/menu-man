@@ -3,6 +3,10 @@ import { MAX_CART_QUANTITY, MAX_SPECIAL_INSTRUCTIONS_LENGTH } from "./cart";
 
 export const CART_STORAGE_KEY = "menu-man:cart:v1";
 
+export function restaurantCartStorageKey(restaurantId: string) {
+  return `${CART_STORAGE_KEY}:${restaurantId}`;
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
@@ -63,13 +67,31 @@ export function parseStoredCart(value: string | null): StoredCart | null {
 }
 
 export function loadRestaurantCart(storage: Storage, restaurantId: string, currency: string): StoredCart {
-  const stored = parseStoredCart(storage.getItem(CART_STORAGE_KEY));
-  if (!stored || stored.restaurantId !== restaurantId) {
-    storage.removeItem(CART_STORAGE_KEY);
-    return { version: 1, restaurantId, currency, lines: [], updatedAt: new Date().toISOString() };
+  const scopedKey = restaurantCartStorageKey(restaurantId);
+  const scopedValue = storage.getItem(scopedKey);
+  const scopedCart = parseStoredCart(scopedValue);
+
+  if (scopedCart?.restaurantId === restaurantId) {
+    return { ...scopedCart, currency };
+  }
+  if (scopedValue !== null) {
+    storage.removeItem(scopedKey);
   }
 
-  return { ...stored, currency };
+  // Migrate the original global key without deleting a different restaurant's cart.
+  const legacyValue = storage.getItem(CART_STORAGE_KEY);
+  const legacyCart = parseStoredCart(legacyValue);
+  if (legacyCart?.restaurantId === restaurantId) {
+    const migratedCart = { ...legacyCart, currency };
+    storage.setItem(scopedKey, JSON.stringify(migratedCart));
+    storage.removeItem(CART_STORAGE_KEY);
+    return migratedCart;
+  }
+  if (legacyValue !== null && !legacyCart) {
+    storage.removeItem(CART_STORAGE_KEY);
+  }
+
+  return { version: 1, restaurantId, currency, lines: [], updatedAt: new Date().toISOString() };
 }
 
 export function saveRestaurantCart(storage: Storage, cart: Omit<StoredCart, "version" | "updatedAt">) {
@@ -78,5 +100,5 @@ export function saveRestaurantCart(storage: Storage, cart: Omit<StoredCart, "ver
     version: 1,
     updatedAt: new Date().toISOString(),
   };
-  storage.setItem(CART_STORAGE_KEY, JSON.stringify(storedCart));
+  storage.setItem(restaurantCartStorageKey(cart.restaurantId), JSON.stringify(storedCart));
 }

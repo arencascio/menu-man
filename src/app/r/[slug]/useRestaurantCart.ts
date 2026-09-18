@@ -11,6 +11,7 @@ import {
 import {
   CART_STORAGE_KEY,
   loadRestaurantCart,
+  restaurantCartStorageKey,
   saveRestaurantCart,
 } from "@/lib/cart/storage";
 import type { CartLine } from "@/lib/cart/types";
@@ -51,8 +52,10 @@ export default function useRestaurantCart(restaurantId: string, currency: string
   }, [currency, restaurantId]);
 
   useEffect(() => {
+    const scopedStorageKey = restaurantCartStorageKey(restaurantId);
+
     function handleStorage(event: StorageEvent) {
-      if (event.key !== CART_STORAGE_KEY) return;
+      if (event.key !== scopedStorageKey && event.key !== CART_STORAGE_KEY) return;
       try {
         skipNextSave.current = true;
         dispatch({ type: "hydrate", cart: loadRestaurantCart(window.localStorage, restaurantId, currency) });
