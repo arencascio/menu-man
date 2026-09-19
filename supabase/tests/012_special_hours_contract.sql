@@ -15,10 +15,25 @@ begin
     restaurant_id, pickup_enabled, asap_enabled, scheduled_pickup_enabled,
     pickup_lead_time_minutes, pickup_cutoff_minutes_before_close,
     pickup_slot_interval_minutes, advance_order_days, tax_strategy, tax_rate_basis_points
-  ) values (restaurant_uuid, true, true, true, 0, 0, 15, 1, 'restaurant_percentage', 0);
+  ) values (restaurant_uuid, true, true, true, 0, 0, 15, 5, 'restaurant_percentage', 0);
   insert into public.restaurant_business_hours
     (restaurant_id, day_of_week, open_time, close_time, is_closed, sort_order)
-  values (restaurant_uuid, 1, time '09:00', time '20:00', false, 0);
+  values
+    (restaurant_uuid, 1, time '09:00', time '20:00', false, 0),
+    (restaurant_uuid, 3, time '10:00', time '18:00', false, 0),
+    (restaurant_uuid, 4, time '11:00', time '19:00', false, 0);
+
+  -- No exception row: after today's close and an intervening closed Tuesday,
+  -- the weekly Wednesday schedule must still be searched within the horizon.
+  availability := public.get_pickup_availability_v1(
+    'qa-special-hours', timestamptz '2026-12-21 21:00:00-08'
+  );
+  select min((slot ->> 'pickupAt')::timestamptz) into first_slot
+  from jsonb_array_elements(availability #> '{scheduled,slots}') slot;
+  if (availability ->> 'currentlyOpen')::boolean
+    or (availability #>> '{asap,available}')::boolean
+    or first_slot <> timestamptz '2026-12-23 10:00:00-08'
+  then raise exception 'Weekly fallback did not search past closed days: %', availability; end if;
 
   insert into public.restaurant_special_hours
     (id, restaurant_id, service_date, label, is_closed)

@@ -43,6 +43,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609160004_refund_timeline_realtime_polish.sql",
     "202609170001_restaurant_settings_v1.sql",
     "202609170002_special_hours_checkout_messaging.sql",
+    "202609180001_fix_special_hours_pickup_availability.sql",
   ]);
 });
 
@@ -536,7 +537,6 @@ test("special hours override weekly pickup while preserving authoritative checko
   assert.match(migration, /create table public\.restaurant_special_hours/);
   assert.match(migration, /unique \(restaurant_id, service_date\)/);
   assert.match(migration, /open_time < close_time/);
-  assert.match(migration, /special\.service_date = service_date/);
   assert.match(migration, /where not has_special and weekly\.restaurant_id/);
   assert.match(migration, /'currentlyOpen', currently_open/);
   assert.match(migration, /update_managed_hours_settings_v2/);
@@ -544,4 +544,17 @@ test("special hours override weekly pickup while preserving authoritative checko
   assert.match(migration, /get_checkout_notification_preferences_v1/);
   assert.doesNotMatch(migration, /customer_refund_confirmation_email/);
   assert.match(migration, /grant execute on function public\.get_checkout_notification_preferences_v1\(text\) to service_role/);
+});
+
+test("pickup availability repair removes the special-date variable collision and searches the full horizon", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_fix_special_hours_pickup_availability.sql"),
+  )?.sql || "";
+  assert.match(migration, /special\.service_date = target_service_date/);
+  assert.doesNotMatch(migration, /special\.service_date = service_date\b/);
+  assert.match(migration, /for day_offset in -1\.\.settings_record\.advance_order_days/);
+  assert.match(migration, /where has_special and not special_is_closed/);
+  assert.match(migration, /where not has_special[\s\S]*weekly\.restaurant_id = restaurant_record\.id/);
+  assert.match(migration, /'currentlyOpen', currently_open/);
+  assert.match(migration, /grant execute on function public\.get_pickup_availability_v1\(text, timestamptz\)[\s\S]*to service_role/);
 });
