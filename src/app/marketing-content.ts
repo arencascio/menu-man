@@ -1,205 +1,144 @@
+import type { ReactNode } from "react";
+
 export const CTA_LABELS = {
-  primary: "Build My Website",
-  primaryAlternate: "I Want a Better Website",
-  review: "Get a Free Website Review",
-  showcase: "I Want a Site Like This",
+  primary: "BUILD MY WEBSITE",
+  review: "GET MY FREE WEBSITE REVIEW",
+  showcase: "I WANT A SITE LIKE THIS",
 } as const;
 
-export const marketingCopy = {
-  hero: {
-    eyebrow: "Websites for independent restaurants",
-    title: "Your restaurant should look as good online as it does in real life.",
-    lead:
-      "We build and manage your restaurant website so guests can find what they need, choose you with confidence, and order without confusion.",
-    ownerNote: "No website dashboard to learn. No digital chore added to your week.",
-  },
-  problem: {
-    eyebrow: "Before they walk in",
-    title: "Hungry customers look for a few simple answers.",
-    copy:
-      "They check the menu, photos, hours, location, and ordering path—often from a phone. When that information is stale, scattered, or hard to use, choosing somewhere else is easy.",
-  },
-  journey: {
-    eyebrow: "From search to supper",
-    title: "A website should move a hungry customer toward choosing you.",
-    copy:
-      "Not decoration. A clear path from first impression to menu, order, or visit.",
-  },
-  process: {
-    eyebrow: "How it works",
-    title: "You run the restaurant. We’ll handle the website.",
-  },
-  services: {
-    eyebrow: "A flexible service",
-    title: "Build it once. Keep it taken care of. Add more when you’re ready.",
-    copy:
-      "Start with the website and ongoing care. Ordering, deeper reporting, and larger projects can be scoped when they make sense for your restaurant.",
-  },
-  work: {
-    eyebrow: "Working product showcase",
-    title: "Armando’s",
-    copy:
-      "A large real-world menu turned into a searchable, mobile-first customer experience—with a clear pickup path and practical visit details close at hand.",
-  },
-  review: {
-    eyebrow: "A useful first step",
-    title: "See how your restaurant looks online.",
-    copy:
-      "Get a free, restaurant-specific website checkup. We’ll point out the clearest opportunities and explain what we would prioritize first.",
-  },
+export const PUBLIC_PRICING = {
+  monthly: "$149/month",
+  setup: "$149 one-time setup",
 } as const;
 
-export const heroPromises = [
-  "Built around your restaurant",
-  "Works with your existing tools",
-  "Kept current for you",
-];
-
-export const mockupCallouts = [
-  "Searchable menu",
-  "Easy ordering",
-  "Hours & location",
-  "Always kept current",
-];
+export const DINER_RESEARCH = {
+  menu: "85%",
+  website: "80%",
+  sourceLabel: "TouchBistro 2024 U.S. Diner Trends Report",
+  sourceUrl:
+    "https://www.touchbistro.com/wp-content/uploads/2022/09/American_Diner_Report_2024_Final.pdf",
+} as const;
 
 export const guestQuestions = [
-  "What does the food look like?",
-  "What’s on the menu—and what does it cost?",
-  "Are they open, and where are they?",
-  "How do I order or visit?",
-];
-
-export const journeySteps = [
-  { title: "They find you", copy: "Search, social, or a recommendation brings them to your restaurant." },
-  { title: "They like what they see", copy: "The food, personality, and practical details feel clear and current." },
-  { title: "They choose you", copy: "Your menu and next step are easy to understand on any screen." },
-  { title: "They order or visit", copy: "They know exactly how to take action—without hunting for answers." },
-];
-
-export const outcomes = [
-  {
-    title: "Your menu works on their phone.",
-    copy: "Guests can browse what you serve without pinching, zooming, or opening a blurry PDF.",
-  },
-  {
-    title: "The next step is obvious.",
-    copy: "Ordering, directions, hours, and contact details are placed where guests expect them.",
-  },
-  {
-    title: "You don’t become the website manager.",
-    copy: "Send us the change. We handle routine updates and keep the essential information current.",
-  },
-];
+  "What do you serve?",
+  "What does it cost?",
+  "Are you open?",
+  "Where are you?",
+  "How do I order?",
+] as const;
 
 export const processSteps = [
   {
-    title: "Tell us about your restaurant",
-    copy: "We learn what you serve, how guests order, what tools you use, and what makes the place yours.",
+    title: "Tell us about your restaurant.",
+    copy: "Share your menu, photos, details, and the tools you already use.",
   },
   {
-    title: "We build it",
-    copy: "We shape the story, menu, photos, details, and mobile experience into one clear website.",
+    title: "We build it.",
+    copy: "We turn it into a clear, mobile-first restaurant website.",
   },
   {
-    title: "We keep it current",
-    copy: "Send routine changes as they happen. We take care of the updates, hosting, and ongoing support.",
+    title: "We keep it current.",
+    copy: "Send us routine changes. We handle the website work.",
   },
-];
+] as const;
 
-export const routineUpdates = [
-  "Hours and contact details",
-  "Menu items and prices",
-  "Photos and minor copy",
-  "Location and ordering links",
-];
+export const armandoFeatures = [
+  {
+    id: "mobile",
+    kicker: "Mobile first",
+    title: "Built for the phone in your customer's hand.",
+    copy: "The menu, hours, location, and ordering path stay easy to reach on a small screen.",
+  },
+  {
+    id: "search",
+    kicker: "Menu search",
+    title: "Search a huge menu in seconds.",
+    copy: "Guests can search dishes and move between categories without wrestling with a PDF.",
+  },
+  {
+    id: "order",
+    kicker: "Clear next step",
+    title: "Make ordering obvious.",
+    copy: "A prominent ordering path connects the website to the restaurant's current workflow.",
+  },
+  {
+    id: "details",
+    kicker: "Practical details",
+    title: "Put the important details where customers expect them.",
+    copy: "Hours, phone, location, and directions stay close to the decision.",
+  },
+] as const;
 
-export const services = [
-  {
-    title: "Website Build",
-    copy: "Give guests a polished, useful place to understand your restaurant, browse the menu, and take the next step.",
-    type: "ONE-TIME",
-  },
-  {
-    title: "Website Care",
-    copy: "Change a price, photo, hour, or link without spending your night maintaining a website.",
-    type: "ONGOING BASE",
-  },
-  {
-    title: "Online Ordering",
-    copy: "Add a clear pickup experience or connect the ordering tools you already use—without replacing your whole system.",
-    type: "OPTIONAL ADD-ON",
-  },
-  {
-    title: "Insights",
-    copy: "Get plain-English reporting on visits, menu interest, ordering clicks, traffic sources, and useful trends.",
-    type: "OPTIONAL ADD-ON",
-  },
-  {
-    title: "Projects",
-    copy: "Scope larger redesigns, menu restructuring, integrations, photography, or one-time cleanup separately.",
-    type: "QUOTED AS NEEDED",
-  },
-];
+export const includedServices = [
+  "Managed, mobile-first restaurant website",
+  "Hosting, SSL, deployment, and normal technical upkeep",
+  "Restaurant domain connection",
+  "Searchable digital menu",
+  "Routine menu and content updates",
+  "Hours, contact, and location updates",
+  "Connections to your existing ordering system",
+  "Basic SEO foundation",
+  "Basic analytics",
+  "Ongoing human support",
+] as const;
 
-export const armandoProof = [
-  "Large menu made searchable",
-  "Mobile-first browsing",
-  "Clear pickup ordering path",
-  "Hours, location, and contact details",
-];
-
-export const reviewCriteria = [
-  "Mobile experience",
-  "Menu access and ordering clarity",
-  "Hours, location, and contact visibility",
-  "Search basics and stale information",
-  "Photos and overall presentation",
-];
-
-export const faqs = [
+export const laterServices = [
   {
-    question: "Do I have to update the website myself?",
+    title: "Deeper reporting",
+    copy: "Recurring interpretation and recommendations can be added when the deliverable fits your restaurant.",
+    label: "Working add-on",
+  },
+  {
+    title: "Delivery app management",
+    copy: "Routine menu, price, availability, and hours help across third-party platforms can be scoped separately.",
+    label: "Variable service",
+  },
+] as const;
+
+export const quotedServices = [
+  "Professional photography",
+  "Logo and brand work",
+  "Large menu or catalog cleanup",
+  "Major redesigns or new page types",
+  "Custom integrations and project work",
+] as const;
+
+type Faq = { question: string; answer: ReactNode };
+
+export const faqs: readonly Faq[] = [
+  {
+    question: "Do I need to update the website myself?",
+    answer: "No. Send us routine changes and we will handle the website updates.",
+  },
+  {
+    question: "Can I keep my current ordering system?",
     answer:
-      "No. Website Care is designed so you can send us routine changes instead of learning and maintaining another system.",
+      "Yes. We can connect Clover, Square, Toast, DoorDash, Uber Eats, and similar systems so you do not have to replace a workflow that already works.",
   },
   {
     question: "What happens when my menu or hours change?",
-    answer:
-      "Send us the updated information and we’ll handle the website change as part of your care arrangement.",
+    answer: "Send us the change. Routine menu, price, hours, contact, and ordering-link updates are included.",
   },
   {
-    question: "What counts as a routine update?",
-    answer:
-      "Typical examples include hours, menu items, prices, photos, contact details, location information, ordering links, and minor copy changes. Major redesigns, new features, and larger integrations are scoped separately.",
+    question: "Do I keep my domain?",
+    answer: "Yes. Your restaurant should own its domain. We can help connect and manage it.",
   },
   {
-    question: "Do I have to replace Toast, DoorDash, my POS, or other restaurant tools?",
+    question: "What does $149/month include?",
     answer:
-      "No. Menu Man can create a clearer customer-facing experience around the tools that already work for your restaurant. Any new integration is discussed before it is added.",
+      "The managed website, hosting, searchable menu, routine updates, ordering connections, basic SEO and analytics, and ongoing support. It is more than hosting.",
   },
   {
-    question: "Do you offer online ordering?",
+    question: "What does setup cost?",
     answer:
-      "Pickup ordering can be scoped as an optional add-on when it fits the restaurant. We’ll explain the approach, support, and any processing requirements before implementation.",
+      "Setup is $149 one time for the initial site configuration, menu setup, brand styling, domain connection, and launch.",
   },
   {
-    question: "Do I own my domain?",
-    answer:
-      "Yes. Your restaurant should remain the owner of its domain. We can help connect and manage it without taking ownership away from you.",
+    question: "Can you redesign my current site?",
+    answer: "Yes. We can keep what works and rebuild what is getting in your customers' way.",
   },
   {
-    question: "Can you redesign an existing site?",
-    answer:
-      "Yes. We can review what you already have, preserve what works, and recommend a focused redesign.",
+    question: "What if I do not have a website at all?",
+    answer: "That is fine. We can start with your menu, photos, logo, and restaurant details.",
   },
-  {
-    question: "Do you work with restaurants without a website?",
-    answer:
-      "Yes. We can start from your existing menu, brand materials, photos, and practical business information.",
-  },
-  {
-    question: "How much does a website cost?",
-    answer:
-      "Pricing depends on the site, content, ongoing care, and optional services. You’ll receive a clear scope and price before work begins.",
-  },
-];
+] as const;

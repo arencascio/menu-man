@@ -25,14 +25,25 @@ type RestaurantPageProps = {
 
 export async function generateMetadata({ params }: RestaurantPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const { data: restaurant } = await supabaseServer
+  let { data: restaurant, error } = await supabaseServer
     .from("restaurants")
     .select("name, slug, tagline, description, logo_url, hero_image_url, primary_domain, is_indexable")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
 
-  if (!restaurant) {
+  if (error?.code === "42703") {
+    const fallback = await supabaseServer
+      .from("restaurants")
+      .select("name, slug, tagline, description, logo_url, hero_image_url, primary_domain")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .maybeSingle();
+    restaurant = fallback.data ? { ...fallback.data, is_indexable: true } : null;
+    error = fallback.error;
+  }
+
+  if (error || !restaurant) {
     return { title: "Restaurant menu | Menu Man" };
   }
 
@@ -53,7 +64,7 @@ export default async function RestaurantPage({
 }: RestaurantPageProps) {
   const { slug } = await params;
 
-  const { data: restaurant, error: restaurantError } =
+  let { data: restaurant, error: restaurantError } =
     await supabaseServer
       .from("restaurants")
       .select(`
@@ -88,6 +99,44 @@ export default async function RestaurantPage({
       .eq("slug", slug)
       .eq("is_active", true)
       .single();
+
+  if (restaurantError?.code === "42703") {
+    const fallback = await supabaseServer
+      .from("restaurants")
+      .select(`
+        id,
+        name,
+        slug,
+        currency,
+        timezone,
+        logo_url,
+        hero_image_url,
+        tagline,
+        description,
+        phone,
+        address_line1,
+        city,
+        state,
+        postal_code,
+        latitude,
+        longitude,
+        doordash_url,
+        pickup_url,
+        google_maps_url,
+        instagram_url,
+        facebook_url,
+        primary_color,
+        accent_color,
+        theme_preset,
+        theme_overrides,
+        primary_domain
+      `)
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .single();
+    restaurant = fallback.data ? { ...fallback.data, is_indexable: true } : null;
+    restaurantError = fallback.error;
+  }
 
 if (restaurantError || !restaurant) {
   return (

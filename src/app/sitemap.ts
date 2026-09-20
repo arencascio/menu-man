@@ -3,6 +3,13 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/seo/restaurant-metadata";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const marketingRoutes: MetadataRoute.Sitemap = [
+    "",
+    "/services",
+    "/work",
+    "/build-my-website",
+  ].map((path) => ({ url: `${siteUrl.replace(/\/$/, "")}${path}` }));
+
   let { data: restaurants, error } = await supabaseServer
     .from("restaurants")
     .select("slug")
@@ -22,10 +29,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   if (error) {
     console.error(error);
-    return [];
+    return marketingRoutes;
   }
 
-  return (restaurants || []).map((restaurant) => ({
+  return marketingRoutes.concat((restaurants || []).map((restaurant) => ({
     url: `${siteUrl.replace(/\/$/, "")}/r/${restaurant.slug}`,
-  }));
+  })));
 }
