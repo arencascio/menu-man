@@ -187,11 +187,13 @@ test("restaurant settings use dedicated authorized routes and preserve the notif
 
 test("delivery settings feed the shared tracked restaurant chooser", () => {
   const page = source("src", "app", "r", "[slug]", "page.tsx");
+  const deliveryOptions = source("src", "app", "r", "[slug]", "restaurant-delivery-options.ts");
   const chooser = source("src", "app", "r", "[slug]", "RestaurantDeliveryChooser.tsx");
   const form = source("src", "app", "manage", "[slug]", "settings", "delivery", "DeliverySettingsForm.tsx");
-  assert.match(page, /\.from\("restaurant_delivery_providers"\)/);
-  assert.match(page, /\.eq\("is_active", true\)/);
-  assert.match(page, /\.order\("sort_order"/);
+  assert.match(page, /getRestaurantDeliveryOptions\(restaurant\.id\)/);
+  assert.match(deliveryOptions, /\.from\("restaurant_delivery_providers"\)/);
+  assert.match(deliveryOptions, /\.eq\("is_active", true\)/);
+  assert.match(deliveryOptions, /\.order\("sort_order"/);
   assert.doesNotMatch(page, /restaurantDeliveryConfigs|restaurant\[option\.urlField\]/);
   assert.match(chooser, /eventName="delivery_clicked"/);
   for (const control of ["Add provider", "Provider name", "Destination URL", "Enabled", "Remove provider", "Move up", "Move down"]) {

@@ -87,6 +87,7 @@
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-surface) 24%, transparent);
   color: var(--theme-surface);
+  background: transparent;
   font-size: .9rem;
   font-family: inherit;
   font-weight: 800;

@@ -21,4 +21,5 @@ import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test"
 import "./staging-safety.test";
 import "./route-checkout-contract.test";
 import "./order-management-route-contract.test";
+import "./restaurant-location-route.test";
 import "./migration-contract.test";

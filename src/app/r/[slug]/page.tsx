@@ -7,11 +7,11 @@ import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
 import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
-import { type BusinessHour, type SpecialHour } from "./BusinessHours";
 import MenuBrowser, { type MenuSection } from "./MenuBrowser";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import PageViewTracker from "./PageViewTracker";
-import type { RestaurantDeliveryOption } from "./RestaurantDeliveryChooser";
+import { getRestaurantDeliveryOptions } from "./restaurant-delivery-options";
+import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "./restaurant-location-data";
 import RestaurantFooter, { type RestaurantFooterLink } from "./RestaurantFooter";
 import RestaurantFeaturedGallerySlider, {
   type RestaurantFeaturedGalleryAction,
@@ -36,17 +36,6 @@ const restaurantAnnouncements: Readonly<Partial<Record<string, readonly string[]
     "Search our full menu online",
   ],
 };
-
-function isValidDeliveryUrl(value: unknown): value is string {
-  if (typeof value !== "string" || value.includes("PLACEHOLDER")) return false;
-
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
 
 type RestaurantHeroConfig = Omit<RestaurantHeroPresentation, "secondaryAction"> & {
   featuredMenuItemName?: string;
@@ -424,59 +413,11 @@ if (restaurantError || !restaurant) {
       .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
   }
 
-  const { data: businessHours, error: businessHoursError } = await supabaseServer
-    .from("restaurant_business_hours")
-    .select("day_of_week, open_time, close_time, is_closed, sort_order")
-    .eq("restaurant_id", restaurant.id)
-    .order("day_of_week", { ascending: true })
-    .order("sort_order", { ascending: true });
-
-  if (businessHoursError) {
-    console.error(businessHoursError);
-  }
-
-  const hours: BusinessHour[] = businessHours || [];
-  const localDate = new Intl.DateTimeFormat("en-CA", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: restaurant.timezone || "UTC",
-    year: "numeric",
-  }).format(new Date());
-  const { data: specialHoursData, error: specialHoursError } = await supabaseServer
-    .from("restaurant_special_hours")
-    .select("service_date, label, open_time, close_time, is_closed")
-    .eq("restaurant_id", restaurant.id)
-    .gte("service_date", localDate)
-    .order("service_date", { ascending: true })
-    .limit(6);
-
-  const specialHoursTableUnavailable = specialHoursError
-    && ["42P01", "PGRST205"].includes(specialHoursError.code);
-  if (specialHoursError && !specialHoursTableUnavailable) {
-    console.error(specialHoursError);
-  }
-
-  const specialHours: SpecialHour[] = specialHoursData || [];
-  const { data: deliveryProviderRows, error: deliveryProvidersError } = await supabaseServer
-    .from("restaurant_delivery_providers")
-    .select("display_name, destination_url, image_url, sort_order")
-    .eq("restaurant_id", restaurant.id)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true })
-    .order("id", { ascending: true });
-  if (deliveryProvidersError) {
-    console.error(deliveryProvidersError);
-  }
-  const address = [
-    restaurant.address_line1,
-    restaurant.city,
-    restaurant.state,
-    restaurant.postal_code,
-  ].filter(Boolean).join(", ");
-  const hasUsableAddress = address && !address.includes("PLACEHOLDER");
-  const directionsUrl = restaurant.google_maps_url || (
-    hasUsableAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null
-  );
+  const [{ hours, specialHours }, deliveryOptions] = await Promise.all([
+    getRestaurantHoursLocationData(restaurant.id, restaurant.timezone),
+    getRestaurantDeliveryOptions(restaurant.id),
+  ]);
+  const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
   let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
   for (const capability of await listGuestPaymentCapabilities()) {
     try {
@@ -515,16 +456,6 @@ if (restaurantError || !restaurant) {
       }),
   }));
 
-  const deliveryOptions: RestaurantDeliveryOption[] = (deliveryProviderRows ?? []).flatMap((provider) => {
-    if (!isValidDeliveryUrl(provider.destination_url)) return [];
-
-    return [{
-      displayName: provider.display_name,
-      imageUrl: provider.image_url ?? undefined,
-      supportingLabel: `Continue to ${provider.display_name} to place your order.`,
-      url: provider.destination_url,
-    }];
-  });
   const restaurantPresentation: RestaurantShellRestaurant = {
     id: restaurant.id,
     name: restaurant.name,
@@ -534,7 +465,7 @@ if (restaurantError || !restaurant) {
     deliveryOptions,
     navigation: [
       { label: "Menu", href: "#restaurant-menu" },
-      { label: "About & hours", href: "#restaurant-information" },
+      { label: "Location", href: `/r/${restaurant.slug}/location` },
       ...(directionsUrl
         ? [{ label: "Directions", href: directionsUrl, external: true }]
         : []),
@@ -635,7 +566,7 @@ if (restaurantError || !restaurant) {
     : null;
   const footerLinks: RestaurantFooterLink[] = [
     { label: "Menu", href: "#restaurant-menu" },
-    { label: "Location & hours", href: "#restaurant-information" },
+    { label: "Location & hours", href: `/r/${restaurant.slug}/location` },
     ...(deliveryOptions.length > 0
       ? [{
           kind: "delivery" as const,
@@ -733,7 +664,7 @@ if (restaurantError || !restaurant) {
         </div>
       </div>
       <RestaurantFooter
-        address={hasUsableAddress ? address : null}
+        address={address}
         homeHref={`/r/${restaurant.slug}`}
         links={footerLinks}
         logoUrl={restaurant.logo_url}

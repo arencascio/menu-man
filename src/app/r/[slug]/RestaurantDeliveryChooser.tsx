@@ -37,6 +37,7 @@ export function RestaurantDeliveryTrigger({
 
   return (
     <button
+      aria-haspopup="dialog"
       className={className}
       type="button"
       onClick={(event) => chooser.open(event.currentTarget)}

@@ -90,6 +90,9 @@ export default function DeliverySettingsForm({
                 <label className={styles.field}>Destination URL
                   <input required type="url" maxLength={2048} placeholder="https://…" value={provider.destinationUrl} onChange={(event) => updateProvider(provider.id, { destinationUrl: event.target.value })} />
                 </label>
+                <label className={styles.field}>Logo image URL (optional)
+                  <input type="url" maxLength={2048} placeholder="https://…" value={provider.imageUrl ?? ""} onChange={(event) => updateProvider(provider.id, { imageUrl: event.target.value || null })} />
+                </label>
               </div>
               <div className={styles.deliveryProviderActions}>
                 <label className={styles.toggle}><input type="checkbox" checked={provider.isActive} onChange={() => updateProvider(provider.id, { isActive: !provider.isActive })} /><span><strong>Enabled</strong><small>Show this provider to customers.</small></span></label>

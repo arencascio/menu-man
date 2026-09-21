@@ -216,7 +216,7 @@ test("read-only order details preserve capability checks and skip payment browse
 
 test("restaurant server components pass serializable analytics data to a client link boundary", () => {
   const hero = read("src", "app", "r", "[slug]", "RestaurantHero.tsx");
-  const info = read("src", "app", "r", "[slug]", "RestaurantInfo.tsx");
+  const info = read("src", "app", "r", "[slug]", "RestaurantHoursLocation.tsx");
   const trackedLink = read("src", "app", "r", "[slug]", "TrackedRestaurantLink.tsx");
 
   for (const serverComponent of [hero, info]) {
