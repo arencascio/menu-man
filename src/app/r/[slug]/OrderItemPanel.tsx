@@ -23,6 +23,10 @@ type OrderItemPanelProps = {
   editingLine: CartLine | null;
   onSave: (line: CartLine) => void;
   onClose: () => void;
+  liked: boolean;
+  heartCount: number;
+  heartPending: boolean;
+  onHeart: () => void;
 };
 
 export default function OrderItemPanel({
@@ -33,6 +37,10 @@ export default function OrderItemPanel({
   editingLine,
   onSave,
   onClose,
+  liked,
+  heartCount,
+  heartPending,
+  onHeart,
 }: OrderItemPanelProps) {
   const [selectedOptionIds, setSelectedOptionIds] = useState(() => (
     editingLine
@@ -89,7 +97,12 @@ export default function OrderItemPanel({
             <h3>{item.name}</h3>
             <p className={styles.itemPanelPrice}>{formatPrice(item.price_cents, currency)}</p>
           </div>
-          <button className={styles.closeButton} type="button" onClick={onClose}>Close</button>
+          <div className={styles.detailActions}>
+            <button className={styles.detailHeartButton} type="button" aria-pressed={liked} aria-label={`${liked ? "Unlike" : "Like"} ${item.name}`} disabled={heartPending} onClick={onHeart}>
+              <span aria-hidden="true">{liked ? "♥" : "♡"}</span>{heartCount > 0 ? ` ${heartCount}` : ""}
+            </button>
+            <button className={styles.closeButton} type="button" onClick={onClose}>Close</button>
+          </div>
         </div>
         {item.description && <p className={styles.expandedDescription}>{item.description}</p>}
         {item.is_orderable ? (

@@ -38,6 +38,9 @@
 .removeButton { color: #9d0000; }
 .emptyNote { margin: 0; color: #666; }
 .deliveryProviders { display: grid; gap: 14px; }
+.featuredSelected { display: grid; gap: 5px; margin: 18px 0; }
+.featuredSelectedRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 7px; }
+.featuredList { max-height: 420px; overflow-y: auto; margin-top: 14px; padding: 0 12px; border: 1px solid #ddd; border-radius: 8px; }
 .deliveryProvider { display: grid; gap: 16px; padding: 16px; border: 1px solid #ddd; border-radius: 9px; background: #fafafa; }
 .deliveryProviderHeading, .deliveryProviderActions, .orderButtons { display: flex; align-items: center; gap: 10px; }
 .deliveryProviderHeading, .deliveryProviderActions { justify-content: space-between; }
@@ -47,3 +50,4 @@
 @media (max-width: 700px) { .page { width: min(100% - 20px, 1180px); padding-top: 16px; } .grid { grid-template-columns: 1fr; } .full { grid-column: auto; } .day { grid-template-columns: 1fr 1fr; } .dayName { grid-column: 1 / -1; } }
 @media (max-width: 1000px) { .specialDay { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sectionHeading { display: grid; } }
 @media (max-width: 600px) { .deliveryProviderHeading, .deliveryProviderActions { align-items: stretch; flex-direction: column; } .orderButtons { display: grid; grid-template-columns: 1fr 1fr; width: 100%; } }
+@media (max-width: 600px) { .featuredSelectedRow { align-items: stretch; flex-direction: column; } .featuredSelectedRow .orderButtons { display: flex; width: auto; } }

@@ -2,6 +2,8 @@ import "server-only";
 
 import { authenticatedClient, rpcError } from "@/lib/order-management/server";
 import {
+  featuredSettingsSchema,
+  type FeaturedSettings,
   deliverySettingsSchema,
   hoursSettingsSchema,
   orderingSettingsSchema,
@@ -11,6 +13,11 @@ import {
   type OrderingSettings,
   type RestaurantSettings,
 } from "./contracts";
+
+export const getFeaturedSettings = (slug: string): Promise<FeaturedSettings> =>
+  call("get_managed_featured_items_v1", featuredSettingsSchema, { p_restaurant_slug: slug });
+export const updateFeaturedSettings = (slug: string, selectedItemIds: string[], clientActionId: string): Promise<FeaturedSettings> =>
+  call("update_managed_featured_items_v1", featuredSettingsSchema, { p_restaurant_slug: slug, p_item_ids: selectedItemIds, p_client_action_id: clientActionId });
 
 async function call<T>(functionName: string, schema: { parse(value: unknown): T }, args: Record<string, unknown>) {
   const client = await authenticatedClient();

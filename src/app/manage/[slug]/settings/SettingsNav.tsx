@@ -13,6 +13,7 @@ export default function SettingsNav({ slug, capabilities }: { slug: string; capa
     {general ? item(`/manage/${slug}/settings/restaurant`, "Restaurant") : null}
     {general ? item(`/manage/${slug}/settings/ordering`, "Ordering") : null}
     {general ? item(`/manage/${slug}/settings/delivery`, "Delivery") : null}
+    {general ? item(`/manage/${slug}/settings/featured`, "Featured") : null}
     {general ? item(`/manage/${slug}/settings/hours`, "Hours") : null}
     {capabilities.includes("manage_notifications") ? item(`/manage/${slug}/settings/notifications`, "Notifications") : null}
   </nav>;

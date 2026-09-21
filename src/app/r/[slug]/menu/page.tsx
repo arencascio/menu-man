@@ -5,6 +5,7 @@ import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
+import { composeMenuSections } from "@/lib/menu-engagement/sections";
 import MenuBrowser from "../MenuBrowser";
 import PageViewTracker from "../PageViewTracker";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
@@ -64,6 +65,12 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     getRestaurantDeliveryOptions(restaurant.id),
   ]);
   if (!sections) throw new Error("There was a problem loading the menu.");
+  const [featuredResult, heartsResult] = await Promise.all([
+    supabaseServer.from("restaurant_featured_menu_items").select("item_id, sort_order").eq("menu_id", menu.id),
+    supabaseServer.from("menu_item_heart_counts").select("item_id, heart_count").eq("restaurant_id", restaurant.id),
+  ]);
+  if (featuredResult.error || heartsResult.error) throw new Error("There was a problem loading menu highlights.");
+  const menuSections = composeMenuSections(sections, featuredResult.data ?? [], heartsResult.data ?? []);
 
   let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
   for (const capability of await listGuestPaymentCapabilities()) {
@@ -127,7 +134,8 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
         restaurantId={restaurant.id}
         restaurantSlug={restaurant.slug}
         currency={restaurant.currency}
-        sections={sections}
+        sections={menuSections}
+        initialHeartCounts={Object.fromEntries((heartsResult.data ?? []).map((row) => [row.item_id, row.heart_count]))}
         ariaLabel={`${restaurant.name} ${menu.name}`}
         initialActivePayment={initialActivePayment}
       />

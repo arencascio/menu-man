@@ -49,6 +49,15 @@
 
 .grid { display: contents; }
 .item { display: block; min-width: 0; width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 14px; color: var(--ink); background: var(--card-bg); cursor: pointer; text-align: left; transition: transform .12s ease, box-shadow .12s ease; }
+.itemCard { position: relative; min-width: 0; }
+.heartButton { position: absolute; top: 9px; right: 9px; display: flex; align-items: center; gap: 4px; min-width: 38px; min-height: 38px; border: 1px solid #ddd; border-radius: 999px; padding: 5px 9px; color: #a11; background: #fff; cursor: pointer; font: inherit; font-weight: 700; box-shadow: 0 2px 9px #0002; }
+.heartButton span:first-child { font-size: 23px; line-height: 1; }
+.heartButton:focus-visible { outline: 3px solid var(--theme-accent, #b70000); outline-offset: 2px; }
+.heartButton:disabled { opacity: .6; cursor: wait; }
+.detailActions { display: flex; align-items: flex-start; gap: 8px; }
+.detailHeartButton { border: 1px solid #bbb; border-radius: 999px; padding: 5px 10px; color: #a11; background: #fff; cursor: pointer; font: inherit; font-weight: 700; white-space: nowrap; }
+.detailHeartButton span { font-size: 22px; vertical-align: middle; }
+.detailHeartButton:focus-visible { outline: 3px solid var(--theme-accent, #b70000); outline-offset: 2px; }
 .item:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgb(0 0 0 / 18%); }
 .item:disabled { cursor: not-allowed; opacity: .62; transform: none; box-shadow: none; }
 .image { display: grid; place-items: center; aspect-ratio: 1; background: #ddd; }

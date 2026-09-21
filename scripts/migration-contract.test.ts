@@ -45,7 +45,19 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609170002_special_hours_checkout_messaging.sql",
     "202609180001_fix_special_hours_pickup_availability.sql",
     "202609200001_restaurant_delivery_providers.sql",
+    "202609210001_menu_hearts_featured.sql",
   ]);
+});
+
+test("menu hearts and Featured selections use canonical items with restricted writes", () => {
+  const sql = readFileSync(join(migrationDirectory, "202609210001_menu_hearts_featured.sql"), "utf8");
+  assert.match(sql, /primary key \(restaurant_id, item_id, visitor_key\)/);
+  assert.match(sql, /foreign key \(item_id\) references public\.menu_items\(id\)/);
+  assert.match(sql, /primary key \(menu_id, item_id\)/);
+  assert.match(sql, /require_restaurant_capability_v1\(p_restaurant_slug, 'manage_restaurant_settings'\)/);
+  assert.match(sql, /settings\.featured_updated/);
+  assert.match(sql, /revoke all on public\.restaurant_featured_menu_items from public, anon, authenticated/);
+  assert.match(sql, /grant execute on function public\.update_managed_featured_items_v1.*to authenticated/);
 });
 
 test("baseline creates every documented application table", () => {

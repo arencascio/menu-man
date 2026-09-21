@@ -39,6 +39,16 @@ export const restaurantSettingsSchema = z.object({
   facebookUrl: optionalHttpsUrl,
 });
 
+export const featuredSettingsSchema = z.object({
+  items: z.array(z.object({ id: z.uuid(), name: z.string() })),
+  selectedItemIds: z.array(z.uuid()).max(20),
+});
+export type FeaturedSettings = z.infer<typeof featuredSettingsSchema>;
+export const updateFeaturedSettingsRequestSchema = z.object({
+  selectedItemIds: z.array(z.uuid()).max(20).refine((ids) => new Set(ids).size === ids.length, "Select each item once."),
+  clientActionId: z.uuid(),
+});
+
 export const orderingSettingsSchema = z.object({
   pickupEnabled: z.boolean(),
   asapEnabled: z.boolean(),

@@ -43,6 +43,7 @@ type MenuBrowserProps = {
   restaurantSlug: string;
   currency: string | null;
   sections: MenuSection[];
+  initialHeartCounts: Record<string, number>;
   ariaLabel: string;
   initialActivePayment: {
     orderId: string;
@@ -57,6 +58,7 @@ export default function MenuBrowser({
   restaurantSlug,
   currency,
   sections,
+  initialHeartCounts,
   ariaLabel,
   initialActivePayment,
 }: MenuBrowserProps) {
@@ -67,6 +69,9 @@ export default function MenuBrowser({
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
+  const [heartCounts, setHeartCounts] = useState(initialHeartCounts);
+  const [pendingHearts, setPendingHearts] = useState<string[]>([]);
   const [activePayment, setActivePayment] = useState<{
     orderId: string;
     orderNumber: string;
@@ -76,6 +81,35 @@ export default function MenuBrowser({
   const resolvedCurrency = currency || "USD";
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
   const cartLocked = Boolean(activePayment?.locksCart);
+
+  useEffect(() => {
+    let active = true;
+    void fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { likedItemIds?: string[] } | null) => { if (active && data?.likedItemIds) setLikedItemIds(data.likedItemIds); });
+    return () => { active = false; };
+  }, [restaurantSlug]);
+
+  async function toggleHeart(itemId: string) {
+    if (pendingHearts.includes(itemId)) return;
+    const liked = !likedItemIds.includes(itemId);
+    setPendingHearts((current) => [...current, itemId]);
+    try {
+      const response = await fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, liked }),
+      });
+      if (!response.ok) return;
+      const result = await response.json() as { count: number };
+      setLikedItemIds((current) => liked ? [...current.filter((id) => id !== itemId), itemId] : current.filter((id) => id !== itemId));
+      setHeartCounts((current) => ({ ...current, [itemId]: result.count }));
+      router.refresh();
+    } catch {
+      // Keep the last confirmed state; a later click can retry.
+    } finally {
+      setPendingHearts((current) => current.filter((id) => id !== itemId));
+    }
+  }
 
   useEffect(() => {
     if (!initialActivePayment || loadActiveOrderMarker(window.localStorage, restaurantId)) return;
@@ -367,14 +401,18 @@ export default function MenuBrowser({
                     editingLine={cart.lines.find((line) => line.lineId === editingLineId) || null}
                     onSave={saveCartLine}
                     onClose={() => closeExpandedItem(expandedItem, section)}
+                    liked={likedItemIds.includes(expandedItem.id)}
+                    heartCount={heartCounts[expandedItem.id] ?? 0}
+                    heartPending={pendingHearts.includes(expandedItem.id)}
+                    onHeart={() => void toggleHeart(expandedItem.id)}
                   />
                 )}
 
                 <div className={styles.grid}>
                   {section.items.map((item) => (
+                    <div className={styles.itemCard} key={item.id}>
                     <button
                       className={`${styles.item} ${expandedItemId === item.id ? styles.itemSelected : ""}`}
-                      key={item.id}
                       type="button"
                       disabled={cartLocked}
                       onClick={() => {
@@ -406,6 +444,18 @@ export default function MenuBrowser({
                         <span className={styles.price}>{formatPrice(item.price_cents, resolvedCurrency)}</span>
                       </span>
                     </button>
+                    <button
+                      className={styles.heartButton}
+                      type="button"
+                      aria-label={`${likedItemIds.includes(item.id) ? "Unlike" : "Like"} ${item.name}`}
+                      aria-pressed={likedItemIds.includes(item.id)}
+                      disabled={pendingHearts.includes(item.id)}
+                      onClick={() => void toggleHeart(item.id)}
+                    >
+                      <span aria-hidden="true">{likedItemIds.includes(item.id) ? "♥" : "♡"}</span>
+                      {heartCounts[item.id] ? <span>{heartCounts[item.id]}</span> : null}
+                    </button>
+                    </div>
                   ))}
                 </div>
               </section>
