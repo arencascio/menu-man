@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { formatPrice } from "@/lib/cart/cart";
@@ -16,6 +16,8 @@ import {
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import CartPanel from "./CartPanel";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
+import { canAddMenuItemDirectly, createDirectCartLine } from "./menu-card-ordering";
+import MenuCardImage from "./MenuCardImage";
 import OrderItemPanel from "./OrderItemPanel";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
@@ -66,9 +68,15 @@ export default function MenuBrowser({
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [expandedItem, setExpandedItem] = useState<{ sectionId: string; itemId: string } | null>(null);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(84);
+  const [controlsHeight, setControlsHeight] = useState(120);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  const cartRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
   const [heartCounts, setHeartCounts] = useState(initialHeartCounts);
   const [pendingHearts, setPendingHearts] = useState<string[]>([]);
@@ -81,6 +89,29 @@ export default function MenuBrowser({
   const resolvedCurrency = currency || "USD";
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
   const cartLocked = Boolean(activePayment?.locksCart);
+  const hasActiveSurface = Boolean(expandedItem || isCartOpen);
+
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>("[data-restaurant-header]");
+    const controls = controlsRef.current;
+    if (!header || !controls) return;
+    const measure = () => {
+      setHeaderHeight(Math.ceil(header.getBoundingClientRect().height));
+      if (controls.getBoundingClientRect().height > 0) setControlsHeight(Math.ceil(controls.getBoundingClientRect().height));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    observer.observe(controls);
+    return () => observer.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    const target = isCartOpen ? cartRef.current : expandedItem ? detailRef.current : null;
+    if (!target) return;
+    const frame = requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
+    return () => cancelAnimationFrame(frame);
+  }, [expandedItem, isCartOpen]);
 
   useEffect(() => {
     let active = true;
@@ -160,7 +191,7 @@ export default function MenuBrowser({
         locksCart: true,
       });
       setIsCartOpen(false);
-      setExpandedItemId(null);
+      setExpandedItem(null);
       setEditingLineId(null);
     } catch {
       // Keep the conservative lock until an authoritative refresh succeeds.
@@ -216,13 +247,43 @@ export default function MenuBrowser({
     }))
     .filter((section) => section.items.length > 0);
 
-  function toggleExpanded(itemId: string) {
-    setExpandedItemId((current) => (current === itemId ? null : itemId));
+  function openItem(item: MenuItem, section: MenuSection) {
+    const isExpanded = expandedItem?.itemId === item.id && expandedItem.sectionId === section.id;
+    setExpandedItem(isExpanded ? null : { sectionId: section.id, itemId: item.id });
+    setIsCartOpen(false);
+    setEditingLineId(null);
+    trackEvent({
+      name: isExpanded ? "menu_item_collapsed" : "menu_item_expanded",
+      restaurantId,
+      itemId: item.id,
+      itemName: item.name,
+      priceCents: item.price_cents,
+      sectionId: section.id,
+      sectionName: section.name,
+    });
+  }
+
+  function addFromCard(item: MenuItem, section: MenuSection) {
+    if (cartLocked || !item.is_orderable) return;
+    if (!canAddMenuItemDirectly(item)) {
+      openItem(item, section);
+      return;
+    }
+    cart.addLine(createDirectCartLine(item, section, crypto.randomUUID()));
+  }
+
+  function selectCategory(section: MenuSection | null) {
+    setSelectedCategory(section?.id ?? "all");
+    setExpandedItem(null);
+    setEditingLineId(null);
+    setIsCartOpen(false);
+    trackEvent({ name: "category_selected", restaurantId, sectionId: section?.id ?? null, sectionName: section?.name ?? "Full Menu" });
   }
 
   function closeExpandedItem(item: MenuItem, section: MenuSection) {
-    setExpandedItemId(null);
+    setExpandedItem(null);
     setEditingLineId(null);
+    requestAnimationFrame(() => cardRefs.current.get(`${section.id}:${item.id}`)?.focus({ preventScroll: true }));
     trackEvent({
       name: "menu_item_collapsed",
       restaurantId,
@@ -238,7 +299,7 @@ export default function MenuBrowser({
     if (cartLocked) return;
     if (editingLineId) cart.replaceLine(line);
     else cart.addLine(line);
-    setExpandedItemId(null);
+    setExpandedItem(null);
     setEditingLineId(null);
   }
 
@@ -254,7 +315,7 @@ export default function MenuBrowser({
     setSearchInput("");
     setSearch("");
     setSelectedCategory(section.id);
-    setExpandedItemId(line.menuItemId);
+    setExpandedItem({ sectionId: section.id, itemId: line.menuItemId });
     setEditingLineId(line.lineId);
   }
 
@@ -286,7 +347,10 @@ export default function MenuBrowser({
   }
 
   return (
-    <main className={styles.page} aria-label={ariaLabel}>
+    <main className={styles.page} aria-label={ariaLabel} style={{
+      "--menu-header-height": `${headerHeight}px`,
+      "--menu-controls-height": `${controlsHeight}px`,
+    } as CSSProperties}>
       {activePayment && (
         <aside className={styles.activePaymentBanner} aria-live="polite">
           <div>
@@ -305,17 +369,12 @@ export default function MenuBrowser({
           </button>
         </aside>
       )}
-      <div className={styles.controls}>
+      <div ref={controlsRef} className={`${styles.controls} ${hasActiveSurface ? styles.controlsInactive : ""}`}>
         <nav className={styles.categories} aria-label="Menu categories">
           <button
             className={selectedCategory === "all" ? styles.categoryActive : styles.category}
             type="button"
-            onClick={() => {
-              setSelectedCategory("all");
-              setExpandedItemId(null);
-              setEditingLineId(null);
-              trackEvent({ name: "category_selected", restaurantId, sectionId: null, sectionName: "Full Menu" });
-            }}
+            onClick={() => selectCategory(null)}
             aria-pressed={selectedCategory === "all"}
           >
             Full Menu
@@ -325,12 +384,7 @@ export default function MenuBrowser({
               className={selectedCategory === section.id ? styles.categoryActive : styles.category}
               key={section.id}
               type="button"
-              onClick={() => {
-                setSelectedCategory(section.id);
-                setExpandedItemId(null);
-                setEditingLineId(null);
-                trackEvent({ name: "category_selected", restaurantId, sectionId: section.id, sectionName: section.name });
-              }}
+              onClick={() => selectCategory(section)}
               aria-pressed={selectedCategory === section.id}
             >
               {section.name}
@@ -344,7 +398,7 @@ export default function MenuBrowser({
             value={searchInput}
             onChange={(event) => {
               setSearchInput(event.target.value);
-              setExpandedItemId(null);
+              setExpandedItem(null);
               setEditingLineId(null);
             }}
             placeholder="Search the menu..."
@@ -358,90 +412,64 @@ export default function MenuBrowser({
           onClick={() => {
             const willOpen = !isCartOpen;
             setIsCartOpen(willOpen);
-            if (willOpen) cart.trackCartViewed();
+            if (willOpen) {
+              setExpandedItem(null);
+              setEditingLineId(null);
+              cart.trackCartViewed();
+            }
           }}
         >
           Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}
         </button>
       </div>
 
-      {isCartOpen && (
-        <CartPanel
-          lines={cart.lines}
-          currency={resolvedCurrency}
-          subtotalCents={cart.subtotalCents}
-          onClose={() => setIsCartOpen(false)}
-          onEdit={editCartLine}
-          onRemove={cart.removeLine}
-          onQuantityChange={cart.setLineQuantity}
-          onClear={cart.clearCart}
-          onCheckout={openCheckout}
-        />
-      )}
-
       <div className={styles.menu}>
+        {isCartOpen && <div ref={cartRef} className={styles.cartSlot}>
+          <CartPanel
+            lines={cart.lines}
+            currency={resolvedCurrency}
+            subtotalCents={cart.subtotalCents}
+            onClose={() => setIsCartOpen(false)}
+            onEdit={editCartLine}
+            onRemove={cart.removeLine}
+            onQuantityChange={cart.setLineQuantity}
+            onClear={cart.clearCart}
+            onCheckout={openCheckout}
+          />
+        </div>}
         {visibleSections.length > 0 ? (
           visibleSections.map((section) => {
-            const expandedItem = section.items.find((item) => item.id === expandedItemId);
-
             return (
               <section className={styles.section} key={section.id}>
-                <div id={getMenuSectionAnchorId(section.id)} className={styles.sectionHeading}>
+                <div id={getMenuSectionAnchorId(section.id)} className={`${styles.sectionHeading} ${section.id === "featured" ? styles.sectionHeadingFeatured : section.id === "favorites" ? styles.sectionHeadingFavorites : ""}`}>
                   <h2>{section.name}</h2>
                   {section.description && <p>{section.description}</p>}
                 </div>
 
-                {expandedItem && !cartLocked && (
-                  <OrderItemPanel
-                    key={`${expandedItem.id}:${editingLineId || "new"}`}
-                    item={expandedItem}
-                    sectionId={section.id}
-                    sectionName={section.name}
-                    currency={resolvedCurrency}
-                    editingLine={cart.lines.find((line) => line.lineId === editingLineId) || null}
-                    onSave={saveCartLine}
-                    onClose={() => closeExpandedItem(expandedItem, section)}
-                    liked={likedItemIds.includes(expandedItem.id)}
-                    heartCount={heartCounts[expandedItem.id] ?? 0}
-                    heartPending={pendingHearts.includes(expandedItem.id)}
-                    onHeart={() => void toggleHeart(expandedItem.id)}
-                  />
-                )}
-
                 <div className={styles.grid}>
-                  {section.items.map((item) => (
-                    <div className={styles.itemCard} key={item.id}>
+                  {section.items.map((item, index) => {
+                    const isExpanded = expandedItem?.sectionId === section.id && expandedItem.itemId === item.id;
+                    const priorityImage = section === visibleSections[0] && index < 2;
+                    return <div className={styles.itemUnit} key={item.id}>
+                    <div className={styles.itemCard}>
                     <button
-                      className={`${styles.item} ${expandedItemId === item.id ? styles.itemSelected : ""}`}
+                      className={`${styles.item} ${isExpanded ? styles.itemSelected : ""}`}
+                      ref={(node) => {
+                        const key = `${section.id}:${item.id}`;
+                        if (node) cardRefs.current.set(key, node);
+                        else cardRefs.current.delete(key);
+                      }}
                       type="button"
                       disabled={cartLocked}
-                      onClick={() => {
-                        const isExpanded = expandedItemId === item.id;
-                        toggleExpanded(item.id);
-                        setEditingLineId(null);
-                        trackEvent({
-                          name: isExpanded ? "menu_item_collapsed" : "menu_item_expanded",
-                          restaurantId,
-                          itemId: item.id,
-                          itemName: item.name,
-                          priceCents: item.price_cents,
-                          sectionId: section.id,
-                          sectionName: section.name,
-                        });
-                      }}
-                      aria-expanded={expandedItemId === item.id}
+                      onClick={() => openItem(item, section)}
+                      aria-expanded={isExpanded}
                     >
-                      <span className={styles.image}>
-                        {item.image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.image_url} alt={item.name} loading="lazy" decoding="async" />
-                        ) : (
-                          <span className={styles.placeholder}>{item.name.charAt(0)}</span>
-                        )}
-                      </span>
+                      <MenuCardImage name={item.name} url={item.image_url} priority={priorityImage} />
                       <span className={styles.itemInfo}>
                         <span className={styles.itemName}>{item.name}</span>
                         <span className={styles.price}>{formatPrice(item.price_cents, resolvedCurrency)}</span>
+                        {item.description && <span className={styles.itemDescription}>{item.description}</span>}
+                        {!item.is_orderable && <span className={styles.cardAvailability}>Not available for online ordering</span>}
                       </span>
                     </button>
                     <button
@@ -455,8 +483,26 @@ export default function MenuBrowser({
                       <span aria-hidden="true">{likedItemIds.includes(item.id) ? "♥" : "♡"}</span>
                       {heartCounts[item.id] ? <span>{heartCounts[item.id]}</span> : null}
                     </button>
+                    {item.is_orderable && <button className={styles.cardAddButton} type="button" disabled={cartLocked} onClick={() => addFromCard(item, section)}>Add to Cart</button>}
                     </div>
-                  ))}
+                    {isExpanded && !cartLocked && <div ref={detailRef} className={styles.detailSlot}>
+                      <OrderItemPanel
+                        key={`${item.id}:${editingLineId || "new"}`}
+                        item={item}
+                        sectionId={section.id}
+                        sectionName={section.name}
+                        currency={resolvedCurrency}
+                        editingLine={cart.lines.find((line) => line.lineId === editingLineId) || null}
+                        onSave={saveCartLine}
+                        onClose={() => closeExpandedItem(item, section)}
+                        liked={likedItemIds.includes(item.id)}
+                        heartCount={heartCounts[item.id] ?? 0}
+                        heartPending={pendingHearts.includes(item.id)}
+                        onHeart={() => void toggleHeart(item.id)}
+                      />
+                    </div>}
+                    </div>;
+                  })}
                 </div>
               </section>
             );

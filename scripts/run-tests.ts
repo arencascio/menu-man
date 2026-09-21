@@ -19,6 +19,7 @@ import "../src/lib/notifications/notifications.test";
 import "../src/lib/restaurant-settings/contracts.test";
 import "../src/lib/menu-engagement/sections.test";
 import "../src/lib/menu-engagement/featured-picker.test";
+import "../src/app/r/[slug]/menu-card-ordering.test";
 import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test";
 import "./staging-safety.test";
 import "./route-checkout-contract.test";

@@ -41,7 +41,7 @@ export default function RestaurantNavigation({
   }, [isOpen]);
 
   return (
-    <header className={styles.siteHeader}>
+    <header className={styles.siteHeader} data-restaurant-header>
       <div className={styles.navigationInner}>
         <Link className={styles.brand} href={homeHref} onClick={() => setIsOpen(false)}>
           {logoUrl ? (
