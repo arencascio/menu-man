@@ -1,0 +1,185 @@
+.dialog {
+  width: min(calc(100% - 2rem), 38rem);
+  max-height: min(80vh, 46rem);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: max(var(--theme-radius), 1rem);
+  color: var(--theme-text);
+  background: transparent;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--theme-primary) 76%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.dialog[open] {
+  animation: dialog-in 180ms ease-out;
+}
+
+.panel {
+  max-height: min(80vh, 46rem);
+  padding: clamp(1.35rem, 4vw, 2rem);
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--theme-text) 12%, transparent);
+  border-radius: inherit;
+  background: var(--theme-surface);
+  box-shadow: 0 1.75rem 5rem color-mix(in srgb, var(--theme-primary) 36%, transparent);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 .45rem;
+  color: var(--theme-accent);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 0;
+  font-family: var(--theme-heading-font);
+  font-size: clamp(2rem, 7vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.045em;
+}
+
+.closeButton {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--theme-text) 16%, transparent);
+  border-radius: 50%;
+  color: var(--theme-text);
+  background: var(--theme-background);
+  font: inherit;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.options {
+  display: grid;
+  gap: .7rem;
+  margin-top: 1.5rem;
+}
+
+.option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  min-height: 5rem;
+  padding: .9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 15%, transparent);
+  border-radius: var(--theme-radius);
+  color: var(--theme-surface);
+  background: var(--theme-primary);
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.optionImage,
+.optionMark {
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: calc(var(--theme-radius) * .72);
+  background: var(--theme-surface);
+}
+
+.optionImage {
+  object-fit: contain;
+}
+
+.optionMark {
+  display: grid;
+  place-items: center;
+  color: var(--theme-primary);
+  font-weight: 900;
+}
+
+.optionCopy {
+  display: grid;
+  min-width: 0;
+  gap: .25rem;
+}
+
+.optionCopy strong {
+  font-family: var(--theme-heading-font);
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
+
+.optionCopy span {
+  color: color-mix(in srgb, var(--theme-surface) 72%, transparent);
+  font-size: .82rem;
+  line-height: 1.35;
+}
+
+.optionArrow {
+  color: var(--theme-accent);
+  font-size: 1.45rem;
+}
+
+.option:hover {
+  transform: translateY(-2px);
+  border-color: var(--theme-accent);
+}
+
+.closeButton:focus-visible,
+.option:focus-visible {
+  outline: 3px solid var(--theme-accent);
+  outline-offset: 3px;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(.75rem) scale(.985);
+  }
+}
+
+@media (max-width: 700px) {
+  .dialog {
+    width: 100%;
+    max-width: none;
+    max-height: min(88vh, 50rem);
+    margin: auto 0 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .panel {
+    max-height: min(88vh, 50rem);
+    padding: 1.35rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+  }
+
+  .option {
+    min-height: 5.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open] {
+    animation: none;
+  }
+
+  .option {
+    transition: none;
+  }
+}

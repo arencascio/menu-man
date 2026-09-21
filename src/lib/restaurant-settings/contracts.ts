@@ -13,6 +13,17 @@ const optionalHttpsUrl = z.string().trim().max(2048).nullable().transform((value
     return z.NEVER;
   }
 });
+const webUrl = z.string().trim().max(2048).transform((value, context) => {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
+    if (value.toLowerCase().includes("placeholder")) throw new Error();
+    return url.toString();
+  } catch {
+    context.addIssue({ code: "custom", message: "Enter a valid http:// or https:// URL." });
+    return z.NEVER;
+  }
+});
 
 export const restaurantSettingsSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -90,11 +101,38 @@ export const hoursSettingsSchema = z.object({
   hadMultipleIntervals: z.boolean().default(false),
 });
 
+export const deliveryProviderSchema = z.object({
+  id: z.uuid(),
+  displayName: z.string().trim().min(1).max(120),
+  providerKey: z.string().trim().max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).nullable(),
+  destinationUrl: webUrl,
+  imageUrl: optionalHttpsUrl,
+  sortOrder: z.number().int().min(0),
+  isActive: z.boolean(),
+});
+
+export const deliverySettingsSchema = z.object({
+  providers: z.array(deliveryProviderSchema).max(25),
+}).superRefine(({ providers }, context) => {
+  const uniqueValues = (values: (string | number)[], path: string, message: string) => {
+    if (new Set(values).size !== values.length) {
+      context.addIssue({ code: "custom", path: ["providers"], message: `${path} ${message}` });
+    }
+  };
+  uniqueValues(providers.map(({ id }) => id), "Provider IDs", "must be unique.");
+  uniqueValues(providers.map(({ displayName }) => displayName.toLowerCase()), "Provider names", "must be unique.");
+  uniqueValues(providers.flatMap(({ providerKey }) => providerKey === null ? [] : [providerKey]), "Provider keys", "must be unique.");
+  uniqueValues(providers.map(({ sortOrder }) => sortOrder), "Display positions", "must be unique.");
+});
+
 export const updateRestaurantSettingsRequestSchema = restaurantSettingsSchema.extend({ clientActionId: z.uuid() });
 export const updateOrderingSettingsRequestSchema = orderingSettingsSchema.extend({ clientActionId: z.uuid() });
 export const updateHoursSettingsRequestSchema = hoursSettingsSchema.omit({ timezone: true, hadMultipleIntervals: true })
   .extend({ clientActionId: z.uuid() });
+export const updateDeliverySettingsRequestSchema = deliverySettingsSchema.extend({ clientActionId: z.uuid() });
 
 export type RestaurantSettings = z.infer<typeof restaurantSettingsSchema>;
 export type OrderingSettings = z.infer<typeof orderingSettingsSchema>;
 export type HoursSettings = z.infer<typeof hoursSettingsSchema>;
+export type DeliveryProvider = z.infer<typeof deliveryProviderSchema>;
+export type DeliverySettings = z.infer<typeof deliverySettingsSchema>;

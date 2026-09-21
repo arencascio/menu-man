@@ -86,7 +86,7 @@ The authoritative clean-environment schema is committed under `supabase/migratio
 - `phone`
 - `address_line1`, `city`, `state`, `postal_code`
 - `latitude`, `longitude`
-- `doordash_url`, `pickup_url`, `google_maps_url`
+- `doordash_url` (legacy, retained for compatibility), `pickup_url`, `google_maps_url`
 - `instagram_url`, `facebook_url`
 - `primary_color`, `accent_color`
 - `primary_domain` nullable canonical domain/base URL; does not enable hostname routing
@@ -103,6 +103,17 @@ Address and contact fields intentionally remain on `restaurants` for v1. There i
 - `sort_order`
 
 Hours are normalized because one day can contain multiple opening intervals. The identity constraint is `(restaurant_id, day_of_week, sort_order)`, not one row per day.
+
+### `restaurant_delivery_providers`
+
+- `id`
+- `restaurant_id`
+- `display_name`, optional `provider_key`
+- `destination_url`, optional `image_url`
+- `sort_order`
+- `is_active`
+
+Delivery destinations are restaurant-managed settings. The customer route reads active rows in `sort_order`; `restaurants.doordash_url` is retained as legacy data but is not a runtime chooser source after its one-time migration backfill.
 
 ### `menus`
 

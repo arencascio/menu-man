@@ -22,7 +22,7 @@ Run the sequence only against the separately created staging project:
 9. After the order-management migration is applied, invite and bootstrap the
    first owner with the guarded staging command below. Apply
    `007_test_kitchen_memberships.sql` to link that same user to Test Kitchen,
-   then run management tests `007` through `010`.
+   then run management tests `007` through `014`.
 
 One explicit hosted-staging command sequence is:
 
@@ -53,6 +53,10 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/007
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/008_restaurant_user_management_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/009_order_management_export_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/010_multitenant_notifications_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/011_restaurant_settings_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/012_special_hours_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/013_pickup_availability_repair_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/014_restaurant_delivery_providers_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new

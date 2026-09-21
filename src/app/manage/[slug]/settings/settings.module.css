@@ -37,5 +37,13 @@
 .specialDay { display: grid; grid-template-columns: 150px minmax(180px, 1fr) 150px 120px 120px auto; align-items: end; gap: 10px; padding: 14px; border: 1px solid #ddd; border-radius: 9px; background: #fafafa; }
 .removeButton { color: #9d0000; }
 .emptyNote { margin: 0; color: #666; }
+.deliveryProviders { display: grid; gap: 14px; }
+.deliveryProvider { display: grid; gap: 16px; padding: 16px; border: 1px solid #ddd; border-radius: 9px; background: #fafafa; }
+.deliveryProviderHeading, .deliveryProviderActions, .orderButtons { display: flex; align-items: center; gap: 10px; }
+.deliveryProviderHeading, .deliveryProviderActions { justify-content: space-between; }
+.orderButtons .secondaryButton { padding: 7px 10px; font-size: 13px; }
+.secondaryButton:disabled { cursor: default; opacity: .45; }
+.deliveryProviderActions .toggle { flex: 1; border-bottom: 0; padding: 0; }
 @media (max-width: 700px) { .page { width: min(100% - 20px, 1180px); padding-top: 16px; } .grid { grid-template-columns: 1fr; } .full { grid-column: auto; } .day { grid-template-columns: 1fr 1fr; } .dayName { grid-column: 1 / -1; } }
 @media (max-width: 1000px) { .specialDay { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sectionHeading { display: grid; } }
+@media (max-width: 600px) { .deliveryProviderHeading, .deliveryProviderActions { align-items: stretch; flex-direction: column; } .orderButtons { display: grid; grid-template-columns: 1fr 1fr; width: 100%; } }

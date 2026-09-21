@@ -1,26 +1,150 @@
-import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
 import { isMenuModifierOptionAvailable, resolveModifierPriceCents } from "@/lib/cart/cart";
 import type { MenuModifierGroup } from "@/lib/cart/types";
-import { resolveTheme } from "@/lib/themes/resolve-theme";
 import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
 import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
 import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
-import { type BusinessHour } from "./BusinessHours";
+import { type BusinessHour, type SpecialHour } from "./BusinessHours";
 import MenuBrowser, { type MenuSection } from "./MenuBrowser";
+import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import PageViewTracker from "./PageViewTracker";
-import RestaurantFooter from "./RestaurantFooter";
-import RestaurantHero from "./RestaurantHero";
-import RestaurantInfo from "./RestaurantInfo";
+import type { RestaurantDeliveryOption } from "./RestaurantDeliveryChooser";
+import RestaurantFooter, { type RestaurantFooterLink } from "./RestaurantFooter";
+import RestaurantFeaturedGallerySlider, {
+  type RestaurantFeaturedGalleryAction,
+  type RestaurantFeaturedGallerySlide,
+} from "./RestaurantFeaturedGallerySlider";
+import RestaurantHoursLocation from "./RestaurantHoursLocation";
+import RestaurantHero, { type RestaurantHeroPresentation } from "./RestaurantHero";
+import RestaurantMenuIntro, { type RestaurantMenuQuicklink } from "./RestaurantMenuIntro";
+import RestaurantOrderingActions, { type RestaurantOrderingAction } from "./RestaurantOrderingActions";
+import RestaurantShell, { type RestaurantShellRestaurant } from "./RestaurantShell";
 import styles from "./restaurant-page.module.css";
 
 type RestaurantPageProps = {
   params: Promise<{
     slug: string;
   }>;
+};
+
+const restaurantAnnouncements: Readonly<Partial<Record<string, readonly string[]>>> = {
+  armandos: [
+    "Breakfast served all day",
+    "Search our full menu online",
+  ],
+};
+
+function isValidDeliveryUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.includes("PLACEHOLDER")) return false;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+type RestaurantHeroConfig = Omit<RestaurantHeroPresentation, "secondaryAction"> & {
+  featuredMenuItemName?: string;
+};
+
+const restaurantHeroes: Readonly<Partial<Record<string, RestaurantHeroConfig>>> = {
+  armandos: {
+    layout: "photo-split",
+    eyebrow: "Armando's Mexican Food",
+    headline: "You deserve it, amigo.",
+    supportingText: "Breakfast favorites, street tacos, burritos, combination plates, and more—all in one menu.",
+    imageAlt: "Five carnitas street tacos from Armando's Mexican Food",
+    featuredMenuItemName: "5 Carnitas Street Tacos Special",
+    primaryAction: {
+      label: "Explore the menu",
+      href: "#restaurant-menu",
+    },
+  },
+};
+
+type RestaurantOrderingActionsConfig = {
+  description: string;
+  eyebrow: string;
+  menuAction: RestaurantOrderingAction;
+  title: string;
+};
+
+const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrderingActionsConfig>>> = {
+  armandos: {
+    eyebrow: "Start your order",
+    title: "Your favorites are a few taps away.",
+    description: "Browse Armando's full menu, find what sounds good, and build your order in one place.",
+    menuAction: {
+      label: "View the menu",
+      description: "Search breakfast, tacos, burritos, combination plates, and more.",
+      href: "#restaurant-menu",
+    },
+  },
+};
+
+type RestaurantFeaturedGalleryConfig = {
+  eyebrow: string;
+  title: string;
+  slides: readonly {
+    menuItemName: string;
+    imageAlt: string;
+    primaryAction?: RestaurantFeaturedGalleryAction;
+    secondaryAction?: RestaurantFeaturedGalleryAction;
+  }[];
+};
+
+const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFeaturedGalleryConfig>>> = {
+  armandos: {
+    eyebrow: "Featured favorites",
+    title: "Made to satisfy.",
+    slides: [
+      {
+        menuItemName: "Huevos a la Mexicana",
+        imageAlt: "Huevos a la Mexicana with rice, beans, avocado, cucumber, and orange",
+        primaryAction: { label: "View the menu", href: "#restaurant-menu" },
+      },
+      {
+        menuItemName: "Carne Asada Fries",
+        imageAlt: "Carne asada fries topped with guacamole and cheese",
+        primaryAction: { label: "View the menu", href: "#restaurant-menu" },
+      },
+      {
+        menuItemName: "Camarones a la Diabla",
+        imageAlt: "Camarones a la Diabla with rice, beans, avocado, cucumber, and orange",
+        primaryAction: { label: "View the menu", href: "#restaurant-menu" },
+      },
+    ],
+  },
+};
+
+type RestaurantMenuIntroConfig = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  quicklinks: readonly {
+    label: string;
+    sectionName: string;
+  }[];
+};
+
+const restaurantMenuIntros: Readonly<Partial<Record<string, RestaurantMenuIntroConfig>>> = {
+  armandos: {
+    eyebrow: "The full menu",
+    title: "Find your next favorite.",
+    description: "From breakfast served all day to street tacos, burritos, loaded fries, and combination plates—start with a favorite or explore everything.",
+    quicklinks: [
+      { label: "Breakfast", sectionName: "Breakfast Plates" },
+      { label: "Burritos", sectionName: "Burritos" },
+      { label: "Street tacos", sectionName: "Street Tacos" },
+      { label: "Loaded favorites", sectionName: "Carne Asada Fries, Nachos, Quesadillas & Sides" },
+      { label: "Combination plates", sectionName: "Combination Plates" },
+    ],
+  },
 };
 
 export async function generateMetadata({ params }: RestaurantPageProps): Promise<Metadata> {
@@ -84,7 +208,6 @@ export default async function RestaurantPage({
         postal_code,
         latitude,
         longitude,
-        doordash_url,
         pickup_url,
         google_maps_url,
         instagram_url,
@@ -120,7 +243,6 @@ export default async function RestaurantPage({
         postal_code,
         latitude,
         longitude,
-        doordash_url,
         pickup_url,
         google_maps_url,
         instagram_url,
@@ -314,6 +436,37 @@ if (restaurantError || !restaurant) {
   }
 
   const hours: BusinessHour[] = businessHours || [];
+  const localDate = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: restaurant.timezone || "UTC",
+    year: "numeric",
+  }).format(new Date());
+  const { data: specialHoursData, error: specialHoursError } = await supabaseServer
+    .from("restaurant_special_hours")
+    .select("service_date, label, open_time, close_time, is_closed")
+    .eq("restaurant_id", restaurant.id)
+    .gte("service_date", localDate)
+    .order("service_date", { ascending: true })
+    .limit(6);
+
+  const specialHoursTableUnavailable = specialHoursError
+    && ["42P01", "PGRST205"].includes(specialHoursError.code);
+  if (specialHoursError && !specialHoursTableUnavailable) {
+    console.error(specialHoursError);
+  }
+
+  const specialHours: SpecialHour[] = specialHoursData || [];
+  const { data: deliveryProviderRows, error: deliveryProvidersError } = await supabaseServer
+    .from("restaurant_delivery_providers")
+    .select("display_name, destination_url, image_url, sort_order")
+    .eq("restaurant_id", restaurant.id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("id", { ascending: true });
+  if (deliveryProvidersError) {
+    console.error(deliveryProvidersError);
+  }
   const address = [
     restaurant.address_line1,
     restaurant.city,
@@ -324,7 +477,6 @@ if (restaurantError || !restaurant) {
   const directionsUrl = restaurant.google_maps_url || (
     hasUsableAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null
   );
-  const theme = resolveTheme(restaurant.theme_preset, restaurant.theme_overrides);
   let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
   for (const capability of await listGuestPaymentCapabilities()) {
     try {
@@ -343,21 +495,6 @@ if (restaurantError || !restaurant) {
       if (!(error instanceof PaymentServerError)) throw error;
     }
   }
-  const themeStyle = {
-    "--theme-primary": theme.colors.primary,
-    "--theme-accent": theme.colors.accent,
-    "--theme-background": theme.colors.background,
-    "--theme-surface": theme.colors.surface,
-    "--theme-text": theme.colors.text,
-    "--theme-muted-text": theme.colors.mutedText,
-    "--theme-heading-font": theme.typography.headingFont,
-    "--theme-body-font": theme.typography.bodyFont,
-    "--theme-radius": theme.shape.borderRadius,
-    "--theme-content-width": theme.shape.contentWidth,
-    "--theme-section-gap": theme.density.sectionGap,
-    "--theme-card-gap": theme.density.cardGap,
-  } as CSSProperties;
-
   const menuSections: MenuSection[] = (sections || []).map((section) => ({
     id: section.id,
     name: section.name,
@@ -378,20 +515,192 @@ if (restaurantError || !restaurant) {
       }),
   }));
 
+  const deliveryOptions: RestaurantDeliveryOption[] = (deliveryProviderRows ?? []).flatMap((provider) => {
+    if (!isValidDeliveryUrl(provider.destination_url)) return [];
+
+    return [{
+      displayName: provider.display_name,
+      imageUrl: provider.image_url ?? undefined,
+      supportingLabel: `Continue to ${provider.display_name} to place your order.`,
+      url: provider.destination_url,
+    }];
+  });
+  const restaurantPresentation: RestaurantShellRestaurant = {
+    id: restaurant.id,
+    name: restaurant.name,
+    logoUrl: restaurant.logo_url,
+    homeHref: `/r/${restaurant.slug}`,
+    announcements: restaurantAnnouncements[restaurant.slug] ?? [],
+    deliveryOptions,
+    navigation: [
+      { label: "Menu", href: "#restaurant-menu" },
+      { label: "About & hours", href: "#restaurant-information" },
+      ...(directionsUrl
+        ? [{ label: "Directions", href: directionsUrl, external: true }]
+        : []),
+    ],
+    themePreset: restaurant.theme_preset,
+    themeOverrides: restaurant.theme_overrides,
+  };
+  const configuredHero = restaurantHeroes[restaurant.slug];
+  const heroMenuImage = configuredHero?.featuredMenuItemName
+    ? menuSections
+        .flatMap((section) => section.items)
+        .find((item) => item.name === configuredHero.featuredMenuItemName)?.image_url ?? null
+    : null;
+  const usableTagline = restaurant.tagline && !restaurant.tagline.includes("PLACEHOLDER")
+    ? restaurant.tagline
+    : null;
+  const heroPresentation: RestaurantHeroPresentation = {
+    layout: configuredHero?.layout ?? "photo-split",
+    eyebrow: configuredHero?.eyebrow ?? restaurant.name,
+    headline: configuredHero?.headline ?? usableTagline ?? restaurant.name,
+    supportingText: configuredHero?.supportingText ?? "Browse the menu and restaurant information.",
+    imageAlt: configuredHero?.imageAlt ?? `${restaurant.name} featured menu item`,
+    primaryAction: configuredHero?.primaryAction ?? {
+      label: "Explore the menu",
+      href: "#restaurant-menu",
+    },
+    secondaryAction: deliveryOptions.length > 0
+      ? { kind: "delivery", label: "Order delivery" }
+      : restaurant.pickup_url
+        ? {
+            label: "Order pickup",
+            href: restaurant.pickup_url,
+            external: true,
+            trackingEvent: "pickup_clicked",
+          }
+        : undefined,
+  };
+  const orderingActionsConfig = restaurantOrderingActions[restaurant.slug];
+  const orderingActions: RestaurantOrderingAction[] = orderingActionsConfig
+    ? [
+        orderingActionsConfig.menuAction,
+        ...(restaurant.pickup_url
+          ? [{
+              label: "Order pickup",
+              description: "Place a pickup order online.",
+              href: restaurant.pickup_url,
+              external: true,
+              trackingEvent: "pickup_clicked" as const,
+            }]
+          : []),
+        ...(deliveryOptions.length > 0
+          ? [{
+              kind: "delivery" as const,
+              label: "Order delivery",
+              description: "Choose a delivery provider and continue to place your order.",
+            }]
+          : []),
+      ]
+    : [];
+  const featuredGalleryConfig = restaurantFeaturedGalleries[restaurant.slug];
+  const featuredGallerySlides: RestaurantFeaturedGallerySlide[] = featuredGalleryConfig
+    ? featuredGalleryConfig.slides.flatMap((configuredSlide) => {
+        const menuItem = menuSections
+          .flatMap((section) => section.items)
+          .find((item) => item.name === configuredSlide.menuItemName);
+        if (!menuItem?.image_url) return [];
+
+        return [{
+          imageUrl: menuItem.image_url,
+          imageAlt: configuredSlide.imageAlt,
+          title: menuItem.name,
+          description: menuItem.description ?? undefined,
+          primaryAction: configuredSlide.primaryAction,
+          secondaryAction: configuredSlide.secondaryAction,
+        }];
+      })
+    : [];
+  const menuIntroConfig = restaurantMenuIntros[restaurant.slug];
+  const menuQuicklinks: RestaurantMenuQuicklink[] = menuIntroConfig
+    ? menuIntroConfig.quicklinks.flatMap((configuredQuicklink) => {
+        const section = menuSections.find(({ name }) => name === configuredQuicklink.sectionName);
+        if (!section) return [];
+
+        return [{
+          label: configuredQuicklink.label,
+          href: `#${getMenuSectionAnchorId(section.id)}`,
+        }];
+      })
+    : [];
+  const hasUsablePhone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER");
+  const usableInstagramUrl = restaurant.instagram_url?.startsWith("http")
+    && !restaurant.instagram_url.includes("PLACEHOLDER")
+    ? restaurant.instagram_url
+    : null;
+  const usableFacebookUrl = restaurant.facebook_url?.startsWith("http")
+    && !restaurant.facebook_url.includes("PLACEHOLDER")
+    ? restaurant.facebook_url
+    : null;
+  const footerLinks: RestaurantFooterLink[] = [
+    { label: "Menu", href: "#restaurant-menu" },
+    { label: "Location & hours", href: "#restaurant-information" },
+    ...(deliveryOptions.length > 0
+      ? [{
+          kind: "delivery" as const,
+          label: "Order delivery",
+        }]
+      : restaurant.pickup_url
+        ? [{
+            label: "Order pickup",
+            href: restaurant.pickup_url,
+            external: true,
+            trackingEvent: "pickup_clicked" as const,
+          }]
+      : []),
+    ...(directionsUrl
+      ? [{
+          label: "Directions",
+          href: directionsUrl,
+          external: true,
+          trackingEvent: "directions_clicked" as const,
+        }]
+      : []),
+    ...(hasUsablePhone
+      ? [{
+          label: "Call us",
+          href: `tel:${restaurant.phone}`,
+          trackingEvent: "phone_clicked" as const,
+        }]
+      : []),
+    ...(usableInstagramUrl
+      ? [{ label: "Instagram", href: usableInstagramUrl, external: true }]
+      : []),
+    ...(usableFacebookUrl
+      ? [{ label: "Facebook", href: usableFacebookUrl, external: true }]
+      : []),
+  ];
+
   return (
-    <div className={styles.shell} style={themeStyle}>
+    <RestaurantShell restaurant={restaurantPresentation}>
       <RestaurantHero
         restaurantId={restaurant.id}
         name={restaurant.name}
-        tagline={restaurant.tagline}
         logoUrl={restaurant.logo_url}
-        heroImageUrl={restaurant.hero_image_url}
-        orderUrl={restaurant.doordash_url || restaurant.pickup_url}
-        orderEvent={restaurant.doordash_url ? "delivery_clicked" : "pickup_clicked"}
-        directionsUrl={directionsUrl}
+        imageUrl={restaurant.hero_image_url || heroMenuImage}
+        presentation={heroPresentation}
       />
+      {featuredGalleryConfig && featuredGallerySlides.length > 0 ? (
+        <RestaurantFeaturedGallerySlider
+          eyebrow={featuredGalleryConfig.eyebrow}
+          restaurantId={restaurant.id}
+          slides={featuredGallerySlides}
+          title={featuredGalleryConfig.title}
+        />
+      ) : null}
+      {orderingActionsConfig ? (
+        <RestaurantOrderingActions
+          actions={orderingActions}
+          description={orderingActionsConfig.description}
+          eyebrow={orderingActionsConfig.eyebrow}
+          restaurantId={restaurant.id}
+          title={orderingActionsConfig.title}
+        />
+      ) : null}
       <div className={styles.content}>
-        <RestaurantInfo
+        <RestaurantHoursLocation
+          restaurantName={restaurant.name}
           restaurantId={restaurant.id}
           description={restaurant.description}
           phone={restaurant.phone}
@@ -399,9 +708,19 @@ if (restaurantError || !restaurant) {
           city={restaurant.city}
           state={restaurant.state}
           postalCode={restaurant.postal_code}
+          directionsUrl={directionsUrl}
           hours={hours}
+          specialHours={specialHours}
           timezone={restaurant.timezone}
         />
+        {menuIntroConfig ? (
+          <RestaurantMenuIntro
+            description={menuIntroConfig.description}
+            eyebrow={menuIntroConfig.eyebrow}
+            quicklinks={menuQuicklinks}
+            title={menuIntroConfig.title}
+          />
+        ) : null}
         <div className={styles.menuRegion}>
           <MenuBrowser
             restaurantId={restaurant.id}
@@ -414,10 +733,12 @@ if (restaurantError || !restaurant) {
         </div>
       </div>
       <RestaurantFooter
+        address={hasUsableAddress ? address : null}
+        homeHref={`/r/${restaurant.slug}`}
+        links={footerLinks}
+        logoUrl={restaurant.logo_url}
         name={restaurant.name}
-        phone={restaurant.phone}
-        instagramUrl={restaurant.instagram_url}
-        facebookUrl={restaurant.facebook_url}
+        restaurantId={restaurant.id}
       />
       <RestaurantJsonLd
         name={restaurant.name}
@@ -436,6 +757,6 @@ if (restaurantError || !restaurant) {
         hours={hours}
       />
       <PageViewTracker restaurantId={restaurant.id} />
-    </div>
+    </RestaurantShell>
   );
 }

@@ -2,9 +2,11 @@ import "server-only";
 
 import { authenticatedClient, rpcError } from "@/lib/order-management/server";
 import {
+  deliverySettingsSchema,
   hoursSettingsSchema,
   orderingSettingsSchema,
   restaurantSettingsSchema,
+  type DeliverySettings,
   type HoursSettings,
   type OrderingSettings,
   type RestaurantSettings,
@@ -29,3 +31,7 @@ export const getHoursSettings = (slug: string): Promise<HoursSettings> =>
   call("get_managed_hours_settings_v2", hoursSettingsSchema, { p_restaurant_slug: slug });
 export const updateHoursSettings = (slug: string, settings: Pick<HoursSettings, "days" | "specialDates">, clientActionId: string) =>
   call("update_managed_hours_settings_v2", hoursSettingsSchema, { p_restaurant_slug: slug, p_days: settings.days, p_special_dates: settings.specialDates, p_client_action_id: clientActionId });
+export const getDeliverySettings = (slug: string): Promise<DeliverySettings> =>
+  call("get_managed_delivery_settings_v1", deliverySettingsSchema, { p_restaurant_slug: slug });
+export const updateDeliverySettings = (slug: string, settings: DeliverySettings, clientActionId: string) =>
+  call("update_managed_delivery_settings_v1", deliverySettingsSchema, { p_restaurant_slug: slug, p_providers: settings.providers, p_client_action_id: clientActionId });

@@ -44,6 +44,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609170001_restaurant_settings_v1.sql",
     "202609170002_special_hours_checkout_messaging.sql",
     "202609180001_fix_special_hours_pickup_availability.sql",
+    "202609200001_restaurant_delivery_providers.sql",
   ]);
 });
 
@@ -87,6 +88,7 @@ test("baseline creates every documented application table", () => {
     "notification_delivery_attempts",
     "restaurant_setting_events",
     "restaurant_special_hours",
+    "restaurant_delivery_providers",
   ];
 
   for (const table of tables) {
@@ -557,4 +559,24 @@ test("pickup availability repair removes the special-date variable collision and
   assert.match(migration, /where not has_special[\s\S]*weekly\.restaurant_id = restaurant_record\.id/);
   assert.match(migration, /'currentlyOpen', currently_open/);
   assert.match(migration, /grant execute on function public\.get_pickup_availability_v1\(text, timestamptz\)[\s\S]*to service_role/);
+});
+
+test("delivery providers are normalized, tenant-scoped, audited, and legacy-safe", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_restaurant_delivery_providers.sql"),
+  )?.sql || "";
+  assert.match(migration, /create table if not exists public\.restaurant_delivery_providers/i);
+  assert.match(migration, /restaurant_id uuid not null references public\.restaurants\(id\) on delete cascade/i);
+  assert.match(migration, /unique \(restaurant_id, sort_order\)/i);
+  assert.match(migration, /restaurant_id, lower\(btrim\(display_name\)\)/i);
+  assert.match(migration, /where provider_key is not null/i);
+  assert.match(migration, /restaurant_delivery_providers_restaurant_active_sort_idx/i);
+  assert.match(migration, /private\.require_restaurant_capability_v1\([\s\S]*'manage_restaurant_settings'/i);
+  assert.match(migration, /'settings\.delivery_updated'/i);
+  assert.match(migration, /delete from public\.restaurant_delivery_providers[\s\S]*access_record\.restaurant_id/i);
+  assert.match(migration, /restaurant\.doordash_url[\s\S]*on conflict do nothing/i);
+  assert.doesNotMatch(migration, /drop column[^;]*doordash_url/i);
+  assert.match(migration, /grant select on table public\.restaurant_delivery_providers to service_role/i);
+  assert.doesNotMatch(migration, /grant (?:select|insert|update|delete).*restaurant_delivery_providers.*authenticated/i);
+  assert.match(migration, /grant execute on function public\.update_managed_delivery_settings_v1[\s\S]*to authenticated/i);
 });

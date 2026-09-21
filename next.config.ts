@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+
+
+
 const nextConfig: NextConfig = {
   async headers() {
     const squarePaymentCsp = [
@@ -29,6 +32,9 @@ const nextConfig: NextConfig = {
       ],
     }];
   },
+  allowedDevOrigins: ["192.168.1.145"],
+
+  
 };
 
 export default nextConfig;

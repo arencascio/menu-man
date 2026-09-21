@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   businessHourSchema,
+  deliverySettingsSchema,
   orderingSettingsSchema,
   restaurantSettingsSchema,
   specialHourSchema,
@@ -70,4 +71,44 @@ test("special hours accept closed dates and reject overnight custom ranges", () 
   assert.equal(specialHourSchema.parse({ ...base, isClosed: true, openTime: null, closeTime: null }).label, "Christmas Day");
   assert.equal(specialHourSchema.safeParse({ ...base, isClosed: false, openTime: "09:00", closeTime: "15:00" }).success, true);
   assert.equal(specialHourSchema.safeParse({ ...base, isClosed: false, openTime: "20:00", closeTime: "02:00" }).success, false);
+});
+
+test("delivery settings accept ordered providers and normalize web URLs", () => {
+  const result = deliverySettingsSchema.parse({ providers: [
+    {
+      id: "00000000-0000-4000-8000-000000000020",
+      displayName: " DoorDash ",
+      providerKey: "doordash",
+      destinationUrl: "https://www.doordash.com/store/example",
+      imageUrl: null,
+      sortOrder: 0,
+      isActive: true,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000000021",
+      displayName: "Uber Eats",
+      providerKey: null,
+      destinationUrl: "http://example.test/order",
+      imageUrl: "https://example.test/logo.png",
+      sortOrder: 1,
+      isActive: false,
+    },
+  ] });
+  assert.equal(result.providers[0].displayName, "DoorDash");
+  assert.equal(result.providers[1].destinationUrl, "http://example.test/order");
+});
+
+test("delivery settings reject invalid URLs and ambiguous ordering", () => {
+  const provider = {
+    id: "00000000-0000-4000-8000-000000000020",
+    displayName: "DoorDash",
+    providerKey: "doordash",
+    destinationUrl: "https://www.doordash.com/store/example",
+    imageUrl: null,
+    sortOrder: 0,
+    isActive: true,
+  };
+  assert.equal(deliverySettingsSchema.safeParse({ providers: [{ ...provider, destinationUrl: "javascript:alert(1)" }] }).success, false);
+  assert.equal(deliverySettingsSchema.safeParse({ providers: [{ ...provider, destinationUrl: "https://PLACEHOLDER.invalid" }] }).success, false);
+  assert.equal(deliverySettingsSchema.safeParse({ providers: [provider, { ...provider, id: "00000000-0000-4000-8000-000000000021" }] }).success, false);
 });

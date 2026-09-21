@@ -15,6 +15,7 @@ import {
 } from "@/lib/payments/browser-session";
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import CartPanel from "./CartPanel";
+import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import OrderItemPanel from "./OrderItemPanel";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
@@ -351,7 +352,7 @@ export default function MenuBrowser({
 
             return (
               <section className={styles.section} key={section.id}>
-                <div className={styles.sectionHeading}>
+                <div id={getMenuSectionAnchorId(section.id)} className={styles.sectionHeading}>
                   <h2>{section.name}</h2>
                   {section.description && <p>{section.description}</p>}
                 </div>
