@@ -51,7 +51,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
             - optional daily-reset display numbers; the restaurant and diner
               intentionally share the same order number today */}
         <nav aria-label="Confirmation actions">
-          <Link className={styles.secondaryConfirmationButton} href={`/r/${encodeURIComponent(slug)}`}>Return to Menu</Link>
+          <Link className={styles.secondaryConfirmationButton} href={`/r/${encodeURIComponent(slug)}/menu`}>Return to Menu</Link>
         </nav>
       </section>
     </main>

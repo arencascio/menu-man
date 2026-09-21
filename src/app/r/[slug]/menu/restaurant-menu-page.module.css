@@ -1,0 +1,8 @@
+.menuPage { color: var(--theme-surface); background: var(--theme-primary); }
+.heading { width: min(calc(100% - 32px), 1440px); margin: 0 auto; padding: 3.5rem 0 0; }
+.heading p { margin: 0 0 .75rem; color: color-mix(in srgb, var(--theme-surface) 78%, var(--theme-accent)); font-size: .76rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.heading h1 { margin: 0; font-family: var(--theme-heading-font); font-size: clamp(3rem, 6vw, 5.5rem); letter-spacing: -.055em; line-height: .95; }
+
+@media (max-width: 700px) {
+  .heading { padding-top: 2.5rem; }
+}

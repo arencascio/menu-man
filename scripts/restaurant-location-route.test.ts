@@ -20,7 +20,7 @@ test("restaurant location page composes the shared shell, hours data, and footer
   assert.match(hoursData, /\.from\("restaurant_business_hours"\)/);
   assert.match(hoursData, /\.from\("restaurant_special_hours"\)/);
   assert.match(home, /label: "Location", href: `\/r\/\$\{restaurant\.slug\}\/location`/);
-  assert.match(route, /label: "Menu", href: `\$\{homeHref\}#restaurant-menu`/);
+  assert.match(route, /label: "Menu", href: `\$\{homeHref\}\/menu`/);
 });
 
 test("Armando's map and storefront embeds are configured outside the shared presentation", () => {

@@ -62,6 +62,23 @@
   line-height: 1.6;
 }
 
+.primaryAction {
+  display: inline-flex;
+  align-items: center;
+  gap: .85rem;
+  min-height: 3.1rem;
+  margin-top: 1.5rem;
+  padding: .75rem 1.2rem;
+  border-radius: max(var(--theme-radius), .5rem);
+  color: var(--theme-surface);
+  background: var(--theme-accent);
+  font-size: .92rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.primaryAction:focus-visible { outline: 3px solid var(--theme-surface); outline-offset: 3px; }
+
 .quicklinks {
   min-width: 0;
 }

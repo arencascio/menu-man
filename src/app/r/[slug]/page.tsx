@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
-import { isMenuModifierOptionAvailable, resolveModifierPriceCents } from "@/lib/cart/cart";
-import type { MenuModifierGroup } from "@/lib/cart/types";
-import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
-import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
-import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
 import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
-import MenuBrowser, { type MenuSection } from "./MenuBrowser";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import PageViewTracker from "./PageViewTracker";
 import { getRestaurantDeliveryOptions } from "./restaurant-delivery-options";
 import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "./restaurant-location-data";
+import { getRestaurantMenuSections } from "./restaurant-menu-data";
 import RestaurantFooter, { type RestaurantFooterLink } from "./RestaurantFooter";
 import RestaurantFeaturedGallerySlider, {
   type RestaurantFeaturedGalleryAction,
@@ -59,7 +54,7 @@ const restaurantHeroes: Readonly<Partial<Record<string, RestaurantHeroConfig>>> 
 type RestaurantOrderingActionsConfig = {
   description: string;
   eyebrow: string;
-  menuAction: RestaurantOrderingAction;
+  menuAction: Extract<RestaurantOrderingAction, { href: string }>;
   title: string;
 };
 
@@ -286,34 +281,8 @@ if (restaurantError || !restaurant) {
     );
   }
 
-  const { data: sections, error: sectionsError } =
-    await supabaseServer
-      .from("menu_sections")
-      .select(`
-        id,
-        name,
-        description,
-        sort_order,
-        menu_section_items (
-          sort_order,
-          menu_items (
-            id,
-            name,
-            description,
-            price_cents,
-            source_image_url,
-            image_path,
-            is_orderable
-          )
-        )
-      `)
-      .eq("menu_id", menu.id)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
-
-  if (sectionsError) {
-    console.error(sectionsError);
-
+  const menuSections = await getRestaurantMenuSections(restaurant.id, menu.id);
+  if (!menuSections) {
     return (
       <main style={{ padding: "2rem" }}>
         <h1>{restaurant.name}</h1>
@@ -322,139 +291,12 @@ if (restaurantError || !restaurant) {
     );
   }
 
-  const [modifierGroupsResult, modifierOptionsResult, modifierAttachmentsResult, modifierOverridesResult] = await Promise.all([
-    supabaseServer
-      .from("modifier_groups")
-      .select("id, name, description, is_active")
-      .eq("restaurant_id", restaurant.id),
-    supabaseServer
-      .from("modifier_options")
-      .select("id, modifier_group_id, name, default_price_adjustment_cents, sort_order, is_default, is_active")
-      .eq("restaurant_id", restaurant.id),
-    supabaseServer
-      .from("menu_item_modifier_groups")
-      .select("menu_item_id, modifier_group_id, min_selections, max_selections, sort_order, is_active")
-      .eq("restaurant_id", restaurant.id),
-    supabaseServer
-      .from("menu_item_modifier_option_overrides")
-      .select("menu_item_id, modifier_option_id, price_adjustment_cents, sort_order, is_active")
-      .eq("restaurant_id", restaurant.id),
-  ]);
-
-  const modifierErrors = [
-    modifierGroupsResult.error,
-    modifierOptionsResult.error,
-    modifierAttachmentsResult.error,
-    modifierOverridesResult.error,
-  ].filter(Boolean);
-  if (modifierErrors.length > 0) {
-    console.error("There was a problem loading menu modifiers.", modifierErrors);
-  }
-
-  const modifierGroupsById = new Map(
-    (modifierGroupsResult.data || []).map((group) => [group.id, group]),
-  );
-  const modifierOptionsByGroupId = new Map<string, NonNullable<typeof modifierOptionsResult.data>>();
-  for (const option of modifierOptionsResult.data || []) {
-    const options = modifierOptionsByGroupId.get(option.modifier_group_id) || [];
-    options.push(option);
-    modifierOptionsByGroupId.set(option.modifier_group_id, options);
-  }
-  const modifierOverridesByItemAndOption = new Map(
-    (modifierOverridesResult.data || []).map((override) => [
-      `${override.menu_item_id}:${override.modifier_option_id}`,
-      override,
-    ]),
-  );
-  const modifierAttachmentsByItemId = new Map<string, NonNullable<typeof modifierAttachmentsResult.data>>();
-  for (const attachment of modifierAttachmentsResult.data || []) {
-    const attachments = modifierAttachmentsByItemId.get(attachment.menu_item_id) || [];
-    attachments.push(attachment);
-    modifierAttachmentsByItemId.set(attachment.menu_item_id, attachments);
-  }
-
-  function getItemModifierGroups(menuItemId: string): MenuModifierGroup[] {
-    return (modifierAttachmentsByItemId.get(menuItemId) || [])
-      .flatMap((attachment) => {
-        const group = modifierGroupsById.get(attachment.modifier_group_id);
-        if (!group || !group.is_active || !attachment.is_active) return [];
-        const options = (modifierOptionsByGroupId.get(group.id) || [])
-          .flatMap((option) => {
-            const override = modifierOverridesByItemAndOption.get(`${menuItemId}:${option.id}`);
-            if (!isMenuModifierOptionAvailable(
-              group.is_active,
-              option.is_active,
-              attachment.is_active,
-              override?.is_active,
-            )) return [];
-            return [{
-              id: option.id,
-              name: option.name,
-              priceAdjustmentCents: resolveModifierPriceCents(
-                override?.price_adjustment_cents,
-                option.default_price_adjustment_cents,
-              ),
-              sortOrder: override?.sort_order ?? option.sort_order,
-              isDefault: option.is_default,
-            }];
-          })
-          .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
-
-        return [{
-          id: group.id,
-          name: group.name,
-          description: group.description,
-          minSelections: attachment.min_selections,
-          maxSelections: attachment.max_selections,
-          sortOrder: attachment.sort_order,
-          options,
-        }];
-      })
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
-  }
-
   const [{ hours, specialHours }, deliveryOptions] = await Promise.all([
     getRestaurantHoursLocationData(restaurant.id, restaurant.timezone),
     getRestaurantDeliveryOptions(restaurant.id),
   ]);
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
-  let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
-  for (const capability of await listGuestPaymentCapabilities()) {
-    try {
-      const view = await getOrderPaymentView(slug, capability.orderId, capability.checkoutToken);
-      const payment = await getPaymentStatus(capability.orderId, capability.checkoutToken);
-      if (paymentLocksCart(payment)) {
-        initialActivePayment = {
-          orderId: capability.orderId,
-          orderNumber: view.order.orderNumber,
-          statusLabel: getCustomerPaymentStatusLabel(payment),
-          locksCart: true,
-        };
-        break;
-      }
-    } catch (error) {
-      if (!(error instanceof PaymentServerError)) throw error;
-    }
-  }
-  const menuSections: MenuSection[] = (sections || []).map((section) => ({
-    id: section.id,
-    name: section.name,
-    description: section.description,
-    sort_order: section.sort_order,
-    items: (section.menu_section_items || [])
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .flatMap((placement) => {
-        const item = placement.menu_items;
-        const items = Array.isArray(item) ? item : item ? [item] : [];
-        return items.map((menuItem) => ({
-          ...menuItem,
-          modifierGroups: getItemModifierGroups(menuItem.id),
-          image_url: menuItem.image_path
-            ? supabaseServer.storage.from("restaurant-assets").getPublicUrl(menuItem.image_path).data.publicUrl
-            : menuItem.source_image_url,
-        }));
-      }),
-  }));
+  const menuHref = `/r/${restaurant.slug}/menu`;
 
   const restaurantPresentation: RestaurantShellRestaurant = {
     id: restaurant.id,
@@ -464,7 +306,7 @@ if (restaurantError || !restaurant) {
     announcements: restaurantAnnouncements[restaurant.slug] ?? [],
     deliveryOptions,
     navigation: [
-      { label: "Menu", href: "#restaurant-menu" },
+      { label: "Menu", href: menuHref },
       { label: "Location", href: `/r/${restaurant.slug}/location` },
       ...(directionsUrl
         ? [{ label: "Directions", href: directionsUrl, external: true }]
@@ -506,7 +348,7 @@ if (restaurantError || !restaurant) {
   const orderingActionsConfig = restaurantOrderingActions[restaurant.slug];
   const orderingActions: RestaurantOrderingAction[] = orderingActionsConfig
     ? [
-        orderingActionsConfig.menuAction,
+        { ...orderingActionsConfig.menuAction, href: menuHref },
         ...(restaurant.pickup_url
           ? [{
               label: "Order pickup",
@@ -538,7 +380,9 @@ if (restaurantError || !restaurant) {
           imageAlt: configuredSlide.imageAlt,
           title: menuItem.name,
           description: menuItem.description ?? undefined,
-          primaryAction: configuredSlide.primaryAction,
+          primaryAction: configuredSlide.primaryAction
+            ? { ...configuredSlide.primaryAction, href: menuHref }
+            : undefined,
           secondaryAction: configuredSlide.secondaryAction,
         }];
       })
@@ -551,7 +395,7 @@ if (restaurantError || !restaurant) {
 
         return [{
           label: configuredQuicklink.label,
-          href: `#${getMenuSectionAnchorId(section.id)}`,
+          href: `${menuHref}#${getMenuSectionAnchorId(section.id)}`,
         }];
       })
     : [];
@@ -565,7 +409,7 @@ if (restaurantError || !restaurant) {
     ? restaurant.facebook_url
     : null;
   const footerLinks: RestaurantFooterLink[] = [
-    { label: "Menu", href: "#restaurant-menu" },
+    { label: "Menu", href: menuHref },
     { label: "Location & hours", href: `/r/${restaurant.slug}/location` },
     ...(deliveryOptions.length > 0
       ? [{
@@ -649,19 +493,10 @@ if (restaurantError || !restaurant) {
             description={menuIntroConfig.description}
             eyebrow={menuIntroConfig.eyebrow}
             quicklinks={menuQuicklinks}
+            primaryAction={{ label: "View the full menu", href: menuHref }}
             title={menuIntroConfig.title}
           />
         ) : null}
-        <div className={styles.menuRegion}>
-          <MenuBrowser
-            restaurantId={restaurant.id}
-            restaurantSlug={restaurant.slug}
-            currency={restaurant.currency}
-            sections={menuSections}
-            ariaLabel={`${restaurant.name} ${menu.name}`}
-            initialActivePayment={initialActivePayment}
-          />
-        </div>
       </div>
       <RestaurantFooter
         address={address}

@@ -10,6 +10,7 @@ type RestaurantMenuIntroProps = {
   title: string;
   description: string;
   quicklinks: readonly RestaurantMenuQuicklink[];
+  primaryAction?: RestaurantMenuQuicklink;
 };
 
 export default function RestaurantMenuIntro({
@@ -17,6 +18,7 @@ export default function RestaurantMenuIntro({
   title,
   description,
   quicklinks,
+  primaryAction,
 }: RestaurantMenuIntroProps) {
   return (
     <section
@@ -29,6 +31,7 @@ export default function RestaurantMenuIntro({
           <p className={styles.eyebrow}>{eyebrow}</p>
           <h2 id="restaurant-menu-intro-title">{title}</h2>
           <p className={styles.description}>{description}</p>
+          {primaryAction ? <a className={styles.primaryAction} href={primaryAction.href}>{primaryAction.label} <span aria-hidden="true">&rarr;</span></a> : null}
         </div>
 
         {quicklinks.length > 0 ? (

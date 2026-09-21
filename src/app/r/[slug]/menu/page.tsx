@@ -1,34 +1,34 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
+import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
+import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
+import MenuBrowser from "../MenuBrowser";
 import PageViewTracker from "../PageViewTracker";
-import RestaurantAbout from "../RestaurantAbout";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
+import { getRestaurantLocationLinks } from "../restaurant-location-data";
+import { getRestaurantMenuSections } from "../restaurant-menu-data";
 import RestaurantFooter, { type RestaurantFooterLink } from "../RestaurantFooter";
-import RestaurantHoursLocation from "../RestaurantHoursLocation";
-import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "../restaurant-location-data";
-import { restaurantLocationPresentations } from "../restaurant-location-presentation";
-import RestaurantMapViews from "../RestaurantMapViews";
 import RestaurantShell, { type RestaurantShellRestaurant } from "../RestaurantShell";
+import styles from "./restaurant-menu-page.module.css";
 
-type LocationPageProps = { params: Promise<{ slug: string }> };
+type MenuPageProps = { params: Promise<{ slug: string }> };
 
-export async function generateMetadata({ params }: LocationPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: MenuPageProps): Promise<Metadata> {
   const { slug } = await params;
   const { data: restaurant } = await supabaseServer
     .from("restaurants")
-    .select("name, description, primary_domain, is_indexable")
+    .select("name, primary_domain, is_indexable")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
-  if (!restaurant) return { title: "Location | Menu Man" };
+  if (!restaurant) return { title: "Menu | Menu Man" };
 
-  const title = `About & Location | ${restaurant.name}`;
-  const description = restaurant.description && !restaurant.description.includes("PLACEHOLDER")
-    ? restaurant.description
-    : `About, hours, and location for ${restaurant.name}.`;
-  const url = `${restaurantUrl(slug, restaurant.primary_domain)}/location`;
+  const title = `Menu | ${restaurant.name}`;
+  const description = `Explore the full menu at ${restaurant.name}.`;
+  const url = `${restaurantUrl(slug, restaurant.primary_domain)}/menu`;
   return {
     title,
     description,
@@ -38,34 +38,55 @@ export async function generateMetadata({ params }: LocationPageProps): Promise<M
   };
 }
 
-export default async function RestaurantLocationPage({ params }: LocationPageProps) {
+export default async function RestaurantMenuPage({ params }: MenuPageProps) {
   const { slug } = await params;
   const { data: restaurant, error } = await supabaseServer
     .from("restaurants")
     .select(`
-      id, name, slug, description, phone, address_line1, city, state, postal_code,
-      google_maps_url, logo_url, hero_image_url, instagram_url, facebook_url,
-      theme_preset, theme_overrides, pickup_url, timezone
+      id, name, slug, currency, logo_url, phone, address_line1, city, state, postal_code,
+      google_maps_url, instagram_url, facebook_url, pickup_url, theme_preset, theme_overrides
     `)
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
   if (error || !restaurant) notFound();
 
-  const [{ hours, specialHours }, deliveryOptions] = await Promise.all([
-    getRestaurantHoursLocationData(restaurant.id, restaurant.timezone),
+  const { data: menu, error: menuError } = await supabaseServer
+    .from("menus")
+    .select("id, name")
+    .eq("restaurant_id", restaurant.id)
+    .eq("is_published", true)
+    .maybeSingle();
+  if (menuError || !menu) notFound();
+
+  const [sections, deliveryOptions] = await Promise.all([
+    getRestaurantMenuSections(restaurant.id, menu.id, true),
     getRestaurantDeliveryOptions(restaurant.id),
   ]);
+  if (!sections) throw new Error("There was a problem loading the menu.");
+
+  let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
+  for (const capability of await listGuestPaymentCapabilities()) {
+    try {
+      const view = await getOrderPaymentView(slug, capability.orderId, capability.checkoutToken);
+      const payment = await getPaymentStatus(capability.orderId, capability.checkoutToken);
+      if (paymentLocksCart(payment)) {
+        initialActivePayment = {
+          orderId: capability.orderId,
+          orderNumber: view.order.orderNumber,
+          statusLabel: getCustomerPaymentStatusLabel(payment),
+          locksCart: true,
+        };
+        break;
+      }
+    } catch (capabilityError) {
+      if (!(capabilityError instanceof PaymentServerError)) throw capabilityError;
+    }
+  }
+
+  const homeHref = `/r/${restaurant.slug}`;
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
-  const presentation = restaurantLocationPresentations[slug];
-  const description = restaurant.description && !restaurant.description.includes("PLACEHOLDER")
-    ? restaurant.description
-    : presentation?.fallbackStory ?? "Restaurant details have not been published yet.";
-  const imageUrl = restaurant.hero_image_url?.startsWith("https://")
-    && !restaurant.hero_image_url.includes("PLACEHOLDER") ? restaurant.hero_image_url : null;
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
-  const homeHref = `/r/${slug}`;
-  const locationHref = `${homeHref}/location`;
   const shellRestaurant: RestaurantShellRestaurant = {
     id: restaurant.id,
     name: restaurant.name,
@@ -74,7 +95,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
     deliveryOptions,
     navigation: [
       { label: "Menu", href: `${homeHref}/menu` },
-      { label: "Location", href: locationHref },
+      { label: "Location", href: `${homeHref}/location` },
       ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true }] : []),
     ],
     themePreset: restaurant.theme_preset,
@@ -82,7 +103,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   };
   const footerLinks: RestaurantFooterLink[] = [
     { label: "Menu", href: `${homeHref}/menu` },
-    { label: "Location & hours", href: "#restaurant-information" },
+    { label: "Location & hours", href: `${homeHref}/location` },
     ...(deliveryOptions.length > 0
       ? [{ kind: "delivery" as const, label: "Order delivery" }]
       : restaurant.pickup_url
@@ -97,34 +118,20 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   ];
 
   return <RestaurantShell restaurant={shellRestaurant}>
-    <main>
-      <RestaurantAbout
-        eyebrow={presentation?.eyebrow ?? "About us"}
-        heading={presentation?.heading ?? `Meet ${restaurant.name}.`}
-        description={description}
-        imageUrl={imageUrl}
-        restaurantName={restaurant.name}
-      />
-      <RestaurantHoursLocation
-        restaurantName={restaurant.name}
+    <div className={styles.menuPage}>
+      <div className={styles.heading}>
+        <p>Explore the menu</p>
+        <h1>{restaurant.name} menu</h1>
+      </div>
+      <MenuBrowser
         restaurantId={restaurant.id}
-        description={null}
-        phone={phone}
-        addressLine1={restaurant.address_line1}
-        city={restaurant.city}
-        state={restaurant.state}
-        postalCode={restaurant.postal_code}
-        directionsUrl={directionsUrl}
-        hours={hours}
-        specialHours={specialHours}
-        timezone={restaurant.timezone}
+        restaurantSlug={restaurant.slug}
+        currency={restaurant.currency}
+        sections={sections}
+        ariaLabel={`${restaurant.name} ${menu.name}`}
+        initialActivePayment={initialActivePayment}
       />
-      <RestaurantMapViews
-        restaurantName={restaurant.name}
-        mapEmbedUrl={presentation?.mapEmbedUrl}
-        streetViewEmbedUrl={presentation?.streetViewEmbedUrl}
-      />
-    </main>
+    </div>
     <RestaurantFooter
       address={address}
       homeHref={homeHref}

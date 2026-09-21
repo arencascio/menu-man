@@ -351,7 +351,7 @@ export default function CheckoutPanel({
       <section className={styles.checkoutPanel}>
         <div className={styles.cartHeader}>
           <div><p className={styles.expandedLabel}>Checkout</p><h1>Review your order</h1></div>
-          <Link className={styles.closeButton} href={`/r/${restaurantSlug}`}>Back to Menu</Link>
+          <Link className={styles.closeButton} href={`/r/${restaurantSlug}/menu`}>Back to Menu</Link>
         </div>
 
         <div className={styles.checkoutReview}>
