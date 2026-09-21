@@ -46,6 +46,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609180001_fix_special_hours_pickup_availability.sql",
     "202609200001_restaurant_delivery_providers.sql",
     "202609210001_menu_hearts_featured.sql",
+    "202609210002_fix_featured_item_save.sql",
   ]);
 });
 
@@ -58,6 +59,15 @@ test("menu hearts and Featured selections use canonical items with restricted wr
   assert.match(sql, /settings\.featured_updated/);
   assert.match(sql, /revoke all on public\.restaurant_featured_menu_items from public, anon, authenticated/);
   assert.match(sql, /grant execute on function public\.update_managed_featured_items_v1.*to authenticated/);
+});
+
+test("Featured save validates canonical item IDs without ambiguous PL/pgSQL names", () => {
+  const sql = readFileSync(join(migrationDirectory, "202609210002_fix_featured_item_save.sql"), "utf8");
+  assert.match(sql, /selected_item_id uuid/);
+  assert.match(sql, /alter function public\.get_managed_featured_items_v1\(text\) volatile/);
+  assert.match(sql, /placement\.item_id = selected_item_id/);
+  assert.doesNotMatch(sql, /placement\.item_id = item_id\b/);
+  assert.match(sql, /settings\.featured_updated/);
 });
 
 test("baseline creates every documented application table", () => {
