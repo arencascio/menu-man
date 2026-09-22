@@ -14,6 +14,7 @@ import {
   saveActiveOrderMarker,
 } from "@/lib/payments/browser-session";
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
+import { composePersonalizedMenuSections } from "@/lib/menu-engagement/sections";
 import CartPanel from "./CartPanel";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import { createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, type MenuItemDraft } from "./menu-card-ordering";
@@ -94,6 +95,7 @@ export default function MenuBrowser({
   const cartRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
+  const [likedItemsLoaded, setLikedItemsLoaded] = useState(false);
   const [heartCounts, setHeartCounts] = useState(initialHeartCounts);
   const [pendingHearts, setPendingHearts] = useState<string[]>([]);
   const [activePayment, setActivePayment] = useState<{
@@ -106,12 +108,19 @@ export default function MenuBrowser({
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
   const cartLocked = Boolean(activePayment?.locksCart);
   const hasActiveSurface = Boolean(detailItem || isCartOpen);
+  const menuSections = useMemo(
+    () => composePersonalizedMenuSections(sections, likedItemsLoaded ? likedItemIds : []),
+    [likedItemIds, likedItemsLoaded, sections],
+  );
   const selectedDetail = useMemo(() => {
     if (!detailItem) return null;
-    const section = sections.find((candidate) => candidate.id === detailItem.sectionId);
-    const item = section?.items.find((candidate) => candidate.id === detailItem.itemId);
-    return section && item ? { section, item, mode: detailItem.mode } : null;
-  }, [detailItem, sections]);
+    const exactSection = menuSections.find((candidate) => candidate.id === detailItem.sectionId);
+    const exactItem = exactSection?.items.find((candidate) => candidate.id === detailItem.itemId);
+    if (exactSection && exactItem) return { section: exactSection, item: exactItem, mode: detailItem.mode };
+    const fallbackSection = menuSections.find((candidate) => candidate.items.some((item) => item.id === detailItem.itemId));
+    const fallbackItem = fallbackSection?.items.find((candidate) => candidate.id === detailItem.itemId);
+    return fallbackSection && fallbackItem ? { section: fallbackSection, item: fallbackItem, mode: detailItem.mode } : null;
+  }, [detailItem, menuSections]);
   const cartQuantities = useMemo(() => {
     const totals: Record<string, number> = {};
     for (const line of cart.lines) totals[line.menuItemId] = (totals[line.menuItemId] ?? 0) + line.quantity;
@@ -185,7 +194,7 @@ export default function MenuBrowser({
       window.removeEventListener("resize", update);
       categories.removeEventListener("scroll", update);
     };
-  }, [sections, ensureActiveCategoryVisible]);
+  }, [menuSections, ensureActiveCategoryVisible]);
 
   useEffect(() => {
     ensureActiveCategoryVisible(activeCategory, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
@@ -201,7 +210,7 @@ export default function MenuBrowser({
         setEditingLineId(null);
         return;
       }
-      const section = sections.find((candidate) => candidate.items.some((item) => item.id === itemId));
+      const section = menuSections.find((candidate) => candidate.items.some((item) => item.id === itemId));
       const item = section?.items.find((candidate) => candidate.id === itemId);
       if (!section || !item) return;
       if (!window.history.state?.menuItem) {
@@ -220,7 +229,7 @@ export default function MenuBrowser({
     window.addEventListener("popstate", handlePopState);
     handlePopState();
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [sections]);
+  }, [menuSections]);
 
   useLayoutEffect(() => {
     const target = isCartOpen && !detailItem ? cartRef.current : null;
@@ -243,9 +252,25 @@ export default function MenuBrowser({
     body.style.top = `-${scrollY}px`;
     body.style.width = `${bodyWidth}px`;
     dialog.showModal();
+    if (detailItem.mode === "quick" && window.matchMedia("(min-width: 761px) and (pointer: fine)").matches) {
+      const opener = detailOpenerRef.current;
+      if (opener) {
+        const anchor = opener.getBoundingClientRect();
+        const bounds = dialog.getBoundingClientRect();
+        const left = Math.max(12, Math.min(window.innerWidth - bounds.width - 12, anchor.right - bounds.width));
+        const above = anchor.top - bounds.height - 10;
+        const top = above >= 12 ? above : Math.max(12, Math.min(window.innerHeight - bounds.height - 12, anchor.bottom + 10));
+        dialog.style.margin = "0";
+        dialog.style.left = `${left}px`;
+        dialog.style.top = `${top}px`;
+      }
+    }
     dialog.querySelector<HTMLButtonElement>("[data-detail-close]")?.focus();
     return () => {
       dialog.close();
+      dialog.style.removeProperty("margin");
+      dialog.style.removeProperty("left");
+      dialog.style.removeProperty("top");
       body.style.position = originalPosition;
       body.style.top = originalTop;
       body.style.width = originalWidth;
@@ -270,26 +295,30 @@ export default function MenuBrowser({
     let active = true;
     void fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((data: { likedItemIds?: string[] } | null) => { if (active && data?.likedItemIds) setLikedItemIds(data.likedItemIds); });
+      .then((data: { likedItemIds?: string[] } | null) => { if (active && data?.likedItemIds) setLikedItemIds(data.likedItemIds); })
+      .finally(() => { if (active) setLikedItemsLoaded(true); });
     return () => { active = false; };
   }, [restaurantSlug]);
 
   async function toggleHeart(itemId: string) {
     if (pendingHearts.includes(itemId)) return;
     const liked = !likedItemIds.includes(itemId);
+    const previousHeartCount = heartCounts[itemId] ?? 0;
     setPendingHearts((current) => [...current, itemId]);
+    if (!liked && selectedCategory === "favorites" && likedItemIds.length === 1) setSelectedCategory("all");
+    setLikedItemIds((current) => liked ? [...current.filter((id) => id !== itemId), itemId] : current.filter((id) => id !== itemId));
+    setHeartCounts((current) => ({ ...current, [itemId]: Math.max(0, (current[itemId] ?? 0) + (liked ? 1 : -1)) }));
     try {
       const response = await fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId, liked }),
       });
-      if (!response.ok) return;
+      if (!response.ok) throw new Error("Heart request failed");
       const result = await response.json() as { count: number };
-      setLikedItemIds((current) => liked ? [...current.filter((id) => id !== itemId), itemId] : current.filter((id) => id !== itemId));
       setHeartCounts((current) => ({ ...current, [itemId]: result.count }));
-      router.refresh();
     } catch {
-      // Keep the last confirmed state; a later click can retry.
+      setLikedItemIds((current) => liked ? current.filter((id) => id !== itemId) : [...current.filter((id) => id !== itemId), itemId]);
+      setHeartCounts((current) => ({ ...current, [itemId]: previousHeartCount }));
     } finally {
       setPendingHearts((current) => current.filter((id) => id !== itemId));
     }
@@ -378,16 +407,16 @@ export default function MenuBrowser({
       const nextSearch = searchInput.trim().toLowerCase();
       setSearch(nextSearch);
       if (nextSearch) {
-        const resultCount = sections
+        const resultCount = menuSections
           .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
           .reduce((count, section) => count + section.items.filter((item) => [item.name, item.description || ""].join(" ").toLowerCase().includes(nextSearch)).length, 0);
         trackEvent({ name: "menu_search", restaurantId, query: nextSearch, queryLength: nextSearch.length, resultCount });
       }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [restaurantId, searchInput, sections, selectedCategory]);
+  }, [restaurantId, searchInput, menuSections, selectedCategory]);
 
-  const visibleSections = useMemo(() => sections
+  const visibleSections = useMemo(() => menuSections
     .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
     .map((section) => ({
       ...section,
@@ -399,7 +428,7 @@ export default function MenuBrowser({
           .includes(search);
       }),
     }))
-    .filter((section) => section.items.length > 0), [sections, selectedCategory, search]);
+    .filter((section) => section.items.length > 0), [menuSections, selectedCategory, search]);
   const visibleItemCount = visibleSections.reduce((total, section) => total + section.items.length, 0);
   const showResultCount = Boolean(search || selectedCategory !== "all");
 
@@ -465,11 +494,10 @@ export default function MenuBrowser({
     });
   }
 
-  function addFromCard(item: MenuItem, section: MenuSection) {
+  function addFromCard(item: MenuItem, section: MenuSection, opener: HTMLElement) {
     if (cartLocked || !item.is_orderable) return;
     const mode = getCardAddMode(item);
     if (mode !== "direct") {
-      const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       openItem(item, section, mode, opener);
       return;
     }
@@ -521,10 +549,10 @@ export default function MenuBrowser({
 
   function editCartLine(line: CartLine) {
     if (cartLocked) return;
-    const section = sections.find((candidate) => (
+    const section = menuSections.find((candidate) => (
       candidate.id === line.sectionId
       && candidate.items.some((item) => item.id === line.menuItemId)
-    )) || sections.find((candidate) => candidate.items.some((item) => item.id === line.menuItemId));
+    )) || menuSections.find((candidate) => candidate.items.some((item) => item.id === line.menuItemId));
     if (!section) return;
 
     detailOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -640,7 +668,7 @@ export default function MenuBrowser({
           >
             Full Menu
           </button>
-          {sections.map((section) => (
+          {menuSections.map((section) => (
             <button
               className={activeCategory === section.id ? styles.categoryActive : styles.category}
               ref={(node) => { if (node) categoryButtonsRef.current.set(section.id, node); else categoryButtonsRef.current.delete(section.id); }}
@@ -742,9 +770,9 @@ export default function MenuBrowser({
                         <span className={styles.price}>{formatPrice(item.price_cents, resolvedCurrency)}</span>
                         {item.description && <span className={styles.itemDescription}>{item.description}</span>}
                         {!item.is_orderable && <span className={styles.cardAvailability}>Not available for online ordering</span>}
-                        {inCartQuantity > 0 && <span className={styles.cardCartStatus}>{inCartQuantity} in cart</span>}
                       </span>
                     </button>
+                    {item.is_orderable && <span className={`${styles.cardFooter} ${inCartQuantity > 0 ? styles.cardFooterActive : ""}`} aria-live="polite">{inCartQuantity > 0 ? `${inCartQuantity} in cart` : ""}</span>}
                     <button
                       className={styles.heartButton}
                       type="button"
@@ -756,7 +784,7 @@ export default function MenuBrowser({
                       <span aria-hidden="true">{likedItemIds.includes(item.id) ? "♥" : "♡"}</span>
                     </button>
                     {heartCounts[item.id] ? <span className={styles.heartCount} aria-hidden="true">{heartCounts[item.id]}</span> : null}
-                    {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={() => addFromCard(item, section)}><span aria-hidden="true">+</span></button>}
+                    {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><span aria-hidden="true">+</span></button>}
                     </div>;
                   })}
                 </div>
@@ -769,7 +797,7 @@ export default function MenuBrowser({
       </div>
       {selectedDetail && !cartLocked && <dialog
         ref={dialogRef}
-        className={styles.itemDialog}
+        className={`${styles.itemDialog} ${selectedDetail.mode === "quick" ? styles.itemDialogQuick : ""}`}
         aria-label={`Item details: ${selectedDetail.item.name}`}
         onClick={(event) => {
           if (event.target === event.currentTarget && window.matchMedia("(pointer: fine)").matches) {
@@ -796,10 +824,10 @@ export default function MenuBrowser({
           closeDetail(selectedDetail.item, selectedDetail.section);
         }}
       >
-        <div className={styles.dialogToolbar}>
-          <button className={styles.dialogShare} type="button" onClick={() => void shareItem(selectedDetail.item)}>Share</button>
-          <span className={styles.shareStatus} aria-live="polite">{shareStatus}</span>
-          <button data-detail-close className={styles.dialogClose} type="button" onClick={() => closeDetail(selectedDetail.item, selectedDetail.section)}>Close <span aria-hidden="true">×</span></button>
+        <div className={`${styles.dialogToolbar} ${selectedDetail.mode === "quick" ? styles.dialogToolbarQuick : ""}`}>
+          {selectedDetail.mode === "full" && <button className={styles.dialogShare} type="button" onClick={() => void shareItem(selectedDetail.item)}>Share</button>}
+          {selectedDetail.mode === "full" && <span className={styles.shareStatus} aria-live="polite">{shareStatus}</span>}
+          <button data-detail-close className={`${styles.dialogClose} ${selectedDetail.mode === "quick" ? styles.quickClose : ""}`} type="button" onClick={() => closeDetail(selectedDetail.item, selectedDetail.section)}>{selectedDetail.mode === "quick" ? <><span className={styles.visuallyHidden}>Close quick add</span><span aria-hidden="true">×</span></> : <>Close <span aria-hidden="true">×</span></>}</button>
         </div>
         {selectedDetail.mode === "quick" && activeDraft ? <QuickChoicePanel
           item={selectedDetail.item}
