@@ -76,7 +76,6 @@
 .sectionHeadingFavorites { border-left-color: color-mix(in srgb, var(--accent) 50%, var(--ink)); background: color-mix(in srgb, var(--ink) 3%, var(--card-bg)); }
 
 .grid { display: contents; }
-.itemUnit { display: contents; }
 .item { display: flex; flex: 1; flex-direction: column; min-width: 0; width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 11px 11px 0 0; color: var(--ink); background: var(--card-bg); cursor: pointer; text-align: left; transition: background-color .15s ease; }
 .itemCard { position: relative; display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--card-bg); overflow: hidden; transition: border-color .15s ease, box-shadow .15s ease; }
 .itemCard:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 8%, transparent); }
@@ -107,10 +106,17 @@
 .itemDescription { display: -webkit-box; min-height: 3.9em; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
 .cardAvailability { margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
 
-.detailSlot, .cartSlot { grid-column: 1 / -1; min-width: 0; scroll-margin-top: calc(var(--menu-header-height, 84px) + 12px); }
-.detailSlot { border-radius: 12px; box-shadow: 0 0 0 2px var(--accent); }
+.cartSlot { grid-column: 1 / -1; min-width: 0; scroll-margin-top: calc(var(--menu-header-height, 84px) + 12px); }
 
-.expandedItem { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(320px, 1.25fr); max-height: calc(100dvh - var(--menu-header-height, 84px) - 24px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border-radius: 12px; background: var(--card-bg); }
+.itemDialog { box-sizing: border-box; width: min(960px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--card-bg); box-shadow: 0 24px 80px #0005; font-family: var(--theme-body-font, Arial, Helvetica, sans-serif); }
+.itemDialog::backdrop { background: #0009; }
+.dialogToolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--card-bg); }
+.dialogClose { min-width: 76px; min-height: 40px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
+.dialogClose span { margin-left: 4px; font-size: 20px; vertical-align: -2px; }
+.dialogClose:hover { border-color: var(--accent); color: var(--accent); }
+.dialogClose:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+
+.expandedItem { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(320px, 1.25fr); min-width: 0; background: var(--card-bg); }
 .expandedMedia { display: grid; min-height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: var(--theme-primary, #5b0000); }
 .expandedMedia img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .expandedPlaceholder { color: var(--theme-surface, #fff); font-size: 5rem; }
@@ -152,7 +158,7 @@
 .quantityControlCompact { grid-template-columns: 34px 42px 34px; }
 .quantityControlCompact button, .quantityControlCompact input { min-height: 34px; }
 .quantityControlCompact input { width: 42px; }
-.addToCartButton { width: 100%; border: 0; border-radius: 9px; padding: 14px 18px; color: #fff; background: var(--theme-accent, var(--accent)); cursor: pointer; font: inherit; font-weight: 800; }
+.addToCartButton { position: sticky; bottom: 8px; width: 100%; border: 0; border-radius: 9px; padding: 14px 18px; color: #fff; background: var(--theme-accent, var(--accent)); box-shadow: 0 3px 14px #0003; cursor: pointer; font: inherit; font-weight: 800; }
 .addToCartButton:not(:disabled):hover { filter: brightness(.9); }
 .addToCartButton:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .addToCartButton:disabled { color: #555; background: #dedede; cursor: not-allowed; opacity: 1; }
@@ -291,7 +297,8 @@
   .itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 52px; }
   .heartButton { top: 6px; right: 6px; min-width: 31px; min-height: 31px; padding: 3px 7px; }
   .heartButton span:first-child { font-size: 20px; }
-  .expandedItem { display: block; min-height: 0; max-height: calc(100dvh - var(--menu-header-height, 84px) - 24px); }
+  .itemDialog { width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }
+  .expandedItem { display: block; min-height: 0; }
   .expandedMedia { min-height: 180px; max-height: 240px; border-right: 0; border-bottom: 1px solid var(--line); }
   .expandedMedia img { height: 100%; object-fit: cover; }
   .orderForm { gap: 12px; padding: 16px; }

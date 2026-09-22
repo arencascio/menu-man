@@ -22,7 +22,6 @@ type OrderItemPanelProps = {
   currency: string;
   editingLine: CartLine | null;
   onSave: (line: CartLine) => void;
-  onClose: () => void;
   liked: boolean;
   heartCount: number;
   heartPending: boolean;
@@ -36,7 +35,6 @@ export default function OrderItemPanel({
   currency,
   editingLine,
   onSave,
-  onClose,
   liked,
   heartCount,
   heartPending,
@@ -101,7 +99,6 @@ export default function OrderItemPanel({
             <button className={styles.detailHeartButton} type="button" aria-pressed={liked} aria-label={`${liked ? "Unlike" : "Like"} ${item.name}`} disabled={heartPending} onClick={onHeart}>
               <span aria-hidden="true">{liked ? "♥" : "♡"}</span>{heartCount > 0 ? ` ${heartCount}` : ""}
             </button>
-            <button className={styles.closeButton} type="button" onClick={onClose}>Close</button>
           </div>
         </div>
         {item.description && <p className={styles.expandedDescription}>{item.description}</p>}

@@ -71,7 +71,7 @@ export default function MenuBrowser({
   const [categoryEdges, setCategoryEdges] = useState({ left: false, right: false });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [expandedItem, setExpandedItem] = useState<{ sectionId: string; itemId: string } | null>(null);
+  const [detailItem, setDetailItem] = useState<{ sectionId: string; itemId: string } | null>(null);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(84);
@@ -82,9 +82,10 @@ export default function MenuBrowser({
   const categoryButtonsRef = useRef(new Map<string, HTMLButtonElement>());
   const followActiveCategoryRef = useRef(true);
   const searchRef = useRef<HTMLInputElement>(null);
-  const restorePositionRef = useRef<{ sectionId: string; itemId: string; top: number; scrollY: number } | null>(null);
+  const detailOpenerRef = useRef<HTMLElement | null>(null);
+  const detailScrollYRef = useRef(0);
   const searchId = useId();
-  const detailRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const cartRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
@@ -99,7 +100,13 @@ export default function MenuBrowser({
   const resolvedCurrency = currency || "USD";
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
   const cartLocked = Boolean(activePayment?.locksCart);
-  const hasActiveSurface = Boolean(expandedItem || isCartOpen);
+  const hasActiveSurface = Boolean(detailItem || isCartOpen);
+  const selectedDetail = useMemo(() => {
+    if (!detailItem) return null;
+    const section = sections.find((candidate) => candidate.id === detailItem.sectionId);
+    const item = section?.items.find((candidate) => candidate.id === detailItem.itemId);
+    return section && item ? { section, item } : null;
+  }, [detailItem, sections]);
   const activeCategory = selectedCategory === "all" ? visibleCategory : selectedCategory;
   const activeCategoryRef = useRef(activeCategory);
   useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
@@ -138,11 +145,13 @@ export default function MenuBrowser({
     if (!controls || !anchor) return;
     const controlsTop = anchor.getBoundingClientRect().top + window.scrollY;
     const compactAt = Math.max(0, controlsTop + controls.offsetHeight - (header?.offsetHeight ?? 0) - 24);
-    const update = () => setCompactControls(window.scrollY > compactAt);
+    const update = () => {
+      if (!detailItem) setCompactControls(window.scrollY > compactAt);
+    };
     update();
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);
-  }, []);
+  }, [detailItem]);
 
   useEffect(() => {
     const categories = categoriesRef.current;
@@ -173,22 +182,38 @@ export default function MenuBrowser({
   }, [activeCategory, compactControls, ensureActiveCategoryVisible]);
 
   useLayoutEffect(() => {
-    const target = isCartOpen ? cartRef.current : expandedItem ? detailRef.current : null;
+    const target = isCartOpen && !detailItem ? cartRef.current : null;
     if (!target) return;
     const frame = requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
     return () => cancelAnimationFrame(frame);
-  }, [expandedItem, isCartOpen]);
+  }, [detailItem, isCartOpen]);
 
   useLayoutEffect(() => {
-    if (expandedItem || !restorePositionRef.current) return;
-    const origin = restorePositionRef.current;
-    restorePositionRef.current = null;
-    const card = cardRefs.current.get(`${origin.sectionId}:${origin.itemId}`);
-    if (!card) return;
-    window.scrollTo({ top: origin.scrollY, behavior: "instant" });
-    window.scrollBy({ top: card.getBoundingClientRect().top - origin.top, behavior: "instant" });
-    card.focus({ preventScroll: true });
-  }, [expandedItem]);
+    if (!detailItem) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const scrollY = detailScrollYRef.current;
+    const body = document.body;
+    const originalPosition = body.style.position;
+    const originalTop = body.style.top;
+    const originalWidth = body.style.width;
+    const bodyWidth = body.getBoundingClientRect().width;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = `${bodyWidth}px`;
+    dialog.showModal();
+    dialog.querySelector<HTMLButtonElement>("[data-detail-close]")?.focus();
+    return () => {
+      dialog.close();
+      body.style.position = originalPosition;
+      body.style.top = originalTop;
+      body.style.width = originalWidth;
+      window.scrollTo({ top: scrollY, behavior: "instant" });
+      const opener = detailOpenerRef.current;
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+      detailOpenerRef.current = null;
+    };
+  }, [detailItem]);
 
   useEffect(() => {
     let active = true;
@@ -268,7 +293,7 @@ export default function MenuBrowser({
         locksCart: true,
       });
       setIsCartOpen(false);
-      setExpandedItem(null);
+      setDetailItem(null);
       setEditingLineId(null);
     } catch {
       // Keep the conservative lock until an authoritative refresh succeeds.
@@ -354,19 +379,14 @@ export default function MenuBrowser({
     };
   }, [selectedCategory, hasActiveSurface, headerHeight, controlsHeight, visibleSections, compactControls, ensureActiveCategoryVisible]);
 
-  function rememberItemPosition(sectionId: string, itemId: string) {
-    const card = cardRefs.current.get(`${sectionId}:${itemId}`);
-    if (card) restorePositionRef.current = { sectionId, itemId, top: card.getBoundingClientRect().top, scrollY: window.scrollY };
-  }
-
   function openItem(item: MenuItem, section: MenuSection) {
-    const isExpanded = expandedItem?.itemId === item.id && expandedItem.sectionId === section.id;
-    if (!isExpanded) rememberItemPosition(section.id, item.id);
-    setExpandedItem(isExpanded ? null : { sectionId: section.id, itemId: item.id });
+    detailOpenerRef.current = cardRefs.current.get(`${section.id}:${item.id}`) || null;
+    detailScrollYRef.current = window.scrollY;
+    setDetailItem({ sectionId: section.id, itemId: item.id });
     setIsCartOpen(false);
     setEditingLineId(null);
     trackEvent({
-      name: isExpanded ? "menu_item_collapsed" : "menu_item_expanded",
+      name: "menu_item_expanded",
       restaurantId,
       itemId: item.id,
       itemName: item.name,
@@ -386,17 +406,16 @@ export default function MenuBrowser({
   }
 
   function selectCategory(section: MenuSection | null) {
-    restorePositionRef.current = null;
     followActiveCategoryRef.current = true;
     setSelectedCategory(section?.id ?? "all");
-    setExpandedItem(null);
+    setDetailItem(null);
     setEditingLineId(null);
     setIsCartOpen(false);
     trackEvent({ name: "category_selected", restaurantId, sectionId: section?.id ?? null, sectionName: section?.name ?? "Full Menu" });
   }
 
-  function closeExpandedItem(item: MenuItem, section: MenuSection) {
-    setExpandedItem(null);
+  function closeDetail(item: MenuItem, section: MenuSection) {
+    setDetailItem(null);
     setEditingLineId(null);
     trackEvent({
       name: "menu_item_collapsed",
@@ -413,7 +432,7 @@ export default function MenuBrowser({
     if (cartLocked) return;
     if (editingLineId) cart.replaceLine(line);
     else cart.addLine(line);
-    setExpandedItem(null);
+    setDetailItem(null);
     setEditingLineId(null);
   }
 
@@ -425,11 +444,9 @@ export default function MenuBrowser({
     )) || sections.find((candidate) => candidate.items.some((item) => item.id === line.menuItemId));
     if (!section) return;
 
-    setIsCartOpen(false);
-    setSearchInput("");
-    setSearch("");
-    setSelectedCategory(section.id);
-    setExpandedItem({ sectionId: section.id, itemId: line.menuItemId });
+    detailOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    detailScrollYRef.current = window.scrollY;
+    setDetailItem({ sectionId: section.id, itemId: line.menuItemId });
     setEditingLineId(line.lineId);
   }
 
@@ -494,7 +511,7 @@ export default function MenuBrowser({
         </aside>
       )}
       <span ref={controlsAnchorRef} className={styles.controlsAnchor} aria-hidden="true" />
-      <div ref={controlsRef} className={`${styles.controls} ${compactControls ? styles.controlsCompact : ""} ${hasActiveSurface ? styles.controlsInactive : ""}`}>
+      <div ref={controlsRef} className={`${styles.controls} ${compactControls ? styles.controlsCompact : ""} ${isCartOpen ? styles.controlsInactive : ""}`}>
         <div className={styles.categoryNav}>
           {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}>‹</button>}
           <nav ref={categoriesRef} className={styles.categories} aria-label="Menu categories" onPointerDown={() => { followActiveCategoryRef.current = false; }} onTouchStart={() => { followActiveCategoryRef.current = false; }} onWheel={(event) => { if (event.deltaX) followActiveCategoryRef.current = false; }}>
@@ -530,15 +547,12 @@ export default function MenuBrowser({
             type="search"
             value={searchInput}
             onChange={(event) => {
-              restorePositionRef.current = null;
               setSearchInput(event.target.value);
-              setExpandedItem(null);
               setEditingLineId(null);
             }}
             placeholder="Search the menu..."
           />
           {searchInput && <button className={styles.searchClear} type="button" aria-label="Clear search" onClick={() => {
-            restorePositionRef.current = null;
             setSearchInput("");
             setSearch("");
             searchRef.current?.focus();
@@ -553,8 +567,7 @@ export default function MenuBrowser({
             const willOpen = !isCartOpen;
             setIsCartOpen(willOpen);
             if (willOpen) {
-              restorePositionRef.current = null;
-              setExpandedItem(null);
+              setDetailItem(null);
               setEditingLineId(null);
               cart.trackCartViewed();
             }
@@ -590,12 +603,11 @@ export default function MenuBrowser({
 
                 <div className={styles.grid}>
                   {section.items.map((item, index) => {
-                    const isExpanded = expandedItem?.sectionId === section.id && expandedItem.itemId === item.id;
+                    const isOpen = detailItem?.sectionId === section.id && detailItem.itemId === item.id;
                     const priorityImage = section === visibleSections[0] && index < 2;
-                    return <div className={styles.itemUnit} key={item.id}>
-                    <div className={styles.itemCard}>
+                    return <div className={styles.itemCard} key={item.id}>
                     <button
-                      className={`${styles.item} ${isExpanded ? styles.itemSelected : ""}`}
+                      className={`${styles.item} ${isOpen ? styles.itemSelected : ""}`}
                       ref={(node) => {
                         const key = `${section.id}:${item.id}`;
                         if (node) cardRefs.current.set(key, node);
@@ -604,7 +616,8 @@ export default function MenuBrowser({
                       type="button"
                       disabled={cartLocked}
                       onClick={() => openItem(item, section)}
-                      aria-expanded={isExpanded}
+                      aria-haspopup="dialog"
+                      aria-expanded={isOpen}
                     >
                       <MenuCardImage name={item.name} url={item.image_url} priority={priorityImage} />
                       <span className={styles.itemInfo}>
@@ -626,23 +639,6 @@ export default function MenuBrowser({
                       {heartCounts[item.id] ? <span>{heartCounts[item.id]}</span> : null}
                     </button>
                     {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={() => addFromCard(item, section)}><span aria-hidden="true">+</span></button>}
-                    </div>
-                    {isExpanded && !cartLocked && <div ref={detailRef} className={styles.detailSlot}>
-                      <OrderItemPanel
-                        key={`${item.id}:${editingLineId || "new"}`}
-                        item={item}
-                        sectionId={section.id}
-                        sectionName={section.name}
-                        currency={resolvedCurrency}
-                        editingLine={cart.lines.find((line) => line.lineId === editingLineId) || null}
-                        onSave={saveCartLine}
-                        onClose={() => closeExpandedItem(item, section)}
-                        liked={likedItemIds.includes(item.id)}
-                        heartCount={heartCounts[item.id] ?? 0}
-                        heartPending={pendingHearts.includes(item.id)}
-                        onHeart={() => void toggleHeart(item.id)}
-                      />
-                    </div>}
                     </div>;
                   })}
                 </div>
@@ -653,6 +649,47 @@ export default function MenuBrowser({
           <p className={styles.empty}>No dishes match your search.</p>
         )}
       </div>
+      {selectedDetail && !cartLocked && <dialog
+        ref={dialogRef}
+        className={styles.itemDialog}
+        aria-label={`Item details: ${selectedDetail.item.name}`}
+        onKeyDown={(event) => {
+          if (event.key !== "Tab") return;
+          const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])")]
+            .filter((element) => element.getClientRects().length > 0);
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeDetail(selectedDetail.item, selectedDetail.section);
+        }}
+      >
+        <div className={styles.dialogToolbar}>
+          <button data-detail-close className={styles.dialogClose} type="button" onClick={() => closeDetail(selectedDetail.item, selectedDetail.section)}>Close <span aria-hidden="true">×</span></button>
+        </div>
+        <OrderItemPanel
+          key={`${selectedDetail.item.id}:${editingLineId || "new"}`}
+          item={selectedDetail.item}
+          sectionId={selectedDetail.section.id}
+          sectionName={selectedDetail.section.name}
+          currency={resolvedCurrency}
+          editingLine={cart.lines.find((line) => line.lineId === editingLineId) || null}
+          onSave={saveCartLine}
+          liked={likedItemIds.includes(selectedDetail.item.id)}
+          heartCount={heartCounts[selectedDetail.item.id] ?? 0}
+          heartPending={pendingHearts.includes(selectedDetail.item.id)}
+          onHeart={() => void toggleHeart(selectedDetail.item.id)}
+        />
+      </dialog>}
     </main>
   );
 }
