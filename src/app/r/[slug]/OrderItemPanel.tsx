@@ -1,16 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   calculateUnitPriceCents,
   createModifierSelections,
   formatPrice,
-  getDefaultModifierOptionIds,
   getModifierValidationErrors,
   MAX_SPECIAL_INSTRUCTIONS_LENGTH,
 } from "@/lib/cart/cart";
 import type { CartLine } from "@/lib/cart/types";
 import type { MenuItem } from "./MenuBrowser";
+import { createMenuCartLine, type MenuItemDraft } from "./menu-card-ordering";
 import ModifierGroupFieldset from "./ModifierGroupFieldset";
 import QuantityControl from "./QuantityControl";
 import styles from "./menu-browser.module.css";
@@ -21,6 +21,9 @@ type OrderItemPanelProps = {
   sectionName: string;
   currency: string;
   editingLine: CartLine | null;
+  draft: MenuItemDraft;
+  onDraftChange: (draft: MenuItemDraft) => void;
+  inCartQuantity: number;
   onSave: (line: CartLine) => void;
   liked: boolean;
   heartCount: number;
@@ -34,27 +37,22 @@ export default function OrderItemPanel({
   sectionName,
   currency,
   editingLine,
+  draft,
+  onDraftChange,
+  inCartQuantity,
   onSave,
   liked,
   heartCount,
   heartPending,
   onHeart,
 }: OrderItemPanelProps) {
-  const [selectedOptionIds, setSelectedOptionIds] = useState(() => (
-    editingLine
-      ? new Set(editingLine.selectedModifiers.map((modifier) => modifier.modifierOptionId))
-      : getDefaultModifierOptionIds(item.modifierGroups)
-  ));
-  const [quantity, setQuantity] = useState(editingLine?.quantity || 1);
-  const [specialInstructions, setSpecialInstructions] = useState(editingLine?.specialInstructions || "");
-
   const validationErrors = useMemo(
-    () => getModifierValidationErrors(item.modifierGroups, selectedOptionIds),
-    [item.modifierGroups, selectedOptionIds],
+    () => getModifierValidationErrors(item.modifierGroups, draft.selectedOptionIds),
+    [item.modifierGroups, draft.selectedOptionIds],
   );
   const selectedModifiers = useMemo(
-    () => createModifierSelections(item.modifierGroups, selectedOptionIds),
-    [item.modifierGroups, selectedOptionIds],
+    () => createModifierSelections(item.modifierGroups, draft.selectedOptionIds),
+    [item.modifierGroups, draft.selectedOptionIds],
   );
   const unitPriceCents = calculateUnitPriceCents({
     basePriceCents: item.price_cents,
@@ -65,17 +63,7 @@ export default function OrderItemPanel({
     event.preventDefault();
     if (!item.is_orderable || validationErrors.size > 0) return;
 
-    onSave({
-      lineId: editingLine?.lineId || crypto.randomUUID(),
-      menuItemId: item.id,
-      sectionId,
-      sectionName,
-      itemName: item.name,
-      quantity,
-      basePriceCents: item.price_cents,
-      selectedModifiers,
-      specialInstructions: specialInstructions.trim(),
-    });
+    onSave(createMenuCartLine(item, { id: sectionId, name: sectionName }, editingLine?.lineId || crypto.randomUUID(), draft));
   }
 
   return (
@@ -94,11 +82,13 @@ export default function OrderItemPanel({
             <p className={styles.expandedLabel}>{item.is_orderable ? "Build your order" : "Menu item"}</p>
             <h3>{item.name}</h3>
             <p className={styles.itemPanelPrice}>{formatPrice(item.price_cents, currency)}</p>
+            {inCartQuantity > 0 && <p className={styles.detailCartStatus}>{inCartQuantity} in cart</p>}
           </div>
           <div className={styles.detailActions}>
             <button className={styles.detailHeartButton} type="button" aria-pressed={liked} aria-label={`${liked ? "Unlike" : "Like"} ${item.name}`} disabled={heartPending} onClick={onHeart}>
-              <span aria-hidden="true">{liked ? "♥" : "♡"}</span>{heartCount > 0 ? ` ${heartCount}` : ""}
+              <span aria-hidden="true">{liked ? "♥" : "♡"}</span>
             </button>
+            {heartCount > 0 && <span className={styles.detailHeartCount} aria-hidden="true">{heartCount}</span>}
           </div>
         </div>
         {item.description && <p className={styles.expandedDescription}>{item.description}</p>}
@@ -109,25 +99,25 @@ export default function OrderItemPanel({
                 key={group.id}
                 group={group}
                 currency={currency}
-                selectedOptionIds={selectedOptionIds}
-                onChange={setSelectedOptionIds}
+                selectedOptionIds={draft.selectedOptionIds}
+                onChange={(selectedOptionIds) => onDraftChange({ ...draft, selectedOptionIds })}
               />
             ))}
             <div className={styles.orderFields}>
               <label>
                 <span>Quantity</span>
-                <QuantityControl quantity={quantity} onChange={setQuantity} />
+                <QuantityControl quantity={draft.quantity} onChange={(quantity) => onDraftChange({ ...draft, quantity })} />
               </label>
               <label>
                 <span>Special instructions <small>Optional</small></span>
                 <textarea
-                  value={specialInstructions}
+                  value={draft.specialInstructions}
                   maxLength={MAX_SPECIAL_INSTRUCTIONS_LENGTH}
                   rows={3}
-                  onChange={(event) => setSpecialInstructions(event.target.value)}
+                  onChange={(event) => onDraftChange({ ...draft, specialInstructions: event.target.value })}
                   placeholder="Preparation requests only; do not include contact or payment information."
                 />
-                <small>{specialInstructions.length}/{MAX_SPECIAL_INSTRUCTIONS_LENGTH}</small>
+                <small>{draft.specialInstructions.length}/{MAX_SPECIAL_INSTRUCTIONS_LENGTH}</small>
               </label>
             </div>
             {validationErrors.size > 0 && (
@@ -138,7 +128,7 @@ export default function OrderItemPanel({
               type="submit"
               disabled={validationErrors.size > 0}
             >
-              {editingLine ? "Update Cart" : "Add to Cart"} · {formatPrice(unitPriceCents * quantity, currency)}
+              {editingLine ? "Update Cart" : "Add to Cart"} · {formatPrice(unitPriceCents * draft.quantity, currency)}
             </button>
           </>
         ) : (

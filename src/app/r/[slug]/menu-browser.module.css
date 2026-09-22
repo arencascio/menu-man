@@ -82,18 +82,20 @@
 .itemCard:has(.itemSelected) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .itemSelected { background: color-mix(in srgb, var(--accent) 3%, var(--card-bg)); }
 .itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 56px; }
-.cardAddButton { position: absolute; right: 9px; bottom: 9px; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--accent); border-radius: 999px; color: var(--card-bg); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 16%, transparent); cursor: pointer; font: inherit; font-size: 27px; font-weight: 500; line-height: 1; transition: transform .15s ease, filter .15s ease; }
-.cardAddButton:hover { filter: brightness(.9); transform: translateY(-1px); }
-.cardAddButton:active { transform: scale(.94); }
+.cardAddButton { position: absolute; right: 9px; bottom: 9px; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--accent); border-radius: 999px; color: var(--card-bg); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 16%, transparent); cursor: pointer; font: inherit; font-size: 27px; font-weight: 500; line-height: 1; transition: background-color .15s ease, box-shadow .15s ease; }
+.cardAddButton:hover { background: color-mix(in srgb, var(--accent) 88%, #000); box-shadow: 0 3px 10px color-mix(in srgb, var(--ink) 22%, transparent); }
+.cardAddButton:active { background: color-mix(in srgb, var(--accent) 78%, #000); }
 .cardAddButton:disabled { cursor: not-allowed; color: #555; background: #dedede; }
 .cardAddButton:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-.heartButton { position: absolute; top: 8px; right: 8px; display: flex; align-items: center; gap: 4px; min-width: 34px; min-height: 34px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; color: var(--accent); background: var(--card-bg); cursor: pointer; font: inherit; font-weight: 700; box-shadow: 0 1px 5px #0002; }
+.heartButton { position: absolute; top: 8px; right: 8px; display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 50%; padding: 0; color: var(--accent); background: var(--card-bg); cursor: pointer; font: inherit; font-weight: 700; box-shadow: 0 1px 5px #0002; }
 .heartButton span:first-child { font-size: 23px; line-height: 1; }
+.heartCount { position: absolute; top: 39px; right: 7px; display: grid; min-width: 18px; height: 18px; place-items: center; border-radius: 999px; color: var(--card-bg); background: var(--accent); font-size: 10px; font-weight: 800; }
 .heartButton:focus-visible { outline: 3px solid var(--theme-accent, #b70000); outline-offset: 2px; }
 .heartButton:disabled { opacity: .6; cursor: wait; }
-.detailActions { display: flex; align-items: flex-start; gap: 8px; }
-.detailHeartButton { border: 1px solid #bbb; border-radius: 999px; padding: 5px 10px; color: #a11; background: #fff; cursor: pointer; font: inherit; font-weight: 700; white-space: nowrap; }
+.detailActions { position: relative; display: flex; align-items: flex-start; gap: 8px; padding-right: 4px; }
+.detailHeartButton { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid #bbb; border-radius: 50%; padding: 0; color: #a11; background: #fff; cursor: pointer; font: inherit; font-weight: 700; }
 .detailHeartButton span { font-size: 22px; vertical-align: middle; }
+.detailHeartCount { position: absolute; top: 32px; right: -1px; display: grid; min-width: 18px; height: 18px; place-items: center; border-radius: 999px; color: #fff; background: #a11; font-size: 10px; font-weight: 800; }
 .detailHeartButton:focus-visible { outline: 3px solid var(--theme-accent, #b70000); outline-offset: 2px; }
 .item:hover { background: color-mix(in srgb, var(--accent) 3%, var(--card-bg)); }
 .item:disabled { cursor: not-allowed; opacity: .62; box-shadow: none; }
@@ -105,18 +107,30 @@
 .price { color: var(--accent); font-size: 15px; font-weight: 800; }
 .itemDescription { display: -webkit-box; min-height: 3.9em; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
 .cardAvailability { margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.cardCartStatus, .detailCartStatus { color: var(--accent); font-size: 12px; font-weight: 800; }
+.cardCartStatus { margin-top: auto; padding-top: 5px; }
+.detailCartStatus { margin: 5px 0 0; }
 
 .cartSlot { grid-column: 1 / -1; min-width: 0; scroll-margin-top: calc(var(--menu-header-height, 84px) + 12px); }
 
 .itemDialog { box-sizing: border-box; width: min(960px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--card-bg); box-shadow: 0 24px 80px #0005; font-family: var(--theme-body-font, Arial, Helvetica, sans-serif); }
 .itemDialog::backdrop { background: #0009; }
-.dialogToolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--card-bg); }
+.dialogToolbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--card-bg); }
+.dialogShare { min-height: 40px; border: 1px solid var(--line); border-radius: 8px; padding: 0 13px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
+.dialogShare:hover { border-color: var(--accent); color: var(--accent); }
+.dialogShare:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.shareStatus { margin-right: auto; color: var(--muted); font-size: 12px; font-weight: 700; }
 .dialogClose { min-width: 76px; min-height: 40px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
 .dialogClose span { margin-left: 4px; font-size: 20px; vertical-align: -2px; }
 .dialogClose:hover { border-color: var(--accent); color: var(--accent); }
 .dialogClose:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 
 .expandedItem { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(320px, 1.25fr); min-width: 0; background: var(--card-bg); }
+.quickChoicePanel { display: grid; gap: 13px; width: min(100%, 520px); box-sizing: border-box; margin: 0 auto; padding: 22px 24px 26px; }
+.quickChoicePanel h3 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: 25px; line-height: 1.1; }
+.quickChoicePanel .itemPanelPrice { margin: -6px 0 0; }
+.quickCustomize { min-height: 42px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-weight: 800; }
+.quickCustomize:hover { border-color: var(--accent); color: var(--accent); }
 .expandedMedia { display: grid; min-height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: var(--theme-primary, #5b0000); }
 .expandedMedia img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .expandedPlaceholder { color: var(--theme-surface, #fff); font-size: 5rem; }
@@ -295,13 +309,15 @@
   .cardAvailability { font-size: 10px; }
   .cardAddButton { right: 7px; bottom: 7px; width: 42px; height: 42px; font-size: 26px; }
   .itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 52px; }
-  .heartButton { top: 6px; right: 6px; min-width: 31px; min-height: 31px; padding: 3px 7px; }
+  .heartButton { top: 6px; right: 6px; width: 34px; height: 34px; }
+  .heartCount { top: 36px; right: 4px; }
   .heartButton span:first-child { font-size: 20px; }
   .itemDialog { width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }
   .expandedItem { display: block; min-height: 0; }
   .expandedMedia { min-height: 180px; max-height: 240px; border-right: 0; border-bottom: 1px solid var(--line); }
   .expandedMedia img { height: 100%; object-fit: cover; }
   .orderForm { gap: 12px; padding: 16px; }
+  .quickChoicePanel { padding: 18px 16px 24px; }
   .orderFormHeader h3 { font-size: 22px; }
   .orderFields { grid-template-columns: 1fr; }
   .cartPanel { padding: 16px; }
