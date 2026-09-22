@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { formatPrice } from "@/lib/cart/cart";
@@ -66,6 +66,9 @@ export default function MenuBrowser({
 }: MenuBrowserProps) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [visibleCategory, setVisibleCategory] = useState("all");
+  const [compactControls, setCompactControls] = useState(false);
+  const [categoryEdges, setCategoryEdges] = useState({ left: false, right: false });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [expandedItem, setExpandedItem] = useState<{ sectionId: string; itemId: string } | null>(null);
@@ -74,6 +77,13 @@ export default function MenuBrowser({
   const [headerHeight, setHeaderHeight] = useState(84);
   const [controlsHeight, setControlsHeight] = useState(120);
   const controlsRef = useRef<HTMLDivElement>(null);
+  const controlsAnchorRef = useRef<HTMLSpanElement>(null);
+  const categoriesRef = useRef<HTMLElement>(null);
+  const categoryButtonsRef = useRef(new Map<string, HTMLButtonElement>());
+  const followActiveCategoryRef = useRef(true);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const restorePositionRef = useRef<{ sectionId: string; itemId: string; top: number; scrollY: number } | null>(null);
+  const searchId = useId();
   const detailRef = useRef<HTMLDivElement>(null);
   const cartRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -90,6 +100,21 @@ export default function MenuBrowser({
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
   const cartLocked = Boolean(activePayment?.locksCart);
   const hasActiveSurface = Boolean(expandedItem || isCartOpen);
+  const activeCategory = selectedCategory === "all" ? visibleCategory : selectedCategory;
+  const activeCategoryRef = useRef(activeCategory);
+  useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
+  const ensureActiveCategoryVisible = useCallback((categoryId: string, behavior: ScrollBehavior) => {
+    const categories = categoriesRef.current;
+    const button = categoryButtonsRef.current.get(categoryId);
+    if (!categories || !button) return;
+    const strip = categories.getBoundingClientRect();
+    const active = button.getBoundingClientRect();
+    const inset = window.innerWidth > 760 ? 42 : 12;
+    const delta = active.left < strip.left + inset
+      ? active.left - strip.left - inset
+      : active.right > strip.right - inset ? active.right - strip.right + inset : 0;
+    if (delta) categories.scrollBy({ left: delta, behavior });
+  }, []);
 
   useEffect(() => {
     const header = document.querySelector<HTMLElement>("[data-restaurant-header]");
@@ -106,12 +131,64 @@ export default function MenuBrowser({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const controls = controlsRef.current;
+    const anchor = controlsAnchorRef.current;
+    const header = document.querySelector<HTMLElement>("[data-restaurant-header]");
+    if (!controls || !anchor) return;
+    const controlsTop = anchor.getBoundingClientRect().top + window.scrollY;
+    const compactAt = Math.max(0, controlsTop + controls.offsetHeight - (header?.offsetHeight ?? 0) - 24);
+    const update = () => setCompactControls(window.scrollY > compactAt);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
+  useEffect(() => {
+    const categories = categoriesRef.current;
+    if (!categories) return;
+    const update = () => {
+      const lastScroll = categories.scrollWidth - categories.clientWidth;
+      const left = categories.scrollLeft > 2;
+      const right = categories.scrollLeft < lastScroll - 2;
+      setCategoryEdges((current) => current.left === left && current.right === right ? current : { left, right });
+      if (followActiveCategoryRef.current && categories.clientWidth > 0) {
+        ensureActiveCategoryVisible(activeCategoryRef.current, "auto");
+      }
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(categories);
+    window.addEventListener("resize", update);
+    categories.addEventListener("scroll", update, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      categories.removeEventListener("scroll", update);
+    };
+  }, [sections, ensureActiveCategoryVisible]);
+
+  useEffect(() => {
+    ensureActiveCategoryVisible(activeCategory, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+  }, [activeCategory, compactControls, ensureActiveCategoryVisible]);
+
   useLayoutEffect(() => {
     const target = isCartOpen ? cartRef.current : expandedItem ? detailRef.current : null;
     if (!target) return;
     const frame = requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
     return () => cancelAnimationFrame(frame);
   }, [expandedItem, isCartOpen]);
+
+  useLayoutEffect(() => {
+    if (expandedItem || !restorePositionRef.current) return;
+    const origin = restorePositionRef.current;
+    restorePositionRef.current = null;
+    const card = cardRefs.current.get(`${origin.sectionId}:${origin.itemId}`);
+    if (!card) return;
+    window.scrollTo({ top: origin.scrollY, behavior: "instant" });
+    window.scrollBy({ top: card.getBoundingClientRect().top - origin.top, behavior: "instant" });
+    card.focus({ preventScroll: true });
+  }, [expandedItem]);
 
   useEffect(() => {
     let active = true;
@@ -233,7 +310,7 @@ export default function MenuBrowser({
     return () => window.clearTimeout(timeout);
   }, [restaurantId, searchInput, sections, selectedCategory]);
 
-  const visibleSections = sections
+  const visibleSections = useMemo(() => sections
     .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
     .map((section) => ({
       ...section,
@@ -245,10 +322,46 @@ export default function MenuBrowser({
           .includes(search);
       }),
     }))
-    .filter((section) => section.items.length > 0);
+    .filter((section) => section.items.length > 0), [sections, selectedCategory, search]);
+  const visibleItemCount = visibleSections.reduce((total, section) => total + section.items.length, 0);
+  const showResultCount = Boolean(search || selectedCategory !== "all");
+
+  useEffect(() => {
+    if (selectedCategory !== "all" || hasActiveSurface) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const cutoff = headerHeight + (controlsRef.current?.getBoundingClientRect().height || controlsHeight) + 20;
+      let current = "all";
+      for (const section of visibleSections) {
+        const heading = document.getElementById(getMenuSectionAnchorId(section.id));
+        if (heading && heading.getBoundingClientRect().top <= cutoff) current = section.id;
+      }
+      setVisibleCategory(current);
+      ensureActiveCategoryVisible(current, "auto");
+    };
+    const schedule = () => {
+      followActiveCategoryRef.current = true;
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [selectedCategory, hasActiveSurface, headerHeight, controlsHeight, visibleSections, compactControls, ensureActiveCategoryVisible]);
+
+  function rememberItemPosition(sectionId: string, itemId: string) {
+    const card = cardRefs.current.get(`${sectionId}:${itemId}`);
+    if (card) restorePositionRef.current = { sectionId, itemId, top: card.getBoundingClientRect().top, scrollY: window.scrollY };
+  }
 
   function openItem(item: MenuItem, section: MenuSection) {
     const isExpanded = expandedItem?.itemId === item.id && expandedItem.sectionId === section.id;
+    if (!isExpanded) rememberItemPosition(section.id, item.id);
     setExpandedItem(isExpanded ? null : { sectionId: section.id, itemId: item.id });
     setIsCartOpen(false);
     setEditingLineId(null);
@@ -273,6 +386,8 @@ export default function MenuBrowser({
   }
 
   function selectCategory(section: MenuSection | null) {
+    restorePositionRef.current = null;
+    followActiveCategoryRef.current = true;
     setSelectedCategory(section?.id ?? "all");
     setExpandedItem(null);
     setEditingLineId(null);
@@ -283,7 +398,6 @@ export default function MenuBrowser({
   function closeExpandedItem(item: MenuItem, section: MenuSection) {
     setExpandedItem(null);
     setEditingLineId(null);
-    requestAnimationFrame(() => cardRefs.current.get(`${section.id}:${item.id}`)?.focus({ preventScroll: true }));
     trackEvent({
       name: "menu_item_collapsed",
       restaurantId,
@@ -346,6 +460,16 @@ export default function MenuBrowser({
     router.push(`/r/${encodeURIComponent(restaurantSlug)}/checkout`);
   }
 
+  function scrollCategories(direction: -1 | 1) {
+    const categories = categoriesRef.current;
+    if (!categories) return;
+    followActiveCategoryRef.current = false;
+    categories.scrollBy({
+      left: direction * Math.max(180, Math.round(categories.clientWidth * .65)),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }
+
   return (
     <main className={styles.page} aria-label={ariaLabel} style={{
       "--menu-header-height": `${headerHeight}px`,
@@ -369,41 +493,57 @@ export default function MenuBrowser({
           </button>
         </aside>
       )}
-      <div ref={controlsRef} className={`${styles.controls} ${hasActiveSurface ? styles.controlsInactive : ""}`}>
-        <nav className={styles.categories} aria-label="Menu categories">
+      <span ref={controlsAnchorRef} className={styles.controlsAnchor} aria-hidden="true" />
+      <div ref={controlsRef} className={`${styles.controls} ${compactControls ? styles.controlsCompact : ""} ${hasActiveSurface ? styles.controlsInactive : ""}`}>
+        <div className={styles.categoryNav}>
+          {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}>‹</button>}
+          <nav ref={categoriesRef} className={styles.categories} aria-label="Menu categories" onPointerDown={() => { followActiveCategoryRef.current = false; }} onTouchStart={() => { followActiveCategoryRef.current = false; }} onWheel={(event) => { if (event.deltaX) followActiveCategoryRef.current = false; }}>
           <button
-            className={selectedCategory === "all" ? styles.categoryActive : styles.category}
+            className={activeCategory === "all" ? styles.categoryActive : styles.category}
+            ref={(node) => { if (node) categoryButtonsRef.current.set("all", node); else categoryButtonsRef.current.delete("all"); }}
             type="button"
             onClick={() => selectCategory(null)}
-            aria-pressed={selectedCategory === "all"}
+            aria-pressed={activeCategory === "all"}
           >
             Full Menu
           </button>
           {sections.map((section) => (
             <button
-              className={selectedCategory === section.id ? styles.categoryActive : styles.category}
+              className={activeCategory === section.id ? styles.categoryActive : styles.category}
+              ref={(node) => { if (node) categoryButtonsRef.current.set(section.id, node); else categoryButtonsRef.current.delete(section.id); }}
               key={section.id}
               type="button"
               onClick={() => selectCategory(section)}
-              aria-pressed={selectedCategory === section.id}
+              aria-pressed={activeCategory === section.id}
             >
               {section.name}
             </button>
           ))}
-        </nav>
-        <label className={styles.search}>
-          <span className={styles.visuallyHidden}>Search menu</span>
+          </nav>
+          {categoryEdges.right && <button className={`${styles.categoryArrow} ${styles.categoryArrowRight}`} type="button" aria-label="Scroll categories right" onClick={() => scrollCategories(1)}>›</button>}
+        </div>
+        <div className={styles.search}>
+          <label className={styles.visuallyHidden} htmlFor={searchId}>Search menu</label>
           <input
+            ref={searchRef}
+            id={searchId}
             type="search"
             value={searchInput}
             onChange={(event) => {
+              restorePositionRef.current = null;
               setSearchInput(event.target.value);
               setExpandedItem(null);
               setEditingLineId(null);
             }}
             placeholder="Search the menu..."
           />
-        </label>
+          {searchInput && <button className={styles.searchClear} type="button" aria-label="Clear search" onClick={() => {
+            restorePositionRef.current = null;
+            setSearchInput("");
+            setSearch("");
+            searchRef.current?.focus();
+          }}>×</button>}
+        </div>
         <button
           className={styles.cartButton}
           type="button"
@@ -413,6 +553,7 @@ export default function MenuBrowser({
             const willOpen = !isCartOpen;
             setIsCartOpen(willOpen);
             if (willOpen) {
+              restorePositionRef.current = null;
               setExpandedItem(null);
               setEditingLineId(null);
               cart.trackCartViewed();
@@ -421,6 +562,7 @@ export default function MenuBrowser({
         >
           Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}
         </button>
+        {showResultCount && <p className={styles.resultCount} aria-live="polite">{visibleItemCount === 0 ? "No results" : `${visibleItemCount} ${visibleItemCount === 1 ? "result" : "results"}`}</p>}
       </div>
 
       <div className={styles.menu}>
@@ -483,7 +625,7 @@ export default function MenuBrowser({
                       <span aria-hidden="true">{likedItemIds.includes(item.id) ? "♥" : "♡"}</span>
                       {heartCounts[item.id] ? <span>{heartCounts[item.id]}</span> : null}
                     </button>
-                    {item.is_orderable && <button className={styles.cardAddButton} type="button" disabled={cartLocked} onClick={() => addFromCard(item, section)}>Add to Cart</button>}
+                    {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={() => addFromCard(item, section)}><span aria-hidden="true">+</span></button>}
                     </div>
                     {isExpanded && !cartLocked && <div ref={detailRef} className={styles.detailSlot}>
                       <OrderItemPanel

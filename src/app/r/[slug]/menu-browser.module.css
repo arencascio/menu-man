@@ -14,6 +14,7 @@
   padding: 0 0 72px;
 }
 
+.controlsAnchor { display: block; height: 0; }
 .controls {
   position: sticky;
   top: var(--menu-header-height, 84px);
@@ -30,16 +31,31 @@
   box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 7%, transparent);
 }
 .controlsInactive { display: none; }
+.controlsCompact { gap: 6px; padding: 7px 9px; border-radius: 9px; }
+.controlsCompact .category, .controlsCompact .categoryActive { padding: 6px 11px; }
+.controlsCompact .search input, .controlsCompact .cartButton { min-height: 36px; padding-top: 7px; padding-bottom: 7px; }
 
-.categories { grid-column: 1 / -1; display: flex; flex-wrap: nowrap; gap: 7px; min-width: 0; }
+.categoryNav { position: relative; grid-column: 1 / -1; min-width: 0; }
+.categories { display: flex; flex-wrap: nowrap; gap: 7px; min-width: 0; }
+.categoryArrow { position: absolute; top: 0; bottom: 0; z-index: 1; display: grid; width: 34px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--card-bg); box-shadow: 0 1px 8px color-mix(in srgb, var(--ink) 12%, transparent); cursor: pointer; font: inherit; font-size: 26px; line-height: 1; }
+.categoryArrow:hover { color: var(--accent); border-color: var(--accent); }
+.categoryArrowLeft { left: 0; }
+.categoryArrowRight { right: 0; }
+.categoryArrow:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .category, .categoryActive { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; transition: background-color .15s ease, border-color .15s ease; }
 .category:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card-bg)); }
 .categoryActive { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--card-bg)); }
-.search input { box-sizing: border-box; width: min(100%, 440px); padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--ink); background: var(--card-bg); font: inherit; font-size: 15px; }
+.search { position: relative; width: min(100%, 440px); }
+.search input { box-sizing: border-box; width: 100%; min-height: 42px; padding: 10px 48px 10px 13px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--ink); background: var(--card-bg); font: inherit; font-size: 15px; }
+.search input::-webkit-search-cancel-button { display: none; }
+.searchClear { position: absolute; top: 50%; right: 2px; display: grid; width: 40px; height: 40px; transform: translateY(-50%); place-items: center; border: 0; border-radius: 6px; color: var(--muted); background: transparent; cursor: pointer; font: inherit; font-size: 22px; line-height: 1; }
+.searchClear:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--card-bg)); }
+.searchClear:focus-visible { outline: 3px solid var(--accent); outline-offset: -2px; }
 .search input:focus-visible, .category:focus-visible, .categoryActive:focus-visible, .item:focus-visible, .cartButton:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .cartButton { border: 1px solid var(--accent); border-radius: 8px; padding: 10px 15px; color: var(--card-bg); background: var(--accent); cursor: pointer; font: inherit; font-size: 14px; font-weight: 800; white-space: nowrap; }
 .cartButton:hover { filter: brightness(.92); }
 .cartButton:disabled { color: #555; background: #dedede; cursor: not-allowed; opacity: 1; }
+.resultCount { grid-column: 1 / -1; margin: -1px 2px 1px; color: var(--muted); font-size: 12px; font-weight: 700; }
 
 .activePaymentBanner { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 16px; padding: 16px 18px; border: 2px solid #111; border-radius: 12px; background: #fff8cf; }
 .activePaymentBanner div { display: grid; gap: 4px; }
@@ -66,10 +82,12 @@
 .itemCard:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 8%, transparent); }
 .itemCard:has(.itemSelected) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .itemSelected { background: color-mix(in srgb, var(--accent) 3%, var(--card-bg)); }
-.cardAddButton { width: 100%; border: 0; border-top: 1px solid var(--line); padding: 11px 14px; color: var(--accent); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
-.cardAddButton:hover { color: var(--card-bg); background: var(--accent); }
+.itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 56px; }
+.cardAddButton { position: absolute; right: 9px; bottom: 9px; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--accent); border-radius: 999px; color: var(--card-bg); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 16%, transparent); cursor: pointer; font: inherit; font-size: 27px; font-weight: 500; line-height: 1; transition: transform .15s ease, filter .15s ease; }
+.cardAddButton:hover { filter: brightness(.9); transform: translateY(-1px); }
+.cardAddButton:active { transform: scale(.94); }
 .cardAddButton:disabled { cursor: not-allowed; color: #555; background: #dedede; }
-.cardAddButton:focus-visible { outline: 3px solid #111; outline-offset: -3px; }
+.cardAddButton:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .heartButton { position: absolute; top: 8px; right: 8px; display: flex; align-items: center; gap: 4px; min-width: 34px; min-height: 34px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 8px; color: var(--accent); background: var(--card-bg); cursor: pointer; font: inherit; font-weight: 700; box-shadow: 0 1px 5px #0002; }
 .heartButton span:first-child { font-size: 23px; line-height: 1; }
 .heartButton:focus-visible { outline: 3px solid var(--theme-accent, #b70000); outline-offset: 2px; }
@@ -248,8 +266,11 @@
   .categories { flex-wrap: nowrap; padding-bottom: 2px; }
   .category, .categoryActive { flex: 0 0 auto; padding: 7px 11px; font-size: 12px; }
   .search input { width: 100%; }
-  .search { display: block; }
+  .search { display: block; width: 100%; }
   .controls { grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin-bottom: 14px; padding: 8px; border-radius: 9px; }
+  .controlsCompact { gap: 5px; padding: 6px; }
+  .controlsCompact .category, .controlsCompact .categoryActive { padding: 6px 10px; }
+  .categoryArrow { display: none; }
   .search { min-width: 0; }
   .cartButton { padding: 9px 10px; font-size: 12px; }
   .activePaymentBanner { align-items: stretch; flex-direction: column; }
@@ -266,7 +287,8 @@
   .price { font-size: 13px; }
   .itemDescription { font-size: 11px; }
   .cardAvailability { font-size: 10px; }
-  .cardAddButton { padding: 9px 6px; font-size: 12px; }
+  .cardAddButton { right: 7px; bottom: 7px; width: 42px; height: 42px; font-size: 26px; }
+  .itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 52px; }
   .heartButton { top: 6px; right: 6px; min-width: 31px; min-height: 31px; padding: 3px 7px; }
   .heartButton span:first-child { font-size: 20px; }
   .expandedItem { display: block; min-height: 0; max-height: calc(100dvh - var(--menu-header-height, 84px) - 24px); }
@@ -285,5 +307,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .item, .itemCard, .category, .categoryActive { transition: none; }
+  .item, .itemCard, .category, .categoryActive, .cardAddButton { transition: none; }
 }
