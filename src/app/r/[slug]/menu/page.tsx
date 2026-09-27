@@ -7,6 +7,7 @@ import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
 import { composeMenuSections } from "@/lib/menu-engagement/sections";
 import MenuBrowser from "../MenuBrowser";
+import OrderingStatus from "../OrderingStatus";
 import PageViewTracker from "../PageViewTracker";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
 import { getRestaurantLocationLinks } from "../restaurant-location-data";
@@ -142,8 +143,14 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
   return <RestaurantShell restaurant={shellRestaurant}>
     <div className={styles.menuPage}>
       <div className={styles.heading}>
-        <p>Explore the menu</p>
-        <h1>{restaurant.name} menu</h1>
+        <div>
+          <p>Explore the menu</p>
+          <h1>{restaurant.name} menu</h1>
+        </div>
+        <OrderingStatus
+          hasDelivery={deliveryOptions.length > 0}
+          restaurantSlug={restaurant.slug}
+        />
       </div>
       <MenuBrowser
         restaurantId={restaurant.id}
