@@ -92,6 +92,8 @@ export default function MenuBrowser({
   const [shareStatus, setShareStatus] = useState("");
   const searchId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const sectionDialogRef = useRef<HTMLDialogElement>(null);
+  const sectionDialogOpenerRef = useRef<HTMLElement | null>(null);
   const cartRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
@@ -135,7 +137,7 @@ export default function MenuBrowser({
     if (!categories || !button) return;
     const strip = categories.getBoundingClientRect();
     const active = button.getBoundingClientRect();
-    const inset = window.innerWidth > 760 ? 42 : 12;
+    const inset = window.innerWidth > 760 ? 42 : 38;
     const delta = active.left < strip.left + inset
       ? active.left - strip.left - inset
       : active.right > strip.right - inset ? active.right - strip.right + inset : 0;
@@ -631,6 +633,23 @@ export default function MenuBrowser({
     });
   }
 
+  function openSectionList(opener: HTMLElement) {
+    const dialog = sectionDialogRef.current;
+    if (!dialog) return;
+    sectionDialogOpenerRef.current = opener;
+    dialog.showModal();
+    dialog.querySelector<HTMLButtonElement>("[data-section-list-close]")?.focus();
+  }
+
+  function closeSectionList() {
+    sectionDialogRef.current?.close();
+  }
+
+  function selectSectionFromList(section: MenuSection | null) {
+    selectCategory(section);
+    closeSectionList();
+  }
+
   return (
     <main className={styles.page} aria-label={ariaLabel} style={{
       "--menu-header-height": `${headerHeight}px`,
@@ -657,6 +676,7 @@ export default function MenuBrowser({
       <span ref={controlsAnchorRef} className={styles.controlsAnchor} aria-hidden="true" />
       <div ref={controlsRef} className={`${styles.controls} ${compactControls ? styles.controlsCompact : ""} ${isCartOpen ? styles.controlsInactive : ""}`}>
         <div className={styles.categoryNav}>
+          <div className={`${styles.categoryStrip} ${categoryEdges.left ? styles.categoryStripLeftEdge : ""} ${categoryEdges.right ? styles.categoryStripRightEdge : ""}`}>
           {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}>‹</button>}
           <nav ref={categoriesRef} className={styles.categories} aria-label="Menu categories" onPointerDown={() => { followActiveCategoryRef.current = false; }} onTouchStart={() => { followActiveCategoryRef.current = false; }} onWheel={(event) => { if (event.deltaX) followActiveCategoryRef.current = false; }}>
           <button
@@ -682,6 +702,16 @@ export default function MenuBrowser({
           ))}
           </nav>
           {categoryEdges.right && <button className={`${styles.categoryArrow} ${styles.categoryArrowRight}`} type="button" aria-label="Scroll categories right" onClick={() => scrollCategories(1)}>›</button>}
+          </div>
+          <button
+            className={styles.sectionListButton}
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Browse all menu sections"
+            onClick={(event) => openSectionList(event.currentTarget)}
+          >
+            <span aria-hidden="true">☰</span><span className={styles.sectionListLabel}>Sections</span>
+          </button>
         </div>
         <div className={styles.search}>
           <label className={styles.visuallyHidden} htmlFor={searchId}>Search menu</label>
@@ -722,6 +752,33 @@ export default function MenuBrowser({
         {showResultCount && <p className={styles.resultCount} aria-live="polite">{visibleItemCount === 0 ? "No results" : `${visibleItemCount} ${visibleItemCount === 1 ? "result" : "results"}`}</p>}
       </div>
 
+      <dialog
+        ref={sectionDialogRef}
+        className={styles.sectionDialog}
+        aria-labelledby="menu-section-list-title"
+        onClick={(event) => { if (event.target === event.currentTarget) closeSectionList(); }}
+        onClose={() => {
+          const opener = sectionDialogOpenerRef.current;
+          if (opener?.isConnected) opener.focus({ preventScroll: true });
+          sectionDialogOpenerRef.current = null;
+        }}
+      >
+        <div className={styles.sectionDialogPanel}>
+          <div className={styles.sectionDialogHeader}>
+            <div>
+              <p>Menu navigation</p>
+              <h2 id="menu-section-list-title">All sections</h2>
+            </div>
+            <button data-section-list-close className={styles.sectionDialogClose} type="button" onClick={closeSectionList} aria-label="Close all sections">Ã—</button>
+          </div>
+          <nav className={styles.sectionList} aria-label="All menu sections">
+            <button type="button" className={activeCategory === "all" ? styles.sectionListActive : ""} aria-current={activeCategory === "all" ? "page" : undefined} onClick={() => selectSectionFromList(null)}>Full Menu</button>
+            {menuSections.map((section) => (
+              <button key={section.id} type="button" className={activeCategory === section.id ? styles.sectionListActive : ""} aria-current={activeCategory === section.id ? "page" : undefined} onClick={() => selectSectionFromList(section)}>{section.name}</button>
+            ))}
+          </nav>
+        </div>
+      </dialog>
       <div className={styles.menu}>
         {isCartOpen && <div ref={cartRef} className={styles.cartSlot}>
           <CartPanel

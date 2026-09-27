@@ -35,9 +35,14 @@
 .controlsCompact .category, .controlsCompact .categoryActive { padding: 6px 11px; }
 .controlsCompact .search input, .controlsCompact .cartButton { min-height: 36px; padding-top: 7px; padding-bottom: 7px; }
 
-.categoryNav { position: relative; grid-column: 1 / -1; min-width: 0; }
+.categoryNav { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-column: 1 / -1; align-items: stretch; gap: 7px; min-width: 0; }
+.categoryStrip { position: relative; min-width: 0; }
 .categories { display: flex; flex-wrap: nowrap; gap: 7px; min-width: 0; }
+.categoryStripLeftEdge::before, .categoryStripRightEdge::after { position: absolute; top: 0; bottom: 0; z-index: 1; width: 42px; content: ""; pointer-events: none; }
+.categoryStripLeftEdge::before { left: 0; background: linear-gradient(90deg, var(--card-bg) 12%, color-mix(in srgb, var(--card-bg) 82%, transparent) 58%, transparent); }
+.categoryStripRightEdge::after { right: 0; background: linear-gradient(270deg, var(--card-bg) 12%, color-mix(in srgb, var(--card-bg) 82%, transparent) 58%, transparent); }
 .categoryArrow { position: absolute; top: 0; bottom: 0; z-index: 1; display: grid; width: 34px; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--card-bg); box-shadow: 0 1px 8px color-mix(in srgb, var(--ink) 12%, transparent); cursor: pointer; font: inherit; font-size: 26px; line-height: 1; }
+.categoryArrow { z-index: 2; }
 .categoryArrow:hover { color: var(--accent); border-color: var(--accent); }
 .categoryArrowLeft { left: 0; }
 .categoryArrowRight { right: 0; }
@@ -45,6 +50,10 @@
 .category, .categoryActive { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; transition: background-color .15s ease, border-color .15s ease; }
 .category:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card-bg)); }
 .categoryActive { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--card-bg)); }
+.sectionListButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.sectionListButton > span:first-child { font-size: 16px; line-height: 1; }
+.sectionListButton:hover { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card-bg)); }
+.sectionListButton:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .search { position: relative; width: min(100%, 440px); }
 .search input { box-sizing: border-box; width: 100%; min-height: 42px; padding: 10px 48px 10px 13px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--ink); background: var(--card-bg); font: inherit; font-size: 15px; }
 .search input::-webkit-search-cancel-button { display: none; }
@@ -66,6 +75,20 @@
 
 .categories { overflow-x: auto; scrollbar-width: none; }
 .categories::-webkit-scrollbar { display: none; }
+
+.sectionDialog { box-sizing: border-box; width: min(390px, calc(100vw - 24px)); max-height: min(560px, calc(100dvh - 24px)); margin: auto; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--theme-radius, 12px); color: var(--ink); background: var(--card-bg); box-shadow: 0 24px 80px color-mix(in srgb, var(--ink) 38%, transparent); font-family: var(--theme-body-font, Arial, Helvetica, sans-serif); }
+.sectionDialog::backdrop { background: color-mix(in srgb, var(--ink) 55%, transparent); }
+.sectionDialogPanel { display: grid; max-height: inherit; }
+.sectionDialogHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 15px 16px 12px; border-bottom: 1px solid var(--line); }
+.sectionDialogHeader p { margin: 0 0 3px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.sectionDialogHeader h2 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: 22px; letter-spacing: -.025em; }
+.sectionDialogClose { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 0; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 24px; line-height: 1; }
+.sectionDialogClose:hover { color: var(--accent); border-color: var(--accent); }
+.sectionDialogClose:focus-visible, .sectionList button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.sectionList { display: grid; gap: 3px; max-height: min(430px, calc(100dvh - 118px)); padding: 8px; overflow-y: auto; overscroll-behavior: contain; }
+.sectionList button { min-height: 39px; border: 1px solid transparent; border-radius: 8px; padding: 8px 10px; color: var(--ink); background: transparent; cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.25; text-align: left; }
+.sectionList button:hover { background: color-mix(in srgb, var(--accent) 6%, var(--card-bg)); }
+.sectionList .sectionListActive { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)); }
 
 .menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: var(--theme-content-width, 1280px); margin: 0 auto; align-items: stretch; }
 .section { display: contents; }
@@ -306,7 +329,9 @@
   .controls { grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin-bottom: 14px; padding: 8px; border-radius: 9px; }
   .controlsCompact { gap: 5px; padding: 6px; }
   .controlsCompact .category, .controlsCompact .categoryActive { padding: 6px 10px; }
-  .categoryArrow { display: none; }
+  .categoryArrow { display: grid; width: 30px; font-size: 23px; }
+  .sectionListButton { min-width: 36px; padding: 0 8px; }
+  .sectionListLabel { display: none; }
   .search { min-width: 0; }
   .cartButton { padding: 9px 10px; font-size: 12px; }
   .activePaymentBanner { align-items: stretch; flex-direction: column; }
