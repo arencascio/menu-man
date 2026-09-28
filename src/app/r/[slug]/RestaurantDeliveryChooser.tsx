@@ -6,6 +6,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useRef,
 } from "react";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
@@ -59,6 +60,54 @@ export default function RestaurantDeliveryChooser({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const scrollLockRef = useRef<{
+    body: Pick<CSSStyleDeclaration, "left" | "overflow" | "position" | "right" | "top" | "width">;
+    documentElement: Pick<CSSStyleDeclaration, "overflow" | "overscrollBehavior">;
+    scrollY: number;
+  } | null>(null);
+
+  const lockPageScroll = useCallback(() => {
+    if (scrollLockRef.current) return;
+
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    scrollLockRef.current = {
+      body: {
+        left: body.style.left,
+        overflow: body.style.overflow,
+        position: body.style.position,
+        right: body.style.right,
+        top: body.style.top,
+        width: body.style.width,
+      },
+      documentElement: {
+        overflow: documentElement.style.overflow,
+        overscrollBehavior: documentElement.style.overscrollBehavior,
+      },
+      scrollY,
+    };
+    documentElement.style.overflow = "hidden";
+    documentElement.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.right = "0";
+    body.style.left = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+  }, []);
+
+  const unlockPageScroll = useCallback(() => {
+    const lock = scrollLockRef.current;
+    if (!lock) return;
+
+    const { body, documentElement } = document;
+    Object.assign(body.style, lock.body);
+    Object.assign(documentElement.style, lock.documentElement);
+    scrollLockRef.current = null;
+    window.scrollTo({ top: lock.scrollY, behavior: "instant" });
+  }, []);
+
+  useEffect(() => () => unlockPageScroll(), [unlockPageScroll]);
 
   const close = useCallback(() => {
     dialogRef.current?.close();
@@ -69,16 +118,18 @@ export default function RestaurantDeliveryChooser({
     if (!dialog || options.length === 0) return;
 
     returnFocusRef.current = trigger;
+    lockPageScroll();
     dialog.showModal();
     closeButtonRef.current?.focus();
-  }, [options.length]);
+  }, [lockPageScroll, options.length]);
 
   const handleDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
     if (event.target === event.currentTarget) close();
   };
 
   const handleClose = () => {
-    returnFocusRef.current?.focus();
+    unlockPageScroll();
+    returnFocusRef.current?.focus({ preventScroll: true });
     returnFocusRef.current = null;
   };
 

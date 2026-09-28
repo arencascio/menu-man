@@ -94,6 +94,11 @@ export default function MenuBrowser({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const sectionDialogRef = useRef<HTMLDialogElement>(null);
   const sectionDialogOpenerRef = useRef<HTMLElement | null>(null);
+  const sectionDialogScrollLockRef = useRef<{
+    body: Pick<CSSStyleDeclaration, "left" | "overflow" | "position" | "right" | "top" | "width">;
+    documentElement: Pick<CSSStyleDeclaration, "overflow" | "overscrollBehavior">;
+    scrollY: number;
+  } | null>(null);
   const cartRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
@@ -637,6 +642,7 @@ export default function MenuBrowser({
     const dialog = sectionDialogRef.current;
     if (!dialog) return;
     sectionDialogOpenerRef.current = opener;
+    lockSectionDialogScroll();
     dialog.showModal();
     dialog.querySelector<HTMLButtonElement>("[data-section-list-close]")?.focus();
   }
@@ -649,6 +655,37 @@ export default function MenuBrowser({
     selectCategory(section);
     closeSectionList();
   }
+
+  function lockSectionDialogScroll() {
+    if (sectionDialogScrollLockRef.current) return;
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    sectionDialogScrollLockRef.current = {
+      body: { left: body.style.left, overflow: body.style.overflow, position: body.style.position, right: body.style.right, top: body.style.top, width: body.style.width },
+      documentElement: { overflow: documentElement.style.overflow, overscrollBehavior: documentElement.style.overscrollBehavior },
+      scrollY,
+    };
+    documentElement.style.overflow = "hidden";
+    documentElement.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.right = "0";
+    body.style.left = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+  }
+
+  function unlockSectionDialogScroll() {
+    const lock = sectionDialogScrollLockRef.current;
+    if (!lock) return;
+    const { body, documentElement } = document;
+    Object.assign(body.style, lock.body);
+    Object.assign(documentElement.style, lock.documentElement);
+    sectionDialogScrollLockRef.current = null;
+    window.scrollTo({ top: lock.scrollY, behavior: "instant" });
+  }
+
+  useEffect(() => () => unlockSectionDialogScroll(), []);
 
   return (
     <main className={styles.page} aria-label={ariaLabel} style={{
@@ -710,7 +747,12 @@ export default function MenuBrowser({
             aria-label="Browse all menu sections"
             onClick={(event) => openSectionList(event.currentTarget)}
           >
-            <span aria-hidden="true">☰</span><span className={styles.sectionListLabel}>Sections</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 5h1" /><path d="M3 12h1" /><path d="M3 19h1" />
+              <path d="M8 5h1" /><path d="M8 12h1" /><path d="M8 19h1" />
+              <path d="M13 5h8" /><path d="M13 12h8" /><path d="M13 19h8" />
+            </svg>
+            <span className={styles.sectionListLabel}>Sections</span>
           </button>
         </div>
         <div className={styles.search}>
@@ -758,6 +800,7 @@ export default function MenuBrowser({
         aria-labelledby="menu-section-list-title"
         onClick={(event) => { if (event.target === event.currentTarget) closeSectionList(); }}
         onClose={() => {
+          unlockSectionDialogScroll();
           const opener = sectionDialogOpenerRef.current;
           if (opener?.isConnected) opener.focus({ preventScroll: true });
           sectionDialogOpenerRef.current = null;
@@ -769,7 +812,7 @@ export default function MenuBrowser({
               <p>Menu navigation</p>
               <h2 id="menu-section-list-title">All sections</h2>
             </div>
-            <button data-section-list-close className={styles.sectionDialogClose} type="button" onClick={closeSectionList} aria-label="Close all sections">Ã—</button>
+            <button data-section-list-close className={styles.sectionDialogClose} type="button" onClick={closeSectionList} aria-label="Close all sections">&times;</button>
           </div>
           <nav className={styles.sectionList} aria-label="All menu sections">
             <button type="button" className={activeCategory === "all" ? styles.sectionListActive : ""} aria-current={activeCategory === "all" ? "page" : undefined} onClick={() => selectSectionFromList(null)}>Full Menu</button>

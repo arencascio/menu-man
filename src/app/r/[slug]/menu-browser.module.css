@@ -50,8 +50,8 @@
 .category, .categoryActive { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; transition: background-color .15s ease, border-color .15s ease; }
 .category:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card-bg)); }
 .categoryActive { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--card-bg)); }
-.sectionListButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; }
-.sectionListButton > span:first-child { font-size: 16px; line-height: 1; }
+.sectionListButton { order: -1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.sectionListButton svg { width: 17px; height: 17px; flex: 0 0 auto; }
 .sectionListButton:hover { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--card-bg)); }
 .sectionListButton:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .search { position: relative; width: min(100%, 440px); }
@@ -332,6 +332,11 @@
   .categoryArrow { display: grid; width: 30px; font-size: 23px; }
   .sectionListButton { min-width: 36px; padding: 0 8px; }
   .sectionListLabel { display: none; }
+  .sectionDialog { width: 100%; max-width: none; max-height: calc(100dvh - env(safe-area-inset-bottom)); margin: auto 0 0; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 1.25rem 1.25rem 0 0; animation: section-sheet-in 180ms ease-out; }
+  .sectionDialogPanel { max-height: calc(100dvh - env(safe-area-inset-bottom)); }
+  .sectionList { --section-row-height: 43px; max-height: calc(100dvh - 10rem - env(safe-area-inset-bottom)); }
+  .sectionList button { min-height: var(--section-row-height); }
+  .sectionList:has(button:nth-child(7)) { max-height: min(calc(100dvh - 10rem - env(safe-area-inset-bottom)), 268px); }
   .search { min-width: 0; }
   .cartButton { padding: 9px 10px; font-size: 12px; }
   .activePaymentBanner { align-items: stretch; flex-direction: column; }
@@ -374,4 +379,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .item, .itemCard, .category, .categoryActive, .cardAddButton { transition: none; }
+  .sectionDialog { animation: none; }
+}
+
+@keyframes section-sheet-in {
+  from { transform: translateY(100%); }
 }
