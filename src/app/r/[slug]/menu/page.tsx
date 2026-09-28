@@ -149,6 +149,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
         </div>
         <OrderingStatus
           hasDelivery={deliveryOptions.length > 0}
+          restaurantId={restaurant.id}
           restaurantSlug={restaurant.slug}
         />
       </div>

@@ -10,12 +10,14 @@ import {
   useRef,
 } from "react";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
+import RestaurantDeliveryProviderIcon from "./RestaurantDeliveryProviderIcon";
 import styles from "./restaurant-delivery-chooser.module.css";
 
 export type RestaurantDeliveryOption = {
   displayName: string;
   url: string;
   imageUrl?: string;
+  providerKey?: string;
   supportingLabel?: string;
 };
 
@@ -176,11 +178,11 @@ export default function RestaurantDeliveryChooser({
                     // Provider imagery may be hosted by the restaurant or provider.
                     // eslint-disable-next-line @next/next/no-img-element
                     <img className={styles.optionImage} src={option.imageUrl} alt="" />
-                  ) : (
-                    <span className={styles.optionMark} aria-hidden="true">
-                      {option.displayName.charAt(0)}
-                    </span>
-                  )}
+                  ) : <RestaurantDeliveryProviderIcon
+                    displayName={option.displayName}
+                    fallbackClassName={styles.optionMark}
+                    providerKey={option.providerKey}
+                  />}
                   <span className={styles.optionCopy}>
                     <strong>{option.displayName}</strong>
                     {option.supportingLabel ? <span>{option.supportingLabel}</span> : null}

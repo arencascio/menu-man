@@ -14,6 +14,7 @@ import {
   saveActiveOrderMarker,
 } from "@/lib/payments/browser-session";
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
+import { pickupIntentEvent } from "@/lib/checkout/pickup-intent";
 import { composePersonalizedMenuSections } from "@/lib/menu-engagement/sections";
 import CartPanel from "./CartPanel";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
@@ -456,6 +457,18 @@ export default function MenuBrowser({
   const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior) => {
     document.getElementById(getMenuSectionAnchorId(sectionId))?.scrollIntoView({ block: "start", behavior });
   }, []);
+
+  useEffect(() => {
+    const openPickupCart = (event: Event) => {
+      if (!(event instanceof CustomEvent) || event.detail !== restaurantId || cartLocked) return;
+      setDetailItem(null);
+      setEditingLineId(null);
+      setIsCartOpen(true);
+      cart.trackCartViewed();
+    };
+    window.addEventListener(pickupIntentEvent, openPickupCart);
+    return () => window.removeEventListener(pickupIntentEvent, openPickupCart);
+  }, [cart, cartLocked, restaurantId]);
 
   useEffect(() => {
     const targetSectionId = pendingSectionNavigationRef.current;

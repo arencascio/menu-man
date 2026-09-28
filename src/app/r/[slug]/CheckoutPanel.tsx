@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { calculateLineTotalCents, formatPrice } from "@/lib/cart/cart";
 import { loadCheckoutDraft, saveCheckoutDraft } from "@/lib/checkout/draft";
+import { takePickupIntent, type PickupIntent } from "@/lib/checkout/pickup-intent";
 import {
   checkoutRequestSchema,
   checkoutResponseSchema,
@@ -89,6 +90,7 @@ export default function CheckoutPanel({
   const customTipInput = useRef<HTMLInputElement>(null);
   const largeTipPrompt = useRef<HTMLDivElement>(null);
   const restoredPickup = useRef<{ mode: "asap" } | { mode: "scheduled"; pickupAt: string } | undefined>(undefined);
+  const pickupIntent = useRef<PickupIntent | null>(null);
   const attemptStorageKey = `menu-man:checkout-attempt:v1:${restaurantId}`;
 
   useEffect(() => {
@@ -105,6 +107,7 @@ export default function CheckoutPanel({
         setOrderNotes(draft.orderNotes);
         restoredPickup.current = draft.pickup;
       }
+      pickupIntent.current = takePickupIntent(window.sessionStorage, restaurantId);
       setDraftHydrated(true);
     }, 0);
     return () => window.clearTimeout(hydration);
@@ -138,9 +141,21 @@ export default function CheckoutPanel({
       if (!response.ok) throw new Error("Pickup availability could not be loaded.");
       const nextAvailability = await response.json() as PickupAvailability;
       setAvailability(nextAvailability);
-      const nextSelection = resolvePickupSelection(nextAvailability, restoredPickup.current);
+      const requestedPickup = pickupIntent.current;
+      const scheduleRequested = requestedPickup?.mode === "scheduled"
+        && nextAvailability.scheduled.enabled
+        && nextAvailability.scheduled.slots.length > 0;
+      const nextSelection = scheduleRequested
+        ? null
+        : requestedPickup?.mode === "asap"
+          ? (nextAvailability.asap.available ? { mode: "asap" as const } : resolvePickupSelection(nextAvailability, restoredPickup.current))
+          : resolvePickupSelection(nextAvailability, restoredPickup.current);
+      pickupIntent.current = null;
       restoredPickup.current = undefined;
-      if (nextSelection) {
+      if (scheduleRequested) {
+        setPickupMode("scheduled");
+        setPickupAt("");
+      } else if (nextSelection) {
         setPickupMode(nextSelection.mode);
         setPickupAt(nextSelection.mode === "scheduled" ? nextSelection.pickupAt : "");
       } else {

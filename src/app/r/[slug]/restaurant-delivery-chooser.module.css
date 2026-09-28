@@ -93,7 +93,8 @@
 }
 
 .optionImage,
-.optionMark {
+.optionMark,
+:global(.restaurantDeliveryProviderIcon) {
   width: 3.1rem;
   height: 3.1rem;
   border-radius: calc(var(--theme-radius) * .72);
@@ -102,6 +103,10 @@
 
 .optionImage {
   object-fit: contain;
+}
+
+:global(.restaurantDeliveryProviderIcon) {
+  display: block;
 }
 
 .optionMark {
