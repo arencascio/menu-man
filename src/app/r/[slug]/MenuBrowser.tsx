@@ -69,7 +69,6 @@ export default function MenuBrowser({
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [visibleCategory, setVisibleCategory] = useState("all");
-  const [compactControls, setCompactControls] = useState(false);
   const [categoryEdges, setCategoryEdges] = useState({ left: false, right: false });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -83,6 +82,8 @@ export default function MenuBrowser({
   const categoriesRef = useRef<HTMLElement>(null);
   const categoryButtonsRef = useRef(new Map<string, HTMLButtonElement>());
   const followActiveCategoryRef = useRef(true);
+  const pendingSectionNavigationRef = useRef<string | null>(null);
+  const initialHashHandledRef = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const detailOpenerRef = useRef<HTMLElement | null>(null);
   const detailScrollYRef = useRef(0);
@@ -165,21 +166,6 @@ export default function MenuBrowser({
   }, []);
 
   useEffect(() => {
-    const controls = controlsRef.current;
-    const anchor = controlsAnchorRef.current;
-    const header = document.querySelector<HTMLElement>("[data-restaurant-header]");
-    if (!controls || !anchor) return;
-    const controlsTop = anchor.getBoundingClientRect().top + window.scrollY;
-    const compactAt = Math.max(0, controlsTop + controls.offsetHeight - (header?.offsetHeight ?? 0) - 24);
-    const update = () => {
-      if (!detailItem) setCompactControls(window.scrollY > compactAt);
-    };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, [detailItem]);
-
-  useEffect(() => {
     const categories = categoriesRef.current;
     if (!categories) return;
     const update = () => {
@@ -205,7 +191,7 @@ export default function MenuBrowser({
 
   useEffect(() => {
     ensureActiveCategoryVisible(activeCategory, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
-  }, [activeCategory, compactControls, ensureActiveCategoryVisible]);
+  }, [activeCategory, ensureActiveCategoryVisible]);
 
   useEffect(() => {
     function handlePopState() {
@@ -465,7 +451,42 @@ export default function MenuBrowser({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [selectedCategory, hasActiveSurface, headerHeight, controlsHeight, visibleSections, compactControls, ensureActiveCategoryVisible]);
+  }, [selectedCategory, hasActiveSurface, headerHeight, controlsHeight, visibleSections, ensureActiveCategoryVisible]);
+
+  const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior) => {
+    document.getElementById(getMenuSectionAnchorId(sectionId))?.scrollIntoView({ block: "start", behavior });
+  }, []);
+
+  useEffect(() => {
+    const targetSectionId = pendingSectionNavigationRef.current;
+    if (!targetSectionId) return;
+    const frame = requestAnimationFrame(() => {
+      scrollToSection(targetSectionId, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+      pendingSectionNavigationRef.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [scrollToSection, visibleSections]);
+
+  useEffect(() => {
+    const sectionIdForHash = () => menuSections.find((section) => (
+      `#${getMenuSectionAnchorId(section.id)}` === window.location.hash
+    ))?.id;
+    const scrollHashTarget = () => {
+      const sectionId = sectionIdForHash();
+      if (sectionId) scrollToSection(sectionId, "auto");
+    };
+    const initialSectionId = sectionIdForHash();
+    let frame = 0;
+    if (initialSectionId && !initialHashHandledRef.current) {
+      initialHashHandledRef.current = true;
+      frame = requestAnimationFrame(() => { frame = requestAnimationFrame(scrollHashTarget); });
+    }
+    window.addEventListener("hashchange", scrollHashTarget);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", scrollHashTarget);
+    };
+  }, [menuSections, scrollToSection]);
 
   function setItemUrl(itemId: string, method: "push" | "replace") {
     const url = new URL(window.location.href);
@@ -513,6 +534,7 @@ export default function MenuBrowser({
 
   function selectCategory(section: MenuSection | null) {
     followActiveCategoryRef.current = true;
+    pendingSectionNavigationRef.current = section?.id ?? null;
     setSelectedCategory(section?.id ?? "all");
     closeDetailSurface();
     setEditingLineId(null);
@@ -711,7 +733,7 @@ export default function MenuBrowser({
         </aside>
       )}
       <span ref={controlsAnchorRef} className={styles.controlsAnchor} aria-hidden="true" />
-      <div ref={controlsRef} className={`${styles.controls} ${compactControls ? styles.controlsCompact : ""} ${isCartOpen ? styles.controlsInactive : ""}`}>
+      <div ref={controlsRef} className={`${styles.controls} ${isCartOpen ? styles.controlsInactive : ""}`}>
         <div className={styles.categoryNav}>
           <div className={`${styles.categoryStrip} ${categoryEdges.left ? styles.categoryStripLeftEdge : ""} ${categoryEdges.right ? styles.categoryStripRightEdge : ""}`}>
           {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}>‹</button>}

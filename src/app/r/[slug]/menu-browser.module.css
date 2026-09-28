@@ -5,6 +5,7 @@
   --muted: var(--theme-muted-text, #666666);
   --line: color-mix(in srgb, var(--ink) 13%, transparent);
   --accent: var(--theme-accent, #b70000);
+  --menu-section-offset: calc(var(--menu-header-height, 84px) + var(--menu-controls-height, 120px) + 16px);
   min-height: 100vh;
   width: min(calc(100% - 48px), var(--theme-content-width, 1280px));
   margin: 0 auto;
@@ -31,12 +32,8 @@
   box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 7%, transparent);
 }
 .controlsInactive { display: none; }
-.controlsCompact { gap: 6px; padding: 7px 9px; border-radius: 9px; }
-.controlsCompact .category, .controlsCompact .categoryActive { padding: 6px 11px; }
-.controlsCompact .search input, .controlsCompact .cartButton { min-height: 36px; padding-top: 7px; padding-bottom: 7px; }
-
-.categoryNav { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-column: 1 / -1; align-items: stretch; gap: 7px; min-width: 0; }
-.categoryStrip { position: relative; min-width: 0; }
+.categoryNav { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-column: 1 / -1; align-items: stretch; gap: 7px; min-width: 0; }
+.categoryStrip { position: relative; min-width: 0; align-self: center; }
 .categories { display: flex; flex-wrap: nowrap; gap: 7px; min-width: 0; }
 .categoryStripLeftEdge::before, .categoryStripRightEdge::after { position: absolute; top: 0; bottom: 0; z-index: 1; width: 42px; content: ""; pointer-events: none; }
 .categoryStripLeftEdge::before { left: 0; background: linear-gradient(90deg, var(--card-bg) 12%, color-mix(in srgb, var(--card-bg) 82%, transparent) 58%, transparent); }
@@ -92,7 +89,7 @@
 
 .menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: var(--theme-content-width, 1280px); margin: 0 auto; align-items: stretch; }
 .section { display: contents; }
-.sectionHeading { grid-column: 1 / -1; margin-top: 10px; padding: 12px 2px 11px; border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--menu-header-height, 84px) + var(--menu-controls-height, 120px) + 22px); }
+.sectionHeading { grid-column: 1 / -1; margin-top: 10px; padding: 12px 2px 11px; border-bottom: 1px solid var(--line); scroll-margin-top: var(--menu-section-offset); }
 .sectionHeading h2 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: clamp(22px, 2vw, 28px); letter-spacing: -.025em; line-height: 1.12; }
 .sectionHeading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
 .sectionHeadingFeatured, .sectionHeadingFavorites { margin-top: 2px; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 6%, var(--card-bg)); }
@@ -327,16 +324,15 @@
   .search input { width: 100%; }
   .search { display: block; width: 100%; }
   .controls { grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin-bottom: 14px; padding: 8px; border-radius: 9px; }
-  .controlsCompact { gap: 5px; padding: 6px; }
-  .controlsCompact .category, .controlsCompact .categoryActive { padding: 6px 10px; }
   .categoryArrow { display: grid; width: 30px; font-size: 23px; }
-  .sectionListButton { min-width: 36px; padding: 0 8px; }
+  .sectionListButton { min-width: 42px; min-height: 42px; padding: 0 8px; }
   .sectionListLabel { display: none; }
   .sectionDialog { width: 100%; max-width: none; max-height: calc(100dvh - env(safe-area-inset-bottom)); margin: auto 0 0; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 1.25rem 1.25rem 0 0; animation: section-sheet-in 180ms ease-out; }
   .sectionDialogPanel { max-height: calc(100dvh - env(safe-area-inset-bottom)); }
-  .sectionList { --section-row-height: 43px; max-height: calc(100dvh - 10rem - env(safe-area-inset-bottom)); }
-  .sectionList button { min-height: var(--section-row-height); }
-  .sectionList:has(button:nth-child(7)) { max-height: min(calc(100dvh - 10rem - env(safe-area-inset-bottom)), 268px); }
+  .sectionList { max-height: calc(100dvh - 10rem - env(safe-area-inset-bottom)); scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 60%, transparent) transparent; }
+  .sectionList::-webkit-scrollbar { display: block; width: 6px; }
+  .sectionList::-webkit-scrollbar-track { background: transparent; }
+  .sectionList::-webkit-scrollbar-thumb { min-height: 28px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 56%, transparent); }
   .search { min-width: 0; }
   .cartButton { padding: 9px 10px; font-size: 12px; }
   .activePaymentBanner { align-items: stretch; flex-direction: column; }
