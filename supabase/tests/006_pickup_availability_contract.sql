@@ -259,17 +259,26 @@ $$;
 do $$
 declare
   restaurant_uuid uuid := gen_random_uuid();
+  other_restaurant_uuid uuid := gen_random_uuid();
   menu_uuid uuid := gen_random_uuid();
   section_uuid uuid := gen_random_uuid();
   item_uuid uuid := gen_random_uuid();
   request_payload jsonb;
+  asap_request jsonb;
   availability jsonb;
   pickup_at_value text;
+  future_pickup_at_value text;
   order_response jsonb;
   scheduled_key text := gen_random_uuid()::text;
   asap_key text := gen_random_uuid()::text;
   stale_key text := gen_random_uuid()::text;
   invalid_key text := gen_random_uuid()::text;
+  stale_asap_key text := gen_random_uuid()::text;
+  closed_asap_key text := gen_random_uuid()::text;
+  closed_scheduled_key text := gen_random_uuid()::text;
+  special_hours_key text := gen_random_uuid()::text;
+  retry_key text := gen_random_uuid()::text;
+  boundary_key text := gen_random_uuid()::text;
   counter_before bigint;
 begin
   insert into public.restaurants (id, name, slug, currency, is_active, timezone)
@@ -283,6 +292,18 @@ begin
     restaurant_id, day_of_week, open_time, close_time, is_closed, sort_order
   )
   select restaurant_uuid, day_number, time '00:00', time '00:00', false, 0
+  from generate_series(0, 6) day_number;
+
+  insert into public.restaurants (id, name, slug, currency, is_active, timezone)
+  values (other_restaurant_uuid, 'Other Pickup QA Fixture', 'qa-other-pickup-contract', 'USD', true, 'UTC');
+  insert into public.restaurant_ordering_settings (
+    restaurant_id, pickup_enabled, asap_enabled, scheduled_pickup_enabled,
+    pickup_lead_time_minutes, pickup_cutoff_minutes_before_close, advance_order_days,
+    tax_strategy, tax_rate_basis_points
+  ) values (other_restaurant_uuid, true, true, true, 0, 0, 1, 'restaurant_percentage', 0);
+  insert into public.restaurant_business_hours
+    (restaurant_id, day_of_week, open_time, close_time, is_closed, sort_order)
+  select other_restaurant_uuid, day_number, time '00:00', time '00:00', false, 0
   from generate_series(0, 6) day_number;
 
   insert into public.menus (id, restaurant_id, name, is_published)
@@ -319,6 +340,7 @@ begin
     'tipChoice', 'none',
     'orderNotes', null
   );
+  asap_request := jsonb_set(request_payload, '{pickup}', jsonb_build_object('mode', 'asap'));
 
   order_response := public.create_order_v1(
     'qa-checkout-pickup-contract', scheduled_key, request_payload
@@ -330,8 +352,7 @@ begin
   end if;
 
   order_response := public.create_order_v1(
-    'qa-checkout-pickup-contract', asap_key,
-    jsonb_set(request_payload, '{pickup}', jsonb_build_object('mode', 'asap'))
+    'qa-checkout-pickup-contract', asap_key, asap_request
   );
   if order_response #>> '{pickup,mode}' <> 'asap'
     or (order_response #>> '{pickup,pickupAt}')::timestamptz <> statement_timestamp()
@@ -364,6 +385,22 @@ begin
   update public.restaurant_ordering_settings
   set scheduled_pickup_enabled = true
   where restaurant_id = restaurant_uuid;
+  update public.restaurant_ordering_settings
+  set asap_enabled = false
+  where restaurant_id = restaurant_uuid;
+  begin
+    perform public.create_order_v1('qa-checkout-pickup-contract', stale_asap_key, asap_request);
+    raise exception 'Expected disabled ASAP pickup to be rejected';
+  exception when others then
+    if position('MM_PICKUP_UNAVAILABLE' in sqlerrm) = 0 then raise; end if;
+  end;
+  if exists (select 1 from public.orders where restaurant_id = restaurant_uuid
+    and idempotency_key = stale_asap_key)
+  then raise exception 'Rejected ASAP pickup created an order'; end if;
+  update public.restaurant_ordering_settings
+  set asap_enabled = true
+  where restaurant_id = restaurant_uuid;
+
   begin
     perform public.create_order_v1(
       'qa-checkout-pickup-contract', invalid_key,
@@ -375,14 +412,108 @@ begin
   end;
 
   delete from public.restaurant_business_hours where restaurant_id = restaurant_uuid;
+  if not (public.get_pickup_availability_v1(
+    'qa-other-pickup-contract', statement_timestamp()
+  ) #>> '{asap,available}')::boolean then
+    raise exception 'One restaurant hours change affected another restaurant';
+  end if;
   begin
     perform public.create_order_v1(
-      'qa-checkout-pickup-contract', gen_random_uuid()::text, request_payload
+      'qa-checkout-pickup-contract', closed_scheduled_key, request_payload
     );
     raise exception 'Expected a slot invalidated by changed hours to be rejected';
   exception when others then
     if position('MM_PICKUP_UNAVAILABLE' in sqlerrm) = 0 then raise; end if;
   end;
+  begin
+    perform public.create_order_v1('qa-checkout-pickup-contract', closed_asap_key, asap_request);
+    raise exception 'Expected ASAP pickup to be rejected after hours closed';
+  exception when others then
+    if position('MM_PICKUP_UNAVAILABLE' in sqlerrm) = 0 then raise; end if;
+  end;
+  if exists (select 1 from public.orders where restaurant_id = restaurant_uuid
+    and idempotency_key in (closed_scheduled_key, closed_asap_key))
+    or (select last_order_number from public.restaurant_order_counters
+        where restaurant_id = restaurant_uuid) <> counter_before
+  then raise exception 'Closed-hours rejection mutated order state'; end if;
+
+  -- An already committed order remains an idempotent replay; no new order is
+  -- created when the old pickup time has since become unavailable.
+  order_response := public.create_order_v1('qa-checkout-pickup-contract', scheduled_key, request_payload);
+  if not (order_response ->> 'replayed')::boolean then
+    raise exception 'Existing order was not returned on idempotent replay';
+  end if;
+
+  insert into public.restaurant_business_hours
+    (restaurant_id, day_of_week, open_time, close_time, is_closed, sort_order)
+  select restaurant_uuid, day_number, time '00:00', time '00:00', false, 0
+  from generate_series(0, 6) day_number;
+  availability := public.get_pickup_availability_v1(
+    'qa-checkout-pickup-contract', statement_timestamp()
+  );
+  select slot ->> 'pickupAt' into future_pickup_at_value
+  from jsonb_array_elements(availability #> '{scheduled,slots}') slot
+  where ((slot ->> 'pickupAt')::timestamptz at time zone 'UTC')::date
+    = (statement_timestamp() at time zone 'UTC')::date + 1
+    and ((slot ->> 'pickupAt')::timestamptz at time zone 'UTC')::time >= time '12:00'
+  order by (slot ->> 'pickupAt')::timestamptz limit 1;
+  if future_pickup_at_value is null then
+    raise exception 'Fixture did not produce a future special-hours slot';
+  end if;
+  insert into public.restaurant_special_hours
+    (restaurant_id, service_date, is_closed)
+  values (restaurant_uuid, (statement_timestamp() at time zone 'UTC')::date + 1, true);
+  begin
+    perform public.create_order_v1('qa-checkout-pickup-contract', special_hours_key,
+      jsonb_set(request_payload, '{pickup,pickupAt}', to_jsonb(future_pickup_at_value)));
+    raise exception 'Expected special-hours closure to invalidate the slot';
+  exception when others then
+    if position('MM_PICKUP_UNAVAILABLE' in sqlerrm) = 0 then raise; end if;
+  end;
+  if exists (select 1 from public.orders where restaurant_id = restaurant_uuid
+    and idempotency_key = special_hours_key)
+  then raise exception 'Special-hours rejection created an order'; end if;
+
+  -- The customer can choose a currently offered slot and retry with the
+  -- unchanged cart after a rejected availability response.
+  availability := public.get_pickup_availability_v1(
+    'qa-checkout-pickup-contract', statement_timestamp()
+  );
+  select slot ->> 'pickupAt' into pickup_at_value
+  from jsonb_array_elements(availability #> '{scheduled,slots}') slot
+  order by (slot ->> 'pickupAt')::timestamptz limit 1;
+  order_response := public.create_order_v1('qa-checkout-pickup-contract', retry_key,
+    jsonb_set(request_payload, '{pickup,pickupAt}', to_jsonb(pickup_at_value)));
+  if order_response #>> '{pickup,mode}' <> 'scheduled'
+    or (order_response #>> '{pickup,pickupAt}')::timestamptz <> pickup_at_value::timestamptz
+  then raise exception 'Retry with a current scheduled slot did not succeed'; end if;
+
+  -- statement_timestamp() remains fixed for this DO statement. The core's
+  -- early check sees the old valid interval; the final clock_timestamp()
+  -- check must reject after the submission deadline passes.
+  update public.restaurant_business_hours
+  set close_time = (pg_catalog.clock_timestamp() + interval '1 second')::time
+  where restaurant_id = restaurant_uuid
+    and day_of_week = extract(dow from statement_timestamp() at time zone 'UTC')::integer;
+  if not (public.get_pickup_availability_v1(
+    'qa-checkout-pickup-contract', statement_timestamp()
+  ) #>> '{asap,available}')::boolean then
+    raise exception 'Early availability fixture was not valid before the final boundary';
+  end if;
+  select last_order_number into counter_before
+  from public.restaurant_order_counters where restaurant_id = restaurant_uuid;
+  perform pg_catalog.pg_sleep(2);
+  begin
+    perform public.create_order_v1('qa-checkout-pickup-contract', boundary_key, asap_request);
+    raise exception 'Expected final availability validation to reject a crossed deadline';
+  exception when others then
+    if position('MM_PICKUP_UNAVAILABLE' in sqlerrm) = 0 then raise; end if;
+  end;
+  if exists (select 1 from public.orders where restaurant_id = restaurant_uuid
+    and idempotency_key = boundary_key)
+    or (select last_order_number from public.restaurant_order_counters
+        where restaurant_id = restaurant_uuid) <> counter_before
+  then raise exception 'Final pickup rejection left an order or allocated order number'; end if;
 end;
 $$;
 

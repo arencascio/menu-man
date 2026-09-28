@@ -47,6 +47,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609200001_restaurant_delivery_providers.sql",
     "202609210001_menu_hearts_featured.sql",
     "202609210002_fix_featured_item_save.sql",
+    "202609270001_checkout_pickup_availability_integrity.sql",
   ]);
 });
 
@@ -581,6 +582,23 @@ test("pickup availability repair removes the special-date variable collision and
   assert.match(migration, /where not has_special[\s\S]*weekly\.restaurant_id = restaurant_record\.id/);
   assert.match(migration, /'currentlyOpen', currently_open/);
   assert.match(migration, /grant execute on function public\.get_pickup_availability_v1\(text, timestamptz\)[\s\S]*to service_role/);
+});
+
+test("order creation holds restaurant pickup availability stable through final validation", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_checkout_pickup_availability_integrity.sql"),
+  )?.sql || "";
+  assert.match(migration, /pg_advisory_xact_lock_shared/);
+  assert.match(migration, /pg_advisory_xact_lock\(/);
+  assert.match(migration, /restaurant_business_hours_pickup_write_lock/);
+  assert.match(migration, /restaurant_special_hours_pickup_write_lock/);
+  assert.match(migration, /restaurant_ordering_settings_pickup_write_lock/);
+  assert.match(migration, /restaurant_pickup_identity_write_lock/);
+  assert.match(migration, /order_response := public\.create_order_unlocked_v1/);
+  assert.match(migration, /if coalesce\(\(order_response ->> 'replayed'\)::boolean, false\)/);
+  assert.match(migration, /get_pickup_availability_v1\([\s\S]*pg_catalog\.clock_timestamp\(\)/);
+  assert.match(migration, /'MM_PICKUP_UNAVAILABLE\|Pickup availability changed/);
+  assert.match(migration, /revoke all on function public\.create_order_unlocked_v1[\s\S]*service_role/);
 });
 
 test("delivery providers are normalized, tenant-scoped, audited, and legacy-safe", () => {

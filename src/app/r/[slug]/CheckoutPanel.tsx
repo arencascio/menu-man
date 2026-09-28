@@ -89,6 +89,7 @@ export default function CheckoutPanel({
   const attempt = useRef<IdempotencyAttempt | null>(null);
   const customTipInput = useRef<HTMLInputElement>(null);
   const largeTipPrompt = useRef<HTMLDivElement>(null);
+  const pickupDetailsRef = useRef<HTMLFieldSetElement>(null);
   const restoredPickup = useRef<{ mode: "asap" } | { mode: "scheduled"; pickupAt: string } | undefined>(undefined);
   const pickupIntent = useRef<PickupIntent | null>(null);
   const attemptStorageKey = `menu-man:checkout-attempt:v1:${restaurantId}`;
@@ -204,6 +205,38 @@ export default function CheckoutPanel({
     if (activeLargeTipConfirmation) largeTipPrompt.current?.focus();
   }, [activeLargeTipConfirmation]);
 
+  async function refreshPickupAfterRejection() {
+    attempt.current = null;
+    try {
+      window.sessionStorage.removeItem(attemptStorageKey);
+    } catch {
+      // In-memory retry state is already cleared.
+    }
+    setLargeTipConfirmation(null);
+    setAvailability(null);
+    setPickupAt("");
+    setAvailabilityError("Pickup availability changed. Loading current pickup times…");
+
+    try {
+      const response = await fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/pickup-availability`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Pickup availability could not be loaded.");
+      const current = await response.json() as PickupAvailability;
+      const hasScheduledSlots = current.scheduled.enabled && current.scheduled.slots.length > 0;
+      setAvailability(current);
+      setPickupMode(pickupMode === "scheduled" && hasScheduledSlots
+        ? "scheduled"
+        : current.asap.available ? "asap" : hasScheduledSlots ? "scheduled" : "asap");
+      setAvailabilityError(current.asap.available || hasScheduledSlots
+        ? "Pickup availability changed. Review the current times and choose a valid pickup option."
+        : "Pickup availability changed. No pickup times are currently available.");
+    } catch {
+      setAvailabilityError("Pickup availability changed, but current times could not be loaded. Refresh this page to try again.");
+    }
+    pickupDetailsRef.current?.focus();
+  }
+
   async function submitCheckout(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
@@ -315,6 +348,10 @@ export default function CheckoutPanel({
           });
           return;
         }
+        if (errorBody.error?.code === "PICKUP_UNAVAILABLE" || errorBody.error?.code === "ORDERING_DISABLED") {
+          await refreshPickupAfterRejection();
+          return;
+        }
         throw new Error(errorBody.error?.message || "Checkout could not be completed.");
       }
       const order = checkoutResponseSchema.parse(body);
@@ -400,16 +437,16 @@ export default function CheckoutPanel({
             <label>Phone {!customerRequirements.customerPhoneRequired && <small>Optional</small>}<input required={customerRequirements.customerPhoneRequired} maxLength={30} autoComplete="tel" inputMode="tel" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
             <label>Email {!customerRequirements.customerEmailRequired && <small>Optional</small>}<input required={customerRequirements.customerEmailRequired} maxLength={254} autoComplete="email" inputMode="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           </div>
-          <fieldset className={styles.checkoutFieldset} id="pickup-details">
+          <fieldset className={styles.checkoutFieldset} id="pickup-details" ref={pickupDetailsRef} tabIndex={-1}>
             <legend>Pickup</legend>
-            {availabilityError && <p className={styles.formError}>{availabilityError}</p>}
+            {availabilityError && <p className={styles.formError} role="alert">{availabilityError}</p>}
             {closedWithFuturePickup && <p className={styles.pickupNotice}>We&apos;re currently closed, but you can still place an order for a future pickup time.</p>}
             {orderingUnavailable && <p className={styles.formError}>Ordering is currently unavailable.</p>}
             {!availability && !availabilityError && <p>Loading current availability…</p>}
-            {availability?.asap.enabled && <label><input type="radio" name="pickup-mode" checked={pickupMode === "asap"} disabled={!availability.asap.available} onChange={() => setPickupMode("asap")} /> ASAP</label>}
+            {availability?.asap.enabled && <label><input type="radio" name="pickup-mode" checked={pickupMode === "asap"} disabled={!availability.asap.available} onChange={() => { setPickupMode("asap"); setAvailabilityError(null); }} /> ASAP</label>}
             {availability?.scheduled.enabled && availability.scheduled.slots.length > 0 && (
-              <label><input type="radio" name="pickup-mode" checked={pickupMode === "scheduled"} onChange={() => setPickupMode("scheduled")} /> Scheduled
-                <select required value={pickupAt} onChange={(event) => setPickupAt(event.target.value)} disabled={pickupMode !== "scheduled"}>
+              <label><input type="radio" name="pickup-mode" checked={pickupMode === "scheduled"} onChange={() => { setPickupMode("scheduled"); setAvailabilityError(null); }} /> Scheduled
+                <select required value={pickupAt} onChange={(event) => { setPickupAt(event.target.value); setAvailabilityError(null); }} disabled={pickupMode !== "scheduled"}>
                   <option value="">Choose a pickup date and time</option>
                   {availability.scheduled.slots.map((slot) => <option key={slot.pickupAt} value={slot.pickupAt}>{slot.label}</option>)}
                 </select>

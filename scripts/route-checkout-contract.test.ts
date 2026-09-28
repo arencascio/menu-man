@@ -90,6 +90,11 @@ test("checkout pickup availability is uncached and stale failures retain the edi
   assert.match(checkout, /isPickupSelectionAvailable/);
   assert.match(checkout, /errorBody\.error\?\.message/);
   assert.doesNotMatch(checkout, /cart\.clear\(/);
+  assert.match(checkout, /errorBody\.error\?\.code === "PICKUP_UNAVAILABLE"/);
+  assert.match(checkout, /refreshPickupAfterRejection\(\)/);
+  assert.match(checkout, /setAvailability\(null\)/);
+  assert.match(checkout, /setPickupAt\(""\)/);
+  assert.match(checkout, /Pickup availability changed/);
 });
 
 test("closed-store scheduling requires an explicit future pickup selection", () => {
