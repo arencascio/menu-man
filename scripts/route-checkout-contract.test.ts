@@ -48,7 +48,7 @@ test("safe editable return and return-to-menu abandon server-side before navigat
   assert.match(payment, /payment\.status === "requires_payment_method"/);
   assert.match(payment, /payment\.latestAttempt === null/);
   assert.match(payment, /checkout-abandonment/);
-  assert.match(payment, /abandonCheckout\(destination: "checkout" \| "menu"\)/);
+  assert.match(payment, /abandonCheckout\(destination: "checkout" \| "menu", pickupChanged = false\)/);
   assert.match(payment, /destination === "checkout"/);
   assert.match(payment, /router\.push\(destination === "checkout"/);
   assert.match(payment, /disabled=\{!canSafelyAbandon \|\| abandoning\}/);
@@ -56,7 +56,7 @@ test("safe editable return and return-to-menu abandon server-side before navigat
   assert.doesNotMatch(payment, /payment\?view=details/);
   assert.match(payment, /if \(!response\.ok\)/);
   assert.match(payment, /broadcastCheckoutEvent\(restaurantId, "payment_changed"\)/);
-  assert.match(payment, /: `\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}`/);
+  assert.match(payment, /: `\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}\/menu`/);
 });
 
 test("staging exceptional-state controls use server routes and retain safe navigation", () => {
@@ -74,7 +74,7 @@ test("staging exceptional-state controls use server routes and retain safe navig
   assert.match(payment, /Please don&apos;t submit another payment while we confirm the order with the restaurant/);
   assert.match(payment, /Back to Checkout Details/);
   assert.match(payment, /href={`\/r\/\$\{restaurantSlug\}\/checkout`}/);
-  assert.match(payment, /href={`\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}`}/);
+  assert.match(payment, /href={`\/r\/\$\{encodeURIComponent\(restaurantSlug\)\}\/menu`}/);
   assert.doesNotMatch(payment, /Edit Cart and Start Fresh/);
   assert.doesNotMatch(payment, /requires restaurant review or a refund/i);
 });
@@ -95,6 +95,21 @@ test("checkout pickup availability is uncached and stale failures retain the edi
   assert.match(checkout, /setAvailability\(null\)/);
   assert.match(checkout, /setPickupAt\(""\)/);
   assert.match(checkout, /Pickup availability changed/);
+});
+
+test("final payment pickup rejection abandons the pristine order and reloads checkout times", () => {
+  const payment = read("src", "app", "r", "[slug]", "PaymentPanel.tsx");
+  const checkout = read("src", "app", "r", "[slug]", "CheckoutPanel.tsx");
+  const route = read("src", "app", "api", "orders", "[orderId]", "payments", "route.ts");
+  const server = read("src", "lib", "payments", "server.ts");
+  assert.match(route, /"PICKUP_UNAVAILABLE"/);
+  assert.match(server, /"PICKUP_UNAVAILABLE"/);
+  assert.match(payment, /failure\.error\?\.code === "PICKUP_UNAVAILABLE"/);
+  assert.match(payment, /await abandonCheckout\("checkout", true\)/);
+  assert.match(payment, /checkout\$\{pickupChanged \? "\?pickupChanged=1"/);
+  assert.match(checkout, /new URLSearchParams\(window\.location\.search\)\.has\("pickupChanged"\)/);
+  assert.match(checkout, /setPickupAt\(""\)/);
+  assert.match(checkout, /fetch\(`\/api\/restaurants\/\$\{encodeURIComponent\(restaurantSlug\)\}\/pickup-availability`/);
 });
 
 test("closed-store scheduling requires an explicit future pickup selection", () => {

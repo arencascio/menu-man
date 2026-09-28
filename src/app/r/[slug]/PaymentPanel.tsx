@@ -144,7 +144,15 @@ export default function PaymentPanel({
         }),
       });
       const body = await response.json() as unknown;
-      if (!response.ok) throw new Error((body as { error?: { message?: string } }).error?.message || "Payment could not be submitted.");
+      if (!response.ok) {
+        const failure = body as { error?: { code?: string; message?: string } };
+        if (failure.error?.code === "PICKUP_UNAVAILABLE") {
+          paymentAttempt.current = null;
+          await abandonCheckout("checkout", true);
+          return;
+        }
+        throw new Error(failure.error?.message || "Payment could not be submitted.");
+      }
       const nextPayment = paymentStatusSchema.parse(body);
       setLongProcessing(false);
       setPayment(nextPayment);
@@ -161,7 +169,7 @@ export default function PaymentPanel({
     await submitPaymentMethodToken(`fake:${fakeScenario}`);
   }
 
-  async function abandonCheckout(destination: "checkout" | "menu") {
+  async function abandonCheckout(destination: "checkout" | "menu", pickupChanged = false) {
     if (
       abandoning
       || payment.status !== "requires_payment_method"
@@ -190,8 +198,8 @@ export default function PaymentPanel({
       // refetch. The revoked server session then causes each tab to unlock.
       broadcastCheckoutEvent(restaurantId, "payment_changed");
       router.push(destination === "checkout"
-        ? `/r/${encodeURIComponent(restaurantSlug)}/checkout`
-        : `/r/${encodeURIComponent(restaurantSlug)}`);
+        ? `/r/${encodeURIComponent(restaurantSlug)}/checkout${pickupChanged ? "?pickupChanged=1" : ""}`
+        : `/r/${encodeURIComponent(restaurantSlug)}/menu`);
     } catch (abandonmentError) {
       setError(abandonmentError instanceof Error
         ? abandonmentError.message
@@ -316,7 +324,7 @@ export default function PaymentPanel({
           Return to Menu
         </button>
       ) : (
-        <Link href={`/r/${encodeURIComponent(restaurantSlug)}`}>Return to Menu</Link>
+        <Link href={`/r/${encodeURIComponent(restaurantSlug)}/menu`}>Return to Menu</Link>
       )}
       {!canSafelyAbandon ? <span className={styles.visuallyHidden} id="editable-return-unavailable">Order details cannot be edited while payment is in progress.</span> : null}
     </nav>

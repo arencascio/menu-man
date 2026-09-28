@@ -48,6 +48,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609210001_menu_hearts_featured.sql",
     "202609210002_fix_featured_item_save.sql",
     "202609270001_checkout_pickup_availability_integrity.sql",
+    "202609270002_final_payment_pickup_availability.sql",
   ]);
 });
 
@@ -599,6 +600,20 @@ test("order creation holds restaurant pickup availability stable through final v
   assert.match(migration, /get_pickup_availability_v1\([\s\S]*pg_catalog\.clock_timestamp\(\)/);
   assert.match(migration, /'MM_PICKUP_UNAVAILABLE\|Pickup availability changed/);
   assert.match(migration, /revoke all on function public\.create_order_unlocked_v1[\s\S]*service_role/);
+});
+
+test("payment reservation revalidates pickup before contacting the provider", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_final_payment_pickup_availability.sql"),
+  )?.sql || "";
+  assert.match(migration, /reserve_payment_attempt_unchecked_v1/);
+  assert.match(migration, /reservation := public\.reserve_payment_attempt_unchecked_v1/);
+  assert.match(migration, /pg_advisory_xact_lock_shared/);
+  assert.match(migration, /get_pickup_availability_v1\(order_record\.slug, checked_at\)/);
+  assert.match(migration, /order_record\.pickup_mode = 'asap'/);
+  assert.match(migration, /order_record\.pickup_mode = 'scheduled'/);
+  assert.match(migration, /MM_PICKUP_UNAVAILABLE/);
+  assert.match(migration, /revoke all on function public\.reserve_payment_attempt_unchecked_v1[\s\S]*service_role/);
 });
 
 test("delivery providers are normalized, tenant-scoped, audited, and legacy-safe", () => {

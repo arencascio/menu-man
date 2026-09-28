@@ -156,6 +156,12 @@ export default function CheckoutPanel({
       if (scheduleRequested) {
         setPickupMode("scheduled");
         setPickupAt("");
+      } else if (new URLSearchParams(window.location.search).has("pickupChanged")) {
+        setPickupMode(nextAvailability.scheduled.slots.length > 0 ? "scheduled" : "asap");
+        setPickupAt("");
+        setAvailabilityError(nextAvailability.asap.available || nextAvailability.scheduled.slots.length > 0
+          ? "Pickup availability changed. Review the current times and choose a valid pickup option."
+          : "Pickup availability changed. No pickup times are currently available.");
       } else if (nextSelection) {
         setPickupMode(nextSelection.mode);
         setPickupAt(nextSelection.mode === "scheduled" ? nextSelection.pickupAt : "");

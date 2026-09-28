@@ -14,7 +14,7 @@ function statusForError(error: PaymentServerError) {
   if (error.code === "INVALID_PAYMENT_SESSION") return 401;
   if (error.code === "PAYMENT_NOT_FOUND") return 404;
   if (error.code === "PAYMENT_PROVIDER_UNAVAILABLE") return 503;
-  if (["PAYMENT_NOT_ALLOWED", "PAYMENT_EXPIRED", "PAYMENT_IN_PROGRESS"].includes(error.code)) return 409;
+  if (["PAYMENT_NOT_ALLOWED", "PAYMENT_EXPIRED", "PAYMENT_IN_PROGRESS", "PICKUP_UNAVAILABLE"].includes(error.code)) return 409;
   return 500;
 }
 
