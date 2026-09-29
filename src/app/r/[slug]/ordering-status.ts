@@ -1,4 +1,6 @@
 import type { PickupAvailability } from "@/lib/checkout/contracts";
+import { isPickupSelectionAvailable, type PickupSelection } from "@/lib/checkout/pickup-selection";
+import type { PickupIntent } from "@/lib/checkout/pickup-intent";
 
 export type OrderingStatus = {
   detail: string;
@@ -6,7 +8,7 @@ export type OrderingStatus = {
   title: string;
 };
 
-function formatPickupTime(pickupAt: string, timezone: string | null) {
+export function formatPickupTime(pickupAt: string, timezone: string | null) {
   if (!timezone) return pickupAt;
 
   try {
@@ -17,6 +19,29 @@ function formatPickupTime(pickupAt: string, timezone: string | null) {
     }).format(new Date(pickupAt));
   } catch {
     return pickupAt;
+  }
+}
+
+export function getDisplayedPickupIntent(
+  availability: PickupAvailability,
+  intent: PickupIntent | null,
+): PickupSelection | null {
+  if (!intent) return null;
+  if (intent.mode === "asap") return isPickupSelectionAvailable(availability, intent) ? intent : null;
+  if (!intent.pickupAt || !availability.scheduled.enabled) return null;
+  const selection = { mode: "scheduled" as const, pickupAt: intent.pickupAt };
+  return isPickupSelectionAvailable(availability, selection) ? selection : null;
+}
+
+export function formatScheduledPickup(pickupAt: string, timezone: string | null) {
+  if (!timezone) return { day: pickupAt, time: "" };
+  try {
+    const date = new Date(pickupAt);
+    const day = new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "short", month: "short", day: "numeric" }).format(date);
+    const time = new Intl.DateTimeFormat("en-US", { timeZone: timezone, hour: "numeric", minute: "2-digit" }).format(date);
+    return { day, time };
+  } catch {
+    return { day: pickupAt, time: "" };
   }
 }
 

@@ -1,4 +1,4 @@
-.panel { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; padding: .78rem .9rem; border: 1px solid color-mix(in srgb, var(--theme-text) 14%, transparent); border-radius: var(--theme-radius); background: color-mix(in srgb, var(--theme-surface) 92%, var(--theme-background)); box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-text) 6%, transparent); }
+.panel { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-width: 0; padding: .62rem .8rem; border: 1px solid color-mix(in srgb, var(--theme-text) 14%, transparent); border-radius: var(--theme-radius); background: color-mix(in srgb, var(--theme-surface) 92%, var(--theme-background)); }
 .pickup { display: flex; min-width: 0; align-items: flex-start; gap: .62rem; }
 .indicator { width: .5rem; height: .5rem; flex: 0 0 auto; margin-top: .39rem; border-radius: 999px; background: var(--theme-muted-text); }
 .available { background: #23824a; }
@@ -16,7 +16,7 @@
 .orderPickup:focus-visible, .schedulePickup:focus-visible, .delivery:focus-visible { outline: 3px solid color-mix(in srgb, var(--theme-accent) 72%, transparent); outline-offset: 3px; }
 
 @media (max-width: 700px) {
-  .panel { align-items: flex-start; gap: .7rem; padding: .68rem .75rem; }
-  .actions { max-width: 10rem; }
+  .panel { flex-direction: column; align-items: stretch; gap: .55rem; padding: .62rem .7rem; }
+  .actions { max-width: none; justify-content: flex-start; }
   .detail { font-size: .72rem; }
 }

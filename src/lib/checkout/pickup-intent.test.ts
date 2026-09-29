@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { savePickupIntent, takePickupIntent } from "./pickup-intent";
+import { readPickupIntent, savePickupIntent, takePickupIntent } from "./pickup-intent";
 
 function storage() {
   const values = new Map<string, string>();
@@ -20,6 +20,15 @@ test("pickup intents are restaurant scoped, short lived, and consumed once", () 
   assert.equal(takePickupIntent(session, "restaurant-b", now), null);
   assert.deepEqual(takePickupIntent(session, "restaurant-a", now), { mode: "scheduled", pickupAt });
   assert.equal(takePickupIntent(session, "restaurant-a", now), null);
+});
+
+test("reading a pickup intent does not consume it", () => {
+  const session = storage();
+  const now = Date.parse("2026-09-27T18:00:00.000Z");
+  savePickupIntent(session, "restaurant-a", { mode: "asap" }, now);
+
+  assert.deepEqual(readPickupIntent(session, "restaurant-a", now), { mode: "asap" });
+  assert.deepEqual(takePickupIntent(session, "restaurant-a", now), { mode: "asap" });
 });
 
 test("legacy scheduled intent still requests an explicit time in checkout", () => {

@@ -19,12 +19,14 @@ async function loadAvailability(restaurantSlug: string, signal: AbortSignal): Pr
 }
 
 export default function RestaurantPickupTimeChooser({
+  initialSelection,
   mode,
   onAvailabilityChange,
   onClose,
   restaurantId,
   restaurantSlug,
 }: {
+  initialSelection?: PickupSelection | null;
   mode: PickupChooserMode;
   onAvailabilityChange: (availability: PickupAvailability) => void;
   onClose: () => void;
@@ -88,14 +90,16 @@ export default function RestaurantPickupTimeChooser({
     requestRef.current = controller;
     void loadAvailability(restaurantSlug, controller.signal).then((current) => {
       setAvailability(current);
-      setSelection(initialChooserSelection(mode, current));
+      setSelection(isChooserSelectionAvailable(mode, current, initialSelection ?? null)
+        ? initialSelection ?? null
+        : initialChooserSelection(mode, current));
       onAvailabilityChange(current);
     }).catch((cause: unknown) => {
       if (controller.signal.aborted) return;
       setError(cause instanceof Error ? cause.message : "Pickup times could not be loaded. Please try again.");
     });
     return () => controller.abort();
-  }, [mode, onAvailabilityChange, restaurantSlug]);
+  }, [initialSelection, mode, onAvailabilityChange, restaurantSlug]);
 
   const close = () => dialogRef.current?.close();
   const groups = availability ? groupPickupSlots(availability) : [];
