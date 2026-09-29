@@ -52,7 +52,7 @@ function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
   };
 
   if (event.name === "category_selected") {
-    properties.section_id = event.sectionId ?? "all";
+    properties.section_id = event.sectionId;
     properties.section_name = event.sectionName;
   } else if (event.name === "menu_search") {
     properties.query = event.query;

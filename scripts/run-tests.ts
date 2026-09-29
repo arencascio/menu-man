@@ -29,4 +29,5 @@ import "./route-checkout-contract.test";
 import "./order-management-route-contract.test";
 import "./restaurant-location-route.test";
 import "./restaurant-menu-route.test";
+import "./menu-browser-navigation.test";
 import "./migration-contract.test";

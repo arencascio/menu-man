@@ -68,8 +68,7 @@ export default function MenuBrowser({
   initialActivePayment,
 }: MenuBrowserProps) {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [visibleCategory, setVisibleCategory] = useState("all");
+  const [visibleCategory, setVisibleCategory] = useState("");
   const [categoryEdges, setCategoryEdges] = useState({ left: false, right: false });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -135,7 +134,7 @@ export default function MenuBrowser({
     for (const line of cart.lines) totals[line.menuItemId] = (totals[line.menuItemId] ?? 0) + line.quantity;
     return totals;
   }, [cart.lines]);
-  const activeCategory = selectedCategory === "all" ? visibleCategory : selectedCategory;
+  const activeCategory = visibleCategory;
   const activeCategoryRef = useRef(activeCategory);
   useEffect(() => { activeCategoryRef.current = activeCategory; }, [activeCategory]);
   const ensureActiveCategoryVisible = useCallback((categoryId: string, behavior: ScrollBehavior) => {
@@ -299,7 +298,6 @@ export default function MenuBrowser({
     const liked = !likedItemIds.includes(itemId);
     const previousHeartCount = heartCounts[itemId] ?? 0;
     setPendingHearts((current) => [...current, itemId]);
-    if (!liked && selectedCategory === "favorites" && likedItemIds.length === 1) setSelectedCategory("all");
     setLikedItemIds((current) => liked ? [...current.filter((id) => id !== itemId), itemId] : current.filter((id) => id !== itemId));
     setHeartCounts((current) => ({ ...current, [itemId]: Math.max(0, (current[itemId] ?? 0) + (liked ? 1 : -1)) }));
     try {
@@ -402,16 +400,14 @@ export default function MenuBrowser({
       setSearch(nextSearch);
       if (nextSearch) {
         const resultCount = menuSections
-          .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
           .reduce((count, section) => count + section.items.filter((item) => [item.name, item.description || ""].join(" ").toLowerCase().includes(nextSearch)).length, 0);
         trackEvent({ name: "menu_search", restaurantId, query: nextSearch, queryLength: nextSearch.length, resultCount });
       }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [restaurantId, searchInput, menuSections, selectedCategory]);
+  }, [restaurantId, searchInput, menuSections]);
 
   const visibleSections = useMemo(() => menuSections
-    .filter((section) => selectedCategory === "all" || section.id === selectedCategory)
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
@@ -422,17 +418,17 @@ export default function MenuBrowser({
           .includes(search);
       }),
     }))
-    .filter((section) => section.items.length > 0), [menuSections, selectedCategory, search]);
+    .filter((section) => section.items.length > 0), [menuSections, search]);
   const visibleItemCount = visibleSections.reduce((total, section) => total + section.items.length, 0);
-  const showResultCount = Boolean(search || selectedCategory !== "all");
+  const showResultCount = Boolean(search);
 
   useEffect(() => {
-    if (selectedCategory !== "all" || hasActiveSurface) return;
+    if (hasActiveSurface) return;
     let frame = 0;
     const update = () => {
       frame = 0;
       const cutoff = headerHeight + (controlsRef.current?.getBoundingClientRect().height || controlsHeight) + 20;
-      let current = "all";
+      let current = "";
       for (const section of visibleSections) {
         const heading = document.getElementById(getMenuSectionAnchorId(section.id));
         if (heading && heading.getBoundingClientRect().top <= cutoff) current = section.id;
@@ -452,7 +448,7 @@ export default function MenuBrowser({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [selectedCategory, hasActiveSurface, headerHeight, controlsHeight, visibleSections, ensureActiveCategoryVisible]);
+  }, [hasActiveSurface, headerHeight, controlsHeight, visibleSections, ensureActiveCategoryVisible]);
 
   const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior) => {
     document.getElementById(getMenuSectionAnchorId(sectionId))?.scrollIntoView({ block: "start", behavior });
@@ -469,16 +465,6 @@ export default function MenuBrowser({
     window.addEventListener(pickupIntentEvent, openPickupCart);
     return () => window.removeEventListener(pickupIntentEvent, openPickupCart);
   }, [cart, cartLocked, restaurantId]);
-
-  useEffect(() => {
-    const targetSectionId = pendingSectionNavigationRef.current;
-    if (!targetSectionId) return;
-    const frame = requestAnimationFrame(() => {
-      scrollToSection(targetSectionId, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
-      pendingSectionNavigationRef.current = null;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [scrollToSection, visibleSections]);
 
   useEffect(() => {
     const sectionIdForHash = () => menuSections.find((section) => (
@@ -545,14 +531,16 @@ export default function MenuBrowser({
     cart.addLine(createDirectCartLine(item, section, crypto.randomUUID()));
   }
 
-  function selectCategory(section: MenuSection | null) {
+  function navigateToSection(section: MenuSection, fromSectionList = false) {
     followActiveCategoryRef.current = true;
-    pendingSectionNavigationRef.current = section?.id ?? null;
-    setSelectedCategory(section?.id ?? "all");
-    closeDetailSurface();
-    setEditingLineId(null);
-    setIsCartOpen(false);
-    trackEvent({ name: "category_selected", restaurantId, sectionId: section?.id ?? null, sectionName: section?.name ?? "Full Menu" });
+    if (fromSectionList) {
+      pendingSectionNavigationRef.current = section.id;
+      closeSectionList();
+    } else {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      requestAnimationFrame(() => scrollToSection(section.id, behavior));
+    }
+    trackEvent({ name: "category_selected", restaurantId, sectionId: section.id, sectionName: section.name });
   }
 
   function closeDetailSurface() {
@@ -686,9 +674,8 @@ export default function MenuBrowser({
     sectionDialogRef.current?.close();
   }
 
-  function selectSectionFromList(section: MenuSection | null) {
-    selectCategory(section);
-    closeSectionList();
+  function selectSectionFromList(section: MenuSection) {
+    navigateToSection(section, true);
   }
 
   function lockSectionDialogScroll() {
@@ -751,22 +738,13 @@ export default function MenuBrowser({
           <div className={`${styles.categoryStrip} ${categoryEdges.left ? styles.categoryStripLeftEdge : ""} ${categoryEdges.right ? styles.categoryStripRightEdge : ""}`}>
           {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}>‹</button>}
           <nav ref={categoriesRef} className={styles.categories} aria-label="Menu categories" onPointerDown={() => { followActiveCategoryRef.current = false; }} onTouchStart={() => { followActiveCategoryRef.current = false; }} onWheel={(event) => { if (event.deltaX) followActiveCategoryRef.current = false; }}>
-          <button
-            className={activeCategory === "all" ? styles.categoryActive : styles.category}
-            ref={(node) => { if (node) categoryButtonsRef.current.set("all", node); else categoryButtonsRef.current.delete("all"); }}
-            type="button"
-            onClick={() => selectCategory(null)}
-            aria-pressed={activeCategory === "all"}
-          >
-            Full Menu
-          </button>
           {menuSections.map((section) => (
             <button
               className={activeCategory === section.id ? styles.categoryActive : styles.category}
               ref={(node) => { if (node) categoryButtonsRef.current.set(section.id, node); else categoryButtonsRef.current.delete(section.id); }}
               key={section.id}
               type="button"
-              onClick={() => selectCategory(section)}
+              onClick={() => navigateToSection(section)}
               aria-pressed={activeCategory === section.id}
             >
               {section.name}
@@ -836,6 +814,12 @@ export default function MenuBrowser({
         onClick={(event) => { if (event.target === event.currentTarget) closeSectionList(); }}
         onClose={() => {
           unlockSectionDialogScroll();
+          const targetSectionId = pendingSectionNavigationRef.current;
+          pendingSectionNavigationRef.current = null;
+          if (targetSectionId) {
+            const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+            requestAnimationFrame(() => scrollToSection(targetSectionId, behavior));
+          }
           const opener = sectionDialogOpenerRef.current;
           if (opener?.isConnected) opener.focus({ preventScroll: true });
           sectionDialogOpenerRef.current = null;
@@ -850,7 +834,6 @@ export default function MenuBrowser({
             <button data-section-list-close className={styles.sectionDialogClose} type="button" onClick={closeSectionList} aria-label="Close all sections">&times;</button>
           </div>
           <nav className={styles.sectionList} aria-label="All menu sections">
-            <button type="button" className={activeCategory === "all" ? styles.sectionListActive : ""} aria-current={activeCategory === "all" ? "page" : undefined} onClick={() => selectSectionFromList(null)}>Full Menu</button>
             {menuSections.map((section) => (
               <button key={section.id} type="button" className={activeCategory === section.id ? styles.sectionListActive : ""} aria-current={activeCategory === section.id ? "page" : undefined} onClick={() => selectSectionFromList(section)}>{section.name}</button>
             ))}

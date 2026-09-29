@@ -370,7 +370,7 @@ Application code uses camelCase in the typed `AnalyticsEvent` union. Provider ad
 | Menu Man event | PostHog properties beyond `restaurant_id` | Notes |
 | --- | --- | --- |
 | `page_view` | None | Explicit page view; automatic PostHog page views remain disabled. |
-| `category_selected` | `section_id`, `section_name` | Full Menu uses `section_id: "all"` and `section_name: "Full Menu"`. |
+| `category_selected` | `section_id`, `section_name` | Records navigation to a published menu section; section controls do not filter menu content. |
 | `menu_search` | `query`, `query_length`, `result_count` | `query` is the trimmed, lowercase menu search term. No other free-form customer text is allowed. |
 | `menu_item_expanded`, `menu_item_collapsed` | `section_id`, `section_name`, `item_id`, `item_name`, `price_cents` | Prices are integer minor units. |
 | `phone_clicked`, `directions_clicked`, `delivery_clicked`, `pickup_clicked` | None | Contact details and destination URLs are not included. |

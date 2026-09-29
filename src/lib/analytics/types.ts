@@ -7,7 +7,7 @@ export type AnalyticsCartItem = {
 
 export type AnalyticsEvent =
   | { name: "page_view"; restaurantId: string }
-  | { name: "category_selected"; restaurantId: string; sectionId: string | null; sectionName: string }
+  | { name: "category_selected"; restaurantId: string; sectionId: string; sectionName: string }
   | { name: "menu_search"; restaurantId: string; query: string; queryLength: number; resultCount: number }
   | {
       name: "menu_item_expanded" | "menu_item_collapsed";

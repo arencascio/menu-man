@@ -30,7 +30,7 @@ const ga4Provider: AnalyticsProvider = {
     } else if (event.name === "category_selected") {
       eventName = "select_content";
       parameters.content_type = "menu_category";
-      parameters.item_id = event.sectionId || "all";
+      parameters.item_id = event.sectionId;
     } else if (event.name === "menu_search") {
       eventName = "menu_search";
       parameters.query_length = event.queryLength;
