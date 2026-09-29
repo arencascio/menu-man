@@ -22,6 +22,7 @@ import "../src/lib/menu-engagement/sections.test";
 import "../src/lib/menu-engagement/featured-picker.test";
 import "../src/app/r/[slug]/menu-card-ordering.test";
 import "../src/app/r/[slug]/ordering-status.test";
+import "../src/app/r/[slug]/pickup-time-chooser.test";
 import "../src/app/r/[slug]/RestaurantDeliveryProviderIcon.test";
 import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test";
 import "./staging-safety.test";

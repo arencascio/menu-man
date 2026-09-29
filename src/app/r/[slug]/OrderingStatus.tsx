@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { trackEvent } from "@/lib/analytics/client";
+import { useEffect, useRef, useState } from "react";
 import type { PickupAvailability } from "@/lib/checkout/contracts";
-import { pickupIntentEvent, savePickupIntent, type PickupIntent } from "@/lib/checkout/pickup-intent";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
+import RestaurantPickupTimeChooser from "./RestaurantPickupTimeChooser";
 import { getOrderingStatus } from "./ordering-status";
+import type { PickupChooserMode } from "./pickup-time-chooser";
 import styles from "./ordering-status.module.css";
 
 export default function OrderingStatus({
@@ -19,6 +19,8 @@ export default function OrderingStatus({
 }) {
   const [availability, setAvailability] = useState<PickupAvailability | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [chooser, setChooser] = useState<{ mode: PickupChooserMode; opener: HTMLButtonElement } | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,20 +47,14 @@ export default function OrderingStatus({
 
   const status = availability ? getOrderingStatus(availability) : null;
   const canOrderPickup = Boolean(availability?.asap.available);
-  const canSchedulePickup = Boolean(availability?.scheduled.enabled && availability.scheduled.slots.length);
+  const canSchedulePickup = Boolean(!canOrderPickup && availability?.scheduled.enabled && availability.scheduled.slots.length);
 
-  function startPickup(intent: PickupIntent) {
-    try {
-      savePickupIntent(window.sessionStorage, restaurantId, intent);
-    } catch {
-      // The cart can still open; checkout will use its standard availability default.
-    }
-    trackEvent({ name: "pickup_clicked", restaurantId });
-    window.dispatchEvent(new CustomEvent(pickupIntentEvent, { detail: restaurantId }));
+  function openPickupChooser(mode: PickupChooserMode, opener: HTMLButtonElement) {
+    setChooser({ mode, opener });
   }
 
   return (
-    <aside className={styles.panel} aria-label="Ordering status">
+    <aside className={styles.panel} aria-label="Ordering status" ref={panelRef} tabIndex={-1}>
       <div className={styles.pickup} aria-live="polite">
         <span className={`${styles.indicator} ${status ? styles[status.state] : ""}`} aria-hidden="true" />
         <div>
@@ -69,11 +65,21 @@ export default function OrderingStatus({
       </div>
       {(canOrderPickup || canSchedulePickup || hasDelivery) ? (
         <div className={styles.actions}>
-          {canOrderPickup ? <button className={styles.orderPickup} type="button" onClick={() => startPickup({ mode: "asap" })}>Order Pickup</button> : null}
-          {canSchedulePickup ? <button className={styles.schedulePickup} type="button" onClick={() => startPickup({ mode: "scheduled" })}>Schedule Pickup</button> : null}
+          {canOrderPickup ? <button className={styles.orderPickup} type="button" aria-haspopup="dialog" onClick={(event) => openPickupChooser("order", event.currentTarget)}>Order Pickup</button> : null}
+          {canSchedulePickup ? <button className={styles.schedulePickup} type="button" aria-haspopup="dialog" onClick={(event) => openPickupChooser("schedule", event.currentTarget)}>Schedule Pickup</button> : null}
           {hasDelivery ? <RestaurantDeliveryTrigger className={styles.delivery}>Delivery <span aria-hidden="true">→</span></RestaurantDeliveryTrigger> : null}
         </div>
       ) : null}
+      {chooser && <RestaurantPickupTimeChooser
+        mode={chooser.mode}
+        onAvailabilityChange={setAvailability}
+        onClose={() => {
+          (chooser.opener.isConnected ? chooser.opener : panelRef.current)?.focus({ preventScroll: true });
+          setChooser(null);
+        }}
+        restaurantId={restaurantId}
+        restaurantSlug={restaurantSlug}
+      />}
     </aside>
   );
 }

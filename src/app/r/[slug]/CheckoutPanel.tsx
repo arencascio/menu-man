@@ -143,6 +143,10 @@ export default function CheckoutPanel({
       const nextAvailability = await response.json() as PickupAvailability;
       setAvailability(nextAvailability);
       const requestedPickup = pickupIntent.current;
+      const requestedScheduledAt = requestedPickup?.mode === "scheduled" ? requestedPickup.pickupAt : undefined;
+      const requestedScheduledValid = requestedScheduledAt
+        ? isPickupSelectionAvailable(nextAvailability, { mode: "scheduled", pickupAt: requestedScheduledAt })
+        : false;
       const scheduleRequested = requestedPickup?.mode === "scheduled"
         && nextAvailability.scheduled.enabled
         && nextAvailability.scheduled.slots.length > 0;
@@ -153,7 +157,13 @@ export default function CheckoutPanel({
           : resolvePickupSelection(nextAvailability, restoredPickup.current);
       pickupIntent.current = null;
       restoredPickup.current = undefined;
-      if (scheduleRequested) {
+      if (requestedScheduledAt) {
+        setPickupMode("scheduled");
+        setPickupAt(requestedScheduledValid ? requestedScheduledAt : "");
+        if (!requestedScheduledValid) {
+          setAvailabilityError("Pickup availability changed. Please choose a current pickup time.");
+        }
+      } else if (scheduleRequested) {
         setPickupMode("scheduled");
         setPickupAt("");
       } else if (new URLSearchParams(window.location.search).has("pickupChanged")) {
