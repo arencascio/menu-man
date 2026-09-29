@@ -18,6 +18,7 @@ import {
   paymentLocksCart,
 } from "@/lib/payments/state";
 import type { OrderPaymentView } from "@/lib/payments/view-contracts";
+import type { PaymentStatus } from "@/lib/payments/types";
 import OrderSnapshot from "./OrderSnapshot";
 import SquarePaymentForm from "./SquarePaymentForm";
 import useRestaurantCart from "./useRestaurantCart";
@@ -38,7 +39,7 @@ export default function PaymentPanel({
 }: PaymentPanelProps) {
   const router = useRouter();
   const cart = useRestaurantCart(restaurantId, initialView.order.currency);
-  const [payment, setPayment] = useState(initialView.payment);
+  const [payment, setPayment] = useState<PaymentStatus>({ ...initialView.payment, cancellationReason: initialView.order.cancellationReason });
   const [fakeScenario, setFakeScenario] = useState("success");
   const [submitting, setSubmitting] = useState(false);
   const [abandoning, setAbandoning] = useState(false);
@@ -257,6 +258,7 @@ export default function PaymentPanel({
     if (
       payment.status !== "succeeded"
       || payment.orderStatus === "placed"
+      || (payment.cancellationReason ?? order.cancellationReason) === "restaurant_cancelled"
       || (lateResolutionChoice && lateResolutionChoice !== resolution)
     ) return;
     setLateResolutionChoice(resolution);
@@ -289,9 +291,11 @@ export default function PaymentPanel({
   }
 
   const isPlaced = payment.orderStatus === "placed";
-  const isExpired = isServerMarkedPaymentExpired(payment);
-  const isLateSuccess = payment.status === "succeeded" && !isPlaced;
-  const isLateSuccessRefunded = payment.status === "refunded" && payment.orderStatus === "cancelled";
+  const restaurantCancelled = payment.orderStatus === "cancelled"
+    && (payment.cancellationReason ?? order.cancellationReason) === "restaurant_cancelled";
+  const isExpired = !restaurantCancelled && isServerMarkedPaymentExpired(payment);
+  const isLateSuccess = payment.status === "succeeded" && !isPlaced && !restaurantCancelled;
+  const isLateSuccessRefunded = payment.status === "refunded" && payment.orderStatus === "cancelled" && !restaurantCancelled;
   const processingPresentation = getPaymentProcessingPresentation(payment, longProcessing);
   const fakeScenarios = paymentSession.browserSession.provider === "fake"
     ? paymentSession.browserSession.publicConfig.scenarios as string[] | undefined
@@ -391,6 +395,7 @@ export default function PaymentPanel({
           </div>
         )}
         {isLateSuccessRefunded && <div className={styles.paymentNoticePanel}><h3>Payment refunded</h3><p>The payment was refunded and the order was not placed. Your cart is unlocked.</p></div>}
+        {restaurantCancelled && <div className={styles.paymentNoticePanel}><h3>Order cancelled by the restaurant</h3><p>{payment.status === "refunded" ? "The captured payment has been refunded." : payment.status === "partially_refunded" ? "Part of your payment has been refunded. Contact the restaurant about the remaining balance." : payment.status === "succeeded" ? "Your payment has not been refunded yet. Contact the restaurant for an update." : "This order will not be prepared."}</p></div>}
 
         {showCardPayment && (
           <SquarePaymentForm

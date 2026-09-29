@@ -50,6 +50,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609270001_checkout_pickup_availability_integrity.sql",
     "202609270002_final_payment_pickup_availability.sql",
     "202609280001_pickup_slot_capacity.sql",
+    "202609290001_managed_order_cancellation.sql",
   ]);
 });
 
@@ -355,6 +356,30 @@ test("order management is tenant-scoped, capability-based, and financially isola
   assert.match(migration, /refund_window_days integer not null default 7/i);
   assert.match(migration, /p_restaurant_slug, 'export_order_history'/i);
   assert.match(migration, /realtime\.send\([\s\S]*'order_changed'/i);
+});
+
+test("restaurant cancellation serializes payment and fulfillment, preserves captured money, and releases capacity", () => {
+  const migration = migrations.find(({ file }) => file.endsWith("_managed_order_cancellation.sql"))?.sql || "";
+  assert.match(migration, /'cancel_orders'/);
+  assert.match(migration, /require_restaurant_capability_v1\(p_restaurant_slug, 'cancel_orders'\)/);
+  assert.match(migration, /payment\.order_id = p_order_id and payment\.restaurant_id = access_record\.restaurant_id\s+for update/i);
+  assert.match(migration, /fulfillment\.order_id = p_order_id and fulfillment\.restaurant_id = access_record\.restaurant_id\s+for update/i);
+  assert.match(migration, /for update nowait;[\s\S]*exception when lock_not_available/);
+  assert.match(migration, /order_cancellation_events_action_key unique \(restaurant_id, client_action_id\)/);
+  assert.match(migration, /payment_record\.status <> 'requires_payment_method'[\s\S]*exists \(select 1 from public\.payment_attempts/);
+  assert.match(migration, /payment_record\.status not in \('succeeded', 'partially_refunded', 'refunded'\)/);
+  assert.match(migration, /fulfillment_record\.status = 'completed'/);
+  assert.match(migration, /or exists \(select 1 from public\.payment_attempts attempt/);
+  assert.match(migration, /update public\.orders set order_status = 'cancelled'/);
+  assert.match(migration, /update public\.pickup_slot_reservations[\s\S]*committed_at is null and released_at is null/);
+  assert.match(migration, /greatest\(payment_record\.captured_cents - payment_record\.refunded_cents, 0\)/);
+  assert.match(migration, /order_status = 'cancelled'[\s\S]*'replayed', true/);
+  assert.match(migration, /p_view = 'pending'[\s\S]*order_status = 'pending_payment'/);
+  assert.match(migration, /p_view = 'history'[\s\S]*order_status = 'cancelled'/);
+  assert.match(migration, /attempt_record\.status = 'succeeded'[\s\S]*processing_status = 'ignored'/);
+  assert.doesNotMatch(migration, /update public\.payments set status = 'refunded'/);
+  assert.match(migration, /grant execute on function public\.cancel_managed_order_v1\(text, uuid, uuid\) to authenticated/);
+  assert.doesNotMatch(migration, /grant (?:insert|update|delete) on public\.orders to authenticated/);
 });
 
 test("order management routes expose login but no public signup", () => {

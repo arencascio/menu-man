@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { managedRefundResultSchema } from "@/lib/order-management/contracts";
+import CancelOrderAction from "./CancelOrderAction";
 import styles from "../orders.module.css";
 
 function money(cents: number, currency: string) {
@@ -21,23 +22,35 @@ export default function RefundAction({
   restaurantId,
   orderId,
   originalTotalCents,
+  capturedCents,
   refundedCents,
   refundableCents,
   pendingRefundCents,
   currency,
   policyEligible,
   providerAvailable,
+  canRefund,
+  canCancel,
+  orderNumber,
+  pickupAt,
+  pickupTimezone,
 }: {
   slug: string;
   restaurantId: string;
   orderId: string;
   originalTotalCents: number;
+  capturedCents: number;
   refundedCents: number;
   refundableCents: number;
   pendingRefundCents: number;
   currency: string;
   policyEligible: boolean;
   providerAvailable: boolean;
+  canRefund: boolean;
+  canCancel: boolean;
+  orderNumber: string;
+  pickupAt: string;
+  pickupTimezone: string;
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -51,7 +64,7 @@ export default function RefundAction({
   const [pending, setPending] = useState(false);
   const partialCents = centsFromInput(partialAmount);
   const amountCents = mode === "full" ? refundableCents : partialCents;
-  const eligible = refundableCents > 0 && policyEligible && providerAvailable;
+  const eligible = canRefund && refundableCents > 0 && policyEligible && providerAvailable;
 
   function open() {
     setMode("full");
@@ -135,8 +148,9 @@ export default function RefundAction({
       <details className={styles.actionsMenu}>
         <summary className={styles.secondaryButton}>Actions <span aria-hidden="true">•••</span></summary>
         <div className={styles.actionsMenuPanel}>
-          <button type="button" disabled={!eligible} onClick={open}>Issue refund</button>
-          {unavailableReason ? <p>{unavailableReason}</p> : null}
+          {canRefund ? <button type="button" disabled={!eligible} onClick={open}>Issue refund</button> : null}
+          {canRefund && unavailableReason ? <p>{unavailableReason}</p> : null}
+          {canCancel ? <CancelOrderAction slug={slug} restaurantId={restaurantId} orderId={orderId} orderNumber={orderNumber} pickupAt={pickupAt} pickupTimezone={pickupTimezone} capturedCents={capturedCents} refundedCents={refundedCents} pendingRefundCents={pendingRefundCents} currency={currency} /> : null}
         </div>
       </details>
       <dialog ref={dialogRef} className={styles.refundDialog} aria-labelledby="refund-dialog-title" onCancel={(event) => { if (pending) event.preventDefault(); }}>

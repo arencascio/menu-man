@@ -6,6 +6,7 @@ export const managementCapabilitySchema = z.enum([
   "view_customer_contact",
   "export_order_history",
   "issue_refunds",
+  "cancel_orders",
   "correct_fulfillment",
   "manage_memberships",
   "manage_restaurant_settings",
@@ -14,7 +15,7 @@ export const managementCapabilitySchema = z.enum([
 
 export const managementRoleSchema = z.enum(["owner", "manager", "staff"]);
 export const fulfillmentStatusSchema = z.enum(["new", "preparing", "ready", "completed"]);
-export const orderListViewSchema = z.enum(["active", "history"]);
+export const orderListViewSchema = z.enum(["active", "pending", "history"]);
 
 export type ManagementCapability = z.infer<typeof managementCapabilitySchema>;
 export type FulfillmentStatus = z.infer<typeof fulfillmentStatusSchema>;
@@ -124,6 +125,7 @@ const capabilityLabels: Record<ManagementCapability, string> = {
   view_customer_contact: "View customer contact",
   export_order_history: "Export order history",
   issue_refunds: "Issue refunds",
+  cancel_orders: "Cancel orders",
   correct_fulfillment: "Correct fulfillment",
   manage_memberships: "Manage team",
   manage_restaurant_settings: "Manage restaurant settings",
@@ -197,10 +199,11 @@ export const managedOrderSummarySchema = z.object({
   totalCents: z.number().int().nonnegative(),
   currency: z.string().length(3),
   paymentStatus: z.string().min(1),
+  orderStatus: z.string().min(1),
   refundedCents: z.number().int().nonnegative(),
-  fulfillmentStatus: fulfillmentStatusSchema,
-  fulfillmentVersion: z.number().int().positive(),
-  statusChangedAt: z.iso.datetime({ offset: true }),
+  fulfillmentStatus: fulfillmentStatusSchema.nullable(),
+  fulfillmentVersion: z.number().int().positive().nullable(),
+  statusChangedAt: z.iso.datetime({ offset: true }).nullable(),
   completedAt: z.iso.datetime({ offset: true }).nullable(),
 });
 
@@ -234,7 +237,7 @@ const orderItemSchema = z.object({
 
 export const managedOrderTimelineEventSchema = z.object({
   id: z.string(),
-  kind: z.enum(["fulfillment", "payment", "refund"]),
+  kind: z.enum(["fulfillment", "payment", "refund", "cancellation"]),
   label: z.string(),
   actorName: z.string().nullable(),
   occurredAt: z.iso.datetime({ offset: true }),
@@ -265,7 +268,11 @@ export function mergeManagedOrderTimeline(
 export const managedOrderDetailSchema = z.object({
   orderId: z.uuid(),
   orderNumber: z.string().min(1),
-  placedAt: z.iso.datetime({ offset: true }),
+  placedAt: z.iso.datetime({ offset: true }).nullable(),
+  orderStatus: z.string().min(1),
+  canCancel: z.boolean(),
+  cancelledAt: z.iso.datetime({ offset: true }).nullable(),
+  cancellationReason: z.string().nullable(),
   pickup: z.object({
     mode: z.enum(["asap", "scheduled"]),
     pickupAt: z.iso.datetime({ offset: true }),
@@ -307,12 +314,21 @@ export const managedOrderDetailSchema = z.object({
     version: z.number().int().positive(),
     statusChangedAt: z.iso.datetime({ offset: true }),
     completedAt: z.iso.datetime({ offset: true }).nullable(),
-  }),
+  }).nullable(),
   items: z.array(orderItemSchema),
   timeline: z.array(managedOrderTimelineEventSchema),
 });
 
 export type ManagedOrderDetail = z.infer<typeof managedOrderDetailSchema>;
+
+export const managedCancellationRequestSchema = z.object({ clientActionId: z.uuid() });
+export const managedCancellationResultSchema = z.object({
+  orderId: z.uuid(),
+  status: z.literal("cancelled"),
+  paymentStatus: z.string().min(1),
+  refundRequiredCents: z.number().int().nonnegative(),
+  replayed: z.boolean(),
+});
 
 export const managedRefundRequestSchema = z.object({
   amountCents: z.number().int().positive(),
@@ -374,7 +390,7 @@ export const managedOrdersQuerySchema = z.object({
 
 export type ManagedOrdersQuery = z.infer<typeof managedOrdersQuerySchema>;
 
-export function nextFulfillmentStatus(status: FulfillmentStatus): Exclude<FulfillmentStatus, "new"> | null {
+export function nextFulfillmentStatus(status: FulfillmentStatus | null): Exclude<FulfillmentStatus, "new"> | null {
   if (status === "new") return "preparing";
   if (status === "preparing") return "ready";
   if (status === "ready") return "completed";

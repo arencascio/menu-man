@@ -113,6 +113,7 @@ export type PaymentStatus = {
     | "partially_refunded"
     | "refunded";
   orderStatus: "pending_payment" | "placed" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+  cancellationReason?: string | null;
   paymentStatus: "unpaid" | "pending" | "paid" | "failed" | "partially_refunded" | "refunded";
   captureMode: CaptureMode;
   amountCents: number;

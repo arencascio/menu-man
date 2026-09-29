@@ -138,3 +138,17 @@ test("a late success stays locked with customer-safe confirmation copy", () => {
   assert.equal(paymentLocksCart(lateSuccess, NOW), true);
   assert.equal(getCustomerPaymentStatusLabel(lateSuccess, NOW), "We're confirming your order");
 });
+
+test("restaurant cancellation does not look like a late payment success", () => {
+  const cancelled = payment({
+    status: "succeeded", orderStatus: "cancelled", paymentStatus: "paid",
+    paidAt: "2026-09-11T12:05:00.000Z", cancellationReason: "restaurant_cancelled",
+  });
+  assert.equal(getCustomerPaymentStatusLabel(cancelled, NOW), "Order cancelled");
+  assert.equal(paymentLocksCart(cancelled, NOW), false);
+  assert.equal(getCustomerPaymentStatusLabel({ ...cancelled, status: "refunded", paymentStatus: "refunded" }, NOW), "Order cancelled · payment refunded");
+  const unpaid = { ...cancelled, status: "cancelled" as const, paymentStatus: "failed" as const };
+  assert.equal(paymentLocksCart(unpaid, NOW), false);
+  assert.equal(isServerMarkedPaymentExpired(unpaid, NOW + 60_000_000), false);
+  assert.equal(getCustomerPaymentStatusLabel(unpaid, NOW + 60_000_000), "Order cancelled");
+});

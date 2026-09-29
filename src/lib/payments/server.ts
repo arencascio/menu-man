@@ -348,6 +348,12 @@ export async function getPaymentStatus(orderId: string, checkoutToken: string) {
     if (error) throw parseDatabaseError(error.message);
     status = parsePaymentStatus(data);
   }
+  if (status.orderStatus === "cancelled") {
+    const { data, error } = await supabaseServer.from("orders")
+      .select("cancellation_reason").eq("id", orderId).single();
+    if (error) throw new PaymentServerError("PAYMENT_FAILED", "Payment status could not be loaded.");
+    return { ...status, cancellationReason: data.cancellation_reason };
+  }
   return status;
 }
 

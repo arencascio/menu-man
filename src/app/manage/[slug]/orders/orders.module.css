@@ -68,6 +68,8 @@
 .exceptionActionSlot { width: 0; height: 40px; }
 .contact { display: grid; gap: 7px; font-size: 14px; }
 .refundAction { display: grid; justify-items: end; gap: 8px; }
+.cancelledLabel { display: block; margin-top: 3px; color: #991b1b; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.refundWarning { margin-top: 8px; color: #991b1b; font-size: 13px; font-weight: 700; }
 .actionsMenu { position: relative; }
 .actionsMenu > summary { list-style: none; gap: 8px; }
 .actionsMenu > summary::-webkit-details-marker { display: none; }
@@ -79,6 +81,7 @@
 .refundDialog { width: min(92vw, 520px); max-height: 90vh; padding: 0; border: 1px solid #a8a29e; border-radius: 12px; background: #fff; color: #171717; box-shadow: 0 24px 70px rgb(0 0 0 / 25%); }
 .refundDialog::backdrop { background: rgb(0 0 0 / 45%); }
 .refundDialog form { display: grid; gap: 18px; padding: 22px; }
+.cancelDialogContent { display: grid; gap: 14px; padding: 22px; }
 .dialogHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .dialogHeader h2 { margin-top: 3px; font-size: 24px; letter-spacing: -.025em; }
 .dialogClose { width: 34px; height: 34px; border: 0; border-radius: 6px; background: #f5f5f4; color: #44403c; font-size: 22px; cursor: pointer; }
@@ -118,6 +121,8 @@
   .historyRow > :nth-child(5), .historyRow > :nth-child(6) { display: none; }
 }
 @media (max-width: 600px) {
+  .tabs { width: 100%; flex-wrap: wrap; }
+  .tab { flex: 1 1 110px; padding: 8px 9px; }
   .pageHeader { align-items: stretch; flex-direction: column; }
   .headerActions { justify-content: space-between; }
   .identity { max-width: 150px; }

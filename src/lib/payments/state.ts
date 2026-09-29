@@ -16,6 +16,7 @@ export function getPaymentProcessingPresentation(
 export function isServerMarkedPaymentExpired(payment: PaymentStatus, nowMs = Date.now()) {
   return payment.status === "cancelled"
     && payment.orderStatus === "cancelled"
+    && payment.cancellationReason !== "restaurant_cancelled"
     && payment.latestAttempt?.status !== "cancelled"
     && Date.parse(payment.paymentDueAt) <= nowMs;
 }
@@ -27,6 +28,7 @@ export function shouldExpirePaymentOnStatusRead(payment: PaymentStatus, nowMs = 
 }
 
 export function paymentLocksCart(payment: PaymentStatus, nowMs = Date.now()) {
+  if (payment.orderStatus === "cancelled" && payment.cancellationReason === "restaurant_cancelled") return false;
   if (payment.orderStatus === "placed") return false;
   if (isServerMarkedPaymentExpired(payment, nowMs)) return false;
   if (payment.orderStatus === "pending_payment") return true;
@@ -37,6 +39,9 @@ export function paymentLocksCart(payment: PaymentStatus, nowMs = Date.now()) {
 export function getCustomerPaymentStatusLabel(payment: PaymentStatus, nowMs = Date.now()) {
   if (isServerMarkedPaymentExpired(payment, nowMs)) return "Payment expired";
   if (payment.orderStatus === "placed") return "Paid and placed";
+  if (payment.orderStatus === "cancelled" && payment.cancellationReason === "restaurant_cancelled") {
+    return payment.status === "refunded" ? "Order cancelled · payment refunded" : "Order cancelled";
+  }
   if (payment.status === "succeeded") return "We're confirming your order";
   if (payment.latestAttempt?.status === "unknown") return "Confirmation pending";
   if (payment.latestAttempt?.failureCategory === "authorization_voided") return "Authorization voided";

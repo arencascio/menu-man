@@ -6,6 +6,8 @@ import {
   formatQueuePaymentLabel,
   managedOrdersQuerySchema,
   managedRefundRequestSchema,
+  managedCancellationRequestSchema,
+  managedCancellationResultSchema,
   mergeManagedOrderTimeline,
   nextFulfillmentStatus,
   inviteRestaurantMemberRequestSchema,
@@ -70,11 +72,22 @@ test("fulfillment progression is forward-only and has no accepted state", () => 
   assert.equal(nextFulfillmentStatus("preparing"), "ready");
   assert.equal(nextFulfillmentStatus("ready"), "completed");
   assert.equal(nextFulfillmentStatus("completed"), null);
+  assert.equal(nextFulfillmentStatus(null), null);
   assert.equal(fulfillmentTransitionRequestSchema.safeParse({
     expectedVersion: 1,
     nextStatus: "accepted",
     clientActionId: "11111111-1111-4111-8111-111111111111",
   }).success, false);
+});
+
+test("order cancellation accepts only an action key and reports unrefunded captured money", () => {
+  const clientActionId = "11111111-1111-4111-8111-111111111111";
+  assert.deepEqual(managedCancellationRequestSchema.parse({ clientActionId }), { clientActionId });
+  assert.equal(managedCancellationRequestSchema.safeParse({ clientActionId: "invalid" }).success, false);
+  assert.equal(managedCancellationResultSchema.parse({
+    orderId: "22222222-2222-4222-8222-222222222222",
+    status: "cancelled", paymentStatus: "paid", refundRequiredCents: 1750, replayed: false,
+  }).refundRequiredCents, 1750);
 });
 
 test("due-soon begins at ten minutes and late begins after promised pickup", () => {
@@ -133,4 +146,9 @@ test("management timeline dedupes semantic refund states and the original paymen
   assert.equal(merged.filter((event) => event.label === "Payment confirmed").length, 1);
   assert.equal(merged.filter((event) => event.id === "refund:a:processing").length, 1);
   assert.equal(merged.filter((event) => event.label.includes("completed")).length, 3);
+  const withCancellation = mergeManagedOrderTimeline([...merged, {
+    id: "cancellation:1", kind: "cancellation", label: "Order cancelled",
+    actorName: "Owner", occurredAt: "2026-09-16T18:07:00Z",
+  }], []);
+  assert.equal(withCancellation.at(-1)?.label, "Order cancelled");
 });

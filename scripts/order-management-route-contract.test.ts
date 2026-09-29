@@ -34,7 +34,7 @@ test("management data routes use authenticated RPCs and no-store responses", () 
   const listRoute = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "route.ts");
   const transitionRoute = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "[orderId]", "fulfillment", "route.ts");
   assert.match(dataAccess, /auth\.getClaims\(\)/);
-  assert.match(dataAccess, /list_managed_orders_v1/);
+  assert.match(dataAccess, /list_managed_orders_v2/);
   assert.match(dataAccess, /transition_order_fulfillment_v1/);
   assert.doesNotMatch(dataAccess, /SUPABASE_SERVICE_ROLE_KEY|supabaseServer/);
   assert.match(listRoute, /private, no-store/);
@@ -67,6 +67,24 @@ test("refund management accepts intent only and keeps provider authority server-
   assert.doesNotMatch(route, /providerPaymentReference|payment_status|refunded_cents|currency:/);
   assert.match(server, /reserve_managed_refund_v1/);
   assert.match(server, /p_client_action_id: input\.clientActionId/);
+});
+
+test("order cancellation requires a confirmation and uses the authenticated mutation", () => {
+  const action = source("src", "app", "manage", "[slug]", "orders", "[orderId]", "CancelOrderAction.tsx");
+  const route = source("src", "app", "api", "manage", "restaurants", "[slug]", "orders", "[orderId]", "cancel", "route.ts");
+  const server = source("src", "lib", "order-management", "server.ts");
+  const detail = source("src", "app", "manage", "[slug]", "orders", "[orderId]", "page.tsx");
+  assert.match(action, /Cancel Order/);
+  assert.match(action, /Confirm cancellation/);
+  assert.match(action, /Payment captured/);
+  assert.match(action, /does not refund the payment/);
+  assert.match(action, /managedCancellationResultSchema\.parse/);
+  assert.match(route, /managedCancellationRequestSchema\.safeParse/);
+  assert.match(route, /private, no-store/);
+  assert.match(server, /cancel_managed_order_v1/);
+  assert.match(detail, /order\.orderStatus === "cancelled" \? "Cancelled"/);
+  assert.match(detail, /Unrefunded captured payment/);
+  assert.doesNotMatch(route, /supabaseServer|\.from\("orders"\)/);
 });
 
 test("team management uses trusted routes, final permissions, and an audited lifecycle", () => {

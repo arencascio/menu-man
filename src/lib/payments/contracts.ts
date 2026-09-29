@@ -81,6 +81,7 @@ export const paymentStatusSchema = z.strictObject({
     "failed", "cancelled", "partially_refunded", "refunded",
   ]),
   orderStatus: z.enum(["pending_payment", "placed", "confirmed", "preparing", "ready", "completed", "cancelled"]),
+  cancellationReason: z.string().nullable().optional(),
   paymentStatus: z.enum(["unpaid", "pending", "paid", "failed", "partially_refunded", "refunded"]),
   captureMode: z.enum(["automatic", "manual"]),
   amountCents: z.int().nonnegative(),

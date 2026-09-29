@@ -107,7 +107,7 @@ export default function OrderQueue({ slug, restaurantId, restaurantName, timezon
 
   async function advance(order: ManagedOrderSummary) {
     const nextStatus = nextFulfillmentStatus(order.fulfillmentStatus);
-    if (!nextStatus) return;
+    if (!nextStatus || order.fulfillmentVersion === null) return;
     setPendingId(order.orderId);
     setError(null);
     try {
@@ -139,7 +139,7 @@ export default function OrderQueue({ slug, restaurantId, restaurantName, timezon
     if (nextView === "active") {
       setPage(initialPage);
       void refresh("active");
-    } else void refresh("history");
+    } else void refresh(nextView);
   }
 
   const columns = useMemo(() => (["new", "preparing", "ready"] as const).map((status) => ({ status, orders: page.orders.filter((order) => order.fulfillmentStatus === status) })), [page.orders]);
@@ -157,6 +157,7 @@ export default function OrderQueue({ slug, restaurantId, restaurantName, timezon
       <div className={styles.toolbar}>
         <div className={styles.tabs} aria-label="Order view">
           <button className={`${styles.tab} ${view === "active" ? styles.tabActive : ""}`} onClick={() => changeView("active")}>Active queue</button>
+          <button className={`${styles.tab} ${view === "pending" ? styles.tabActive : ""}`} onClick={() => changeView("pending")}>Pending payments</button>
           <button className={`${styles.tab} ${view === "history" ? styles.tabActive : ""}`} onClick={() => changeView("history")}>Completed / history</button>
         </div>
         <span className={styles.statusLine}>{loading ? "Refreshing…" : "Live · refreshes automatically"}</span>
@@ -184,18 +185,18 @@ export default function OrderQueue({ slug, restaurantId, restaurantName, timezon
         </div>
       ) : (
         <>
-          <div className={styles.filters}>
+          {view === "history" ? <div className={styles.filters}>
             <label className={styles.filterLabel}>Date range<select className={styles.select} value={preset} onChange={(event) => setPreset(event.target.value as HistoryPreset)}><option value="today">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="custom">Custom</option></select></label>
             {preset === "custom" ? <><label className={styles.filterLabel}>From<input className={styles.dateInput} type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} /></label><label className={styles.filterLabel}>To<input className={styles.dateInput} type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} /></label></> : null}
             <label className={styles.filterLabel}>Date basis<select className={styles.select} value={dateBasis} onChange={(event) => setDateBasis(event.target.value as "placed" | "pickup")}><option value="placed">Order placed</option><option value="pickup">Pickup date</option></select></label>
             <button className={styles.secondaryButton} onClick={() => void refresh("history")}>Apply</button>
             {exportUrl ? <a className={styles.secondaryButton} href={exportUrl}>Download CSV</a> : canExport ? <span className={styles.disabledButton} aria-disabled="true">Download CSV</span> : null}
-          </div>
+          </div> : null}
           <div className={styles.history} style={{ marginTop: 14 }}>
-            <div className={`${styles.historyRow} ${styles.historyHeader}`}><span>Order</span><span>Customer / items</span><span>Placed</span><span>Pickup</span><span>Payment</span><span>Total</span></div>
-            {page.orders.length === 0 ? <p className={styles.emptyColumn}>No completed orders in this range.</p> : page.orders.map((order) => <div className={styles.historyRow} key={order.orderId}><Link className={styles.orderLink} href={`/manage/${slug}/orders/${order.orderId}`}>#{order.orderNumber}</Link><span><strong>{order.customerName ?? "Contact restricted"}</strong><br /><small>{order.itemCount} {order.itemCount === 1 ? "item" : "items"} · {order.itemSummary.map((item) => `${item.quantity}× ${item.itemName}`).join(", ")}</small></span><span>{historyPickupLabel({ ...order, pickupAt: order.placedAt })}</span><span>{historyPickupLabel(order)}</span><span className={styles.paid}>{formatQueuePaymentLabel(order.paymentStatus, order.refundedCents, order.currency)}</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: order.currency }).format(order.totalCents / 100)}</strong></div>)}
+            <div className={`${styles.historyRow} ${styles.historyHeader}`}><span>Order</span><span>Customer / items</span><span>{view === "pending" ? "Created" : "Placed"}</span><span>Pickup</span><span>Payment</span><span>Total</span></div>
+            {page.orders.length === 0 ? <p className={styles.emptyColumn}>{view === "pending" ? "No pending payment orders." : "No completed or cancelled orders in this range."}</p> : page.orders.map((order) => <div className={styles.historyRow} key={order.orderId}><span><Link className={styles.orderLink} href={`/manage/${slug}/orders/${order.orderId}`}>#{order.orderNumber}</Link>{order.orderStatus === "cancelled" ? <small className={styles.cancelledLabel}>Cancelled</small> : null}</span><span><strong>{order.customerName ?? "Contact restricted"}</strong><br /><small>{order.itemCount} {order.itemCount === 1 ? "item" : "items"} · {order.itemSummary.map((item) => `${item.quantity}× ${item.itemName}`).join(", ")}</small></span><span>{historyPickupLabel({ ...order, pickupAt: order.placedAt })}</span><span>{historyPickupLabel(order)}</span><span className={styles.paid}>{formatQueuePaymentLabel(order.paymentStatus, order.refundedCents, order.currency)}</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: order.currency }).format(order.totalCents / 100)}</strong></div>)}
           </div>
-          {page.nextCursor ? <div className={styles.loadMore}><button className={styles.secondaryButton} disabled={loading} onClick={() => void refresh("history", page.nextCursor)}>Load more</button></div> : null}
+          {page.nextCursor ? <div className={styles.loadMore}><button className={styles.secondaryButton} disabled={loading} onClick={() => void refresh(view, page.nextCursor)}>Load more</button></div> : null}
         </>
       )}
     </>

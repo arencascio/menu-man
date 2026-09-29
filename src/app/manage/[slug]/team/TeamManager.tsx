@@ -11,6 +11,7 @@ const capabilityInfo: Record<ManagementCapability, { label: string; description:
   view_customer_contact: { label: "View customer contact", description: "See customer phone numbers and email addresses.", sensitive: true },
   export_order_history: { label: "Export order history", description: "Export restaurant orders and customer data.", sensitive: true },
   issue_refunds: { label: "Issue refunds", description: "Issue provider-backed refunds from order details.", sensitive: true },
+  cancel_orders: { label: "Cancel orders", description: "Cancel eligible orders and record the operator action.", sensitive: true },
   correct_fulfillment: { label: "Correct fulfillment", description: "Reserved for audited fulfillment corrections.", sensitive: true },
   manage_memberships: { label: "Manage team", description: "Invite, edit, revoke, and reinstate non-owner team members.", sensitive: true },
   manage_restaurant_settings: { label: "Manage restaurant settings", description: "Configure the restaurant profile, ordering rules, and weekly hours.", sensitive: true },

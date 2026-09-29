@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createAdminServerClient } from "@/lib/supabase/admin-server";
 import {
   fulfillmentTransitionResultSchema,
+  managedCancellationResultSchema,
   managedRefundReservationSchema,
   managedOrderExportRowSchema,
   managedOrderDetailSchema,
@@ -79,7 +80,7 @@ export async function listManagedOrders(
   query: ManagedOrdersQuery,
 ): Promise<ManagedOrderPage> {
   const client = await authenticatedClient();
-  const { data, error } = await client.rpc("list_managed_orders_v1", {
+  const { data, error } = await client.rpc("list_managed_orders_v2", {
     p_restaurant_slug: slug,
     p_view: query.view,
     p_from_date: query.from ?? null,
@@ -105,6 +106,7 @@ export async function listManagedOrders(
     totalCents: row.total_cents,
     currency: row.currency,
     paymentStatus: row.payment_status,
+    orderStatus: row.order_status,
     refundedCents: row.refunded_cents,
     fulfillmentStatus: row.fulfillment_status,
     fulfillmentVersion: row.fulfillment_version,
@@ -128,7 +130,7 @@ export async function getManagedOrderDetail(
   orderId: string,
 ): Promise<ManagedOrderDetail> {
   const client = await authenticatedClient();
-  const { data, error } = await client.rpc("get_managed_order_detail_v1", {
+  const { data, error } = await client.rpc("get_managed_order_detail_v2", {
     p_restaurant_slug: slug,
     p_order_id: orderId,
   });
@@ -143,12 +145,30 @@ export async function getManagedOrderDetail(
     { p_restaurant_slug: slug, p_order_id: orderId },
   );
   if (refundTimelineError) throw rpcError(refundTimelineError);
+  const { data: cancellationData, error: cancellationError } = await client.rpc(
+    "get_managed_order_cancellation_v1",
+    { p_restaurant_slug: slug, p_order_id: orderId },
+  );
+  if (cancellationError) throw rpcError(cancellationError);
   const base = data as Record<string, unknown>;
   const refundView = refundData as { payment?: unknown } | null;
+  const cancellationView = cancellationData as { orderStatus: unknown; canCancel: unknown; cancelledAt: unknown; cancellationReason: unknown; timeline: unknown };
   const originalTimeline = z.array(managedOrderTimelineEventSchema).parse(base.timeline);
   const refundTimeline = z.array(managedOrderTimelineEventSchema).parse(refundTimelineData);
-  const timeline = mergeManagedOrderTimeline(originalTimeline, refundTimeline);
-  return managedOrderDetailSchema.parse({ ...base, payment: refundView?.payment, timeline });
+  const cancellationTimeline = z.array(managedOrderTimelineEventSchema).parse(cancellationView.timeline);
+  const timeline = mergeManagedOrderTimeline([...originalTimeline, ...cancellationTimeline], refundTimeline);
+  return managedOrderDetailSchema.parse({ ...base, ...cancellationView, payment: refundView?.payment, timeline });
+}
+
+export async function cancelManagedOrder(slug: string, orderId: string, clientActionId: string) {
+  const client = await authenticatedClient();
+  const { data, error } = await client.rpc("cancel_managed_order_v1", {
+    p_restaurant_slug: slug,
+    p_order_id: orderId,
+    p_client_action_id: clientActionId,
+  });
+  if (error) throw rpcError(error);
+  return managedCancellationResultSchema.parse(data);
 }
 
 export async function reserveManagedRefund(
