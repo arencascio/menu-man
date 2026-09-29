@@ -596,20 +596,18 @@ begin
   then
     raise exception 'Late success was placed before explicit acceptance';
   end if;
-  late_resolution := public.reserve_fake_late_success_resolution_v1(
-    (order_response ->> 'orderId')::uuid, repeat('5', 64), 'accepted', gen_random_uuid()
-  );
-  payment_status := public.accept_fake_late_success_v1(
-    (order_response ->> 'orderId')::uuid, repeat('5', 64)
-  );
-  if payment_status ->> 'orderStatus' <> 'placed'
-    or payment_status ->> 'paymentStatus' <> 'paid'
-    or (select count(*) from public.analytics_outbox outbox
-        where outbox.event_type = 'purchase'
-          and outbox.aggregate_id = (prepared ->> 'paymentId')::uuid) <> 1
-  then
-    raise exception 'Explicit late-success acceptance did not place the order: %', payment_status;
-  end if;
+  begin
+    perform public.reserve_fake_late_success_resolution_v1(
+      (order_response ->> 'orderId')::uuid, repeat('5', 64), 'accepted', gen_random_uuid()
+    );
+    raise exception 'Released pickup capacity offered late-success acceptance';
+  exception when others then
+    if sqlerrm not like 'MM_PICKUP_RESERVATION_EXPIRED|%' then raise; end if;
+  end;
+  if exists (select 1 from public.analytics_outbox outbox
+      where outbox.event_type = 'purchase'
+        and outbox.aggregate_id = (prepared ->> 'paymentId')::uuid)
+  then raise exception 'Rejected late acceptance emitted a purchase'; end if;
 
   -- Refund a separate quarantined late success through the refund event path.
   order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);

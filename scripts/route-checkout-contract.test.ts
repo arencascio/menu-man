@@ -48,7 +48,7 @@ test("safe editable return and return-to-menu abandon server-side before navigat
   assert.match(payment, /payment\.status === "requires_payment_method"/);
   assert.match(payment, /payment\.latestAttempt === null/);
   assert.match(payment, /checkout-abandonment/);
-  assert.match(payment, /abandonCheckout\(destination: "checkout" \| "menu", pickupChanged = false\)/);
+  assert.match(payment, /abandonCheckout\(destination: "checkout" \| "menu", pickupChanged = false, capacityFull = false\)/);
   assert.match(payment, /destination === "checkout"/);
   assert.match(payment, /router\.push\(destination === "checkout"/);
   assert.match(payment, /disabled=\{!canSafelyAbandon \|\| abandoning\}/);
@@ -103,12 +103,16 @@ test("final payment pickup rejection abandons the pristine order and reloads che
   const route = read("src", "app", "api", "orders", "[orderId]", "payments", "route.ts");
   const server = read("src", "lib", "payments", "server.ts");
   assert.match(route, /"PICKUP_UNAVAILABLE"/);
+  assert.match(route, /"PICKUP_CAPACITY"/);
   assert.match(server, /"PICKUP_UNAVAILABLE"/);
+  assert.match(server, /"PICKUP_CAPACITY"/);
   assert.match(payment, /failure\.error\?\.code === "PICKUP_UNAVAILABLE"/);
-  assert.match(payment, /await abandonCheckout\("checkout", true\)/);
-  assert.match(payment, /checkout\$\{pickupChanged \? "\?pickupChanged=1"/);
+  assert.match(payment, /failure\.error\?\.code === "PICKUP_CAPACITY"/);
+  assert.match(payment, /await abandonCheckout\("checkout", true, failure\.error\.code === "PICKUP_CAPACITY"\)/);
+  assert.match(payment, /checkout\$\{pickupChanged \? `\?pickupChanged=\$\{capacityFull/);
   assert.match(checkout, /new URLSearchParams\(window\.location\.search\)\.has\("pickupChanged"\)/);
   assert.match(checkout, /setPickupAt\(""\)/);
+  assert.match(checkout, /That pickup time just filled up\. Please choose another time\./);
   assert.match(checkout, /fetch\(`\/api\/restaurants\/\$\{encodeURIComponent\(restaurantSlug\)\}\/pickup-availability`/);
 });
 

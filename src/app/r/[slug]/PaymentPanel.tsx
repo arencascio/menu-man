@@ -146,9 +146,9 @@ export default function PaymentPanel({
       const body = await response.json() as unknown;
       if (!response.ok) {
         const failure = body as { error?: { code?: string; message?: string } };
-        if (failure.error?.code === "PICKUP_UNAVAILABLE") {
+        if (failure.error?.code === "PICKUP_UNAVAILABLE" || failure.error?.code === "PICKUP_CAPACITY") {
           paymentAttempt.current = null;
-          await abandonCheckout("checkout", true);
+          await abandonCheckout("checkout", true, failure.error.code === "PICKUP_CAPACITY");
           return;
         }
         throw new Error(failure.error?.message || "Payment could not be submitted.");
@@ -169,7 +169,7 @@ export default function PaymentPanel({
     await submitPaymentMethodToken(`fake:${fakeScenario}`);
   }
 
-  async function abandonCheckout(destination: "checkout" | "menu", pickupChanged = false) {
+  async function abandonCheckout(destination: "checkout" | "menu", pickupChanged = false, capacityFull = false) {
     if (
       abandoning
       || payment.status !== "requires_payment_method"
@@ -198,7 +198,7 @@ export default function PaymentPanel({
       // refetch. The revoked server session then causes each tab to unlock.
       broadcastCheckoutEvent(restaurantId, "payment_changed");
       router.push(destination === "checkout"
-        ? `/r/${encodeURIComponent(restaurantSlug)}/checkout${pickupChanged ? "?pickupChanged=1" : ""}`
+        ? `/r/${encodeURIComponent(restaurantSlug)}/checkout${pickupChanged ? `?pickupChanged=${capacityFull ? "capacity" : "1"}` : ""}`
         : `/r/${encodeURIComponent(restaurantSlug)}/menu`);
     } catch (abandonmentError) {
       setError(abandonmentError instanceof Error
@@ -271,7 +271,14 @@ export default function PaymentPanel({
         body: JSON.stringify({ resolution, clientActionKey: lateResolutionActionKey.current }),
       });
       const body = await response.json() as unknown;
-      if (!response.ok) throw new Error((body as { error?: { message?: string } }).error?.message || "The payment could not be resolved.");
+      if (!response.ok) {
+        const failure = body as { error?: { code?: string; message?: string } };
+        if (failure.error?.code === "PICKUP_RESERVATION_EXPIRED") {
+          setLateResolutionChoice(null);
+          lateResolutionActionKey.current = null;
+        }
+        throw new Error(failure.error?.message || "The payment could not be resolved.");
+      }
       setPayment(paymentStatusSchema.parse(body));
       broadcastCheckoutEvent(restaurantId, "payment_changed");
     } catch (resolutionError) {

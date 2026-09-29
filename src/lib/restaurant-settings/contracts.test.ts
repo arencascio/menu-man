@@ -50,12 +50,15 @@ test("restaurant settings trim values, null blanks, and require HTTPS links", ()
 test("ordering settings enforce checkout-supported ranges and pickup mode invariants", () => {
   const valid = {
     pickupEnabled: true, asapEnabled: true, scheduledPickupEnabled: true,
-    pickupLeadTimeMinutes: 15, pickupSlotIntervalMinutes: 15, advanceOrderDays: 7,
+    pickupLeadTimeMinutes: 15, pickupSlotIntervalMinutes: 15,
+    pickupMaxOrdersPerInterval: 6, advanceOrderDays: 7,
     customerNameRequired: true, customerEmailRequired: true, customerPhoneRequired: false,
     customTipAdditiveCapCents: 50000, refundWindowDays: 7,
   };
   assert.equal(orderingSettingsSchema.safeParse(valid).success, true);
   assert.equal(orderingSettingsSchema.safeParse({ ...valid, pickupSlotIntervalMinutes: 4 }).success, false);
+  assert.equal(orderingSettingsSchema.safeParse({ ...valid, pickupMaxOrdersPerInterval: 0 }).success, false);
+  assert.equal(orderingSettingsSchema.safeParse({ ...valid, pickupMaxOrdersPerInterval: 1001 }).success, false);
   assert.equal(orderingSettingsSchema.safeParse({ ...valid, pickupEnabled: false }).success, false);
   assert.equal(orderingSettingsSchema.safeParse({ ...valid, customTipAdditiveCapCents: -1 }).success, false);
 });

@@ -49,6 +49,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609210002_fix_featured_item_save.sql",
     "202609270001_checkout_pickup_availability_integrity.sql",
     "202609270002_final_payment_pickup_availability.sql",
+    "202609280001_pickup_slot_capacity.sql",
   ]);
 });
 
@@ -614,6 +615,26 @@ test("payment reservation revalidates pickup before contacting the provider", ()
   assert.match(migration, /order_record\.pickup_mode = 'scheduled'/);
   assert.match(migration, /MM_PICKUP_UNAVAILABLE/);
   assert.match(migration, /revoke all on function public\.reserve_payment_attempt_unchecked_v1[\s\S]*service_role/);
+});
+
+test("scheduled capacity uses one database bucket and atomic attempt reservation", () => {
+  const migration = migrations.find(
+    ({ file }) => file.endsWith("_pickup_slot_capacity.sql"),
+  )?.sql || "";
+  assert.match(migration, /pickup_interval_minutes integer\s+generated always as \(pickup_slot_interval_minutes\) stored/);
+  assert.match(migration, /pickup_max_orders_per_interval integer not null default 1000/);
+  assert.match(migration, /create table public\.pickup_slot_reservations/);
+  assert.match(migration, /date_bin\(/);
+  assert.match(migration, /private\.pickup_slot_start_v1\(reservation\.pickup_at, p_interval_minutes\)/);
+  assert.match(migration, /private\.pickup_slot_start_v1\(placed\.pickup_at, p_interval_minutes\)/);
+  assert.match(migration, /pg_advisory_xact_lock\([\s\S]*pickup_slot_lock_key_v1/);
+  assert.match(migration, /MM_PICKUP_CAPACITY\|That pickup time just filled up/);
+  assert.match(migration, /payment_attempt_id = attempt_record\.id and order_id = order_record\.id/);
+  assert.match(migration, /reservation_record\.expires_at <= pg_catalog\.clock_timestamp\(\)/);
+  assert.match(migration, /create trigger pickup_reservation_order_lifecycle/);
+  assert.match(migration, /create trigger pickup_reservation_attempt_lifecycle/);
+  assert.match(migration, /apply_payment_event_without_capacity_v1/);
+  assert.match(migration, /accept_fake_late_success_without_capacity_v1/);
 });
 
 test("delivery providers are normalized, tenant-scoped, audited, and legacy-safe", () => {

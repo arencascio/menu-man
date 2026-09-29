@@ -66,7 +66,8 @@ begin
 
   result := public.update_managed_ordering_settings_v1('test-kitchen', jsonb_build_object(
     'pickupEnabled', false, 'asapEnabled', false, 'scheduledPickupEnabled', false,
-    'pickupLeadTimeMinutes', 20, 'pickupSlotIntervalMinutes', 10, 'advanceOrderDays', 5,
+    'pickupLeadTimeMinutes', 20, 'pickupSlotIntervalMinutes', 10,
+    'pickupMaxOrdersPerInterval', 6, 'advanceOrderDays', 5,
     'customerNameRequired', false, 'customerEmailRequired', true, 'customerPhoneRequired', false,
     'customTipAdditiveCapCents', 12345, 'refundWindowDays', 14
   ), gen_random_uuid());

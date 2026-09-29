@@ -157,11 +157,16 @@ export default function CheckoutPanel({
         setPickupMode("scheduled");
         setPickupAt("");
       } else if (new URLSearchParams(window.location.search).has("pickupChanged")) {
+        const capacityFull = new URLSearchParams(window.location.search).get("pickupChanged") === "capacity";
         setPickupMode(nextAvailability.scheduled.slots.length > 0 ? "scheduled" : "asap");
         setPickupAt("");
-        setAvailabilityError(nextAvailability.asap.available || nextAvailability.scheduled.slots.length > 0
-          ? "Pickup availability changed. Review the current times and choose a valid pickup option."
-          : "Pickup availability changed. No pickup times are currently available.");
+        setAvailabilityError(capacityFull
+          ? nextAvailability.scheduled.slots.length > 0
+            ? "That pickup time just filled up. Please choose another time."
+            : "That pickup time just filled up. No other scheduled times are currently available."
+          : nextAvailability.asap.available || nextAvailability.scheduled.slots.length > 0
+            ? "Pickup availability changed. Review the current times and choose a valid pickup option."
+            : "Pickup availability changed. No pickup times are currently available.");
       } else if (nextSelection) {
         setPickupMode(nextSelection.mode);
         setPickupAt(nextSelection.mode === "scheduled" ? nextSelection.pickupAt : "");

@@ -22,7 +22,11 @@ export default function OrderingSettingsForm({ slug, restaurantName, initialSett
     </section>
     <section className={styles.panel}><h2>Pickup timing</h2><div className={styles.grid}>
       <label className={styles.field}>Lead time (minutes)<input type="number" min="0" max="1440" required value={editor.value.pickupLeadTimeMinutes} onChange={(e) => number("pickupLeadTimeMinutes", e.target.value)} /></label>
-      <label className={styles.field}>Slot interval (minutes)<input type="number" min="5" max="1440" required value={editor.value.pickupSlotIntervalMinutes} onChange={(e) => number("pickupSlotIntervalMinutes", e.target.value)} /><small>5–1,440 minutes.</small></label>
+      <label className={styles.field}>Pickup interval<select value={editor.value.pickupSlotIntervalMinutes} onChange={(e) => number("pickupSlotIntervalMinutes", e.target.value)}>
+        {![10, 15, 20, 30].includes(editor.value.pickupSlotIntervalMinutes) && <option value={editor.value.pickupSlotIntervalMinutes}>{editor.value.pickupSlotIntervalMinutes} minutes (existing)</option>}
+        {[10, 15, 20, 30].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}
+      </select><small>Existing intervals remain unchanged until you choose a new one.</small></label>
+      <label className={styles.field}>Maximum orders per interval<input type="number" min="1" max="1000" required value={editor.value.pickupMaxOrdersPerInterval} onChange={(e) => number("pickupMaxOrdersPerInterval", e.target.value)} /><small>Scheduled pickup only; 1–1,000 orders.</small></label>
       <label className={styles.field}>Advance order days<input type="number" min="0" max="30" required value={editor.value.advanceOrderDays} onChange={(e) => number("advanceOrderDays", e.target.value)} /><small>0–30 days beyond today.</small></label>
     </div></section>
     <section className={styles.panel}><h2>Customer details</h2><p>Required fields remain enforced by authoritative checkout validation.</p>

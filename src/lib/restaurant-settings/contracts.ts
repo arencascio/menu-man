@@ -55,6 +55,7 @@ export const orderingSettingsSchema = z.object({
   scheduledPickupEnabled: z.boolean(),
   pickupLeadTimeMinutes: z.number().int().min(0).max(1440),
   pickupSlotIntervalMinutes: z.number().int().min(5).max(1440),
+  pickupMaxOrdersPerInterval: z.number().int().min(1).max(1000),
   advanceOrderDays: z.number().int().min(0).max(30),
   customerNameRequired: z.boolean(),
   customerEmailRequired: z.boolean(),
