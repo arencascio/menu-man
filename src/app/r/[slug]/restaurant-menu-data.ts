@@ -1,18 +1,21 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import type { MenuModifierGroup } from "@/lib/cart/types";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { MenuSection } from "./MenuBrowser";
 import {
   createMenuModifierGroupResolverFromQueries,
+  loadPaginatedModifierQuery,
   MenuModifierLoadError,
   summarizeModifierQueryFailures,
   type MenuModifierQueryResults,
-  type ModifierQueryError,
 } from "./restaurant-menu-modifiers";
 
 const cabezaSourceItemId = "198880597";
-const cabezaSourceSystem = "doordash";
+const baconSausageSourceItemId = "5333328467";
+const diagnosticSourceItemIds = new Set([cabezaSourceItemId, baconSausageSourceItemId]);
+const sourceSystem = "doordash";
 
 type SourceMenuItem = {
   id: string;
@@ -36,28 +39,6 @@ type LoadedMenuSection = {
     menu_items: SourceMenuItem | SourceMenuItem[] | null;
   }> | null;
 };
-
-type QueryCapture<T> = {
-  data: readonly T[] | null;
-  error: ModifierQueryError | null;
-};
-
-async function captureModifierQuery<T>(
-  query: PromiseLike<{ data: T[] | null; error: ModifierQueryError | null }>,
-): Promise<QueryCapture<T>> {
-  try {
-    const result = await query;
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    return {
-      data: null,
-      error: {
-        code: "QUERY_REJECTED",
-        message: error instanceof Error ? error.message : "Modifier query rejected without an Error instance.",
-      },
-    };
-  }
-}
 
 function getSupabaseProjectRef() {
   try {
@@ -86,12 +67,21 @@ function findCabezaMenuItem(sections: readonly LoadedMenuSection[]) {
       const relation = placement.menu_items;
       const items = Array.isArray(relation) ? relation : relation ? [relation] : [];
       const item = items.find((candidate) =>
-        candidate.source_system === cabezaSourceSystem && candidate.source_item_id === cabezaSourceItemId,
+        candidate.source_system === sourceSystem && candidate.source_item_id === cabezaSourceItemId,
       );
       if (item) return item;
     }
   }
   return null;
+}
+
+async function getModifierDiagnosticRequestId() {
+  if (!shouldLogStagingModifierDiagnostics()) return null;
+  const requestHeaders = await headers();
+  return requestHeaders.get("x-vercel-id")
+    || requestHeaders.get("x-request-id")
+    || requestHeaders.get("x-correlation-id")
+    || null;
 }
 
 function logCabezaModifierFailure(
@@ -144,10 +134,12 @@ function logCabezaModifierVisibility(
   item: { id: string; source_system: string; source_item_id: string },
   groups: MenuModifierGroup[],
   results: MenuModifierQueryResults,
+  requestId: string | null,
 ) {
   if (!shouldLogStagingModifierDiagnostics()) return;
   console.info("menu_modifier_visibility", {
     ...deploymentContext(),
+    requestId,
     restaurantId,
     menuId,
     itemId: item.id,
@@ -174,6 +166,32 @@ function logCabezaModifierVisibility(
         finalEffectiveOptionNames: effectiveGroup.options.map((option) => option.name),
       };
     }),
+  });
+}
+
+function logFinalMenuItemModifierVisibility(
+  restaurantId: string,
+  menuId: string,
+  item: { id: string; source_system: string | null; source_item_id: string | null },
+  modifierGroups: MenuModifierGroup[],
+  requestId: string | null,
+) {
+  if (!shouldLogStagingModifierDiagnostics()
+    || item.source_system !== sourceSystem
+    || !item.source_item_id
+    || !diagnosticSourceItemIds.has(item.source_item_id)) return;
+  console.info("menu_modifier_server_final_item", {
+    ...deploymentContext(),
+    requestId,
+    restaurantId,
+    menuId,
+    sourceItemId: item.source_item_id,
+    itemId: item.id,
+    groups: modifierGroups.map((group) => ({
+      groupId: group.id,
+      groupName: group.name,
+      options: group.options.map((option) => ({ id: option.id, name: option.name })),
+    })),
   });
 }
 
@@ -210,21 +228,27 @@ export async function getRestaurantMenuSections(restaurantId: string, menuId: st
   }
 
   const typedSections = (sections || []) as LoadedMenuSection[];
+  const diagnosticRequestId = withModifiers ? await getModifierDiagnosticRequestId() : null;
   let modifierResults: MenuModifierQueryResults | null = null;
   let getItemModifierGroups: ReturnType<typeof createMenuModifierGroupResolverFromQueries> = () => [];
   if (withModifiers) {
     const [groups, options, attachments, overrides] = await Promise.all([
-      captureModifierQuery(supabaseServer.from("modifier_groups")
-        .select("id, name, description, is_active").eq("restaurant_id", restaurantId)),
-      captureModifierQuery(supabaseServer.from("modifier_options")
+      loadPaginatedModifierQuery((from, to) => supabaseServer.from("modifier_groups")
+        .select("id, name, description, is_active").eq("restaurant_id", restaurantId)
+        .order("id", { ascending: true }).range(from, to)),
+      loadPaginatedModifierQuery((from, to) => supabaseServer.from("modifier_options")
         .select("id, modifier_group_id, name, default_price_adjustment_cents, sort_order, is_default, is_active")
-        .eq("restaurant_id", restaurantId)),
-      captureModifierQuery(supabaseServer.from("menu_item_modifier_groups")
+        .eq("restaurant_id", restaurantId).order("id", { ascending: true }).range(from, to)),
+      loadPaginatedModifierQuery((from, to) => supabaseServer.from("menu_item_modifier_groups")
         .select("menu_item_id, modifier_group_id, min_selections, max_selections, sort_order, is_active")
-        .eq("restaurant_id", restaurantId)),
-      captureModifierQuery(supabaseServer.from("menu_item_modifier_option_overrides")
+        .eq("restaurant_id", restaurantId)
+        .order("menu_item_id", { ascending: true }).order("modifier_group_id", { ascending: true })
+        .range(from, to)),
+      loadPaginatedModifierQuery((from, to) => supabaseServer.from("menu_item_modifier_option_overrides")
         .select("menu_item_id, modifier_group_id, modifier_option_id, price_adjustment_cents, sort_order, is_active")
-        .eq("restaurant_id", restaurantId)),
+        .eq("restaurant_id", restaurantId)
+        .order("menu_item_id", { ascending: true }).order("modifier_option_id", { ascending: true })
+        .range(from, to)),
     ]);
     modifierResults = { groups, options, attachments, overrides };
     const failures = summarizeModifierQueryFailures(modifierResults);
@@ -254,22 +278,40 @@ export async function getRestaurantMenuSections(restaurantId: string, menuId: st
         return items.map((menuItem) => {
           const { source_system, source_item_id, ...clientMenuItem } = menuItem;
           const modifierGroups = withModifiers ? getItemModifierGroups(menuItem.id) : [];
-          if (source_system === cabezaSourceSystem && source_item_id === cabezaSourceItemId && modifierResults) {
+          const finalItem = {
+            ...clientMenuItem,
+            modifierGroups,
+            image_url: menuItem.image_path
+              ? supabaseServer.storage.from("restaurant-assets").getPublicUrl(menuItem.image_path).data.publicUrl
+              : menuItem.source_image_url,
+            ...(withModifiers
+              && shouldLogStagingModifierDiagnostics()
+              && source_system === sourceSystem
+              && source_item_id !== null
+              && diagnosticSourceItemIds.has(source_item_id)
+              ? { diagnosticSourceItemId: source_item_id, diagnosticRequestId }
+              : {}),
+          };
+          if (withModifiers) {
+            logFinalMenuItemModifierVisibility(
+              restaurantId,
+              menuId,
+              { id: menuItem.id, source_system, source_item_id },
+              finalItem.modifierGroups,
+              diagnosticRequestId,
+            );
+          }
+          if (source_system === sourceSystem && source_item_id === cabezaSourceItemId && modifierResults) {
             logCabezaModifierVisibility(
               restaurantId,
               menuId,
               { id: menuItem.id, source_system, source_item_id },
               modifierGroups,
               modifierResults,
+              diagnosticRequestId,
             );
           }
-          return {
-            ...clientMenuItem,
-            modifierGroups,
-            image_url: menuItem.image_path
-              ? supabaseServer.storage.from("restaurant-assets").getPublicUrl(menuItem.image_path).data.publicUrl
-              : menuItem.source_image_url,
-          };
+          return finalItem;
         });
       }),
   }));

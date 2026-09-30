@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   createMenuModifierGroupResolver,
   createMenuModifierGroupResolverFromQueries,
+  loadPaginatedModifierQuery,
+  MODIFIER_QUERY_PAGE_SIZE,
   MenuModifierLoadError,
   summarizeModifierQueryFailures,
 } from "./restaurant-menu-modifiers";
@@ -139,4 +141,123 @@ test("successful empty modifier queries remain distinct from failed queries", ()
 
   assert.deepEqual(summarizeModifierQueryFailures(emptyResults), []);
   assert.deepEqual(createMenuModifierGroupResolverFromQueries(emptyResults)("item"), []);
+});
+
+test("modifier pagination requests an empty final page when the result is exactly 1,000 rows", async () => {
+  const rows = Array.from({ length: MODIFIER_QUERY_PAGE_SIZE }, (_, id) => ({ id }));
+  const requestedRanges: Array<[number, number]> = [];
+  const result = await loadPaginatedModifierQuery(async (from, to) => {
+    requestedRanges.push([from, to]);
+    return { data: rows.slice(from, to + 1), error: null };
+  });
+
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999]]);
+  assert.equal(result.data?.length, MODIFIER_QUERY_PAGE_SIZE);
+  assert.equal(result.error, null);
+});
+
+test("modifier pagination loads multiple pages, a short final page, and no duplicate rows", async () => {
+  const rows = Array.from({ length: 2405 }, (_, id) => ({ id }));
+  const requestedRanges: Array<[number, number]> = [];
+  const result = await loadPaginatedModifierQuery(async (from, to) => {
+    requestedRanges.push([from, to]);
+    return { data: rows.slice(from, to + 1), error: null };
+  });
+
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999], [2000, 2999]]);
+  assert.deepEqual(result.data, rows);
+  assert.equal(new Set(result.data?.map((row) => row.id)).size, rows.length);
+});
+
+test("Cabeza-style overrides after row 1,000 resolve only after the later page is loaded", async () => {
+  const cabezaId = "018e2221-b533-477f-8193-b3c5c95de6b5";
+  const allowedOptionIds = ["remove-option-onion", "remove-option-cilantro"];
+  const fillerRows = Array.from({ length: MODIFIER_QUERY_PAGE_SIZE }, (_, index) => ({
+    menu_item_id: `earlier-item-${index}`,
+    modifier_group_id: removeIngredients.id,
+    modifier_option_id: groupOptions[index % groupOptions.length].id,
+    price_adjustment_cents: null,
+    sort_order: null,
+    is_active: true,
+  }));
+  const databaseRows = [...fillerRows, ...activeOverrides(cabezaId, allowedOptionIds)];
+  const requestedRanges: Array<[number, number]> = [];
+  const overrides = await loadPaginatedModifierQuery(async (from, to) => {
+    requestedRanges.push([from, to]);
+    return { data: databaseRows.slice(from, to + 1), error: null };
+  });
+
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999]]);
+  assert.equal(overrides.data?.length, 1014);
+
+  const resolveGroups = createMenuModifierGroupResolverFromQueries({
+    groups: { data: [removeIngredients], error: null },
+    options: { data: groupOptions, error: null },
+    attachments: {
+      data: [{
+        menu_item_id: cabezaId,
+        modifier_group_id: removeIngredients.id,
+        min_selections: 0,
+        max_selections: 14,
+        sort_order: 0,
+        is_active: true,
+      }],
+      error: null,
+    },
+    overrides,
+  });
+
+  assert.deepEqual(
+    resolveGroups(cabezaId).flatMap((group) => group.options.map((option) => option.name)),
+    ["No Onion", "No Cilantro"],
+  );
+});
+
+test("a later modifier page failure discards partial rows and fails closed", async () => {
+  const requestedRanges: Array<[number, number]> = [];
+  const result = await loadPaginatedModifierQuery(async (from, to) => {
+    requestedRanges.push([from, to]);
+    if (from > 0) {
+      return {
+        data: null,
+        error: { code: "PGRST000", message: "Later page unavailable." },
+      };
+    }
+    return {
+      data: Array.from({ length: MODIFIER_QUERY_PAGE_SIZE }, (_, id) => ({ id })),
+      error: null,
+    };
+  });
+
+  assert.deepEqual(requestedRanges, [[0, 999], [1000, 1999]]);
+  assert.equal(result.data, null);
+  assert.equal(result.error?.message, "Later page unavailable.");
+  assert.throws(() => createMenuModifierGroupResolverFromQueries({
+    groups: { data: [removeIngredients], error: null },
+    options: { data: groupOptions, error: null },
+    attachments: { data: [], error: null },
+    overrides: { data: null, error: result.error },
+  }), (error: unknown) => error instanceof MenuModifierLoadError
+    && error.failedQueries.includes("overrides"));
+});
+
+test("a rejected later modifier page is surfaced and does not return first-page rows", async () => {
+  const result = await loadPaginatedModifierQuery(async (from) => {
+    if (from > 0) throw new Error("Network connection dropped.");
+    return {
+      data: Array.from({ length: MODIFIER_QUERY_PAGE_SIZE }, (_, id) => ({ id })),
+      error: null,
+    };
+  });
+
+  assert.equal(result.data, null);
+  assert.equal(result.error?.code, "QUERY_REJECTED");
+  assert.match(result.error?.message ?? "", /Network connection dropped/);
+  assert.throws(() => createMenuModifierGroupResolverFromQueries({
+    groups: { data: [removeIngredients], error: null },
+    options: { data: groupOptions, error: null },
+    attachments: { data: [], error: null },
+    overrides: { data: null, error: result.error },
+  }), (error: unknown) => error instanceof MenuModifierLoadError
+    && error.failedQueries.includes("overrides"));
 });

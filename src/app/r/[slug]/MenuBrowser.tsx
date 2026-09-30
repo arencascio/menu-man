@@ -33,6 +33,8 @@ export type MenuItem = {
   image_url: string | null;
   is_orderable: boolean;
   modifierGroups: MenuModifierGroup[];
+  diagnosticSourceItemId?: string;
+  diagnosticRequestId?: string | null;
 };
 
 export type MenuSection = {

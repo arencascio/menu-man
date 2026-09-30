@@ -55,10 +55,45 @@ export type MenuModifierQueryResults = {
   overrides: ModifierQueryResult<MenuModifierOverrideRow>;
 };
 
+export const MODIFIER_QUERY_PAGE_SIZE = 1000;
+
 export class MenuModifierLoadError extends Error {
   constructor(readonly failedQueries: string[], message = "Menu modifier data could not be loaded safely.") {
     super(message);
     this.name = "MenuModifierLoadError";
+  }
+}
+
+export async function loadPaginatedModifierQuery<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<{
+    data: readonly T[] | null;
+    error: ModifierQueryError | null;
+  }>,
+  pageSize = MODIFIER_QUERY_PAGE_SIZE,
+): Promise<ModifierQueryResult<T>> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    let result: { data: readonly T[] | null; error: ModifierQueryError | null };
+    try {
+      result = await fetchPage(from, from + pageSize - 1);
+    } catch (error) {
+      return {
+        data: null,
+        error: {
+          code: "QUERY_REJECTED",
+          message: error instanceof Error ? error.message : "Modifier query rejected without an Error instance.",
+        },
+      };
+    }
+    if (result.error) return { data: null, error: result.error };
+    if (result.data === null) {
+      return {
+        data: null,
+        error: { code: "MISSING_DATA", message: "Query page returned neither data nor an error." },
+      };
+    }
+    rows.push(...result.data);
+    if (result.data.length < pageSize) return { data: rows, error: null };
   }
 }
 

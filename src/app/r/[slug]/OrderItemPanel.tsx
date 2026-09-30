@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   calculateUnitPriceCents,
   createModifierSelections,
@@ -46,6 +46,20 @@ export default function OrderItemPanel({
   heartPending,
   onHeart,
 }: OrderItemPanelProps) {
+  useEffect(() => {
+    if (item.diagnosticSourceItemId !== "198880597" && item.diagnosticSourceItemId !== "5333328467") return;
+    console.info("menu_modifier_client_dialog_item", {
+      requestId: item.diagnosticRequestId ?? null,
+      sourceItemId: item.diagnosticSourceItemId,
+      itemId: item.id,
+      groups: item.modifierGroups.map((group) => ({
+        groupId: group.id,
+        groupName: group.name,
+        options: group.options.map((option) => ({ id: option.id, name: option.name })),
+      })),
+    });
+  }, [item.diagnosticRequestId, item.diagnosticSourceItemId, item.id, item.modifierGroups]);
+
   const validationErrors = useMemo(
     () => getModifierValidationErrors(item.modifierGroups, draft.selectedOptionIds),
     [item.modifierGroups, draft.selectedOptionIds],
