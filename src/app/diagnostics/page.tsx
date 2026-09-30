@@ -13,11 +13,23 @@ function formatEnvironment(environment: string | undefined) {
   return environment.charAt(0).toUpperCase() + environment.slice(1);
 }
 
+function getSupabaseProjectRef(url: string | undefined) {
+  if (!url) return "Not configured";
+  try {
+    return new URL(url).hostname.split(".")[0] || "Not configured";
+  } catch {
+    return "Invalid URL";
+  }
+}
+
 export default function DiagnosticsPage() {
   const deployment = {
     environment: formatEnvironment(process.env.VERCEL_ENV),
     branch: process.env.VERCEL_GIT_COMMIT_REF || "local",
     build: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || "dev",
+    supabaseProject: process.env.VERCEL_ENV === "production"
+      ? null
+      : getSupabaseProjectRef(process.env.NEXT_PUBLIC_SUPABASE_URL),
   };
 
   return (
@@ -34,6 +46,7 @@ export default function DiagnosticsPage() {
             <div><dt>Environment</dt><dd>{deployment.environment}</dd></div>
             <div><dt>Branch</dt><dd>{deployment.branch}</dd></div>
             <div><dt>Build</dt><dd>{deployment.build}</dd></div>
+            {deployment.supabaseProject && <div><dt>Supabase project</dt><dd>{deployment.supabaseProject}</dd></div>}
           </dl>
         </section>
         <section aria-labelledby="routes-heading">

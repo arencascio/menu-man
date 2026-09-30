@@ -10,6 +10,7 @@ function source(...parts: string[]) {
 test("homepage is a menu gateway and the dedicated route owns MenuBrowser", () => {
   const home = source("src", "app", "r", "[slug]", "page.tsx");
   const menu = source("src", "app", "r", "[slug]", "menu", "page.tsx");
+  const menuData = source("src", "app", "r", "[slug]", "restaurant-menu-data.ts");
   const intro = source("src", "app", "r", "[slug]", "RestaurantMenuIntro.tsx");
 
   assert.match(home, /<RestaurantMenuIntro\b/);
@@ -21,6 +22,7 @@ test("homepage is a menu gateway and the dedicated route owns MenuBrowser", () =
   assert.match(intro, /primaryAction\?: RestaurantMenuQuicklink/);
   assert.match(menu, /<MenuBrowser\b/);
   assert.match(menu, /getRestaurantMenuSections\(restaurant\.id, menu\.id, true\)/);
+  assert.match(menuData, /createMenuModifierGroupResolverFromQueries\(/);
   assert.match(menu, /initialActivePayment=\{initialActivePayment\}/);
 });
 

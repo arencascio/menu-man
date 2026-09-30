@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canAddMenuItemDirectly, createDirectCartLine, getCardAddMode, hasOptionalCustomization } from "./menu-card-ordering";
+import { canAddMenuItemDirectly, createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, hasOptionalCustomization } from "./menu-card-ordering";
 import type { MenuItem, MenuSection } from "./MenuBrowser";
 
 const plain: MenuItem = { id: "item", name: "Dish", description: null, price_cents: 500, image_url: null, is_orderable: true, modifierGroups: [] };
@@ -58,4 +58,34 @@ test("optional configured defaults use the same modifier pricing path as item de
   }] };
   assert.equal(canAddMenuItemDirectly(item), true);
   assert.equal(createDirectCartLine(item, section, "line").selectedModifiers[0].priceAdjustmentCents, 75);
+});
+
+test("optional burrito removals and extras are recorded and restored when editing a cart line", () => {
+  const item: MenuItem = { ...plain, modifierGroups: [
+    {
+      id: "remove-ingredients", name: "Remove ingredients", description: null,
+      minSelections: 0, maxSelections: 14, sortOrder: 0,
+      options: [
+        { id: "no-rice", name: "No Rice", priceAdjustmentCents: 0, sortOrder: 0, isDefault: false },
+        { id: "no-beans", name: "No Beans", priceAdjustmentCents: 0, sortOrder: 1, isDefault: false },
+      ],
+    },
+    {
+      id: "add-extras", name: "Add extras", description: null,
+      minSelections: 0, maxSelections: 3, sortOrder: 1,
+      options: [
+        { id: "guacamole", name: "Guacamole", priceAdjustmentCents: 150, sortOrder: 0, isDefault: false },
+        { id: "cheese", name: "Cheese", priceAdjustmentCents: 100, sortOrder: 1, isDefault: false },
+      ],
+    },
+  ] };
+  const draft = { selectedOptionIds: new Set(["no-rice", "guacamole"]), quantity: 2, specialInstructions: "extra crispy" };
+  const line = createMenuCartLine(item, section, "line", draft);
+
+  assert.equal(line.basePriceCents, 500);
+  assert.deepEqual(line.selectedModifiers.map(({ modifierOptionName, priceAdjustmentCents }) => [modifierOptionName, priceAdjustmentCents]), [
+    ["No Rice", 0],
+    ["Guacamole", 150],
+  ]);
+  assert.deepEqual(createMenuItemDraft(item, line), draft);
 });

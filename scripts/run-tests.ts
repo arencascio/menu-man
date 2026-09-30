@@ -21,6 +21,7 @@ import "../src/lib/restaurant-settings/contracts.test";
 import "../src/lib/menu-engagement/sections.test";
 import "../src/lib/menu-engagement/featured-picker.test";
 import "../src/app/r/[slug]/menu-card-ordering.test";
+import "../src/app/r/[slug]/restaurant-menu-modifiers.test";
 import "../src/app/r/[slug]/ordering-status.test";
 import "../src/app/r/[slug]/pickup-time-chooser.test";
 import "../src/app/r/[slug]/RestaurantDeliveryProviderIcon.test";

@@ -11,15 +11,26 @@ Run the sequence only against the separately created staging project:
    `npm run import-menu:staging`.
 3. Apply `002_armandos_operations.sql`.
 4. Apply `003_armandos_test_modifiers.sql`.
-5. Apply `004_armandos_fake_payments.sql`.
-6. To route Armando's to Square Sandbox, apply `005_armandos_square_sandbox.sql`
+5. Apply `008_armandos_demo_orderability.sql` using the staging PostgreSQL owner connection. This replaces the two-item test orderability state with the approved 307-item demo baseline.
+6. Apply `009_armandos_burrito_customizations_batch1.sql` with the staging PostgreSQL owner connection after the orderability baseline. This adds provisional removals and eligible extras only to Breakfast Burritos, Burritos, and Wet Burritos.
+7. Apply `010_armandos_taco_torta_customizations_batch2.sql` with the staging PostgreSQL owner connection. It reuses Armando's existing tenant-owned modifier groups only across Street Tacos, Tacos, Tortas, Sopes, and Tostadas.
+8. Apply `004_armandos_fake_payments.sql`.
+9. To route Armando's to Square Sandbox, apply `005_armandos_square_sandbox.sql`
    with the fixed Sandbox merchant and location IDs.
-7. Apply `006_test_kitchen.sql` with the explicit staging marker. This creates
+10. Apply `006_test_kitchen.sql` with the explicit staging marker. This creates
    the noindex, fake-provider-only Menu Man Test Kitchen tenant.
-8. Run SQL contracts `001` through `006` in filename order. The fake
+11. Run SQL contracts `001` through `006` in filename order. The fake
    contract temporarily selects the fake route inside its rolled-back
    transaction; the Square contract uses the selected Square route.
-9. After the order-management migration is applied, invite and bootstrap the
+12. Run Armando customization contracts `015` and `016` after applying the corresponding seeds.
+13. Apply `011_armandos_fries_nachos_quesadillas_sides_batch3.sql` and run
+    contract `017` to verify that batch.
+14. Apply `012_armandos_combination_plates_customizations_batch4.sql` and run
+    contract `018` to verify Combination Plates.
+15. Apply `013_armandos_safe_copy_cleanup.sql` after the customization batches.
+    Its transaction verifies the eight approved descriptions and asserts that
+    no other menu item fields, placements, modifier data, or orderability change.
+16. After the order-management migration is applied, invite and bootstrap the
    first owner with the guarded staging command below. Apply
    `007_test_kitchen_memberships.sql` to link that same user to Test Kitchen,
    then run management tests `007` through `014`.
@@ -38,6 +49,12 @@ npm run import-menu:staging -- --file ./data/armandos.json --dry-run
 npm run import-menu:staging -- --file ./data/armandos.json
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/002_armandos_operations.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/003_armandos_test_modifiers.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/008_armandos_demo_orderability.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/009_armandos_burrito_customizations_batch1.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/010_armandos_taco_torta_customizations_batch2.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/011_armandos_fries_nachos_quesadillas_sides_batch3.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/012_armandos_combination_plates_customizations_batch4.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/013_armandos_safe_copy_cleanup.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/seeds/staging/004_armandos_fake_payments.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -v menu_man_environment=staging -v square_merchant_id='<sandbox-merchant-id>' -v square_location_id='<sandbox-location-id>' -f supabase/seeds/staging/005_armandos_square_sandbox.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -v menu_man_environment=staging -f supabase/seeds/staging/006_test_kitchen.sql
@@ -57,6 +74,10 @@ psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/011
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/012_special_hours_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/013_pickup_availability_repair_contract.sql
 psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/014_restaurant_delivery_providers_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/015_armandos_burrito_customizations_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/016_armandos_taco_torta_customizations_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/017_armandos_fries_nachos_quesadillas_sides_contract.sql
+psql $env:MENU_MAN_STAGING_DATABASE_URL -v ON_ERROR_STOP=1 -f supabase/tests/018_armandos_combination_plates_customizations_contract.sql
 ```
 
 Before `db push`, confirm the linked project printed by the CLI is the new

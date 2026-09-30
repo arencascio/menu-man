@@ -70,8 +70,40 @@ begin
     from public.menu_items
     where restaurant_id = restaurant_uuid
       and is_orderable
-  ) <> 2 then
-    raise exception 'Armando staging modifier seed must enable exactly two items';
+  ) <> 307 then
+    raise exception 'Armando demo orderability baseline must enable 307 items';
+  end if;
+
+  if exists (
+    select 1 from public.menu_items
+    where restaurant_id = restaurant_uuid
+      and source_system = 'doordash'
+      and source_item_id in ('359794279', '359796582')
+      and is_orderable
+  ) then
+    raise exception 'Armando 20-taco party packs must remain unavailable';
+  end if;
+
+  if (
+    select count(*)
+    from public.menu_item_modifier_groups attachment
+    join public.menu_items item on item.id = attachment.menu_item_id
+    where attachment.restaurant_id = restaurant_uuid
+      and attachment.is_active
+      and item.source_system = 'doordash'
+  ) <> 12 then
+    raise exception 'Armando baseline must have exactly 12 active required-choice attachments';
+  end if;
+
+  if exists (
+    select 1
+    from public.menu_item_modifier_groups attachment
+    join public.modifier_groups modifier_group on modifier_group.id = attachment.modifier_group_id
+    where attachment.restaurant_id = restaurant_uuid
+      and attachment.is_active
+      and modifier_group.name = 'Add extras'
+  ) then
+    raise exception 'Armando Add extras must have no active item attachments in the orderability baseline';
   end if;
 end;
 $$;
