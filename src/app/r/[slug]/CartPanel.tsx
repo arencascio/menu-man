@@ -48,9 +48,8 @@ export default function CartPanel({
             {lines.map((line) => (
               <article className={styles.cartLine} key={line.lineId}>
                 <div className={styles.cartLineHeading}>
-                  <div>
+                  <div className={styles.cartLineIdentity}>
                     <h3>{line.itemName}</h3>
-                    <p>{formatPrice(calculateUnitPriceCents(line), currency)} each</p>
                   </div>
                   <strong>{formatPrice(calculateLineTotalCents(line), currency)}</strong>
                 </div>
@@ -65,10 +64,13 @@ export default function CartPanel({
                   </ul>
                 )}
                 {line.specialInstructions && <p className={styles.cartInstructions}>{line.specialInstructions}</p>}
-                <div className={styles.cartLineActions}>
+                <div className={styles.cartLinePurchase}>
+                  <p>{formatPrice(calculateUnitPriceCents(line), currency)} each</p>
                   <QuantityControl compact quantity={line.quantity} onChange={(quantity) => onQuantityChange(line.lineId, quantity)} />
-                  <button type="button" onClick={() => onEdit(line)}>Edit</button>
-                  <button type="button" onClick={() => onRemove(line.lineId)}>Remove</button>
+                  <div className={styles.cartLineActions}>
+                    <button type="button" onClick={() => onEdit(line)}>Edit</button>
+                    <button type="button" aria-label={`Remove ${line.itemName}`} onClick={() => onRemove(line.lineId)}>Remove</button>
+                  </div>
                 </div>
               </article>
             ))}

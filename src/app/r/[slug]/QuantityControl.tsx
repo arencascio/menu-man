@@ -1,4 +1,5 @@
 import { MAX_CART_QUANTITY } from "@/lib/cart/cart";
+import MenuIcon from "./MenuIcon";
 import styles from "./menu-browser.module.css";
 
 type QuantityControlProps = {
@@ -11,7 +12,7 @@ export default function QuantityControl({ quantity, onChange, compact = false }:
   return (
     <div className={compact ? `${styles.quantityControl} ${styles.quantityControlCompact}` : styles.quantityControl} aria-label="Quantity">
       <button type="button" onClick={() => onChange(Math.max(1, quantity - 1))} disabled={quantity <= 1} aria-label="Decrease quantity">
-        −
+        <MenuIcon name="minus" size={16} />
       </button>
       <input
         aria-label="Quantity"
@@ -23,7 +24,7 @@ export default function QuantityControl({ quantity, onChange, compact = false }:
         onChange={(event) => onChange(Math.min(MAX_CART_QUANTITY, Math.max(1, Number(event.target.value) || 1)))}
       />
       <button type="button" onClick={() => onChange(Math.min(MAX_CART_QUANTITY, quantity + 1))} disabled={quantity >= MAX_CART_QUANTITY} aria-label="Increase quantity">
-        +
+        <MenuIcon name="plus" size={16} />
       </button>
     </div>
   );

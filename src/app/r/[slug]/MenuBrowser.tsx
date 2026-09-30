@@ -18,6 +18,7 @@ import { pickupIntentEvent } from "@/lib/checkout/pickup-intent";
 import { composePersonalizedMenuSections } from "@/lib/menu-engagement/sections";
 import { clearSearchIntent, consumeNavigationIntent, searchIntent } from "@/lib/menu-engagement/navigation-intent";
 import CartPanel from "./CartPanel";
+import MenuIcon from "./MenuIcon";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import { createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, type MenuItemDraft } from "./menu-card-ordering";
 import MenuCardImage from "./MenuCardImage";
@@ -34,8 +35,6 @@ export type MenuItem = {
   image_url: string | null;
   is_orderable: boolean;
   modifierGroups: MenuModifierGroup[];
-  diagnosticSourceItemId?: string;
-  diagnosticRequestId?: string | null;
 };
 
 export type MenuSection = {
@@ -762,7 +761,7 @@ export default function MenuBrowser({
       <div ref={controlsRef} className={`${styles.controls} ${isCartOpen ? styles.controlsInactive : ""}`}>
         <div className={styles.categoryNav}>
           <div className={`${styles.categoryStrip} ${categoryEdges.left ? styles.categoryStripLeftEdge : ""} ${categoryEdges.right ? styles.categoryStripRightEdge : ""}`}>
-          {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}>‹</button>}
+          {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}><MenuIcon name="chevronLeft" size={18} /></button>}
           <nav ref={categoriesRef} className={styles.categories} aria-label="Menu categories" onPointerDown={() => { followActiveCategoryRef.current = false; }} onTouchStart={() => { followActiveCategoryRef.current = false; }} onWheel={(event) => { if (event.deltaX) followActiveCategoryRef.current = false; }}>
           {menuSections.map((section) => (
             <button
@@ -777,7 +776,7 @@ export default function MenuBrowser({
             </button>
           ))}
           </nav>
-          {categoryEdges.right && <button className={`${styles.categoryArrow} ${styles.categoryArrowRight}`} type="button" aria-label="Scroll categories right" onClick={() => scrollCategories(1)}>›</button>}
+          {categoryEdges.right && <button className={`${styles.categoryArrow} ${styles.categoryArrowRight}`} type="button" aria-label="Scroll categories right" onClick={() => scrollCategories(1)}><MenuIcon name="chevronRight" size={18} /></button>}
           </div>
           <button
             className={styles.sectionListButton}
@@ -786,15 +785,12 @@ export default function MenuBrowser({
             aria-label="Browse all menu sections"
             onClick={(event) => openSectionList(event.currentTarget)}
           >
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 5h1" /><path d="M3 12h1" /><path d="M3 19h1" />
-              <path d="M8 5h1" /><path d="M8 12h1" /><path d="M8 19h1" />
-              <path d="M13 5h8" /><path d="M13 12h8" /><path d="M13 19h8" />
-            </svg>
+            <MenuIcon name="sections" size={17} />
             <span className={styles.sectionListLabel}>Sections</span>
           </button>
         </div>
         <div className={styles.search}>
+          <MenuIcon name="search" size={18} />
           <label className={styles.visuallyHidden} htmlFor={searchId}>Search menu</label>
           <input
             ref={searchRef}
@@ -812,7 +808,7 @@ export default function MenuBrowser({
             setSearchInput("");
             setSearch("");
             searchRef.current?.focus();
-          }}>×</button>}
+          }}><MenuIcon name="close" size={17} /></button>}
         </div>
         <button
           className={styles.cartButton}
@@ -829,7 +825,7 @@ export default function MenuBrowser({
             }
           }}
         >
-          Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}
+          <MenuIcon name="cart" size={17} /> Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}
         </button>
         {showResultCount && <p className={styles.resultCount} aria-live="polite">{visibleItemCount === 0 ? "No results" : `${visibleItemCount} ${visibleItemCount === 1 ? "result" : "results"}`}</p>}
       </div>
@@ -926,10 +922,10 @@ export default function MenuBrowser({
                       disabled={pendingHearts.includes(item.id)}
                       onClick={() => void toggleHeart(item.id)}
                     >
-                      <span aria-hidden="true">{likedItemIds.includes(item.id) ? "♥" : "♡"}</span>
+                      <MenuIcon name={likedItemIds.includes(item.id) ? "heartFilled" : "heart"} size={20} />
                     </button>
                     {heartCounts[item.id] ? <span className={styles.heartCount} aria-hidden="true">{heartCounts[item.id]}</span> : null}
-                    {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><span aria-hidden="true">+</span></button>}
+                    {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name="plus" size={20} /></button>}
                     </div>;
                   })}
                 </div>
@@ -970,9 +966,9 @@ export default function MenuBrowser({
         }}
       >
         <div className={`${styles.dialogToolbar} ${selectedDetail.mode === "quick" ? styles.dialogToolbarQuick : ""}`}>
-          {selectedDetail.mode === "full" && <button className={styles.dialogShare} type="button" onClick={() => void shareItem(selectedDetail.item)}>Share</button>}
+          {selectedDetail.mode === "full" && <button className={styles.dialogShare} type="button" onClick={() => void shareItem(selectedDetail.item)}><MenuIcon name="share" size={16} /> Share</button>}
           {selectedDetail.mode === "full" && <span className={styles.shareStatus} aria-live="polite">{shareStatus}</span>}
-          <button data-detail-close className={`${styles.dialogClose} ${selectedDetail.mode === "quick" ? styles.quickClose : ""}`} type="button" onClick={() => closeDetail(selectedDetail.item, selectedDetail.section)}>{selectedDetail.mode === "quick" ? <><span className={styles.visuallyHidden}>Close quick add</span><span aria-hidden="true">×</span></> : <>Close <span aria-hidden="true">×</span></>}</button>
+          <button data-detail-close className={`${styles.dialogClose} ${selectedDetail.mode === "quick" ? styles.quickClose : ""}`} type="button" onClick={() => closeDetail(selectedDetail.item, selectedDetail.section)}>{selectedDetail.mode === "quick" ? <span className={styles.visuallyHidden}>Close quick add</span> : "Close"}<MenuIcon name="close" size={17} /></button>
         </div>
         {selectedDetail.mode === "quick" && activeDraft ? <QuickChoicePanel
           item={selectedDetail.item}

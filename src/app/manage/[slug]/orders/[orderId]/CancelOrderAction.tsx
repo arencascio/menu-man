@@ -41,6 +41,7 @@ export default function CancelOrderAction({
     actionIdRef.current = crypto.randomUUID();
     setError(null);
     dialogRef.current?.showModal();
+    dialogRef.current?.querySelector<HTMLElement>("#cancel-order-title")?.focus({ preventScroll: true });
   }
 
   async function submit() {
@@ -83,7 +84,7 @@ export default function CancelOrderAction({
     <dialog ref={dialogRef} className={styles.refundDialog} aria-labelledby="cancel-order-title" onCancel={(event) => { if (pending) event.preventDefault(); }}>
       <div className={styles.cancelDialogContent}>
         <div className={styles.dialogHeader}>
-          <div><p className={styles.eyebrow}>Order #{orderNumber}</p><h2 id="cancel-order-title">Cancel order?</h2></div>
+          <div><p className={styles.eyebrow}>Order #{orderNumber}</p><h2 id="cancel-order-title" tabIndex={-1}>Cancel order?</h2></div>
           <button className={styles.dialogClose} type="button" aria-label="Close cancellation dialog" disabled={pending} onClick={() => dialogRef.current?.close()}>×</button>
         </div>
         <p>Pickup: {pickupLabel}</p>
