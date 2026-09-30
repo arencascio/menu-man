@@ -14,6 +14,9 @@ test("menu section controls are bookmarks and never filter the published menu", 
   assert.match(browser, /requestAnimationFrame\(\(\) => scrollToSection\(section\.id, behavior\)\)/);
   assert.match(browser, /function selectSectionFromList\(section: MenuSection\)\s*\{\s*navigateToSection\(section, true\);/);
   assert.match(browser, /if \(targetSectionId\)[\s\S]*?scrollToSection\(targetSectionId, behavior\)/);
+  assert.match(browser, /navigationIntentRef\.current = clearSearchIntent\(section\.id\)/);
+  assert.match(browser, /setSearchInput\(""\);\s*setSearch\(""\)/);
+  assert.match(browser, /if \(visibleSections\.some\(\(section\) => section\.id === intent\.sectionId\)\) scrollToSection/);
 });
 
 test("active section remains scroll-derived and menu search remains the only filter", () => {
@@ -23,4 +26,6 @@ test("active section remains scroll-derived and menu search remains the only fil
   assert.match(browser, /item\.name, item\.description \|\| ""/);
   assert.match(browser, /sectionIdForHash/);
   assert.match(browser, /window\.addEventListener\("hashchange", scrollHashTarget\)/);
+  assert.match(browser, /navigationIntentRef\.current = nextSearch \? searchIntent\(\) : clearSearchIntent\(\)/);
+  assert.match(browser, /menuResultsRef\.current\?\.scrollIntoView\(\{ block: "start", behavior \}\)/);
 });

@@ -16,6 +16,7 @@ import {
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import { pickupIntentEvent } from "@/lib/checkout/pickup-intent";
 import { composePersonalizedMenuSections } from "@/lib/menu-engagement/sections";
+import { clearSearchIntent, consumeNavigationIntent, searchIntent } from "@/lib/menu-engagement/navigation-intent";
 import CartPanel from "./CartPanel";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import { createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, type MenuItemDraft } from "./menu-card-ordering";
@@ -85,6 +86,8 @@ export default function MenuBrowser({
   const categoryButtonsRef = useRef(new Map<string, HTMLButtonElement>());
   const followActiveCategoryRef = useRef(true);
   const pendingSectionNavigationRef = useRef<string | null>(null);
+  const navigationIntentRef = useRef<ReturnType<typeof searchIntent>>({ kind: "idle" });
+  const menuResultsRef = useRef<HTMLDivElement>(null);
   const initialHashHandledRef = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const detailOpenerRef = useRef<HTMLElement | null>(null);
@@ -399,6 +402,8 @@ export default function MenuBrowser({
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const nextSearch = searchInput.trim().toLowerCase();
+      if (nextSearch === search) return;
+      navigationIntentRef.current = nextSearch ? searchIntent() : clearSearchIntent();
       setSearch(nextSearch);
       if (nextSearch) {
         const resultCount = menuSections
@@ -407,7 +412,7 @@ export default function MenuBrowser({
       }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [restaurantId, searchInput, menuSections]);
+  }, [restaurantId, search, searchInput, menuSections]);
 
   const visibleSections = useMemo(() => menuSections
     .map((section) => ({
@@ -423,6 +428,21 @@ export default function MenuBrowser({
     .filter((section) => section.items.length > 0), [menuSections, search]);
   const visibleItemCount = visibleSections.reduce((total, section) => total + section.items.length, 0);
   const showResultCount = Boolean(search);
+  const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior) => {
+    document.getElementById(getMenuSectionAnchorId(sectionId))?.scrollIntoView({ block: "start", behavior });
+  }, []);
+
+  useLayoutEffect(() => {
+    const intent = navigationIntentRef.current;
+    if (intent.kind === "idle") return;
+    navigationIntentRef.current = consumeNavigationIntent();
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    if (intent.kind === "section") {
+      if (visibleSections.some((section) => section.id === intent.sectionId)) scrollToSection(intent.sectionId, behavior);
+    } else {
+      menuResultsRef.current?.scrollIntoView({ block: "start", behavior });
+    }
+  }, [search, searchInput, visibleSections, scrollToSection]);
 
   useEffect(() => {
     if (hasActiveSurface) return;
@@ -451,10 +471,6 @@ export default function MenuBrowser({
       window.removeEventListener("resize", schedule);
     };
   }, [hasActiveSurface, headerHeight, controlsHeight, visibleSections, ensureActiveCategoryVisible]);
-
-  const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior) => {
-    document.getElementById(getMenuSectionAnchorId(sectionId))?.scrollIntoView({ block: "start", behavior });
-  }, []);
 
   useEffect(() => {
     const openPickupCart = (event: Event) => {
@@ -535,12 +551,20 @@ export default function MenuBrowser({
 
   function navigateToSection(section: MenuSection, fromSectionList = false) {
     followActiveCategoryRef.current = true;
+    const clearingSearch = Boolean(search || searchInput.trim());
+    if (clearingSearch) {
+      navigationIntentRef.current = fromSectionList ? { kind: "idle" } : clearSearchIntent(section.id);
+      setSearchInput("");
+      setSearch("");
+    }
     if (fromSectionList) {
       pendingSectionNavigationRef.current = section.id;
       closeSectionList();
     } else {
-      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-      requestAnimationFrame(() => scrollToSection(section.id, behavior));
+      if (!clearingSearch) {
+        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+        requestAnimationFrame(() => scrollToSection(section.id, behavior));
+      }
     }
     trackEvent({ name: "category_selected", restaurantId, sectionId: section.id, sectionName: section.name });
   }
@@ -784,6 +808,7 @@ export default function MenuBrowser({
             placeholder="Search the menu..."
           />
           {searchInput && <button className={styles.searchClear} type="button" aria-label="Clear search" onClick={() => {
+            navigationIntentRef.current = clearSearchIntent();
             setSearchInput("");
             setSearch("");
             searchRef.current?.focus();
@@ -842,7 +867,7 @@ export default function MenuBrowser({
           </nav>
         </div>
       </dialog>
-      <div className={styles.menu}>
+      <div ref={menuResultsRef} className={styles.menu}>
         {isCartOpen && <div ref={cartRef} className={styles.cartSlot}>
           <CartPanel
             lines={cart.lines}
