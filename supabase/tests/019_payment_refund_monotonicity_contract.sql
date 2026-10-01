@@ -24,6 +24,7 @@ declare
   expected_status text;
   refund_amount integer;
   variant text;
+  access_token_hash text;
 begin
   select id into strict restaurant_uuid
   from public.restaurants where slug = 'armandos' and is_active;
@@ -43,12 +44,6 @@ begin
 
   update public.restaurant_ordering_settings set advance_order_days = 1
   where restaurant_id = restaurant_uuid;
-  select slot ->> 'pickupAt' into strict pickup_at_value
-  from jsonb_array_elements(
-    public.get_pickup_availability_v1('armandos', statement_timestamp()) #> '{scheduled,slots}'
-  ) slot
-  order by (slot ->> 'pickupAt')::timestamptz limit 1;
-
   request_payload := jsonb_build_object(
     'menuId', menu_uuid,
     'items', jsonb_build_array(jsonb_build_object(
@@ -57,19 +52,27 @@ begin
       'specialInstructions', null)),
     'customer', jsonb_build_object('name', 'AUDIT TEST',
       'phone', '(951) 555-0100', 'email', 'audit-test@example.invalid'),
-    'pickup', jsonb_build_object('mode', 'scheduled', 'pickupAt', pickup_at_value),
+    'pickup', jsonb_build_object('mode', 'scheduled'),
     'tipChoice', 'none', 'orderNotes', 'AUTOMATED STAGING AUDIT'
   );
 
   foreach variant in array array['full', 'partial'] loop
+    access_token_hash := md5(gen_random_uuid()::text) || md5(gen_random_uuid()::text);
+    select slot ->> 'pickupAt' into strict pickup_at_value
+    from jsonb_array_elements(
+      public.get_pickup_availability_v1('armandos', statement_timestamp()) #> '{scheduled,slots}'
+    ) slot
+    order by (slot ->> 'pickupAt')::timestamptz limit 1;
+    request_payload := jsonb_set(request_payload, '{pickup,pickupAt}', to_jsonb(pickup_at_value));
+
     event_prefix := 'refund-monotonicity-' || gen_random_uuid()::text;
     payment_reference := event_prefix || '-payment';
     order_response := public.create_order_v1('armandos', gen_random_uuid()::text, request_payload);
     prepared := public.prepare_payment_v1(
-      (order_response ->> 'orderId')::uuid, repeat('a', 64), false, 30, 120);
+      (order_response ->> 'orderId')::uuid, access_token_hash, false, 30, 120);
     payment_uuid := (prepared ->> 'paymentId')::uuid;
     attempt := public.reserve_payment_attempt_v1(
-      (order_response ->> 'orderId')::uuid, repeat('a', 64), gen_random_uuid());
+      (order_response ->> 'orderId')::uuid, access_token_hash, gen_random_uuid());
 
     event_response := public.ingest_payment_reconciliation_v1(
       'square', 'sandbox', event_prefix || '-first-success', connection_uuid,
