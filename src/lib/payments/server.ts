@@ -732,18 +732,14 @@ export async function processDuePaymentEvents(providerKey: string) {
   if (providerKey === "square" && !isSquareSandboxRuntimeEnabled()) {
     throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "The Square Sandbox payment provider is disabled.");
   }
-  const { data, error } = await supabaseServer.rpc("list_due_payment_webhooks_v1", {
+  const { data, error } = await supabaseServer.rpc("drain_due_payment_webhooks_v1", {
     p_provider_key: providerKey,
     p_limit: 25,
   });
   if (error) throw parseDatabaseError(error.message);
-
-  for (const row of (data || []) as Array<{ webhook_event_id: string }>) {
-    const result = await supabaseServer.rpc("apply_payment_event_v1", {
-      p_webhook_event_id: row.webhook_event_id,
-    });
-    if (result.error) {
-      console.error("Payment event processing failed.", row.webhook_event_id, result.error.message);
-    }
+  const result = data as { claimed?: number; failed?: number; quarantined?: number } | null;
+  if (result?.failed) {
+    console.error("Payment event drain recorded application failures.", result);
   }
+  return result;
 }

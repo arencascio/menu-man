@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { acceptPaymentWebhook, processDuePaymentEvents } from "@/lib/payments/server";
 import { isSquareSandboxRuntimeEnabled } from "@/lib/payments/runtime";
 import { InvalidSquareWebhookError } from "@/lib/payments/providers/square/webhook";
+import { acknowledgeStoredPaymentWebhook } from "@/lib/payments/webhook-acknowledgement";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,8 +19,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Webhook is too large." }, { status: 413, headers: responseHeaders });
   }
   try {
-    const accepted = await acceptPaymentWebhook("square", rawBody, request.headers);
-    await processDuePaymentEvents("square");
+    const accepted = await acknowledgeStoredPaymentWebhook(
+      () => acceptPaymentWebhook("square", rawBody, request.headers),
+      () => processDuePaymentEvents("square"),
+      (error) => console.error("Square payment event drain failed after durable ingestion.", error),
+    );
     return NextResponse.json({ accepted }, { status: 200, headers: responseHeaders });
   } catch (error) {
     if (!(error instanceof InvalidSquareWebhookError)) {
