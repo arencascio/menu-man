@@ -1,7 +1,6 @@
-import Image from "next/image";
 import styles from "./menu-browser.module.css";
 
-type MenuIconName = "chevronLeft" | "chevronRight" | "close" | "heart" | "heartFilled" | "minus" | "plus" | "search" | "share" | "cart" | "sections";
+type MenuIconName = "chevronLeft" | "chevronRight" | "close" | "heart" | "heartFilled" | "minus" | "plus" | "search" | "share" | "cart" | "sections" | "mapPin" | "hourglass" | "truck";
 
 const iconFiles: Record<Exclude<MenuIconName, "heart" | "heartFilled">, string> = {
   chevronLeft: "chevron-right",
@@ -13,6 +12,9 @@ const iconFiles: Record<Exclude<MenuIconName, "heart" | "heartFilled">, string> 
   share: "share-2",
   cart: "shopping-cart",
   sections: "menu-all-sections-button",
+  mapPin: "map-pin",
+  hourglass: "hourglass",
+  truck: "truck",
 };
 
 export default function MenuIcon({ name, size = 18 }: { name: MenuIconName; size?: number }) {
@@ -25,5 +27,10 @@ export default function MenuIcon({ name, size = 18 }: { name: MenuIconName; size
     );
   }
   const flipped = name === "chevronLeft";
-  return <Image className={`${styles.menuIcon} ${flipped ? styles.menuIconFlipped : ""}`} style={style} src={`/img/icons/${iconFiles[name]}.svg`} width={size} height={size} unoptimized alt="" aria-hidden="true" />;
+  const iconStyle = {
+    ...style,
+    maskImage: `url("/img/icons/${iconFiles[name]}.svg")`,
+    WebkitMaskImage: `url("/img/icons/${iconFiles[name]}.svg")`,
+  };
+  return <span className={`${styles.menuIcon} ${styles.menuIconMask} ${flipped ? styles.menuIconFlipped : ""}`} style={iconStyle} aria-hidden="true" />;
 }

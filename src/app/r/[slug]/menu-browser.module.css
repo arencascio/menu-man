@@ -17,6 +17,7 @@
 
 .controlsAnchor { display: block; height: 0; }
 .menuIcon { display: inline-block; flex: 0 0 auto; vertical-align: middle; object-fit: contain; }
+.menuIconMask { background-color: currentColor; mask-position: center; mask-repeat: no-repeat; mask-size: contain; }
 .menuIconFlipped { transform: rotate(180deg); }
 .controls {
   position: sticky;
@@ -105,7 +106,7 @@
 .itemCard:has(.itemSelected) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .itemSelected { background: color-mix(in srgb, var(--accent) 3%, var(--card-bg)); }
 .itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 13px; }
-.cardAddButton { position: absolute; right: 9px; bottom: 9px; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--accent); border-radius: 999px; color: var(--card-bg); background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 16%, transparent); cursor: pointer; font: inherit; font-size: 27px; font-weight: 500; line-height: 1; transition: background-color .15s ease, box-shadow .15s ease; }
+.cardAddButton { position: absolute; right: 9px; bottom: 9px; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--accent); border-radius: 999px; color: #fff; background: var(--accent); box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 16%, transparent); cursor: pointer; font: inherit; font-size: 27px; font-weight: 500; line-height: 1; transition: background-color .15s ease, box-shadow .15s ease; }
 .cardAddButton:hover { background: color-mix(in srgb, var(--accent) 88%, #000); box-shadow: 0 3px 10px color-mix(in srgb, var(--ink) 22%, transparent); }
 .cardAddButton:active { background: color-mix(in srgb, var(--accent) 78%, #000); }
 .cardAddButton:disabled { cursor: not-allowed; color: #555; background: #dedede; }
@@ -129,7 +130,7 @@
 .price { color: var(--accent); font-size: 15px; font-weight: 800; }
 .itemDescription { display: -webkit-box; min-height: 3.9em; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
 .cardAvailability { margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
-.cardFooter { box-sizing: border-box; display: flex; min-height: 46px; align-items: center; padding: 8px 62px 8px 13px; border-top: 1px solid var(--line); color: transparent; background: color-mix(in srgb, var(--ink) 1.5%, var(--card-bg)); font-size: 12px; font-weight: 800; }
+.cardFooter { box-sizing: border-box; display: flex; min-height: 38px; align-items: center; padding: 5px 62px 5px 13px; border-top: 1px solid var(--line); color: transparent; background: color-mix(in srgb, var(--ink) 1.5%, var(--card-bg)); font-size: 12px; font-weight: 800; }
 .cardFooterActive { color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--card-bg)); }
 .detailCartStatus { color: var(--accent); font-size: 12px; font-weight: 800; }
 .detailCartStatus { margin: 5px 0 0; }
@@ -142,6 +143,7 @@
 .itemDialogQuick::backdrop { background: #0005; }
 .dialogToolbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--card-bg); }
 .dialogShare { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; border: 1px solid var(--line); border-radius: 8px; padding: 0 13px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; }
+.dialogShare > svg, .dialogClose > svg { color: inherit; }
 .dialogShare:hover { border-color: var(--accent); color: var(--accent); }
 .dialogShare:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 .shareStatus { margin-right: auto; color: var(--muted); font-size: 12px; font-weight: 700; }
@@ -357,7 +359,7 @@
   .cardAvailability { font-size: 10px; }
   .cardAddButton { right: 7px; bottom: 7px; width: 42px; height: 42px; font-size: 26px; }
   .itemCard:has(.cardAddButton) .itemInfo { padding-bottom: 10px; }
-  .cardFooter { min-height: 43px; padding: 7px 54px 7px 9px; font-size: 11px; }
+  .cardFooter { min-height: 34px; padding: 4px 54px 4px 9px; font-size: 11px; }
   .heartButton { top: 6px; right: 6px; width: 34px; height: 34px; }
   .heartCount { top: 36px; right: 4px; }
   .itemDialog { width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }

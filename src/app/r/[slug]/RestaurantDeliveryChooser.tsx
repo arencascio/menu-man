@@ -174,15 +174,12 @@ export default function RestaurantDeliveryChooser({
                   restaurantId={restaurantId}
                   target="_blank"
                 >
-                  {option.imageUrl ? (
-                    // Provider imagery may be hosted by the restaurant or provider.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className={styles.optionImage} src={option.imageUrl} alt="" />
-                  ) : <RestaurantDeliveryProviderIcon
+                  <RestaurantDeliveryProviderIcon
                     displayName={option.displayName}
-                    fallbackClassName={styles.optionMark}
+                    fallbackClassName={styles.optionImage}
+                    imageUrl={option.imageUrl}
                     providerKey={option.providerKey}
-                  />}
+                  />
                   <span className={styles.optionCopy}>
                     <strong>{option.displayName}</strong>
                     {option.supportingLabel ? <span>{option.supportingLabel}</span> : null}

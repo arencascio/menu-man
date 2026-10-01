@@ -5,6 +5,7 @@ import type { PickupAvailability } from "@/lib/checkout/contracts";
 import type { PickupSelection } from "@/lib/checkout/pickup-selection";
 import { pickupIntentEvent, readPickupIntent, type PickupIntent } from "@/lib/checkout/pickup-intent";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
+import MenuIcon from "./MenuIcon";
 import RestaurantPickupTimeChooser from "./RestaurantPickupTimeChooser";
 import { formatPickupTime, formatScheduledPickup, getDisplayedPickupIntent, getOrderingStatus } from "./ordering-status";
 import type { PickupChooserMode } from "./pickup-time-chooser";
@@ -108,8 +109,8 @@ export default function OrderingStatus({
       </div>
       {(hasPickupAction || hasDelivery) ? (
         <div className={styles.actions}>
-          {hasPickupAction ? <button className={pickupIntent ? styles.schedulePickup : styles.orderPickup} type="button" aria-haspopup="dialog" onClick={(event) => openPickupChooser(pickupIntent ? changePickupMode : canOrderPickup ? "order" : "schedule", event.currentTarget)}>{pickupIntent ? "Change Pickup Time" : canOrderPickup ? "Order Pickup" : "Schedule Pickup"}</button> : null}
-          {hasDelivery ? <RestaurantDeliveryTrigger className={styles.delivery}>Delivery <span aria-hidden="true">→</span></RestaurantDeliveryTrigger> : null}
+          {hasPickupAction ? <button className={pickupIntent ? styles.schedulePickup : styles.orderPickup} type="button" aria-haspopup="dialog" onClick={(event) => openPickupChooser(pickupIntent ? changePickupMode : canOrderPickup ? "order" : "schedule", event.currentTarget)}><MenuIcon name={pickupIntent || !canOrderPickup ? "hourglass" : "mapPin"} size={16} />{pickupIntent ? "Change Pickup Time" : canOrderPickup ? "Order Pickup" : "Schedule Pickup"}</button> : null}
+          {hasDelivery ? <RestaurantDeliveryTrigger className={styles.delivery}><MenuIcon name="truck" size={16} />Delivery <span aria-hidden="true">&rarr;</span></RestaurantDeliveryTrigger> : null}
         </div>
       ) : null}
       {chooser && <RestaurantPickupTimeChooser

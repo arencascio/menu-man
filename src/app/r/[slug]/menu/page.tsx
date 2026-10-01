@@ -143,7 +143,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
   return <RestaurantShell restaurant={shellRestaurant}>
     <div className={styles.menuPage}>
       <div className={styles.heading}>
-        <div>
+        <div className={styles.headingVisuallyHidden}>
           <p>Explore the menu</p>
           <h1>{restaurant.name} menu</h1>
         </div>
