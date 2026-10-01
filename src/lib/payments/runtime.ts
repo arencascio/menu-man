@@ -1,10 +1,11 @@
 export function fakePaymentRuntimeAllowed(input: {
   menuManEnvironment?: string;
   nodeEnvironment?: string;
+  vercelEnvironment?: string;
   explicitlyEnabled?: string;
 }) {
-  const { menuManEnvironment, nodeEnvironment, explicitlyEnabled } = input;
-  if (menuManEnvironment === "production") return false;
+  const { menuManEnvironment, nodeEnvironment, vercelEnvironment, explicitlyEnabled } = input;
+  if (menuManEnvironment === "production" || vercelEnvironment === "production") return false;
 
   const nonProductionRuntime = menuManEnvironment === "staging"
     || menuManEnvironment === "development"
@@ -18,6 +19,7 @@ export function isFakePaymentRuntimeEnabled() {
   return fakePaymentRuntimeAllowed({
     menuManEnvironment: process.env.MENU_MAN_ENV,
     nodeEnvironment: process.env.NODE_ENV,
+    vercelEnvironment: process.env.VERCEL_ENV,
     explicitlyEnabled: process.env.MENU_MAN_ENABLE_FAKE_PAYMENTS,
   });
 }
@@ -25,6 +27,7 @@ export function isFakePaymentRuntimeEnabled() {
 export function fakePaymentRecoveryRuntimeAllowed(input: {
   menuManEnvironment?: string;
   nodeEnvironment?: string;
+  vercelEnvironment?: string;
   explicitlyEnabled?: string;
 }) {
   return input.menuManEnvironment === "staging" && fakePaymentRuntimeAllowed(input);
@@ -34,6 +37,7 @@ export function isFakePaymentRecoveryRuntimeEnabled() {
   return fakePaymentRecoveryRuntimeAllowed({
     menuManEnvironment: process.env.MENU_MAN_ENV,
     nodeEnvironment: process.env.NODE_ENV,
+    vercelEnvironment: process.env.VERCEL_ENV,
     explicitlyEnabled: process.env.MENU_MAN_ENABLE_FAKE_PAYMENTS,
   });
 }
