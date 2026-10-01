@@ -22,6 +22,8 @@ import "../src/lib/notifications/notifications.test";
 import "../src/lib/restaurant-settings/contracts.test";
 import "../src/lib/menu-engagement/sections.test";
 import "../src/lib/menu-engagement/featured-picker.test";
+import "../src/lib/menu-engagement/heart-security.test";
+import "../src/lib/menu-engagement/heart-mutation.test";
 import "../src/app/r/[slug]/menu-card-ordering.test";
 import "../src/app/r/[slug]/restaurant-menu-modifiers.test";
 import "../src/app/r/[slug]/ordering-status.test";

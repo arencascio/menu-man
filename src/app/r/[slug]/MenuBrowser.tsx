@@ -305,10 +305,12 @@ export default function MenuBrowser({
     setLikedItemIds((current) => liked ? [...current.filter((id) => id !== itemId), itemId] : current.filter((id) => id !== itemId));
     setHeartCounts((current) => ({ ...current, [itemId]: Math.max(0, (current[itemId] ?? 0) + (liked ? 1 : -1)) }));
     try {
-      const response = await fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, {
+      const sendHeart = () => fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId, liked }),
       });
+      let response = await sendHeart();
+      if (response.status === 428 && response.headers.get("X-Heart-Visitor-Refresh") === "1") response = await sendHeart();
       if (!response.ok) throw new Error("Heart request failed");
       const result = await response.json() as { count: number };
       setHeartCounts((current) => ({ ...current, [itemId]: result.count }));
