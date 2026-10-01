@@ -14,7 +14,8 @@ export function heartVisitor(cookie: string | undefined, secret: string): { cook
     const id = parts[1];
     const expected = createHmac("sha256", secret).update(`${version}.${id}`).digest();
     const supplied = /^[A-Za-z0-9_-]{43}$/.test(parts[2]) ? Buffer.from(parts[2], "base64url") : Buffer.alloc(0);
-    if (supplied.length === expected.length && timingSafeEqual(supplied, expected)) {
+    if (supplied.length === expected.length && supplied.toString("base64url") === parts[2]
+      && timingSafeEqual(supplied, expected)) {
       return { cookie: `${version}.${id}.${parts[2]}`, key: createHash("sha256").update(id).digest("hex"), fresh: false };
     }
   }

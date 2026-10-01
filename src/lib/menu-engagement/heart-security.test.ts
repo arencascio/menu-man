@@ -18,7 +18,12 @@ test("anonymous visitor receives a signed identity that survives later browsing"
 test("chosen UUID, malformed cookie, and altered signature cannot assume an existing visitor", () => {
   const issued = heartVisitor(undefined, secret);
   const chosen = "00000000-0000-4000-8000-000000000001";
-  for (const value of [chosen, "garbage", `${issued.cookie.slice(0, -1)}${issued.cookie.endsWith("A") ? "B" : "A"}`]) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const last = issued.cookie.at(-1) ?? "";
+  const noncanonical = `${issued.cookie.slice(0, -1)}${alphabet[alphabet.indexOf(last) + 1]}`;
+  const penultimate = issued.cookie.at(-2) ?? "";
+  const altered = `${issued.cookie.slice(0, -2)}${penultimate === "A" ? "B" : "A"}${last}`;
+  for (const value of [chosen, "garbage", altered, noncanonical]) {
     const replacement = heartVisitor(value, secret);
     assert.equal(replacement.fresh, true);
     assert.notEqual(replacement.key, issued.key);
