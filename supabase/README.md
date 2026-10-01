@@ -26,7 +26,7 @@ without customer traffic or a Vercel production-only cron job.
 ```sql
 select id, provider_key, provider_event_id,
        normalized_event ->> 'kind' as event_type,
-       attempt_count, last_error, available_at, next_attempt_at,
+       processing_status, attempt_count, last_error, available_at, next_attempt_at,
        received_at, processed_at
 from public.payment_webhook_events
 where processing_status = 'permanent_failure'
