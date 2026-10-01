@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  authoritativeOrderResponseSchema,
   checkoutRequestSchema,
   checkoutResponseSchema,
   idempotencyKeySchema,
@@ -111,7 +112,7 @@ test("requires UUID idempotency keys", () => {
   );
 });
 
-test("only accepts pre-payment order confirmation states", () => {
+test("distinguishes payable checkout from a progressed existing order", () => {
   const response = {
     orderId: "50000000-0000-4000-8000-000000000001",
     orderNumber: "1001",
@@ -137,7 +138,15 @@ test("only accepts pre-payment order confirmation states", () => {
     replayed: false,
   };
 
-  assert.equal(checkoutResponseSchema.safeParse(response).success, true);
-  assert.equal(checkoutResponseSchema.safeParse({ ...response, orderStatus: "placed" }).success, false);
-  assert.equal(checkoutResponseSchema.safeParse({ ...response, paymentStatus: "paid" }).success, false);
+  assert.equal(authoritativeOrderResponseSchema.safeParse(response).success, true);
+  assert.equal(authoritativeOrderResponseSchema.safeParse({ ...response, orderStatus: "placed", paymentStatus: "paid" }).success, true);
+  assert.equal(checkoutResponseSchema.safeParse({ kind: "payable", ...response, paymentSession: null }).success, true);
+  assert.equal(checkoutResponseSchema.safeParse({ kind: "payable", ...response, orderStatus: "placed", paymentSession: null }).success, false);
+  assert.equal(checkoutResponseSchema.safeParse({
+    kind: "existing", replayed: true, orderId: null, orderStatus: "cancelled", paymentStatus: "failed",
+  }).success, true);
+  assert.equal(checkoutResponseSchema.safeParse({
+    kind: "existing", replayed: true, orderId: null, orderStatus: "cancelled", paymentStatus: "failed",
+    paymentSession: null,
+  }).success, false);
 });

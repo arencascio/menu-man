@@ -14,6 +14,7 @@ import {
   type PickupAvailability,
   type TipChoice,
 } from "@/lib/checkout/contracts";
+import { existingCheckoutDetailsPath, existingCheckoutMessage } from "@/lib/checkout/replay";
 import {
   isPickupSelectionAvailable,
   resolvePickupSelection,
@@ -85,6 +86,7 @@ export default function CheckoutPanel({
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitInfo, setSubmitInfo] = useState<string | null>(null);
   const [largeTipConfirmation, setLargeTipConfirmation] = useState<LargeTipConfirmation | null>(null);
   const attempt = useRef<IdempotencyAttempt | null>(null);
   const customTipInput = useRef<HTMLInputElement>(null);
@@ -261,6 +263,7 @@ export default function CheckoutPanel({
   async function submitCheckout(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
+    setSubmitInfo(null);
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
     const isLargeTipConfirmed = submitter instanceof HTMLButtonElement
       && submitter.dataset.largeTipConfirmed === "true";
@@ -376,6 +379,17 @@ export default function CheckoutPanel({
         throw new Error(errorBody.error?.message || "Checkout could not be completed.");
       }
       const order = checkoutResponseSchema.parse(body);
+      if (order.kind === "existing") {
+        const detailsPath = existingCheckoutDetailsPath(restaurantSlug, order);
+        if (detailsPath) {
+          window.sessionStorage.removeItem(attemptStorageKey);
+          attempt.current = null;
+          router.replace(detailsPath);
+        } else {
+          setSubmitInfo(existingCheckoutMessage(order));
+        }
+        return;
+      }
       if (!order.paymentSession) throw new Error("No payment provider is configured for this restaurant.");
       window.sessionStorage.removeItem(attemptStorageKey);
       attempt.current = null;
@@ -488,6 +502,7 @@ export default function CheckoutPanel({
           <label className={styles.orderNotes}>Order notes <small>Optional</small><textarea maxLength={500} rows={3} value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} /></label>
           {notificationMessage && <p className={styles.emailConfirmation}>{notificationMessage}</p>}
           {submitError && <p className={styles.formError} role="alert">{submitError}</p>}
+          {submitInfo && <p role="status">{submitInfo}</p>}
           {activeLargeTipConfirmation ? (
             <div
               ref={largeTipPrompt}

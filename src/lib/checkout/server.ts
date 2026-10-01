@@ -2,7 +2,7 @@ import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import {
-  checkoutResponseSchema,
+  authoritativeOrderResponseSchema,
   pickupAvailabilitySchema,
   type CheckoutErrorCode,
   type CheckoutRequest,
@@ -140,7 +140,7 @@ export async function createAuthoritativeOrder(
     throw parseDatabaseError(error.message);
   }
 
-  const parsed = checkoutResponseSchema.safeParse(data);
+  const parsed = authoritativeOrderResponseSchema.safeParse(data);
   if (!parsed.success) {
     console.error("Invalid authoritative order response.", parsed.error);
     throw new CheckoutServerError("CHECKOUT_FAILED", "The order was created but its response was invalid.");

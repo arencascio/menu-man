@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { paymentSessionResponseSchema } from "@/lib/payments/contracts";
+import { paymentSessionResponseSchema, paymentStatusSchema } from "@/lib/payments/contracts";
 import {
   isValidCustomerEmail,
   isValidCustomerName,
@@ -146,11 +146,11 @@ const authoritativeOrderItemSchema = z.strictObject({
   lineTotalCents: z.int().nonnegative(),
 });
 
-export const checkoutResponseSchema = z.strictObject({
+export const authoritativeOrderResponseSchema = z.strictObject({
   orderId: uuidSchema,
   orderNumber: z.string().regex(/^\d+$/),
-  orderStatus: z.literal("pending_payment"),
-  paymentStatus: z.literal("unpaid"),
+  orderStatus: paymentStatusSchema.shape.orderStatus,
+  paymentStatus: paymentStatusSchema.shape.paymentStatus,
   currency: z.string().regex(/^[A-Z]{3}$/),
   subtotalCents: z.int().nonnegative(),
   taxCents: z.int().nonnegative(),
@@ -163,8 +163,23 @@ export const checkoutResponseSchema = z.strictObject({
   }),
   items: z.array(authoritativeOrderItemSchema),
   replayed: z.boolean(),
-  paymentSession: paymentSessionResponseSchema.nullable().optional(),
 });
+
+export const checkoutResponseSchema = z.discriminatedUnion("kind", [
+  authoritativeOrderResponseSchema.extend({
+    kind: z.literal("payable"),
+    orderStatus: z.literal("pending_payment"),
+    paymentStatus: z.literal("unpaid"),
+    paymentSession: paymentSessionResponseSchema.nullable(),
+  }),
+  z.strictObject({
+    kind: z.literal("existing"),
+    replayed: z.literal(true),
+    orderId: uuidSchema.nullable(),
+    orderStatus: paymentStatusSchema.shape.orderStatus,
+    paymentStatus: paymentStatusSchema.shape.paymentStatus,
+  }),
+]);
 
 const rawPickupAvailabilitySchema = z.strictObject({
   timezone: z.string().nullable(),
@@ -224,6 +239,7 @@ export const pickupAvailabilitySchema = rawPickupAvailabilitySchema.transform((a
 });
 
 export type CheckoutRequest = z.output<typeof checkoutRequestSchema>;
+export type AuthoritativeOrderResponse = z.output<typeof authoritativeOrderResponseSchema>;
 export type CheckoutResponse = z.output<typeof checkoutResponseSchema>;
 export type PickupAvailability = z.output<typeof pickupAvailabilitySchema>;
 export type TipChoice = CheckoutRequest["tipChoice"];

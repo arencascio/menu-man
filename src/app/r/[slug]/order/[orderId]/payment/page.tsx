@@ -37,7 +37,14 @@ export default async function PaymentPage({
   if (detailsRequested) {
     const returnHref = viewIsPlaced
       ? `/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`
-      : `/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/payment`;
+      : view.payment.orderStatus === "pending_payment"
+        ? `/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/payment`
+        : `/r/${encodeURIComponent(slug)}/menu`;
+    const returnLabel = viewIsPlaced
+      ? "Return to Confirmation"
+      : view.payment.orderStatus === "pending_payment"
+        ? "Return to Payment"
+        : "Back to Menu";
     return (
       <main className={styles.page}>
         <section className={styles.checkoutPanel} aria-labelledby="order-details-title">
@@ -49,7 +56,7 @@ export default async function PaymentPage({
           </dl>
           <OrderSnapshot order={view.order} />
           <nav aria-label="Order detail actions">
-            <Link className={styles.checkoutButton} href={returnHref}>{viewIsPlaced ? "Return to Confirmation" : "Return to Payment"}</Link>
+            <Link className={styles.checkoutButton} href={returnHref}>{returnLabel}</Link>
           </nav>
         </section>
       </main>

@@ -53,6 +53,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609290001_managed_order_cancellation.sql",
     "202609300001_payment_refund_monotonicity.sql",
     "202609300002_payment_event_retry_worker.sql",
+    "202610010001_checkout_exact_replay.sql",
   ]);
 });
 

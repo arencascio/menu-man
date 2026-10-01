@@ -7,8 +7,9 @@ import {
   type CheckoutRequest,
 } from "@/lib/checkout/contracts";
 import { CheckoutServerError, createAuthoritativeOrder } from "@/lib/checkout/server";
-import { preparePaymentForOrder } from "@/lib/payments/server";
-import { setGuestPaymentCapability } from "@/lib/payments/capability-cookie";
+import { isCheckoutPayable, resolveCheckoutResponse } from "@/lib/checkout/replay";
+import { getOrderPaymentView, PaymentServerError, preparePaymentForOrder } from "@/lib/payments/server";
+import { getGuestPaymentCapability, setGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -143,35 +144,56 @@ export async function POST(
     logCheckout("request_validation_passed");
     failureStage = "create_order_v1_failure";
     logCheckout("before_create_order_v1");
-    const response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest);
+    let response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest);
     createdOrder = { orderId: response.orderId, orderNumber: response.orderNumber };
     logCheckout("create_order_v1_success", createdOrder);
 
     failureStage = "payment_preparation_failure";
-    logCheckout("before_payment_preparation", createdOrder);
-    const paymentSession = await preparePaymentForOrder(response.orderId);
-    logCheckout("payment_preparation_success", {
-      ...createdOrder,
-      paymentSessionCreated: paymentSession !== null,
-    });
+    const operations = {
+      canViewExistingOrder: async (orderId: string) => {
+        const checkoutToken = await getGuestPaymentCapability(orderId);
+        if (!checkoutToken) return false;
+        try {
+          await getOrderPaymentView(slug, orderId, checkoutToken);
+          return true;
+        } catch (error) {
+          if (error instanceof PaymentServerError) return false;
+          throw error;
+        }
+      },
+      preparePayment: async (orderId: string) => {
+        logCheckout("before_payment_preparation", createdOrder);
+        const paymentSession = await preparePaymentForOrder(orderId);
+        logCheckout("payment_preparation_success", {
+          ...createdOrder,
+          paymentSessionCreated: paymentSession !== null,
+        });
+        return paymentSession;
+      },
+    };
+    let resolved;
+    try {
+      resolved = await resolveCheckoutResponse(response, operations);
+    } catch (error) {
+      if (!(error instanceof PaymentServerError) || error.code !== "PAYMENT_NOT_ALLOWED") throw error;
+      // Payment may have completed after the first order read. Replaying the
+      // same key rereads the authoritative state without creating another order.
+      response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest);
+      if (isCheckoutPayable(response)) throw error;
+      resolved = await resolveCheckoutResponse(response, operations);
+    }
 
     logCheckout("before_return_success", createdOrder);
-    const checkoutToken = paymentSession && "checkoutToken" in paymentSession
-      ? paymentSession.checkoutToken
-      : null;
-    const publicPaymentSession = paymentSession
-      ? paymentSessionResponseWithoutCapability(paymentSession)
-      : null;
-    const nextResponse = NextResponse.json({ ...response, paymentSession: publicPaymentSession }, {
+    const nextResponse = NextResponse.json(resolved.response, {
       status: response.replayed ? 200 : 201,
       headers: responseHeaders,
     });
-    if (checkoutToken && paymentSession) {
+    if (resolved.capability) {
       setGuestPaymentCapability(
         nextResponse,
-        response.orderId,
-        checkoutToken,
-        paymentSession.expiresAt,
+        resolved.capability.orderId,
+        resolved.capability.checkoutToken,
+        resolved.capability.expiresAt,
       );
     }
     return nextResponse;
@@ -214,14 +236,4 @@ export async function POST(
       error: { code: "CHECKOUT_FAILED", message: "Checkout could not be completed." },
     }, { status: 500, headers: responseHeaders });
   }
-}
-
-function paymentSessionResponseWithoutCapability(
-  paymentSession: NonNullable<Awaited<ReturnType<typeof preparePaymentForOrder>>>,
-) {
-  return {
-    expiresAt: paymentSession.expiresAt,
-    payment: paymentSession.payment,
-    browserSession: paymentSession.browserSession,
-  };
 }

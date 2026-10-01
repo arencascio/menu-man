@@ -235,7 +235,8 @@ test("read-only order details preserve capability checks and skip payment browse
 
   assert.ok(capabilityCheck >= 0 && detailsBranch > capabilityCheck);
   assert.ok(providerSession > detailsBranch);
-  assert.match(page, /viewIsPlaced \? "Return to Confirmation" : "Return to Payment"/);
+  assert.match(page, /view\.payment\.orderStatus === "pending_payment"/);
+  assert.match(page, /"Back to Menu"/);
 });
 
 test("restaurant server components pass serializable analytics data to a client link boundary", () => {
