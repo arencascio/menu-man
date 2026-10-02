@@ -22,6 +22,7 @@ const knownErrorCodes = new Set<CheckoutErrorCode>([
   "LARGE_TIP_CONFIRMATION_REQUIRED",
   "TOTAL_TOO_LARGE",
   "IDEMPOTENCY_CONFLICT",
+  "CHECKOUT_RATE_LIMITED",
   "CHECKOUT_FAILED",
 ]);
 
@@ -30,6 +31,7 @@ export class CheckoutServerError extends Error {
     public readonly code: CheckoutErrorCode,
     message: string,
     public readonly authoritativeSubtotalCents?: number,
+    public readonly retryAfterSeconds?: number,
   ) {
     super(message);
   }
@@ -46,6 +48,17 @@ function parseDatabaseError(message: string) {
         "Please confirm this custom tip before continuing.",
         Number.isSafeInteger(authoritativeSubtotalCents) && authoritativeSubtotalCents >= 0
           ? authoritativeSubtotalCents
+          : undefined,
+      );
+    }
+    if (code === "CHECKOUT_RATE_LIMITED") {
+      const retryAfterSeconds = Number(match?.[2]);
+      return new CheckoutServerError(
+        code,
+        "Too many new checkouts from this network. Please try again shortly.",
+        undefined,
+        Number.isSafeInteger(retryAfterSeconds) && retryAfterSeconds > 0
+          ? retryAfterSeconds
           : undefined,
       );
     }
@@ -114,17 +127,32 @@ export async function createAuthoritativeOrder(
   restaurantSlug: string,
   idempotencyKey: string,
   request: CheckoutRequest,
+  sourceHash?: string | null,
 ) {
-  const rpcResponse = await supabaseServer.rpc("create_order_v1", {
+  let rpcName = sourceHash ? "create_order_with_abuse_limit_v1" : "create_order_v1";
+  const rpcArgs = {
     p_restaurant_slug: restaurantSlug,
     p_idempotency_key: idempotencyKey,
     p_request: request,
-  });
+    ...(sourceHash ? { p_source_hash: sourceHash } : {}),
+  };
+  let rpcResponse = await supabaseServer.rpc(rpcName, rpcArgs);
+  if (sourceHash && rpcResponse.error?.code === "PGRST202") {
+    // A code-first rollout or stale PostgREST schema cache must not stop orders.
+    // This is a visible fail-open until the approved migration is available.
+    console.error("[checkout-rpc]", { stage: "limiter_rpc_unavailable", code: "PGRST202" });
+    rpcName = "create_order_v1";
+    rpcResponse = await supabaseServer.rpc(rpcName, {
+      p_restaurant_slug: restaurantSlug,
+      p_idempotency_key: idempotencyKey,
+      p_request: request,
+    });
+  }
   const { data, error } = rpcResponse;
   if (error) {
     const sensitiveValues = sensitiveCheckoutValues(request, idempotencyKey);
     const logFields = {
-      rpc: "create_order_v1",
+      rpc: rpcName,
       code: sanitizedRpcErrorValue(error.code, sensitiveValues),
       message: sanitizedRpcErrorValue(error.message, sensitiveValues),
       details: sanitizedRpcErrorValue(error.details, sensitiveValues),

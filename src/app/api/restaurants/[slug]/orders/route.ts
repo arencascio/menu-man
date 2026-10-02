@@ -7,6 +7,7 @@ import {
   type CheckoutRequest,
 } from "@/lib/checkout/contracts";
 import { CheckoutServerError, createAuthoritativeOrder } from "@/lib/checkout/server";
+import { checkoutSource } from "@/lib/checkout/source";
 import { isCheckoutPayable, resolveCheckoutResponse } from "@/lib/checkout/replay";
 import { getOrderPaymentView, PaymentServerError, preparePaymentForOrder } from "@/lib/payments/server";
 import { getGuestPaymentCapability, setGuestPaymentCapability } from "@/lib/payments/capability-cookie";
@@ -94,6 +95,7 @@ function logCheckoutFailure(
 function statusForError(code: CheckoutErrorCode) {
   if (code === "RESTAURANT_NOT_FOUND") return 404;
   if (code === "IDEMPOTENCY_CONFLICT") return 409;
+  if (code === "CHECKOUT_RATE_LIMITED") return 429;
   if (["ITEM_NOT_ORDERABLE", "ITEM_NOT_ON_MENU", "INVALID_MODIFIERS", "PICKUP_UNAVAILABLE", "MENU_UNAVAILABLE"].includes(code)) return 409;
   if (["ORDERING_DISABLED", "TAX_NOT_CONFIGURED"].includes(code)) return 503;
   if (code === "CHECKOUT_FAILED") return 500;
@@ -140,11 +142,15 @@ export async function POST(
     const checkoutRequest = checkoutRequestSchema.parse(JSON.parse(rawBody));
     sensitiveValues = sensitiveCheckoutValues(checkoutRequest);
     const { slug } = await params;
+    const sourceHash = checkoutSource(request, slug, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    if (!sourceHash && ["preview", "production"].includes(process.env.VERCEL_ENV || "")) {
+      console.warn("[checkout]", { stage: "source_unavailable", restaurantSlug: slug });
+    }
 
     logCheckout("request_validation_passed");
     failureStage = "create_order_v1_failure";
     logCheckout("before_create_order_v1");
-    let response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest);
+    let response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest, sourceHash);
     createdOrder = { orderId: response.orderId, orderNumber: response.orderNumber };
     logCheckout("create_order_v1_success", createdOrder);
 
@@ -178,7 +184,7 @@ export async function POST(
       if (!(error instanceof PaymentServerError) || error.code !== "PAYMENT_NOT_ALLOWED") throw error;
       // Payment may have completed after the first order read. Replaying the
       // same key rereads the authoritative state without creating another order.
-      response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest);
+      response = await createAuthoritativeOrder(slug, idempotencyKey, checkoutRequest, sourceHash);
       if (isCheckoutPayable(response)) throw error;
       resolved = await resolveCheckoutResponse(response, operations);
     }
@@ -229,7 +235,10 @@ export async function POST(
             ? {}
             : { authoritativeSubtotalCents: error.authoritativeSubtotalCents }),
         },
-      }, { status: statusForError(error.code), headers: responseHeaders });
+      }, { status: statusForError(error.code), headers: {
+        ...responseHeaders,
+        ...(error.retryAfterSeconds ? { "Retry-After": String(error.retryAfterSeconds) } : {}),
+      } });
     }
 
     return NextResponse.json({

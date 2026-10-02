@@ -257,6 +257,7 @@ export type CheckoutErrorCode =
   | "LARGE_TIP_CONFIRMATION_REQUIRED"
   | "TOTAL_TOO_LARGE"
   | "IDEMPOTENCY_CONFLICT"
+  | "CHECKOUT_RATE_LIMITED"
   | "CHECKOUT_FAILED";
 
 export type CheckoutErrorResponse = {

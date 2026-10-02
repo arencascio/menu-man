@@ -54,7 +54,20 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609300001_payment_refund_monotonicity.sql",
     "202609300002_payment_event_retry_worker.sql",
     "202610010001_checkout_exact_replay.sql",
+    "202610010002_checkout_creation_abuse_limit.sql",
   ]);
+});
+
+test("checkout creation limiter is atomic and defers to exact replay", () => {
+  const sql = readFileSync(join(migrationDirectory, "202610010002_checkout_creation_abuse_limit.sql"), "utf8");
+  assert.match(sql, /primary key \(restaurant_id, source_hash, window_start\)/);
+  assert.match(sql, /pg_advisory_xact_lock\([\s\S]*hashtextextended/);
+  assert.match(sql, /if found then[\s\S]*return public\.create_order_v1\(p_restaurant_slug, p_idempotency_key, p_request\)/);
+  assert.match(sql, /on conflict \(restaurant_id, source_hash, window_start\)[\s\S]*where counter\.creation_count < 120/);
+  assert.match(sql, /MM_CHECKOUT_RATE_LIMITED/);
+  assert.match(sql, /grant execute on function public\.create_order_with_abuse_limit_v1[\s\S]*to service_role/);
+  assert.match(sql, /menu-man-checkout-limits-cleanup/);
+  assert.match(sql, /exception when others then[\s\S]*counter_failed := true/);
 });
 
 test("menu hearts and Featured selections use canonical items with restricted writes", () => {
