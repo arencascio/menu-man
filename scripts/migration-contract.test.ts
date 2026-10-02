@@ -55,6 +55,7 @@ test("clean-environment migrations have one deterministic ordered sequence", () 
     "202609300002_payment_event_retry_worker.sql",
     "202610010001_checkout_exact_replay.sql",
     "202610010002_checkout_creation_abuse_limit.sql",
+    "202610010003_checkout_limit_retry_seconds.sql",
   ]);
 });
 
@@ -68,6 +69,21 @@ test("checkout creation limiter is atomic and defers to exact replay", () => {
   assert.match(sql, /grant execute on function public\.create_order_with_abuse_limit_v1[\s\S]*to service_role/);
   assert.match(sql, /menu-man-checkout-limits-cleanup/);
   assert.match(sql, /exception when others then[\s\S]*counter_failed := true/);
+});
+
+test("checkout retry-seconds repair changes only the invalid GREATEST spelling", () => {
+  const original = readFileSync(join(migrationDirectory, "202610010002_checkout_creation_abuse_limit.sql"), "utf8");
+  const repair = readFileSync(join(migrationDirectory, "202610010003_checkout_limit_retry_seconds.sql"), "utf8");
+  const functionPattern = /create(?: or replace)? function public\.create_order_with_abuse_limit_v1\([\s\S]*?\$\$;/i;
+  const originalFunction = original.match(functionPattern)?.[0].replaceAll("\r\n", "\n");
+  const repairedFunction = repair.match(functionPattern)?.[0].replaceAll("\r\n", "\n");
+  assert.ok(originalFunction && repairedFunction);
+  assert.equal(
+    repairedFunction.replace("create or replace function", "create function"),
+    originalFunction.replace("pg_catalog.greatest(", "greatest("),
+  );
+  assert.match(repair, /retry_seconds := greatest\(1,/);
+  assert.doesNotMatch(repairedFunction, /pg_catalog\.greatest\(/);
 });
 
 test("menu hearts and Featured selections use canonical items with restricted writes", () => {
