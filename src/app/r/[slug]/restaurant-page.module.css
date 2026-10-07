@@ -1,7 +1,7 @@
 .hero {
   display: grid;
   grid-template-columns: minmax(0, .9fr) minmax(24rem, 1.1fr);
-  min-height: clamp(34rem, 68vh, 46rem);
+  height: clamp(29rem, 58vh, 39rem);
   overflow: hidden;
   color: var(--theme-surface);
   background: var(--theme-primary);
@@ -16,7 +16,7 @@
   align-items: flex-start;
   justify-content: center;
   max-width: calc((var(--theme-content-width) / 2) + 7rem);
-  padding: clamp(3rem, 7vw, 6.5rem) clamp(2rem, 6vw, 6rem) clamp(3.5rem, 7vw, 6.5rem) max(2rem, calc((100vw - var(--theme-content-width)) / 2));
+  padding: clamp(2.5rem, 5vw, 4.5rem) clamp(2rem, 5vw, 5rem) clamp(2.5rem, 5vw, 4.5rem) max(2rem, calc((100vw - var(--theme-content-width)) / 2));
 }
 
 .heroContent::before {
@@ -54,6 +54,8 @@
 
 .heroImage {
   display: block;
+  position: absolute;
+  inset: 0;
   object-fit: cover;
   object-position: center;
 }
@@ -66,9 +68,9 @@
 
 .heroLogo {
   width: auto;
-  max-width: min(15rem, 70%);
-  height: clamp(3rem, 6vw, 4.5rem);
-  margin-bottom: 1.5rem;
+  max-width: min(13rem, 70%);
+  height: clamp(2.75rem, 5vw, 4rem);
+  margin-bottom: 1rem;
   object-fit: contain;
   object-position: left center;
 }
@@ -86,26 +88,26 @@
   max-width: 9ch;
   margin: 0;
   font-family: var(--theme-heading-font);
-  font-size: clamp(3.4rem, 6.1vw, 6.8rem);
+  font-size: clamp(3rem, 5.1vw, 5.5rem);
   font-weight: 800;
-  line-height: .9;
-  letter-spacing: -.065em;
+  line-height: .96;
+  letter-spacing: -.055em;
   text-wrap: balance;
 }
 
 .tagline {
   max-width: 34rem;
-  margin: 1.5rem 0 0;
+  margin: 1rem 0 0;
   color: color-mix(in srgb, var(--theme-surface) 84%, transparent);
   font-size: clamp(1rem, 1.6vw, 1.2rem);
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .heroActions {
   display: flex;
   flex-wrap: wrap;
   gap: .75rem;
-  margin-top: 2rem;
+  margin-top: 1.4rem;
 }
 
 .primaryAction,
@@ -113,16 +115,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 3.15rem;
-  padding: .8rem 1.3rem;
+  min-height: 3rem;
+  padding: .7rem 1.2rem;
   border: 1px solid transparent;
   border-radius: max(var(--theme-radius), .5rem);
-  font-size: .92rem;
+  font-size: .96rem;
   font-family: inherit;
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 160ms ease, background-color 160ms ease;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
 .primaryAction {
@@ -138,7 +141,9 @@
 
 .primaryAction:hover,
 .secondaryAction:hover {
-  transform: translateY(-2px);
+  border-color: var(--theme-surface);
+  color: var(--theme-primary);
+  background: var(--theme-surface);
 }
 
 .primaryAction:focus-visible,
@@ -150,10 +155,11 @@
 .content { background: var(--theme-background); }
 
 @media (max-width: 860px) {
-  .hero { grid-template-columns: minmax(0, 1fr); }
+  .hero { grid-template-columns: minmax(0, 1fr); height: auto; }
   .heroMedia {
     order: -1;
-    min-height: clamp(20rem, 58vw, 30rem);
+    min-height: 0;
+    height: clamp(17rem, 48vw, 25rem);
   }
   .heroMedia::after {
     background: linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 24%, transparent), transparent 45%);
@@ -163,29 +169,33 @@
 @media (max-width: 700px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
-    min-height: auto;
+    height: auto;
   }
   .heroContent {
     min-width: 0;
-    padding: 3.75rem 1.25rem 3rem;
+    padding: 2.5rem 1.25rem 2.4rem;
   }
   .heroContent::before {
-    top: 2.25rem;
+    top: 1.35rem;
     left: 1.25rem;
     width: 2.75rem;
   }
   .heroMedia {
     order: -1;
-    min-height: clamp(15rem, 68vw, 22rem);
+    height: clamp(13rem, 56vw, 19rem);
   }
   .heroMedia::after {
     background: linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 24%, transparent), transparent 45%);
   }
   .hero h1 {
     max-width: 8ch;
-    font-size: clamp(3.25rem, 16vw, 5.25rem);
+    font-size: clamp(2.7rem, 12vw, 4rem);
   }
-  .tagline { margin-top: 1.25rem; }
+  .tagline { margin-top: .85rem; }
   .heroActions { width: 100%; }
   .primaryAction, .secondaryAction { flex: 1 1 10rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction, .secondaryAction { transition: none; }
 }

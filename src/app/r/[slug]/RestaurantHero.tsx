@@ -21,7 +21,7 @@ export type RestaurantHeroAction = RestaurantHeroLinkAction | RestaurantHeroDeli
 
 export type RestaurantHeroPresentation = {
   layout: "photo-split";
-  eyebrow: string;
+  eyebrow?: string;
   headline: string;
   supportingText?: string;
   imageAlt: string;
@@ -94,7 +94,7 @@ export default function RestaurantHero({
           // eslint-disable-next-line @next/next/no-img-element
           <img className={styles.heroLogo} src={logoUrl} alt={`${name} logo`} />
         ) : null}
-        <p className={styles.eyebrow}>{presentation.eyebrow}</p>
+        {presentation.eyebrow ? <p className={styles.eyebrow}>{presentation.eyebrow}</p> : null}
         <h1 id="restaurant-page-title">{presentation.headline}</h1>
         {presentation.supportingText ? (
           <p className={styles.tagline}>{presentation.supportingText}</p>

@@ -89,7 +89,7 @@
   color: var(--theme-surface);
   background: var(--theme-primary);
   text-decoration: none;
-  transition: transform 160ms ease, border-color 160ms ease;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
 .optionImage,
@@ -140,9 +140,12 @@
 }
 
 .option:hover {
-  transform: translateY(-2px);
   border-color: var(--theme-accent);
+  color: var(--theme-primary);
+  background: var(--theme-surface);
 }
+
+.option:hover .optionCopy span { color: var(--theme-muted-text); }
 
 .closeButton:focus-visible,
 .option:focus-visible {
@@ -153,7 +156,6 @@
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translateY(.75rem) scale(.985);
   }
 }
 

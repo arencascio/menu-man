@@ -39,7 +39,6 @@ type RestaurantHeroConfig = Omit<RestaurantHeroPresentation, "secondaryAction"> 
 const restaurantHeroes: Readonly<Partial<Record<string, RestaurantHeroConfig>>> = {
   armandos: {
     layout: "photo-split",
-    eyebrow: "Armando's Mexican Food",
     headline: "You deserve it, amigo.",
     supportingText: "Breakfast favorites, street tacos, burritos, combination plates, and more—all in one menu.",
     imageAlt: "Five carnitas street tacos from Armando's Mexican Food",
@@ -52,15 +51,14 @@ const restaurantHeroes: Readonly<Partial<Record<string, RestaurantHeroConfig>>> 
 };
 
 type RestaurantOrderingActionsConfig = {
-  description: string;
-  eyebrow: string;
+  description?: string;
+  eyebrow?: string;
   menuAction: Extract<RestaurantOrderingAction, { href: string }>;
   title: string;
 };
 
 const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrderingActionsConfig>>> = {
   armandos: {
-    eyebrow: "Start your order",
     title: "Your favorites are a few taps away.",
     description: "Browse Armando's full menu, find what sounds good, and build your order in one place.",
     menuAction: {
@@ -72,7 +70,7 @@ const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrder
 };
 
 type RestaurantFeaturedGalleryConfig = {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   slides: readonly {
     menuItemName: string;
@@ -84,7 +82,6 @@ type RestaurantFeaturedGalleryConfig = {
 
 const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFeaturedGalleryConfig>>> = {
   armandos: {
-    eyebrow: "Featured favorites",
     title: "Made to satisfy.",
     slides: [
       {
@@ -107,9 +104,9 @@ const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFea
 };
 
 type RestaurantMenuIntroConfig = {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   quicklinks: readonly {
     label: string;
     sectionName: string;
@@ -118,7 +115,6 @@ type RestaurantMenuIntroConfig = {
 
 const restaurantMenuIntros: Readonly<Partial<Record<string, RestaurantMenuIntroConfig>>> = {
   armandos: {
-    eyebrow: "The full menu",
     title: "Find your next favorite.",
     description: "From breakfast served all day to street tacos, burritos, loaded fries, and combination plates—start with a favorite or explore everything.",
     quicklinks: [
@@ -326,9 +322,9 @@ if (restaurantError || !restaurant) {
     : null;
   const heroPresentation: RestaurantHeroPresentation = {
     layout: configuredHero?.layout ?? "photo-split",
-    eyebrow: configuredHero?.eyebrow ?? restaurant.name,
+    eyebrow: configuredHero?.eyebrow,
     headline: configuredHero?.headline ?? usableTagline ?? restaurant.name,
-    supportingText: configuredHero?.supportingText ?? "Browse the menu and restaurant information.",
+    supportingText: configuredHero?.supportingText,
     imageAlt: configuredHero?.imageAlt ?? `${restaurant.name} featured menu item`,
     primaryAction: configuredHero?.primaryAction ?? {
       label: "Explore the menu",

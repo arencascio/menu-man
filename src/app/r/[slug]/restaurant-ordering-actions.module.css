@@ -6,11 +6,11 @@
 .inner {
   display: grid;
   grid-template-columns: minmax(0, .8fr) minmax(20rem, 1.2fr);
-  gap: clamp(2rem, 5vw, 5rem);
+  gap: clamp(1.5rem, 3vw, 3rem);
   align-items: center;
   width: min(100%, var(--theme-content-width));
   margin: 0 auto;
-  padding: clamp(3.25rem, 6vw, 5.5rem) 2rem;
+  padding: clamp(2.25rem, 4vw, 3.75rem) 2rem;
 }
 
 .intro {
@@ -29,24 +29,24 @@
 .intro h2 {
   margin: 0;
   font-family: var(--theme-heading-font);
-  font-size: clamp(2.35rem, 4.5vw, 4.7rem);
+  font-size: clamp(2.15rem, 3.6vw, 3.7rem);
   font-weight: 800;
-  line-height: .96;
+  line-height: 1.02;
   letter-spacing: -.055em;
   text-wrap: balance;
 }
 
 .description {
   max-width: 31rem;
-  margin: 1.25rem 0 0;
+  margin: .8rem 0 0;
   color: var(--theme-muted-text);
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .actions {
   display: grid;
-  gap: .85rem;
+  gap: .65rem;
 }
 
 .action {
@@ -56,19 +56,19 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: .35rem 1.25rem;
   align-items: center;
-  min-height: 8.5rem;
-  padding: 1.5rem 1.65rem;
+  min-height: 6.3rem;
+  padding: 1rem 1.25rem;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 15%, transparent);
-  border-radius: var(--theme-radius);
+  border: 1px solid color-mix(in srgb, var(--theme-surface) 18%, transparent);
+  border-radius: min(var(--theme-radius), .5rem);
   color: var(--theme-surface);
   background: var(--theme-primary);
-  box-shadow: 0 1rem 2.5rem color-mix(in srgb, var(--theme-primary) 14%, transparent);
+  box-shadow: none;
   text-decoration: none;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
 .action::before {
@@ -81,7 +81,7 @@
 
 .actionLabel {
   font-family: var(--theme-heading-font);
-  font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -.035em;
@@ -91,7 +91,7 @@
   grid-column: 1;
   max-width: 34rem;
   color: color-mix(in srgb, var(--theme-surface) 76%, transparent);
-  font-size: .92rem;
+  font-size: .9rem;
   line-height: 1.45;
 }
 
@@ -110,9 +110,13 @@
 }
 
 .action:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 1.25rem 3rem color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+  background: var(--theme-surface);
 }
+
+.action:hover .actionDescription { color: var(--theme-muted-text); }
+.action:hover .actionArrow { color: var(--theme-surface); }
 
 .action:hover .actionArrow {
   transform: translateX(3px);
@@ -126,22 +130,26 @@
 @media (max-width: 760px) {
   .inner {
     grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
-    padding: 3rem 1.25rem 3.25rem;
+    gap: 1.35rem;
+    padding: 2.25rem 1.25rem;
   }
 
   .intro h2 {
     max-width: 10ch;
-    font-size: clamp(2.5rem, 12vw, 3.75rem);
+    font-size: clamp(2.1rem, 9vw, 3rem);
   }
 
   .action {
-    min-height: 7.5rem;
-    padding: 1.35rem 1.25rem 1.35rem 1.4rem;
+    min-height: 5.7rem;
+    padding: 1rem 1.1rem;
   }
 
   .actionArrow {
     width: 2.75rem;
     height: 2.75rem;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action, .actionArrow { transition: none; }
 }

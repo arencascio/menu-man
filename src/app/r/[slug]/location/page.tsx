@@ -99,7 +99,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   return <RestaurantShell restaurant={shellRestaurant}>
     <main>
       <RestaurantAbout
-        eyebrow={presentation?.eyebrow ?? "About us"}
+        eyebrow={presentation?.eyebrow}
         heading={presentation?.heading ?? `Meet ${restaurant.name}.`}
         description={description}
         imageUrl={imageUrl}

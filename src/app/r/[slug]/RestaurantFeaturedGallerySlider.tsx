@@ -23,7 +23,7 @@ export type RestaurantFeaturedGallerySlide = {
 };
 
 type RestaurantFeaturedGallerySliderProps = {
-  eyebrow: string;
+  eyebrow?: string;
   restaurantId: string;
   slides: readonly RestaurantFeaturedGallerySlide[];
   title: string;
@@ -121,7 +121,7 @@ export default function RestaurantFeaturedGallerySlider({
     <section className={styles.section} aria-labelledby="restaurant-gallery-title">
       <div className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>{eyebrow}</p>
+          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
           <h2 id="restaurant-gallery-title">{title}</h2>
         </div>
 

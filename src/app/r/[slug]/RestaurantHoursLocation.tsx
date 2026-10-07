@@ -5,7 +5,8 @@ import TrackedRestaurantLink from "./TrackedRestaurantLink";
 type RestaurantHoursLocationProps = {
   addressLine1: string | null;
   city: string | null;
-  description: string | null;
+  description?: string | null;
+  eyebrow?: string;
   directionsUrl: string | null;
   hours: readonly BusinessHour[];
   phone: string | null;
@@ -17,7 +18,7 @@ type RestaurantHoursLocationProps = {
   timezone: string | null;
 };
 
-function isUsableValue(value: string | null) {
+function isUsableValue(value: string | null | undefined) {
   return Boolean(value && !value.includes("PLACEHOLDER"));
 }
 
@@ -25,6 +26,7 @@ export default function RestaurantHoursLocation({
   addressLine1,
   city,
   description,
+  eyebrow,
   directionsUrl,
   hours,
   phone,
@@ -47,7 +49,7 @@ export default function RestaurantHoursLocation({
     >
       <div className={styles.inner}>
         <div className={styles.heading}>
-          <p className={styles.eyebrow}>Hours &amp; location</p>
+          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
           <h2 id="restaurant-information-title">Visit {restaurantName}</h2>
           {usableDescription ? <p className={styles.description}>{usableDescription}</p> : null}
         </div>

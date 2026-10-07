@@ -24,7 +24,7 @@ export type RestaurantOrderingAction = RestaurantOrderingLinkAction | Restaurant
 type RestaurantOrderingActionsProps = {
   actions: readonly RestaurantOrderingAction[];
   description?: string;
-  eyebrow: string;
+  eyebrow?: string;
   restaurantId: string;
   title: string;
 };
@@ -90,7 +90,7 @@ export default function RestaurantOrderingActions({
     <section className={styles.section} aria-labelledby="restaurant-ordering-title">
       <div className={styles.inner}>
         <div className={styles.intro}>
-          <p className={styles.eyebrow}>{eyebrow}</p>
+          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
           <h2 id="restaurant-ordering-title">{title}</h2>
           {description ? <p className={styles.description}>{description}</p> : null}
         </div>

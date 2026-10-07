@@ -1,6 +1,6 @@
 // Restaurant-owned page presentation. Shared components contain no client facts.
 export type RestaurantLocationPresentation = {
-  eyebrow: string;
+  eyebrow?: string;
   heading: string;
   fallbackStory: string;
   mapEmbedUrl?: string;
@@ -9,7 +9,6 @@ export type RestaurantLocationPresentation = {
 
 export const restaurantLocationPresentations: Readonly<Partial<Record<string, RestaurantLocationPresentation>>> = {
   armandos: {
-    eyebrow: "About Armando's",
     heading: "Good food. A place to find us.",
     fallbackStory: "Explore Armando's Mexican Food menu, from breakfast plates to street tacos, burritos, and combination plates.",
     mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3311.889484116204!2d-117.2066667!3d33.8925!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80dca7171f6d308f%3A0x28220185e3313f9d!2sArmando's%20Mexican%20Food!5e0!3m2!1sen!2sus!4v1789973139894!5m2!1sen!2sus",

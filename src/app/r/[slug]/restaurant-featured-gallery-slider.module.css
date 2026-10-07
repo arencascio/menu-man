@@ -1,6 +1,6 @@
 .section {
   overflow: hidden;
-  padding: clamp(3.5rem, 7vw, 6.5rem) 0;
+  padding: clamp(2.25rem, 4vw, 4rem) 0;
   color: var(--theme-surface);
   background: color-mix(in srgb, var(--theme-primary) 92%, black);
 }
@@ -18,7 +18,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 2rem;
-  margin-bottom: clamp(1.75rem, 4vw, 3rem);
+  margin-bottom: clamp(1.15rem, 2.5vw, 2rem);
 }
 
 .eyebrow {
@@ -34,9 +34,9 @@
   max-width: 11ch;
   margin: 0;
   font-family: var(--theme-heading-font);
-  font-size: clamp(2.75rem, 5.8vw, 5.75rem);
+  font-size: clamp(2.35rem, 4.4vw, 4.4rem);
   font-weight: 800;
-  line-height: .92;
+  line-height: 1;
   letter-spacing: -.055em;
   text-wrap: balance;
 }
@@ -112,7 +112,7 @@
 .media {
   position: relative;
   min-width: 0;
-  min-height: clamp(30rem, 52vw, 46rem);
+  min-height: clamp(24rem, 40vw, 36rem);
   overflow: hidden;
   background: color-mix(in srgb, var(--theme-primary) 80%, black);
 }
@@ -140,13 +140,13 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: clamp(2.5rem, 5vw, 5.5rem);
+  padding: clamp(1.75rem, 3.5vw, 3.5rem);
   color: var(--theme-text);
   background: var(--theme-surface);
 }
 
 .slideNumber {
-  margin: 0 0 2rem;
+  margin: 0 0 1rem;
   color: var(--theme-accent);
   font-size: .78rem;
   font-weight: 800;
@@ -157,40 +157,42 @@
   max-width: 10ch;
   margin: 0;
   font-family: var(--theme-heading-font);
-  font-size: clamp(2.5rem, 4.6vw, 5rem);
+  font-size: clamp(2.2rem, 3.5vw, 3.65rem);
   font-weight: 800;
-  line-height: .93;
+  line-height: 1;
   letter-spacing: -.055em;
   text-wrap: balance;
 }
 
 .description {
   max-width: 30rem;
-  margin: 1.5rem 0 0;
+  margin: .85rem 0 0;
   color: var(--theme-muted-text);
   font-size: clamp(1rem, 1.5vw, 1.16rem);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: .75rem;
-  margin-top: 2rem;
+  margin-top: 1.2rem;
 }
 
 .primaryAction,
 .secondaryAction {
   display: inline-flex;
-  min-height: 3.15rem;
+  min-height: 3rem;
   align-items: center;
   justify-content: center;
-  padding: .8rem 1.25rem;
+  padding: .7rem 1.15rem;
   border: 1px solid var(--theme-primary);
   border-radius: max(var(--theme-radius), .5rem);
-  font-size: .9rem;
-  font-weight: 800;
+  font-size: .96rem;
+  font-weight: 700;
+  line-height: 1.2;
   text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
 .primaryAction {
@@ -203,12 +205,15 @@
   background: transparent;
 }
 
+.primaryAction:hover { color: var(--theme-surface); background: var(--theme-accent); border-color: var(--theme-accent); }
+.secondaryAction:hover { color: var(--theme-surface); background: var(--theme-primary); }
+
 .position {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-top: 1.5rem;
+  padding-top: 1rem;
 }
 
 .positionLabel {
@@ -242,7 +247,7 @@
 
 @media (max-width: 800px) {
   .section {
-    padding: 3.75rem 0;
+    padding: 2.25rem 0;
   }
 
   .header,
@@ -257,7 +262,7 @@
 
   .header h2 {
     max-width: 9ch;
-    font-size: clamp(2.8rem, 13vw, 4.5rem);
+    font-size: clamp(2.25rem, 9vw, 3.5rem);
   }
 
   .desktopControls {
@@ -269,7 +274,7 @@
   }
 
   .media {
-    min-height: clamp(17rem, 72vw, 27rem);
+    min-height: clamp(14rem, 60vw, 23rem);
   }
 
   .media::after {
@@ -277,28 +282,28 @@
   }
 
   .content {
-    min-height: 22rem;
+    min-height: 0;
     justify-content: flex-start;
-    padding: 2.25rem 1.25rem 2.75rem;
+    padding: 1.5rem 1.25rem 1.8rem;
   }
 
   .slideNumber {
-    margin-bottom: 1.25rem;
+    margin-bottom: .75rem;
   }
 
   .content h3 {
     max-width: 12ch;
-    font-size: clamp(2.35rem, 11vw, 3.75rem);
+    font-size: clamp(2rem, 8vw, 3rem);
   }
 
   .description {
-    margin-top: 1rem;
+    margin-top: .7rem;
   }
 
   .actions {
     width: 100%;
     margin-top: auto;
-    padding-top: 1.75rem;
+    padding-top: 1rem;
   }
 
   .primaryAction,
@@ -312,7 +317,7 @@
     scroll-behavior: auto;
   }
 
-  .arrowButton {
+  .arrowButton, .primaryAction, .secondaryAction {
     transition: none;
   }
 }

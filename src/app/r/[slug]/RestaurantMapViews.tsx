@@ -1,6 +1,7 @@
 import styles from "./restaurant-location-page.module.css";
 
 type RestaurantMapViewsProps = {
+  eyebrow?: string;
   mapEmbedUrl?: string;
   streetViewEmbedUrl?: string;
   restaurantName: string;
@@ -17,7 +18,7 @@ function validEmbedUrl(value: string | undefined) {
   }
 }
 
-export default function RestaurantMapViews({ mapEmbedUrl, streetViewEmbedUrl, restaurantName }: RestaurantMapViewsProps) {
+export default function RestaurantMapViews({ eyebrow, mapEmbedUrl, streetViewEmbedUrl, restaurantName }: RestaurantMapViewsProps) {
   const mapUrl = validEmbedUrl(mapEmbedUrl);
   const streetViewUrl = validEmbedUrl(streetViewEmbedUrl);
   if (!mapUrl && !streetViewUrl) return null;
@@ -25,7 +26,7 @@ export default function RestaurantMapViews({ mapEmbedUrl, streetViewEmbedUrl, re
   return <section className={styles.mapSection} aria-labelledby="restaurant-map-title">
     <div className={styles.mapInner}>
       <div className={styles.mapHeading}>
-        <p className={styles.eyebrow}>See the location</p>
+        {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
         <h2 id="restaurant-map-title">Find your way here.</h2>
         <p>{mapUrl && streetViewUrl
           ? "Explore the map and take a look at the storefront before you visit."
