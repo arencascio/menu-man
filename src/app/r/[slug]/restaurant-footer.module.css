@@ -17,17 +17,38 @@
 
 .inner {
   display: grid;
-  grid-template-columns: minmax(16rem, 1.15fr) minmax(18rem, 1fr);
-  gap: 1.75rem clamp(2rem, 5vw, 5rem);
-  align-items: start;
+  grid-template-columns: auto minmax(16rem, 1fr) auto;
+  gap: .5rem clamp(1.5rem, 3vw, 3rem);
+  align-items: center;
   width: min(100%, var(--theme-content-width));
   margin: 0 auto;
-  padding: clamp(2.5rem, 4vw, 4rem) 2rem 1.5rem;
+  padding: clamp(2rem, 3vw, 3rem) 2rem 1.25rem;
 }
 
-.identity {
-  min-width: 0;
+.artworkArea {
+  display: grid;
+  place-items: center;
+  width: clamp(8rem, 12vw, 11rem);
+  height: 10rem;
 }
+
+.artwork {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: .55;
+  transform: translateY(-24px);
+  transition: opacity 580ms ease-out, transform 580ms ease-out;
+}
+
+.artworkVisible {
+  opacity: .9;
+  transform: translateY(0);
+}
+
+.identity { min-width: 0; }
 
 .brand {
   display: inline-flex;
@@ -50,10 +71,7 @@
   border-radius: var(--theme-radius);
 }
 
-.logo {
-  object-fit: contain;
-  background: var(--theme-surface);
-}
+.logo { object-fit: contain; background: var(--theme-surface); }
 
 .brandMark {
   display: grid;
@@ -66,17 +84,17 @@
 
 .contactLink,
 .contactText {
-  display: block;
-  max-width: 32rem;
-  margin: .65rem 0 0;
-  color: color-mix(in srgb, var(--theme-surface) 68%, transparent);
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  max-width: 35rem;
+  margin: .3rem 0 0;
+  color: color-mix(in srgb, var(--theme-surface) 78%, transparent);
   font-size: .95rem;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .contactLink {
-  display: flex;
-  align-items: center;
   width: fit-content;
   min-height: 2.75rem;
   text-decoration: none;
@@ -84,43 +102,39 @@
   transition: color 160ms ease;
 }
 
-.contactLink:hover {
-  color: var(--theme-surface);
-  text-decoration: underline;
-}
+.contactLink:hover { color: var(--theme-surface); text-decoration: underline; }
+.contactIcon { flex: 0 0 auto; }
 
-.links {
+.actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: .25rem;
+  align-items: center;
+  gap: .2rem;
 }
 
-.link {
+.action {
   display: inline-flex;
-  min-height: 2.75rem;
   align-items: center;
-  padding: .5rem .8rem;
-  border: 0;
+  gap: .45rem;
+  min-height: 2.75rem;
+  padding: .5rem .75rem;
   border-radius: var(--theme-radius);
   color: var(--theme-surface);
-  background: transparent;
   font-size: .9rem;
-  font-family: inherit;
   font-weight: 700;
   text-decoration: none;
-  text-align: left;
-  cursor: pointer;
+  text-underline-offset: .25rem;
+  white-space: nowrap;
   transition: color 160ms ease, background-color 160ms ease;
 }
 
-.link:hover {
+.action:hover {
   color: var(--theme-surface);
   background: color-mix(in srgb, var(--theme-accent) 24%, transparent);
+  text-decoration: underline;
 }
 
 .brand:focus-visible,
-.link:focus-visible,
+.action:focus-visible,
 .contactLink:focus-visible {
   outline: 3px solid var(--theme-accent);
   outline-offset: 3px;
@@ -128,7 +142,7 @@
 
 .copyright {
   grid-column: 1 / -1;
-  margin: .8rem 0 0;
+  margin: .65rem 0 0;
   padding-top: .9rem;
   border-top: 1px solid color-mix(in srgb, var(--theme-surface) 18%, transparent);
   color: color-mix(in srgb, var(--theme-surface) 56%, transparent);
@@ -136,27 +150,26 @@
   line-height: 1.4;
 }
 
+@media (max-width: 900px) {
+  .inner { grid-template-columns: auto minmax(0, 1fr); }
+  .actions { grid-column: 2; }
+}
+
 @media (max-width: 700px) {
   .inner {
     grid-template-columns: minmax(0, 1fr);
-    gap: 1.5rem;
-    padding: 2.5rem 1.25rem 1.25rem;
+    gap: .2rem;
+    padding: 1.75rem 1.25rem 1.25rem;
   }
 
-  .brand {
-    font-size: 1.55rem;
-  }
-
-  .links { gap: .1rem; }
-
-  .copyright {
-    margin-top: .5rem;
-  }
+  .artworkArea { width: 6rem; height: 5.5rem; }
+  .brand { font-size: 1.5rem; }
+  .actions { grid-column: 1; margin-top: .35rem; }
+  .action:first-child { padding-left: 0; }
+  .copyright { margin-top: .75rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .link,
-  .contactLink {
-    transition: none;
-  }
+  .artwork { opacity: .9; transform: none; transition: none; }
+  .action, .contactLink { transition: none; }
 }

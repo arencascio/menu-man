@@ -5,10 +5,11 @@ import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import PageViewTracker from "./PageViewTracker";
 import { getRestaurantDeliveryOptions } from "./restaurant-delivery-options";
+import { restaurantIdentities } from "./restaurant-identity";
 import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "./restaurant-location-data";
 import { getRestaurantMenuSections } from "./restaurant-menu-data";
 import RestaurantAnnouncementStrip from "./RestaurantAnnouncementStrip";
-import RestaurantFooter, { type RestaurantFooterLink } from "./RestaurantFooter";
+import RestaurantFooter from "./RestaurantFooter";
 import RestaurantFeaturedGallerySlider, {
   type RestaurantFeaturedGalleryAction,
   type RestaurantFeaturedGallerySlide,
@@ -302,11 +303,14 @@ if (restaurantError || !restaurant) {
   ]);
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
   const menuHref = `/r/${restaurant.slug}/menu`;
+  const identity = restaurantIdentities[restaurant.slug];
+  const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
 
   const restaurantPresentation: RestaurantShellRestaurant = {
     id: restaurant.id,
     name: restaurant.name,
-    logoUrl: restaurant.logo_url,
+    logoUrl: identity?.markUrl ?? restaurant.logo_url,
+    artworkMark: identity?.artworkMark,
     homeHref: `/r/${restaurant.slug}`,
     deliveryOptions,
     navigation: [
@@ -314,8 +318,9 @@ if (restaurantError || !restaurant) {
       ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
       { label: "Location", href: `/r/${restaurant.slug}/location` },
       ...(directionsUrl
-        ? [{ label: "Directions", href: directionsUrl, external: true }]
+        ? [{ label: "Directions", href: directionsUrl, external: true, icon: "directions" as const }]
         : []),
+      ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
     ],
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
@@ -404,25 +409,7 @@ if (restaurantError || !restaurant) {
         }];
       })
     : [];
-  const hasUsablePhone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER");
   const homepageSections = restaurantHomepageSections[restaurant.slug];
-  const footerLinks: RestaurantFooterLink[] = [
-    { label: "Menu", href: menuHref },
-    ...(deliveryOptions.length > 0
-      ? [{
-          kind: "delivery" as const,
-          label: "Order Delivery",
-        }]
-      : restaurant.pickup_url
-        ? [{
-            label: "Order pickup",
-            href: restaurant.pickup_url,
-            external: true,
-            trackingEvent: "pickup_clicked" as const,
-          }]
-      : []),
-    { label: "Location & hours", href: `/r/${restaurant.slug}/location` },
-  ];
 
   return (
     <RestaurantShell restaurant={restaurantPresentation}>
@@ -484,10 +471,10 @@ if (restaurantError || !restaurant) {
         address={address}
         directionsUrl={directionsUrl}
         homeHref={`/r/${restaurant.slug}`}
-        links={footerLinks}
-        logoUrl={restaurant.logo_url}
+        logoUrl={identity?.markUrl ?? restaurant.logo_url}
+        artworkMark={identity?.artworkMark}
         name={restaurant.name}
-        phone={hasUsablePhone ? restaurant.phone : null}
+        phone={phone}
         restaurantId={restaurant.id}
       />
       <RestaurantJsonLd

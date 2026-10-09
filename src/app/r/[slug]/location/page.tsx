@@ -4,7 +4,8 @@ import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
 import PageViewTracker from "../PageViewTracker";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
-import RestaurantFooter, { type RestaurantFooterLink } from "../RestaurantFooter";
+import { restaurantIdentities } from "../restaurant-identity";
+import RestaurantFooter from "../RestaurantFooter";
 import RestaurantHoursLocation from "../RestaurantHoursLocation";
 import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "../restaurant-location-data";
 import { restaurantLocationPresentations } from "../restaurant-location-presentation";
@@ -58,32 +59,26 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
   const presentation = restaurantLocationPresentations[slug];
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
+  const identity = restaurantIdentities[slug];
   const homeHref = `/r/${slug}`;
   const locationHref = `${homeHref}/location`;
   const shellRestaurant: RestaurantShellRestaurant = {
     id: restaurant.id,
     name: restaurant.name,
-    logoUrl: restaurant.logo_url,
+    logoUrl: identity?.markUrl ?? restaurant.logo_url,
+    artworkMark: identity?.artworkMark,
     homeHref,
     deliveryOptions,
     navigation: [
       { label: "Menu", href: `${homeHref}/menu` },
       ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
       { label: "Location", href: locationHref },
-      ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true }] : []),
+      ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true, icon: "directions" as const }] : []),
+      ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
     ],
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
-  const footerLinks: RestaurantFooterLink[] = [
-    { label: "Menu", href: `${homeHref}/menu` },
-    ...(deliveryOptions.length > 0
-      ? [{ kind: "delivery" as const, label: "Order Delivery" }]
-      : restaurant.pickup_url
-        ? [{ label: "Order pickup", href: restaurant.pickup_url, external: true, trackingEvent: "pickup_clicked" as const }]
-        : []),
-    { label: "Location & hours", href: "#restaurant-information" },
-  ];
 
   return <RestaurantShell restaurant={shellRestaurant}>
     <main>
@@ -111,8 +106,8 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
       address={address}
       directionsUrl={directionsUrl}
       homeHref={homeHref}
-      links={footerLinks}
-      logoUrl={restaurant.logo_url}
+      logoUrl={identity?.markUrl ?? restaurant.logo_url}
+      artworkMark={identity?.artworkMark}
       name={restaurant.name}
       phone={phone}
       restaurantId={restaurant.id}

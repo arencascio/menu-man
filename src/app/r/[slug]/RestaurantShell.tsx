@@ -9,6 +9,7 @@ export type RestaurantShellRestaurant = {
   homeHref: string;
   id: string;
   logoUrl: string | null;
+  artworkMark?: boolean;
   name: string;
   navigation: readonly RestaurantNavigationItem[];
   themeOverrides: unknown;
@@ -47,6 +48,7 @@ export default function RestaurantShell({ children, restaurant }: RestaurantShel
           homeHref={restaurant.homeHref}
           items={restaurant.navigation}
           logoUrl={restaurant.logoUrl}
+          artworkMark={restaurant.artworkMark}
           name={restaurant.name}
         />
         {children}

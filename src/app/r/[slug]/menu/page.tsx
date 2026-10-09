@@ -10,9 +10,10 @@ import MenuBrowser from "../MenuBrowser";
 import OrderingStatus from "../OrderingStatus";
 import PageViewTracker from "../PageViewTracker";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
+import { restaurantIdentities } from "../restaurant-identity";
 import { getRestaurantLocationLinks } from "../restaurant-location-data";
 import { getRestaurantMenuSections } from "../restaurant-menu-data";
-import RestaurantFooter, { type RestaurantFooterLink } from "../RestaurantFooter";
+import RestaurantFooter from "../RestaurantFooter";
 import RestaurantShell, { type RestaurantShellRestaurant } from "../RestaurantShell";
 import styles from "./restaurant-menu-page.module.css";
 
@@ -110,30 +111,24 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
   const homeHref = `/r/${restaurant.slug}`;
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
+  const identity = restaurantIdentities[slug];
   const shellRestaurant: RestaurantShellRestaurant = {
     id: restaurant.id,
     name: restaurant.name,
-    logoUrl: restaurant.logo_url,
+    logoUrl: identity?.markUrl ?? restaurant.logo_url,
+    artworkMark: identity?.artworkMark,
     homeHref,
     deliveryOptions,
     navigation: [
       { label: "Menu", href: `${homeHref}/menu` },
       ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
       { label: "Location", href: `${homeHref}/location` },
-      ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true }] : []),
+      ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true, icon: "directions" as const }] : []),
+      ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
     ],
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
-  const footerLinks: RestaurantFooterLink[] = [
-    { label: "Menu", href: `${homeHref}/menu` },
-    ...(deliveryOptions.length > 0
-      ? [{ kind: "delivery" as const, label: "Order Delivery" }]
-      : restaurant.pickup_url
-        ? [{ label: "Order pickup", href: restaurant.pickup_url, external: true, trackingEvent: "pickup_clicked" as const }]
-        : []),
-    { label: "Location & hours", href: `${homeHref}/location` },
-  ];
 
   return <RestaurantShell restaurant={shellRestaurant}>
     <div className={styles.menuPage}>
@@ -162,8 +157,8 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
       address={address}
       directionsUrl={directionsUrl}
       homeHref={homeHref}
-      links={footerLinks}
-      logoUrl={restaurant.logo_url}
+      logoUrl={identity?.markUrl ?? restaurant.logo_url}
+      artworkMark={identity?.artworkMark}
       name={restaurant.name}
       phone={phone}
       restaurantId={restaurant.id}

@@ -56,6 +56,13 @@
   background: var(--theme-background);
 }
 
+.artworkMark {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0;
+  background: transparent;
+}
+
 .brandPlaceholder {
   display: grid;
   place-items: center;
@@ -81,6 +88,10 @@
 }
 
 .navigationLink {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 2.75rem;
   padding: .7rem .8rem;
   border: 0;
   border-radius: var(--theme-radius);
@@ -168,6 +179,8 @@
     width: 2.5rem;
     height: 2.5rem;
   }
+
+  .artworkMark { width: 2.75rem; height: 2.75rem; }
 
   .brandName {
     max-width: min(58vw, 18rem);

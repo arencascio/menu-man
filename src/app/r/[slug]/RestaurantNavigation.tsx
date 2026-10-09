@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
+import RestaurantContactIcon from "./RestaurantContactIcon";
 import styles from "./restaurant-shell.module.css";
 
 type RestaurantNavigationDestination = {
@@ -10,6 +11,7 @@ type RestaurantNavigationDestination = {
   label: string;
   href: string;
   external?: boolean;
+  icon?: "directions" | "phone";
 };
 
 type RestaurantNavigationDelivery = {
@@ -23,6 +25,7 @@ type RestaurantNavigationProps = {
   homeHref: string;
   items: readonly RestaurantNavigationItem[];
   logoUrl: string | null;
+  artworkMark?: boolean;
   name: string;
 };
 
@@ -30,6 +33,7 @@ export default function RestaurantNavigation({
   homeHref,
   items,
   logoUrl,
+  artworkMark,
   name,
 }: RestaurantNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,7 +59,7 @@ export default function RestaurantNavigation({
         <Link className={styles.brand} href={homeHref} onClick={() => setIsOpen(false)}>
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className={styles.brandMark} src={logoUrl} alt="" />
+            <img className={`${styles.brandMark} ${artworkMark ? styles.artworkMark : ""}`} src={logoUrl} alt="" />
           ) : (
             <span className={`${styles.brandMark} ${styles.brandPlaceholder}`} aria-hidden="true">
               {name.charAt(0)}
@@ -91,15 +95,16 @@ export default function RestaurantNavigation({
               >
                 {item.label}
               </RestaurantDeliveryTrigger>
-            ) : item.external ? (
+            ) : item.external || item.href.startsWith("tel:") ? (
               <a
                 key={`${item.label}:${item.href}`}
                 className={styles.navigationLink}
                 href={item.href}
-                target="_blank"
-                rel="noreferrer"
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noreferrer" : undefined}
                 onClick={() => setIsOpen(false)}
               >
+                {item.icon ? <RestaurantContactIcon kind={item.icon} /> : null}
                 {item.label}
               </a>
             ) : (
@@ -109,6 +114,7 @@ export default function RestaurantNavigation({
                 href={item.href}
                 onClick={() => setIsOpen(false)}
               >
+                {item.icon ? <RestaurantContactIcon kind={item.icon} /> : null}
                 {item.label}
               </Link>
             )
