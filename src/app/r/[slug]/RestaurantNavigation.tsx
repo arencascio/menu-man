@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
-import RestaurantContactIcon from "./RestaurantContactIcon";
+import RestaurantNavigationIcon, { type RestaurantNavigationIconName } from "./RestaurantNavigationIcon";
 import styles from "./restaurant-shell.module.css";
 
 type RestaurantNavigationDestination = {
@@ -11,12 +11,13 @@ type RestaurantNavigationDestination = {
   label: string;
   href: string;
   external?: boolean;
-  icon?: "directions" | "phone";
+  icon?: RestaurantNavigationIconName;
 };
 
 type RestaurantNavigationDelivery = {
   kind: "delivery";
   label: string;
+  icon?: RestaurantNavigationIconName;
 };
 
 export type RestaurantNavigationItem = RestaurantNavigationDestination | RestaurantNavigationDelivery;
@@ -93,6 +94,7 @@ export default function RestaurantNavigation({
                 className={styles.navigationLink}
                 key={`${item.label}:delivery`}
               >
+                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
                 {item.label}
               </RestaurantDeliveryTrigger>
             ) : item.external || item.href.startsWith("tel:") ? (
@@ -104,7 +106,7 @@ export default function RestaurantNavigation({
                 rel={item.external ? "noreferrer" : undefined}
                 onClick={() => setIsOpen(false)}
               >
-                {item.icon ? <RestaurantContactIcon kind={item.icon} /> : null}
+                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
                 {item.label}
               </a>
             ) : (
@@ -114,7 +116,7 @@ export default function RestaurantNavigation({
                 href={item.href}
                 onClick={() => setIsOpen(false)}
               >
-                {item.icon ? <RestaurantContactIcon kind={item.icon} /> : null}
+                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
                 {item.label}
               </Link>
             )

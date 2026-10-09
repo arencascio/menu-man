@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./restaurant-footer.module.css";
+import { subscribeRestaurantScroll } from "./restaurant-scroll-observer";
 
 export default function RestaurantFooterArtwork({ src }: { src: string }) {
   const artworkRef = useRef<HTMLImageElement>(null);
@@ -14,14 +15,47 @@ export default function RestaurantFooterArtwork({ src }: { src: string }) {
       return;
     }
 
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let direction: "up" | "down" = "down";
+    let intersecting = false;
+    let ready = true;
+
+    const reveal = () => {
+      if (!motion.matches && intersecting && ready && direction === "down") {
+        ready = false;
         setVisible(true);
-        observer.disconnect();
       }
-    }, { threshold: 0.25 });
+    };
+    const onMotionChange = () => {
+      if (motion.matches) {
+        setVisible(true);
+      } else if (!intersecting) {
+        ready = true;
+        setVisible(false);
+      }
+      reveal();
+    };
+    const unsubscribe = subscribeRestaurantScroll((snapshot) => {
+      direction = snapshot.direction;
+      reveal();
+    });
+    const observer = new IntersectionObserver(([entry]) => {
+      intersecting = entry.isIntersecting;
+      // Arm another reveal only after leaving the footer above it on the page.
+      if (!intersecting && entry.boundingClientRect.top >= window.innerHeight) {
+        ready = true;
+        setVisible(motion.matches);
+      }
+      reveal();
+    });
     observer.observe(footer);
-    return () => observer.disconnect();
+    motion.addEventListener("change", onMotionChange);
+    onMotionChange();
+    return () => {
+      observer.disconnect();
+      unsubscribe();
+      motion.removeEventListener("change", onMotionChange);
+    };
   }, []);
 
   // eslint-disable-next-line @next/next/no-img-element

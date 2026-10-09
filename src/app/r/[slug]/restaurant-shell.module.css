@@ -230,3 +230,8 @@
     content: none;
   }
 }
+.smoothScroll { scroll-margin-top: 5rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :global(html):has(.smoothScroll) { scroll-behavior: smooth; }
+}

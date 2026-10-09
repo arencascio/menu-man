@@ -57,7 +57,7 @@
   position: absolute;
   inset: 0;
   object-fit: cover;
-  object-position: center;
+  object-position: var(--hero-image-position, center);
 }
 
 .heroImagePlaceholder {
@@ -198,4 +198,64 @@
 
 @media (prefers-reduced-motion: reduce) {
   .primaryAction, .secondaryAction { transition: none; }
+}
+.patternSeparator {
+  height: 3.25rem;
+}
+
+.homepageFooter {
+  --restaurant-footer-reveal-offset: -110px;
+}
+
+@media (max-width: 700px) {
+  .patternSeparator { height: 2.5rem; }
+  .homepageFooter nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .homepageFooter nav > * { padding: .5rem .75rem; }
+  .homepageFooter nav > :first-child { padding-left: .75rem; }
+}
+
+.hero[data-layout="full-photo"] {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  height: clamp(28rem, 60svh, 38rem);
+}
+.hero[data-layout="full-photo"] .heroMedia {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+.hero[data-layout="full-photo"] .heroMedia::after {
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / .65), rgb(0 0 0 / .25) 40%, transparent 75%),
+    linear-gradient(0deg, rgb(0 0 0 / .55), transparent 75%);
+}
+.hero[data-layout="full-photo"] .heroContent {
+  justify-content: flex-end;
+  width: min(100%, var(--theme-content-width));
+  max-width: none;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+.hero[data-layout="full-photo"] .heroContent::before { content: none; }
+.hero[data-layout="full-photo"] h1 {
+  max-width: 12ch;
+  font-size: clamp(3.5rem, 5.7vw, 5.5rem);
+  text-shadow: 0 2px 12px rgb(0 0 0 / .2);
+}
+.hero[data-layout="full-photo"] .tagline { max-width: 28rem; color: var(--theme-surface); }
+.hero[data-layout="full-photo"] .secondaryAction { background: rgb(0 0 0 / .3); }
+.hero[data-layout="full-photo"] .secondaryAction:hover { background: var(--theme-surface); }
+
+@media (max-width: 700px) {
+  .hero[data-layout="full-photo"] { height: clamp(29rem, 60svh, 35rem); }
+  .hero[data-layout="full-photo"] .heroContent { padding: 2rem 1.25rem; }
+  .hero[data-layout="full-photo"] h1 { max-width: 11ch; font-size: clamp(2.75rem, 10vw, 3.5rem); }
+  .hero[data-layout="full-photo"] .heroImage { object-position: var(--hero-mobile-image-position, center); }
+  .hero[data-layout="full-photo"] .heroMedia::after {
+    background: linear-gradient(0deg, rgb(0 0 0 / .8), rgb(0 0 0 / .25) 55%, transparent 85%);
+  }
 }

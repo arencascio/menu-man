@@ -154,6 +154,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
       />
     </div>
     <RestaurantFooter
+      navigation={shellRestaurant.navigation}
       address={address}
       directionsUrl={directionsUrl}
       homeHref={homeHref}

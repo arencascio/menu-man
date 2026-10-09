@@ -22,7 +22,7 @@
   align-items: center;
   width: min(100%, var(--theme-content-width));
   margin: 0 auto;
-  padding: clamp(2rem, 3vw, 3rem) 2rem 1.25rem;
+  padding: clamp(2.75rem, 4vw, 4rem) 2rem 1.25rem;
 }
 
 .artworkArea {
@@ -38,14 +38,14 @@
   height: 100%;
   object-fit: contain;
   filter: invert(1);
-  opacity: .55;
-  transform: translateY(-24px);
-  transition: opacity 580ms ease-out, transform 580ms ease-out;
+  opacity: 0;
+  transform: translateY(var(--restaurant-footer-reveal-offset, -64px)) rotate(-3deg);
 }
 
 .artworkVisible {
   opacity: .9;
-  transform: translateY(0);
+  transform: translateY(0) rotate(0);
+  transition: opacity 750ms ease-out, transform 750ms cubic-bezier(.22, .61, .36, 1);
 }
 
 .identity { min-width: 0; }
@@ -107,6 +107,8 @@
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 30rem;
   align-items: center;
   gap: .2rem;
 }
@@ -117,13 +119,17 @@
   gap: .45rem;
   min-height: 2.75rem;
   padding: .5rem .75rem;
+  border: 0;
   border-radius: var(--theme-radius);
   color: var(--theme-surface);
-  font-size: .9rem;
+  background: transparent;
+  font-family: inherit;
+  font-size: .88rem;
   font-weight: 700;
   text-decoration: none;
   text-underline-offset: .25rem;
   white-space: nowrap;
+  cursor: pointer;
   transition: color 160ms ease, background-color 160ms ease;
 }
 
@@ -159,7 +165,7 @@
   .inner {
     grid-template-columns: minmax(0, 1fr);
     gap: .2rem;
-    padding: 1.75rem 1.25rem 1.25rem;
+    padding: 2.5rem 1.25rem 1.25rem;
   }
 
   .artworkArea { width: 6rem; height: 5.5rem; }

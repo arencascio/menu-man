@@ -1,0 +1,20 @@
+.pattern {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--pattern-background);
+}
+
+.pattern::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-color: var(--pattern-color);
+  opacity: var(--pattern-opacity);
+  mask-image: var(--pattern-asset);
+  mask-size: var(--pattern-size);
+  mask-repeat: var(--pattern-repeat);
+  mask-position: var(--pattern-position);
+  content: "";
+  pointer-events: none;
+}
+

@@ -80,7 +80,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
     themeOverrides: restaurant.theme_overrides,
   };
 
-  return <RestaurantShell restaurant={shellRestaurant}>
+  return <RestaurantShell restaurant={shellRestaurant} smoothScroll>
     <main>
       <RestaurantHoursLocation
         restaurantName={restaurant.name}
@@ -103,6 +103,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
       />
     </main>
     <RestaurantFooter
+      navigation={shellRestaurant.navigation}
       address={address}
       directionsUrl={directionsUrl}
       homeHref={homeHref}

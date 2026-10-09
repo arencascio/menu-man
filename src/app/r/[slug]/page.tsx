@@ -8,8 +8,10 @@ import { getRestaurantDeliveryOptions } from "./restaurant-delivery-options";
 import { restaurantIdentities } from "./restaurant-identity";
 import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "./restaurant-location-data";
 import { getRestaurantMenuSections } from "./restaurant-menu-data";
-import RestaurantAnnouncementStrip from "./RestaurantAnnouncementStrip";
+import RestaurantAnnouncementStrip, { type RestaurantDetailItem } from "./RestaurantAnnouncementStrip";
+import type { RestaurantPatternName } from "@/lib/restaurant-presentation/patterns";
 import RestaurantFooter from "./RestaurantFooter";
+import RestaurantPatternSeparator from "./RestaurantPatternSeparator";
 import RestaurantFeaturedGallerySlider, {
   type RestaurantFeaturedGalleryAction,
   type RestaurantFeaturedGallerySlide,
@@ -27,24 +29,35 @@ type RestaurantPageProps = {
   }>;
 };
 
-const restaurantAnnouncements: Readonly<Partial<Record<string, readonly string[]>>> = {
-  armandos: [
-    "Breakfast served all day",
-    "Search our full menu online",
-  ],
+const restaurantDetailStrips: Readonly<Partial<Record<string, {
+  pattern: RestaurantPatternName;
+  items: readonly RestaurantDetailItem[];
+}>>> = {
+  armandos: {
+    pattern: "brick-wall",
+    items: [
+      { icon: "flag", text: "Serving Moreno Valley since 1989" },
+      { icon: "utensils", text: "Menu served all day" },
+      { icon: "moon", text: "Open Late" },
+      { icon: "truck", text: "Available on all delivery apps" },
+    ],
+  },
 };
 
 type RestaurantHeroConfig = Omit<RestaurantHeroPresentation, "secondaryAction"> & {
   featuredMenuItemName?: string;
+  imageUrl?: string;
 };
 
 const restaurantHeroes: Readonly<Partial<Record<string, RestaurantHeroConfig>>> = {
   armandos: {
-    layout: "photo-split",
+    layout: "full-photo",
     headline: "You deserve it, amigo.",
-    supportingText: "Breakfast favorites, street tacos, burritos, combination plates, and more—all in one menu.",
-    imageAlt: "Five carnitas street tacos from Armando's Mexican Food",
-    featuredMenuItemName: "5 Carnitas Street Tacos Special",
+    supportingText: "Breakfast favorites, tacos, burritos, and more.",
+    imageAlt: "Carnitas tacos topped with onion and cilantro",
+    imageUrl: "/img/carnitas-tacos-bg.jpg",
+    imagePosition: "50% 42%",
+    mobileImagePosition: "62% 45%",
     primaryAction: {
       label: "Explore the menu",
       href: "/r/armandos/menu",
@@ -74,6 +87,8 @@ const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrder
 type RestaurantFeaturedGalleryConfig = {
   eyebrow?: string;
   title: string;
+  showHeading?: boolean;
+  patternSeparator?: RestaurantPatternName;
   slides: readonly {
     menuItemName: string;
     imageAlt: string;
@@ -85,6 +100,8 @@ type RestaurantFeaturedGalleryConfig = {
 const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFeaturedGalleryConfig>>> = {
   armandos: {
     title: "Made to satisfy.",
+    showHeading: false,
+    patternSeparator: "brick-wall",
     slides: [
       {
         menuItemName: "Huevos a la Mexicana",
@@ -314,11 +331,11 @@ if (restaurantError || !restaurant) {
     homeHref: `/r/${restaurant.slug}`,
     deliveryOptions,
     navigation: [
-      { label: "Menu", href: menuHref },
-      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
-      { label: "Location", href: `/r/${restaurant.slug}/location` },
+      { label: "Menu", href: menuHref, icon: "utensils" },
+      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Delivery", icon: "truck" as const }] : []),
+      { label: "Location", href: `/r/${restaurant.slug}/location`, icon: "mapPinned" },
       ...(directionsUrl
-        ? [{ label: "Directions", href: directionsUrl, external: true, icon: "directions" as const }]
+        ? [{ label: "Get Directions", href: directionsUrl, external: true, icon: "navigation" as const }]
         : []),
       ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
     ],
@@ -336,6 +353,8 @@ if (restaurantError || !restaurant) {
     : null;
   const heroPresentation: RestaurantHeroPresentation = {
     layout: configuredHero?.layout ?? "photo-split",
+    imagePosition: configuredHero?.imagePosition,
+    mobileImagePosition: configuredHero?.mobileImagePosition,
     eyebrow: configuredHero?.eyebrow,
     headline: configuredHero?.headline ?? usableTagline ?? restaurant.name,
     supportingText: configuredHero?.supportingText,
@@ -345,7 +364,7 @@ if (restaurantError || !restaurant) {
       href: menuHref,
     },
     secondaryAction: deliveryOptions.length > 0
-      ? { kind: "delivery", label: "Order delivery" }
+      ? { kind: "delivery", label: "Get delivery" }
       : restaurant.pickup_url
         ? {
             label: "Order pickup",
@@ -412,21 +431,25 @@ if (restaurantError || !restaurant) {
   const homepageSections = restaurantHomepageSections[restaurant.slug];
 
   return (
-    <RestaurantShell restaurant={restaurantPresentation}>
+    <RestaurantShell restaurant={restaurantPresentation} smoothScroll>
       <RestaurantHero
         restaurantId={restaurant.id}
         name={restaurant.name}
         logoUrl={restaurant.logo_url}
-        imageUrl={restaurant.hero_image_url || heroMenuImage}
+        imageUrl={configuredHero?.imageUrl ?? (restaurant.hero_image_url || heroMenuImage)}
         presentation={heroPresentation}
       />
-      <RestaurantAnnouncementStrip messages={restaurantAnnouncements[restaurant.slug] ?? []} />
+      <RestaurantAnnouncementStrip
+        items={restaurantDetailStrips[restaurant.slug]?.items}
+        pattern={restaurantDetailStrips[restaurant.slug]?.pattern}
+      />
       {featuredGalleryConfig && featuredGallerySlides.length > 0 ? (
         <RestaurantFeaturedGallerySlider
           eyebrow={featuredGalleryConfig.eyebrow}
           restaurantId={restaurant.id}
           slides={featuredGallerySlides}
           title={featuredGalleryConfig.title}
+          showHeading={featuredGalleryConfig.showHeading}
         />
       ) : null}
       {homepageSections?.orderingActions !== false && orderingActionsConfig ? (
@@ -467,7 +490,12 @@ if (restaurantError || !restaurant) {
           ) : null}
         </div>
       ) : null}
+      {featuredGalleryConfig?.patternSeparator && featuredGallerySlides.length > 0 ? (
+        <RestaurantPatternSeparator className={styles.patternSeparator} pattern={featuredGalleryConfig.patternSeparator} />
+      ) : null}
       <RestaurantFooter
+        className={styles.homepageFooter}
+        navigation={restaurantPresentation.navigation}
         address={address}
         directionsUrl={directionsUrl}
         homeHref={`/r/${restaurant.slug}`}

@@ -3,6 +3,7 @@ import { resolveTheme } from "@/lib/themes/resolve-theme";
 import RestaurantDeliveryChooser, { type RestaurantDeliveryOption } from "./RestaurantDeliveryChooser";
 import RestaurantNavigation, { type RestaurantNavigationItem } from "./RestaurantNavigation";
 import styles from "./restaurant-shell.module.css";
+import RestaurantPresentationMotion from "./RestaurantPresentationMotion";
 
 export type RestaurantShellRestaurant = {
   deliveryOptions?: readonly RestaurantDeliveryOption[];
@@ -19,9 +20,10 @@ export type RestaurantShellRestaurant = {
 type RestaurantShellProps = {
   children: ReactNode;
   restaurant: RestaurantShellRestaurant;
+  smoothScroll?: boolean;
 };
 
-export default function RestaurantShell({ children, restaurant }: RestaurantShellProps) {
+export default function RestaurantShell({ children, restaurant, smoothScroll = false }: RestaurantShellProps) {
   const theme = resolveTheme(restaurant.themePreset, restaurant.themeOverrides);
   const themeStyle = {
     "--theme-primary": theme.colors.primary,
@@ -39,7 +41,9 @@ export default function RestaurantShell({ children, restaurant }: RestaurantShel
   } as CSSProperties;
 
   return (
-    <div className={styles.shell} style={themeStyle}>
+    <div className={`${styles.shell} ${smoothScroll ? styles.smoothScroll : ""}`} style={themeStyle}
+      data-restaurant-presentation={smoothScroll || undefined}>
+      {smoothScroll ? <RestaurantPresentationMotion /> : null}
       <RestaurantDeliveryChooser
         options={restaurant.deliveryOptions ?? []}
         restaurantId={restaurant.id}

@@ -1,6 +1,7 @@
 import styles from "./restaurant-page.module.css";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
+import type { CSSProperties } from "react";
 
 type RestaurantHeroTrackingEvent = "delivery_clicked" | "pickup_clicked";
 
@@ -20,7 +21,9 @@ type RestaurantHeroDeliveryAction = {
 export type RestaurantHeroAction = RestaurantHeroLinkAction | RestaurantHeroDeliveryAction;
 
 export type RestaurantHeroPresentation = {
-  layout: "photo-split";
+  layout: "photo-split" | "full-photo";
+  imagePosition?: string;
+  mobileImagePosition?: string;
   eyebrow?: string;
   headline: string;
   supportingText?: string;
@@ -86,6 +89,10 @@ export default function RestaurantHero({
     <section
       className={styles.hero}
       data-layout={presentation.layout}
+      style={{
+        "--hero-image-position": presentation.imagePosition ?? "center",
+        "--hero-mobile-image-position": presentation.mobileImagePosition ?? presentation.imagePosition ?? "center",
+      } as CSSProperties}
       aria-labelledby="restaurant-page-title"
     >
       <div className={styles.heroContent}>

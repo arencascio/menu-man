@@ -2,8 +2,13 @@ import TrackedRestaurantLink from "./TrackedRestaurantLink";
 import RestaurantContactIcon from "./RestaurantContactIcon";
 import RestaurantFooterArtwork from "./RestaurantFooterArtwork";
 import styles from "./restaurant-footer.module.css";
+import Link from "next/link";
+import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
+import type { RestaurantNavigationItem } from "./RestaurantNavigation";
+import RestaurantNavigationIcon from "./RestaurantNavigationIcon";
 
 type RestaurantFooterProps = {
+  className?: string;
   address?: string | null;
   directionsUrl?: string | null;
   homeHref: string;
@@ -12,9 +17,11 @@ type RestaurantFooterProps = {
   name: string;
   phone?: string | null;
   restaurantId: string;
+  navigation: readonly RestaurantNavigationItem[];
 };
 
 export default function RestaurantFooter({
+  className,
   address,
   directionsUrl,
   homeHref,
@@ -23,11 +30,12 @@ export default function RestaurantFooter({
   name,
   phone,
   restaurantId,
+  navigation,
 }: RestaurantFooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id="restaurant-footer" className={styles.footer}>
+    <footer id="restaurant-footer" className={[styles.footer, className].filter(Boolean).join(" ")}>
       <div className={styles.inner}>
         {artworkMark && logoUrl ? (
           <div className={styles.artworkArea} aria-hidden="true">
@@ -74,34 +82,35 @@ export default function RestaurantFooter({
           ) : null}
         </div>
 
-        {directionsUrl || phone ? (
-          <div className={styles.actions} role="group" aria-label={`${name} contact actions`}>
-            {directionsUrl ? (
+        <nav className={styles.actions} aria-label={`${name} footer navigation`}>
+          {navigation.map((item) => (
+            item.kind === "delivery" ? (
+              <RestaurantDeliveryTrigger className={styles.action} key={`${item.label}:delivery`}>
+                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
+                {item.label}
+              </RestaurantDeliveryTrigger>
+            ) : item.icon === "phone" || item.icon === "directions" || item.icon === "navigation" ? (
               <TrackedRestaurantLink
+                key={`${item.label}:${item.href}`}
                 className={styles.action}
-                eventName="directions_clicked"
-                href={directionsUrl}
+                eventName={item.icon === "phone" ? "phone_clicked" : "directions_clicked"}
+                href={item.href}
                 restaurantId={restaurantId}
-                rel="noreferrer"
-                target="_blank"
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noreferrer" : undefined}
               >
-                <RestaurantContactIcon kind="directions" />
-                Directions
+                <RestaurantNavigationIcon icon={item.icon} />
+                {item.label}
               </TrackedRestaurantLink>
-            ) : null}
-            {phone ? (
-              <TrackedRestaurantLink
-                className={styles.action}
-                eventName="phone_clicked"
-                href={`tel:${phone}`}
-                restaurantId={restaurantId}
-              >
-                <RestaurantContactIcon kind="phone" />
-                Call Us
-              </TrackedRestaurantLink>
-            ) : null}
-          </div>
-        ) : null}
+            ) : (
+              <Link className={styles.action} key={`${item.label}:${item.href}`} href={item.href}
+                target={item.external ? "_blank" : undefined} rel={item.external ? "noreferrer" : undefined}>
+                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
+                {item.label}
+              </Link>
+            )
+          ))}
+        </nav>
 
         <p className={styles.copyright}>&copy; {currentYear} {name}</p>
       </div>
