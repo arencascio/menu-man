@@ -89,17 +89,17 @@ const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFea
       {
         menuItemName: "Huevos a la Mexicana",
         imageAlt: "Huevos a la Mexicana with rice, beans, avocado, cucumber, and orange",
-        primaryAction: { label: "View the menu", href: "#restaurant-menu" },
+        primaryAction: { label: "View menu", href: "#restaurant-menu" },
       },
       {
         menuItemName: "Carne Asada Fries",
         imageAlt: "Carne asada fries topped with guacamole and cheese",
-        primaryAction: { label: "View the menu", href: "#restaurant-menu" },
+        primaryAction: { label: "View menu", href: "#restaurant-menu" },
       },
       {
         menuItemName: "Camarones a la Diabla",
         imageAlt: "Camarones a la Diabla with rice, beans, avocado, cucumber, and orange",
-        primaryAction: { label: "View the menu", href: "#restaurant-menu" },
+        primaryAction: { label: "View menu", href: "#restaurant-menu" },
       },
     ],
   },

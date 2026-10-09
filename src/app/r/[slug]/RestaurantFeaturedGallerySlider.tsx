@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./restaurant-featured-gallery-slider.module.css";
+import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
 
 type GalleryActionTrackingEvent = "delivery_clicked" | "pickup_clicked";
@@ -67,184 +68,145 @@ function GalleryAction({
 }
 
 export default function RestaurantFeaturedGallerySlider({
-  eyebrow,
-  restaurantId,
-  slides,
-  title,
+  eyebrow, restaurantId, slides, title,
 }: RestaurantFeaturedGallerySliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
   const viewportRef = useRef<HTMLDivElement>(null);
   const scrollFrameRef = useRef<number | null>(null);
   const reducedMotionRef = useRef(false);
+  const mobileRef = useRef(false);
 
   useEffect(() => {
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updateMotionPreference = () => {
-      reducedMotionRef.current = motionPreference.matches;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobile = window.matchMedia("(max-width: 767px)");
+    const updateMotion = () => { reducedMotionRef.current = motion.matches; };
+    const alignSlide = () => {
+      mobileRef.current = mobile.matches;
+      const viewport = viewportRef.current;
+      const panel = viewport?.querySelectorAll<HTMLElement>("article")[activeIndexRef.current];
+      if (viewport && panel) {
+        viewport.scrollTo({ left: mobile.matches ? panel.offsetLeft : 0, behavior: "instant" });
+      }
     };
-
-    updateMotionPreference();
-    motionPreference.addEventListener("change", updateMotionPreference);
-    return () => motionPreference.removeEventListener("change", updateMotionPreference);
-  }, []);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const observer = new ResizeObserver(() => {
-      viewport.scrollLeft = viewport.clientWidth * activeIndexRef.current;
-    });
-    observer.observe(viewport);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => () => {
-    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+    updateMotion();
+    alignSlide();
+    motion.addEventListener("change", updateMotion);
+    mobile.addEventListener("change", alignSlide);
+    const observer = new ResizeObserver(alignSlide);
+    if (viewportRef.current) observer.observe(viewportRef.current);
+    return () => {
+      motion.removeEventListener("change", updateMotion);
+      mobile.removeEventListener("change", alignSlide);
+      observer.disconnect();
+      if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+    };
   }, []);
 
   const moveToSlide = useCallback((index: number) => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
     const nextIndex = Math.max(0, Math.min(slides.length - 1, index));
-    viewport.scrollTo({
-      left: viewport.clientWidth * nextIndex,
-      behavior: reducedMotionRef.current ? "auto" : "smooth",
-    });
+    activeIndexRef.current = nextIndex;
+    setActiveIndex(nextIndex);
+    const viewport = viewportRef.current;
+    const panel = viewport?.querySelectorAll<HTMLElement>("article")[nextIndex];
+    if (mobileRef.current && viewport && panel) {
+      viewport.scrollTo({ left: panel.offsetLeft, behavior: reducedMotionRef.current ? "instant" : "smooth" });
+    }
   }, [slides.length]);
 
   if (slides.length === 0) return null;
 
   return (
-    <section className={styles.section} aria-labelledby="restaurant-gallery-title">
-      <div className={styles.header}>
-        <div>
+    <section className={styles.section} aria-labelledby="restaurant-gallery-title" data-presentation="deck">
+      <div className={styles.inner}>
+        <div className={styles.header}>
           {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
           <h2 id="restaurant-gallery-title">{title}</h2>
         </div>
-
-        <div className={styles.desktopControls} aria-label="Gallery controls">
-          <button
-            type="button"
-            className={styles.arrowButton}
-            onClick={() => moveToSlide(activeIndex - 1)}
-            disabled={activeIndex === 0}
-            aria-label="Previous gallery slide"
-          >
-            <span aria-hidden="true">&larr;</span>
-          </button>
-          <button
-            type="button"
-            className={styles.arrowButton}
-            onClick={() => moveToSlide(activeIndex + 1)}
-            disabled={activeIndex === slides.length - 1}
-            aria-label="Next gallery slide"
-          >
-            <span aria-hidden="true">&rarr;</span>
-          </button>
-        </div>
-      </div>
-
-      <div
-        ref={viewportRef}
-        className={styles.viewport}
-        tabIndex={0}
-        aria-label="Featured food gallery. Use the arrow keys or swipe to change slides."
-        onKeyDown={(event) => {
-          if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            moveToSlide(activeIndex - 1);
-          }
-          if (event.key === "ArrowRight") {
-            event.preventDefault();
-            moveToSlide(activeIndex + 1);
-          }
-        }}
-        onScroll={(event) => {
-          if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
-          const viewport = event.currentTarget;
-          scrollFrameRef.current = requestAnimationFrame(() => {
-            if (viewport.clientWidth === 0) return;
-            const nextIndex = Math.max(
-              0,
-              Math.min(slides.length - 1, Math.round(viewport.scrollLeft / viewport.clientWidth)),
-            );
-            activeIndexRef.current = nextIndex;
-            setActiveIndex(nextIndex);
-          });
-        }}
-      >
-        <div className={styles.track}>
-          {slides.map((slide, index) => {
-            const isActive = index === activeIndex;
-            return (
-              <article
-                className={styles.slide}
-                key={`${slide.imageUrl}:${slide.title ?? index}`}
-                aria-hidden={!isActive}
-              >
-                <div className={styles.media}>
+        <div ref={viewportRef} className={styles.viewport} tabIndex={0} role="region"
+          aria-roledescription="carousel"
+          aria-label="Featured food gallery. Use the arrow keys or swipe to change items."
+          onKeyDown={(event) => {
+            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+              event.preventDefault();
+              moveToSlide(activeIndexRef.current + (event.key === "ArrowLeft" ? -1 : 1));
+            }
+          }}
+          onScroll={(event) => {
+            if (!mobileRef.current) return;
+            if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+            const viewport = event.currentTarget;
+            scrollFrameRef.current = requestAnimationFrame(() => {
+              const panels = Array.from(viewport.querySelectorAll<HTMLElement>("article"));
+              const nextIndex = panels.reduce((nearest, panel, index) =>
+                Math.abs(panel.offsetLeft - viewport.scrollLeft) <
+                Math.abs(panels[nearest].offsetLeft - viewport.scrollLeft) ? index : nearest, 0);
+              activeIndexRef.current = nextIndex;
+              setActiveIndex(nextIndex);
+            });
+          }}>
+          <div className={styles.track}>
+            {slides.map((slide, index) => {
+              const isActive = index === activeIndex;
+              const itemName = slide.title ?? slide.imageAlt;
+              return (
+                <article className={styles.slide} key={slide.imageUrl + ':' + (slide.title ?? index)}
+                  data-active={isActive} aria-label={itemName}>
                   {/* Restaurant imagery may be hosted by its configured asset provider. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className={styles.image}
-                    src={slide.imageUrl}
-                    alt={isActive ? slide.imageAlt : ""}
-                    draggable={false}
-                  />
-                </div>
-
-                <div className={styles.content}>
-                  <p className={styles.slideNumber} aria-hidden="true">
-                    {String(index + 1).padStart(2, "0")}
-                  </p>
-                  {slide.title ? <h3>{slide.title}</h3> : null}
-                  {slide.description ? <p className={styles.description}>{slide.description}</p> : null}
-                  {slide.primaryAction || slide.secondaryAction ? (
+                  <img className={styles.image} src={slide.imageUrl} alt={slide.imageAlt} draggable={false} />
+                  <button type="button" className={styles.preview} aria-label={'Show ' + itemName}
+                    aria-expanded={isActive} tabIndex={isActive ? -1 : 0}
+                    onClick={() => {
+                      moveToSlide(index);
+                      viewportRef.current?.focus({ preventScroll: true });
+                    }}>
+                    <span>{itemName}</span>
+                  </button>
+                  <div className={styles.content} inert={!isActive} aria-hidden={!isActive}>
+                    {slide.title ? <h3>{slide.title}</h3> : null}
+                    {slide.description ? <p className={styles.description}>{slide.description}</p> : null}
                     <div className={styles.actions}>
                       {slide.primaryAction ? (
-                        <GalleryAction
-                          action={slide.primaryAction}
-                          className={styles.primaryAction}
-                          restaurantId={restaurantId}
-                          tabIndex={isActive ? 0 : -1}
-                        />
+                        <GalleryAction action={slide.primaryAction}
+                          className={styles.primaryAction} restaurantId={restaurantId} tabIndex={isActive ? 0 : -1} />
                       ) : null}
                       {slide.secondaryAction ? (
-                        <GalleryAction
-                          action={slide.secondaryAction}
-                          className={styles.secondaryAction}
-                          restaurantId={restaurantId}
-                          tabIndex={isActive ? 0 : -1}
-                        />
-                      ) : null}
+                        <GalleryAction action={slide.secondaryAction} className={styles.secondaryAction}
+                          restaurantId={restaurantId} tabIndex={isActive ? 0 : -1} />
+                      ) : (
+                        <RestaurantDeliveryTrigger className={styles.secondaryAction}>Order delivery</RestaurantDeliveryTrigger>
+                      )}
+                    </div>
+                  </div>
+                  {isActive && slides.length > 1 ? (
+                    <div className={styles.controls} aria-label="Gallery controls">
+                      <button type="button" className={styles.arrowButton}
+                        onClick={() => {
+                          moveToSlide(activeIndexRef.current - 1);
+                          viewportRef.current?.focus({ preventScroll: true });
+                        }}
+                        disabled={activeIndex === 0} aria-label="Previous gallery item">
+                        <span aria-hidden="true">&larr;</span>
+                      </button>
+                      <button type="button" className={styles.arrowButton}
+                        onClick={() => {
+                          moveToSlide(activeIndexRef.current + 1);
+                          viewportRef.current?.focus({ preventScroll: true });
+                        }}
+                        disabled={activeIndex === slides.length - 1} aria-label="Next gallery item">
+                        <span aria-hidden="true">&rarr;</span>
+                      </button>
                     </div>
                   ) : null}
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-      <div className={styles.position}>
-        <p className={styles.positionLabel} aria-live="polite" aria-atomic="true">
-          {activeIndex + 1} of {slides.length}
+        <p className={styles.announcement} aria-live="polite" aria-atomic="true">
+          {slides[activeIndex]?.title ?? slides[activeIndex]?.imageAlt}
         </p>
-        <div className={styles.dots} aria-label="Choose a gallery slide">
-          {slides.map((slide, index) => (
-            <button
-              type="button"
-              key={`${slide.imageUrl}:dot`}
-              className={index === activeIndex ? styles.dotActive : styles.dot}
-              onClick={() => moveToSlide(index)}
-              aria-label={`Go to slide ${index + 1}`}
-              aria-current={index === activeIndex ? "true" : undefined}
-            />
-          ))}
-        </div>
       </div>
     </section>
   );
