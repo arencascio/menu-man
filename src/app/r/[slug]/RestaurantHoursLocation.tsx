@@ -13,6 +13,7 @@ type RestaurantHoursLocationProps = {
   postalCode: string | null;
   restaurantId: string;
   restaurantName: string;
+  showHeading?: boolean;
   specialHours: readonly SpecialHour[];
   state: string | null;
   timezone: string | null;
@@ -33,6 +34,7 @@ export default function RestaurantHoursLocation({
   postalCode,
   restaurantId,
   restaurantName,
+  showHeading = true,
   specialHours,
   state,
   timezone,
@@ -45,14 +47,15 @@ export default function RestaurantHoursLocation({
     <section
       id="restaurant-information"
       className={styles.section}
-      aria-labelledby="restaurant-information-title"
+      aria-labelledby={showHeading ? "restaurant-information-title" : undefined}
+      aria-label={showHeading ? undefined : "Hours and location"}
     >
       <div className={styles.inner}>
-        <div className={styles.heading}>
+        {showHeading ? <div className={styles.heading}>
           {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
           <h2 id="restaurant-information-title">Visit {restaurantName}</h2>
           {usableDescription ? <p className={styles.description}>{usableDescription}</p> : null}
-        </div>
+        </div> : null}
 
         <div className={styles.grid}>
           <div className={styles.locationCard}>

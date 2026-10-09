@@ -7,19 +7,17 @@ function source(...parts: string[]) {
   return readFileSync(join(process.cwd(), ...parts), "utf8");
 }
 
-test("homepage is a menu gateway and the dedicated route owns MenuBrowser", () => {
+test("Armando's homepage has a direct menu gateway and the dedicated route owns MenuBrowser", () => {
   const home = source("src", "app", "r", "[slug]", "page.tsx");
   const menu = source("src", "app", "r", "[slug]", "menu", "page.tsx");
   const menuData = source("src", "app", "r", "[slug]", "restaurant-menu-data.ts");
-  const intro = source("src", "app", "r", "[slug]", "RestaurantMenuIntro.tsx");
-
-  assert.match(home, /<RestaurantMenuIntro\b/);
+  assert.match(home, /armandos: \{ orderingActions: false, hoursLocation: false, menuIntro: false \}/);
+  assert.ok(home.indexOf("<RestaurantHero") < home.indexOf("<RestaurantAnnouncementStrip"));
+  assert.ok(home.indexOf("<RestaurantAnnouncementStrip") < home.indexOf("<RestaurantFeaturedGallerySlider"));
+  assert.ok(home.indexOf("<RestaurantFeaturedGallerySlider") < home.indexOf("<RestaurantFooter"));
   assert.doesNotMatch(home, /<MenuBrowser\b/);
-  assert.match(home, /primaryAction=\{\{ label: "View the full menu", href: menuHref \}\}/);
-  assert.match(home, /getMenuSectionAnchorId\(section\.id\)/);
-  assert.match(home, /href: `\$\{menuHref\}#/);
+  assert.match(home, /href: "\/r\/armandos\/menu"/);
   assert.match(home, /label: "Menu", href: menuHref/);
-  assert.match(intro, /primaryAction\?: RestaurantMenuQuicklink/);
   assert.match(menu, /<MenuBrowser\b/);
   assert.match(menu, /getRestaurantMenuSections\(restaurant\.id, menu\.id, true\)/);
   assert.match(menuData, /createMenuModifierGroupResolverFromQueries\(/);

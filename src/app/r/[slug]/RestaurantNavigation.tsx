@@ -2,13 +2,22 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import styles from "./restaurant-shell.module.css";
 
-export type RestaurantNavigationItem = {
+type RestaurantNavigationDestination = {
+  kind?: "link";
   label: string;
   href: string;
   external?: boolean;
 };
+
+type RestaurantNavigationDelivery = {
+  kind: "delivery";
+  label: string;
+};
+
+export type RestaurantNavigationItem = RestaurantNavigationDestination | RestaurantNavigationDelivery;
 
 type RestaurantNavigationProps = {
   homeHref: string;
@@ -75,7 +84,14 @@ export default function RestaurantNavigation({
           aria-label={`${name} navigation`}
         >
           {items.map((item) => (
-            item.external ? (
+            item.kind === "delivery" ? (
+              <RestaurantDeliveryTrigger
+                className={styles.navigationLink}
+                key={`${item.label}:delivery`}
+              >
+                {item.label}
+              </RestaurantDeliveryTrigger>
+            ) : item.external ? (
               <a
                 key={`${item.label}:${item.href}`}
                 className={styles.navigationLink}

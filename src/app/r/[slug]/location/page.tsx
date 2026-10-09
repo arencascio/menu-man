@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
 import PageViewTracker from "../PageViewTracker";
-import RestaurantAbout from "../RestaurantAbout";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
 import RestaurantFooter, { type RestaurantFooterLink } from "../RestaurantFooter";
 import RestaurantHoursLocation from "../RestaurantHoursLocation";
@@ -43,8 +42,8 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   const { data: restaurant, error } = await supabaseServer
     .from("restaurants")
     .select(`
-      id, name, slug, description, phone, address_line1, city, state, postal_code,
-      google_maps_url, logo_url, hero_image_url, instagram_url, facebook_url,
+      id, name, slug, phone, address_line1, city, state, postal_code,
+      google_maps_url, logo_url,
       theme_preset, theme_overrides, pickup_url, timezone
     `)
     .eq("slug", slug)
@@ -58,11 +57,6 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   ]);
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
   const presentation = restaurantLocationPresentations[slug];
-  const description = restaurant.description && !restaurant.description.includes("PLACEHOLDER")
-    ? restaurant.description
-    : presentation?.fallbackStory ?? "Restaurant details have not been published yet.";
-  const imageUrl = restaurant.hero_image_url?.startsWith("https://")
-    && !restaurant.hero_image_url.includes("PLACEHOLDER") ? restaurant.hero_image_url : null;
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
   const homeHref = `/r/${slug}`;
   const locationHref = `${homeHref}/location`;
@@ -74,6 +68,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
     deliveryOptions,
     navigation: [
       { label: "Menu", href: `${homeHref}/menu` },
+      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
       { label: "Location", href: locationHref },
       ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true }] : []),
     ],
@@ -82,33 +77,20 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   };
   const footerLinks: RestaurantFooterLink[] = [
     { label: "Menu", href: `${homeHref}/menu` },
-    { label: "Location & hours", href: "#restaurant-information" },
     ...(deliveryOptions.length > 0
-      ? [{ kind: "delivery" as const, label: "Order delivery" }]
+      ? [{ kind: "delivery" as const, label: "Order Delivery" }]
       : restaurant.pickup_url
         ? [{ label: "Order pickup", href: restaurant.pickup_url, external: true, trackingEvent: "pickup_clicked" as const }]
         : []),
-    ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true, trackingEvent: "directions_clicked" as const }] : []),
-    ...(phone ? [{ label: "Call us", href: `tel:${phone}`, trackingEvent: "phone_clicked" as const }] : []),
-    ...(restaurant.instagram_url?.startsWith("https://") && !restaurant.instagram_url.includes("PLACEHOLDER")
-      ? [{ label: "Instagram", href: restaurant.instagram_url, external: true }] : []),
-    ...(restaurant.facebook_url?.startsWith("https://") && !restaurant.facebook_url.includes("PLACEHOLDER")
-      ? [{ label: "Facebook", href: restaurant.facebook_url, external: true }] : []),
+    { label: "Location & hours", href: "#restaurant-information" },
   ];
 
   return <RestaurantShell restaurant={shellRestaurant}>
     <main>
-      <RestaurantAbout
-        eyebrow={presentation?.eyebrow}
-        heading={presentation?.heading ?? `Meet ${restaurant.name}.`}
-        description={description}
-        imageUrl={imageUrl}
-        restaurantName={restaurant.name}
-      />
       <RestaurantHoursLocation
         restaurantName={restaurant.name}
         restaurantId={restaurant.id}
-        description={null}
+        showHeading={false}
         phone={phone}
         addressLine1={restaurant.address_line1}
         city={restaurant.city}
@@ -127,10 +109,12 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
     </main>
     <RestaurantFooter
       address={address}
+      directionsUrl={directionsUrl}
       homeHref={homeHref}
       links={footerLinks}
       logoUrl={restaurant.logo_url}
       name={restaurant.name}
+      phone={phone}
       restaurantId={restaurant.id}
     />
     <PageViewTracker restaurantId={restaurant.id} />

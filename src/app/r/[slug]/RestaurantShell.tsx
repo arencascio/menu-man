@@ -1,12 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import { resolveTheme } from "@/lib/themes/resolve-theme";
-import RestaurantAnnouncementStrip from "./RestaurantAnnouncementStrip";
 import RestaurantDeliveryChooser, { type RestaurantDeliveryOption } from "./RestaurantDeliveryChooser";
 import RestaurantNavigation, { type RestaurantNavigationItem } from "./RestaurantNavigation";
 import styles from "./restaurant-shell.module.css";
 
 export type RestaurantShellRestaurant = {
-  announcements?: readonly string[];
   deliveryOptions?: readonly RestaurantDeliveryOption[];
   homeHref: string;
   id: string;
@@ -51,7 +49,6 @@ export default function RestaurantShell({ children, restaurant }: RestaurantShel
           logoUrl={restaurant.logoUrl}
           name={restaurant.name}
         />
-        <RestaurantAnnouncementStrip messages={restaurant.announcements ?? []} />
         {children}
       </RestaurantDeliveryChooser>
     </div>

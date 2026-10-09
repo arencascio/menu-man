@@ -82,11 +82,16 @@
 
 .navigationLink {
   padding: .7rem .8rem;
+  border: 0;
   border-radius: var(--theme-radius);
   color: var(--theme-muted-text);
+  background: transparent;
   font-size: .88rem;
+  font-family: inherit;
   font-weight: 700;
   text-decoration: none;
+  text-align: left;
+  cursor: pointer;
 }
 
 .navigationLink:hover {

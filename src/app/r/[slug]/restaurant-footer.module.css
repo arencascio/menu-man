@@ -64,46 +64,64 @@
   letter-spacing: 0;
 }
 
-.address {
+.contactLink,
+.contactText {
+  display: block;
   max-width: 32rem;
-  margin: .85rem 0 0;
+  margin: .65rem 0 0;
   color: color-mix(in srgb, var(--theme-surface) 68%, transparent);
   font-size: .95rem;
-  line-height: 1.55;
+  line-height: 1.45;
+}
+
+.contactLink {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 2.75rem;
+  text-decoration: none;
+  text-underline-offset: .25rem;
+  transition: color 160ms ease;
+}
+
+.contactLink:hover {
+  color: var(--theme-surface);
+  text-decoration: underline;
 }
 
 .links {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .65rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: .25rem;
 }
 
 .link {
   display: inline-flex;
-  width: 100%;
-  min-height: 3rem;
+  min-height: 2.75rem;
   align-items: center;
-  padding: .7rem 0;
+  padding: .5rem .8rem;
   border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-surface) 24%, transparent);
+  border-radius: var(--theme-radius);
   color: var(--theme-surface);
   background: transparent;
   font-size: .9rem;
   font-family: inherit;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
   text-align: left;
   cursor: pointer;
-  transition: border-color 160ms ease, color 160ms ease;
+  transition: color 160ms ease, background-color 160ms ease;
 }
 
 .link:hover {
-  border-color: var(--theme-accent);
-  color: color-mix(in srgb, var(--theme-surface) 74%, var(--theme-accent));
+  color: var(--theme-surface);
+  background: color-mix(in srgb, var(--theme-accent) 24%, transparent);
 }
 
 .brand:focus-visible,
-.link:focus-visible {
+.link:focus-visible,
+.contactLink:focus-visible {
   outline: 3px solid var(--theme-accent);
   outline-offset: 3px;
 }
@@ -129,14 +147,7 @@
     font-size: 1.55rem;
   }
 
-  .links {
-    grid-template-columns: minmax(0, 1fr);
-    gap: .2rem;
-  }
-
-  .link {
-    min-height: 3.2rem;
-  }
+  .links { gap: .1rem; }
 
   .copyright {
     margin-top: .5rem;
@@ -144,7 +155,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .link {
+  .link,
+  .contactLink {
     transition: none;
   }
 }

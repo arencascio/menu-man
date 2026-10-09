@@ -118,6 +118,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     deliveryOptions,
     navigation: [
       { label: "Menu", href: `${homeHref}/menu` },
+      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
       { label: "Location", href: `${homeHref}/location` },
       ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true }] : []),
     ],
@@ -126,18 +127,12 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
   };
   const footerLinks: RestaurantFooterLink[] = [
     { label: "Menu", href: `${homeHref}/menu` },
-    { label: "Location & hours", href: `${homeHref}/location` },
     ...(deliveryOptions.length > 0
-      ? [{ kind: "delivery" as const, label: "Order delivery" }]
+      ? [{ kind: "delivery" as const, label: "Order Delivery" }]
       : restaurant.pickup_url
         ? [{ label: "Order pickup", href: restaurant.pickup_url, external: true, trackingEvent: "pickup_clicked" as const }]
         : []),
-    ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true, trackingEvent: "directions_clicked" as const }] : []),
-    ...(phone ? [{ label: "Call us", href: `tel:${phone}`, trackingEvent: "phone_clicked" as const }] : []),
-    ...(restaurant.instagram_url?.startsWith("https://") && !restaurant.instagram_url.includes("PLACEHOLDER")
-      ? [{ label: "Instagram", href: restaurant.instagram_url, external: true }] : []),
-    ...(restaurant.facebook_url?.startsWith("https://") && !restaurant.facebook_url.includes("PLACEHOLDER")
-      ? [{ label: "Facebook", href: restaurant.facebook_url, external: true }] : []),
+    { label: "Location & hours", href: `${homeHref}/location` },
   ];
 
   return <RestaurantShell restaurant={shellRestaurant}>
@@ -165,10 +160,12 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     </div>
     <RestaurantFooter
       address={address}
+      directionsUrl={directionsUrl}
       homeHref={homeHref}
       links={footerLinks}
       logoUrl={restaurant.logo_url}
       name={restaurant.name}
+      phone={phone}
       restaurantId={restaurant.id}
     />
     <PageViewTracker restaurantId={restaurant.id} />

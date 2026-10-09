@@ -12,9 +12,11 @@ test("restaurant location page composes the shared shell, hours data, and footer
   const home = source("src", "app", "r", "[slug]", "page.tsx");
   const hoursData = source("src", "app", "r", "[slug]", "restaurant-location-data.ts");
 
-  for (const component of ["RestaurantShell", "RestaurantAbout", "RestaurantHoursLocation", "RestaurantMapViews", "RestaurantFooter"]) {
+  for (const component of ["RestaurantShell", "RestaurantHoursLocation", "RestaurantMapViews", "RestaurantFooter"]) {
     assert.match(route, new RegExp(`<${component}\\b`));
   }
+  assert.doesNotMatch(route, /<RestaurantAbout\b/);
+  assert.match(route, /showHeading=\{false\}/);
   assert.match(route, /getRestaurantHoursLocationData\(restaurant\.id, restaurant\.timezone\)/);
   assert.match(home, /getRestaurantHoursLocationData\(restaurant\.id, restaurant\.timezone\)/);
   assert.match(hoursData, /\.from\("restaurant_business_hours"\)/);

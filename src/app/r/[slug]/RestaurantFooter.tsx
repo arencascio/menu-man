@@ -19,19 +19,23 @@ export type RestaurantFooterLink = RestaurantFooterDestinationLink | RestaurantF
 
 type RestaurantFooterProps = {
   address?: string | null;
+  directionsUrl?: string | null;
   homeHref: string;
   links: readonly RestaurantFooterLink[];
   logoUrl: string | null;
   name: string;
+  phone?: string | null;
   restaurantId: string;
 };
 
 export default function RestaurantFooter({
   address,
+  directionsUrl,
   homeHref,
   links,
   logoUrl,
   name,
+  phone,
   restaurantId,
 }: RestaurantFooterProps) {
   const currentYear = new Date().getFullYear();
@@ -49,7 +53,30 @@ export default function RestaurantFooter({
             )}
             <span>{name}</span>
           </a>
-          {address ? <p className={styles.address}>{address}</p> : null}
+          {address ? (
+            directionsUrl ? (
+              <TrackedRestaurantLink
+                className={styles.contactLink}
+                eventName="directions_clicked"
+                href={directionsUrl}
+                restaurantId={restaurantId}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {address}
+              </TrackedRestaurantLink>
+            ) : <p className={styles.contactText}>{address}</p>
+          ) : null}
+          {phone ? (
+            <TrackedRestaurantLink
+              className={styles.contactLink}
+              eventName="phone_clicked"
+              href={`tel:${phone}`}
+              restaurantId={restaurantId}
+            >
+              {phone}
+            </TrackedRestaurantLink>
+          ) : null}
         </div>
 
         {links.length > 0 ? (
