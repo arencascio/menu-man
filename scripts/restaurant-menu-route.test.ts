@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { getRestaurantNavigation } from "../src/app/r/[slug]/restaurant-navigation-actions";
 
 function source(...parts: string[]) {
   return readFileSync(join(process.cwd(), ...parts), "utf8");
@@ -17,7 +18,8 @@ test("Armando's homepage has a direct menu gateway and the dedicated route owns 
   assert.ok(home.indexOf("<RestaurantFeaturedGallerySlider") < home.indexOf("<RestaurantFooter"));
   assert.doesNotMatch(home, /<MenuBrowser\b/);
   assert.match(home, /href: "\/r\/armandos\/menu"/);
-  assert.match(home, /label: "Menu", href: menuHref/);
+  assert.match(home, /navigation: getRestaurantNavigation/);
+  assert.equal(getRestaurantNavigation({ homeHref: "/r/armandos", hasDelivery: false }).find((item) => item.kind !== "delivery" && item.href === "/r/armandos/menu")?.label, "Menu");
   assert.match(menu, /<MenuBrowser\b/);
   assert.match(menu, /getRestaurantMenuSections\(restaurant\.id, menu\.id, true\)/);
   assert.match(menuData, /createMenuModifierGroupResolverFromQueries\(/);

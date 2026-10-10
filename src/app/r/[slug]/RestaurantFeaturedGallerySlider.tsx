@@ -269,7 +269,7 @@ export default function RestaurantFeaturedGallerySlider({
                         <GalleryAction action={slide.secondaryAction} className={styles.secondaryAction}
                           restaurantId={restaurantId} tabIndex={isActive ? 0 : -1} />
                       ) : (
-                        <RestaurantDeliveryTrigger className={styles.secondaryAction}>Order delivery</RestaurantDeliveryTrigger>
+                        <RestaurantDeliveryTrigger className={styles.secondaryAction}>Order Delivery</RestaurantDeliveryTrigger>
                       )}
                     </div>
                   </div>

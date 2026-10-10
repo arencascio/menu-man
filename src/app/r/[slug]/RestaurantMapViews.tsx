@@ -27,10 +27,7 @@ export default function RestaurantMapViews({ eyebrow, mapEmbedUrl, streetViewEmb
     <div className={styles.mapInner}>
       <div className={styles.mapHeading}>
         {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-        <h2 id="restaurant-map-title">Find your way here.</h2>
-        <p>{mapUrl && streetViewUrl
-          ? "Explore the map and take a look at the storefront before you visit."
-          : mapUrl ? "Explore the map before you visit." : "Take a look at the storefront before you visit."}</p>
+        <h2 id="restaurant-map-title">{mapUrl && streetViewUrl ? "Map & storefront" : mapUrl ? "Map" : "Storefront view"}</h2>
       </div>
       <div className={styles.mapGrid}>
         {mapUrl ? <div className={styles.mapCard}>

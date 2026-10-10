@@ -1,3 +1,4 @@
+import { getRestaurantNavigation } from "../restaurant-navigation-actions";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
@@ -61,21 +62,15 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
   const identity = restaurantIdentities[slug];
   const homeHref = `/r/${slug}`;
-  const locationHref = `${homeHref}/location`;
   const shellRestaurant: RestaurantShellRestaurant = {
     id: restaurant.id,
     name: restaurant.name,
     logoUrl: identity?.markUrl ?? restaurant.logo_url,
     artworkMark: identity?.artworkMark,
+    brandLockup: identity?.brandLockup,
     homeHref,
     deliveryOptions,
-    navigation: [
-      { label: "Menu", href: `${homeHref}/menu` },
-      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
-      { label: "Location", href: locationHref },
-      ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true, icon: "directions" as const }] : []),
-      ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
-    ],
+    navigation: getRestaurantNavigation({ homeHref, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone }),
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
@@ -86,6 +81,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
         restaurantName={restaurant.name}
         restaurantId={restaurant.id}
         showHeading={false}
+        density="compact"
         phone={phone}
         addressLine1={restaurant.address_line1}
         city={restaurant.city}
@@ -109,6 +105,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
       homeHref={homeHref}
       logoUrl={identity?.markUrl ?? restaurant.logo_url}
       artworkMark={identity?.artworkMark}
+      brandLockup={identity?.brandLockup}
       name={restaurant.name}
       phone={phone}
       restaurantId={restaurant.id}

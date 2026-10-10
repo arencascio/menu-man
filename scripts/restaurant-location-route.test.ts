@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { getRestaurantNavigation } from "../src/app/r/[slug]/restaurant-navigation-actions";
 
 function source(...parts: string[]) {
   return readFileSync(join(process.cwd(), ...parts), "utf8");
@@ -21,8 +22,11 @@ test("restaurant location page composes the shared shell, hours data, and footer
   assert.match(home, /getRestaurantHoursLocationData\(restaurant\.id, restaurant\.timezone\)/);
   assert.match(hoursData, /\.from\("restaurant_business_hours"\)/);
   assert.match(hoursData, /\.from\("restaurant_special_hours"\)/);
-  assert.match(home, /label: "Location", href: `\/r\/\$\{restaurant\.slug\}\/location`/);
-  assert.match(route, /label: "Menu", href: `\$\{homeHref\}\/menu`/);
+  assert.match(home, /navigation: getRestaurantNavigation/);
+  assert.match(route, /navigation: getRestaurantNavigation/);
+  const navigation = getRestaurantNavigation({ homeHref: "/r/armandos", hasDelivery: false });
+  assert.equal(navigation.find((item) => item.kind !== "delivery" && item.href === "/r/armandos/location")?.label, "Location");
+  assert.equal(navigation.find((item) => item.kind !== "delivery" && item.href === "/r/armandos/menu")?.label, "Menu");
 });
 
 test("Armando's map and storefront embeds are configured outside the shared presentation", () => {

@@ -47,6 +47,15 @@
   text-decoration: none;
 }
 
+.navigationInner:has([data-brand-lockup]) {
+  min-height: 0;
+  gap: .5rem;
+  padding: .25rem .5rem;
+}
+
+.brand:has([data-brand-lockup]) { flex: 1; max-width: none; }
+.navigationInner:has([data-brand-lockup]) .navigationLinks { flex-shrink: 0; }
+
 .brandMark {
   width: 2.75rem;
   height: 2.75rem;
@@ -169,8 +178,9 @@
   color: color-mix(in srgb, var(--theme-surface) 65%, transparent);
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .navigationInner {
+    gap: 1rem;
     min-height: 4rem;
     padding: .6rem 1.25rem;
   }
@@ -186,6 +196,7 @@
     max-width: min(58vw, 18rem);
     font-size: 1rem;
   }
+  .brand:not(:has([data-brand-lockup])) { max-width: calc(100% - 3.75rem); }
 
   .menuButton {
     display: block;
@@ -215,6 +226,9 @@
     padding: .9rem;
   }
 
+}
+
+@media (max-width: 700px) {
   .announcementList {
     flex-direction: column;
     gap: .2rem;

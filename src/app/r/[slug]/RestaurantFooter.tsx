@@ -6,6 +6,8 @@ import Link from "next/link";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import type { RestaurantNavigationItem } from "./RestaurantNavigation";
 import RestaurantNavigationIcon from "./RestaurantNavigationIcon";
+import RestaurantPatternSeparator from "./RestaurantPatternSeparator";
+import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 
 type RestaurantFooterProps = {
   className?: string;
@@ -14,6 +16,7 @@ type RestaurantFooterProps = {
   homeHref: string;
   logoUrl: string | null;
   artworkMark?: boolean;
+  brandLockup?: RestaurantBrandLockupPresentation;
   name: string;
   phone?: string | null;
   restaurantId: string;
@@ -27,6 +30,7 @@ export default function RestaurantFooter({
   homeHref,
   logoUrl,
   artworkMark,
+  brandLockup,
   name,
   phone,
   restaurantId,
@@ -35,9 +39,11 @@ export default function RestaurantFooter({
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id="restaurant-footer" className={[styles.footer, className].filter(Boolean).join(" ")}>
+    <>
+    <RestaurantPatternSeparator />
+    <footer id="restaurant-footer" className={[styles.footer, brandLockup ? styles.withLockup : null, className].filter(Boolean).join(" ")}>
       <div className={styles.inner}>
-        {artworkMark && logoUrl ? (
+        {!brandLockup && artworkMark && logoUrl ? (
           <div className={styles.artworkArea} aria-hidden="true">
             <RestaurantFooterArtwork src={logoUrl} />
           </div>
@@ -45,6 +51,7 @@ export default function RestaurantFooter({
 
         <div className={styles.identity}>
           <a className={styles.brand} href={homeHref} aria-label={`${name} home`}>
+            {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} size="footer" /> : <>
             {!artworkMark && logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img className={styles.logo} src={logoUrl} alt="" />
@@ -52,6 +59,7 @@ export default function RestaurantFooter({
               <span className={styles.brandMark} aria-hidden="true">{name.charAt(0)}</span>
             ) : null}
             <span>{name}</span>
+            </>}
           </a>
 
           {address ? (
@@ -115,5 +123,6 @@ export default function RestaurantFooter({
         <p className={styles.copyright}>&copy; {currentYear} {name}</p>
       </div>
     </footer>
+    </>
   );
 }

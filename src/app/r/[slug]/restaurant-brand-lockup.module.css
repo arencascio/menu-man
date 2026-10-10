@@ -1,0 +1,10 @@
+.lockup {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  height: auto;
+}
+.footer { width: clamp(22rem, 40vw, 32.5rem); max-width: 100%; }
+@media (max-width: 700px) {
+  .footer { width: min(100%, 32.5rem); }
+}

@@ -4,6 +4,7 @@ import RestaurantDeliveryChooser, { type RestaurantDeliveryOption } from "./Rest
 import RestaurantNavigation, { type RestaurantNavigationItem } from "./RestaurantNavigation";
 import styles from "./restaurant-shell.module.css";
 import RestaurantPresentationMotion from "./RestaurantPresentationMotion";
+import type { RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 
 export type RestaurantShellRestaurant = {
   deliveryOptions?: readonly RestaurantDeliveryOption[];
@@ -11,6 +12,7 @@ export type RestaurantShellRestaurant = {
   id: string;
   logoUrl: string | null;
   artworkMark?: boolean;
+  brandLockup?: RestaurantBrandLockupPresentation;
   name: string;
   navigation: readonly RestaurantNavigationItem[];
   themeOverrides: unknown;
@@ -53,6 +55,7 @@ export default function RestaurantShell({ children, restaurant, smoothScroll = f
           items={restaurant.navigation}
           logoUrl={restaurant.logoUrl}
           artworkMark={restaurant.artworkMark}
+          brandLockup={restaurant.brandLockup}
           name={restaurant.name}
         />
         {children}

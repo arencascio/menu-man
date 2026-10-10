@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import RestaurantNavigationIcon, { type RestaurantNavigationIconName } from "./RestaurantNavigationIcon";
 import styles from "./restaurant-shell.module.css";
+import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 
 type RestaurantNavigationDestination = {
   kind?: "link";
@@ -27,6 +28,7 @@ type RestaurantNavigationProps = {
   items: readonly RestaurantNavigationItem[];
   logoUrl: string | null;
   artworkMark?: boolean;
+  brandLockup?: RestaurantBrandLockupPresentation;
   name: string;
 };
 
@@ -35,6 +37,7 @@ export default function RestaurantNavigation({
   items,
   logoUrl,
   artworkMark,
+  brandLockup,
   name,
 }: RestaurantNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +60,8 @@ export default function RestaurantNavigation({
   return (
     <header className={styles.siteHeader} data-restaurant-header>
       <div className={styles.navigationInner}>
-        <Link className={styles.brand} href={homeHref} onClick={() => setIsOpen(false)}>
+        <Link className={styles.brand} href={homeHref} aria-label={`${name} home`} onClick={() => setIsOpen(false)}>
+          {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} /> : <>
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className={`${styles.brandMark} ${artworkMark ? styles.artworkMark : ""}`} src={logoUrl} alt="" />
@@ -67,6 +71,7 @@ export default function RestaurantNavigation({
             </span>
           )}
           <span className={styles.brandName}>{name}</span>
+          </>}
         </Link>
 
         <button

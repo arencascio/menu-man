@@ -1,3 +1,4 @@
+import { getRestaurantNavigation } from "./restaurant-navigation-actions";
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
@@ -10,8 +11,8 @@ import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "./re
 import { getRestaurantMenuSections } from "./restaurant-menu-data";
 import RestaurantAnnouncementStrip, { type RestaurantDetailItem } from "./RestaurantAnnouncementStrip";
 import type { RestaurantPatternName } from "@/lib/restaurant-presentation/patterns";
+import type { RestaurantSectionEdgeTreatment } from "@/lib/restaurant-presentation/section-edges";
 import RestaurantFooter from "./RestaurantFooter";
-import RestaurantPatternSeparator from "./RestaurantPatternSeparator";
 import RestaurantFeaturedGallerySlider, {
   type RestaurantFeaturedGalleryAction,
   type RestaurantFeaturedGallerySlide,
@@ -31,10 +32,16 @@ type RestaurantPageProps = {
 
 const restaurantDetailStrips: Readonly<Partial<Record<string, {
   pattern: RestaurantPatternName;
+  contentPlate?: boolean;
+  topEdge?: RestaurantSectionEdgeTreatment;
+  bottomEdge?: RestaurantSectionEdgeTreatment;
   items: readonly RestaurantDetailItem[];
 }>>> = {
   armandos: {
-    pattern: "brick-wall",
+    pattern: "texture",
+    contentPlate: true,
+    topEdge: { preset: "torn-edge-top-01" },
+    bottomEdge: { preset: "torn-edge-bottom-01" },
     items: [
       { icon: "flag", text: "Serving Moreno Valley since 1989" },
       { icon: "utensils", text: "Menu served all day" },
@@ -88,7 +95,6 @@ type RestaurantFeaturedGalleryConfig = {
   eyebrow?: string;
   title: string;
   showHeading?: boolean;
-  patternSeparator?: RestaurantPatternName;
   slides: readonly {
     menuItemName: string;
     imageAlt: string;
@@ -101,22 +107,41 @@ const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFea
   armandos: {
     title: "Made to satisfy.",
     showHeading: false,
-    patternSeparator: "brick-wall",
     slides: [
       {
-        menuItemName: "Huevos a la Mexicana",
-        imageAlt: "Huevos a la Mexicana with rice, beans, avocado, cucumber, and orange",
-        primaryAction: { label: "View menu", href: "#restaurant-menu" },
+        menuItemName: "California Burrito",
+        imageAlt: "California Burrito",
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
+      },
+      {
+        menuItemName: "5 Carnitas Street Tacos Special",
+        imageAlt: "5 Carnitas Street Tacos Special",
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
+      },
+      {
+        menuItemName: "Caldo de Camarón",
+        imageAlt: "Caldo de Camarón",
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
       },
       {
         menuItemName: "Carne Asada Fries",
         imageAlt: "Carne asada fries topped with guacamole and cheese",
-        primaryAction: { label: "View menu", href: "#restaurant-menu" },
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
       },
       {
-        menuItemName: "Camarones a la Diabla",
-        imageAlt: "Camarones a la Diabla with rice, beans, avocado, cucumber, and orange",
-        primaryAction: { label: "View menu", href: "#restaurant-menu" },
+        menuItemName: "Cabeza Burrito",
+        imageAlt: "Cabeza Burrito",
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
+      },
+      {
+        menuItemName: "3 Quesabirria Tacos with Consome (8oz)",
+        imageAlt: "3 Quesabirria Tacos with Consome (8oz)",
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
+      },
+      {
+        menuItemName: "Ranchera Meat Plate",
+        imageAlt: "Ranchera Meat Plate",
+        primaryAction: { label: "Order Pickup", href: "#restaurant-menu" },
       },
     ],
   },
@@ -328,17 +353,10 @@ if (restaurantError || !restaurant) {
     name: restaurant.name,
     logoUrl: identity?.markUrl ?? restaurant.logo_url,
     artworkMark: identity?.artworkMark,
+    brandLockup: identity?.brandLockup,
     homeHref: `/r/${restaurant.slug}`,
     deliveryOptions,
-    navigation: [
-      { label: "Menu", href: menuHref, icon: "utensils" },
-      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Delivery", icon: "truck" as const }] : []),
-      { label: "Location", href: `/r/${restaurant.slug}/location`, icon: "mapPinned" },
-      ...(directionsUrl
-        ? [{ label: "Get Directions", href: directionsUrl, external: true, icon: "navigation" as const }]
-        : []),
-      ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
-    ],
+    navigation: getRestaurantNavigation({ homeHref: `/r/${restaurant.slug}`, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone }),
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
@@ -442,6 +460,9 @@ if (restaurantError || !restaurant) {
       <RestaurantAnnouncementStrip
         items={restaurantDetailStrips[restaurant.slug]?.items}
         pattern={restaurantDetailStrips[restaurant.slug]?.pattern}
+        contentPlate={restaurantDetailStrips[restaurant.slug]?.contentPlate}
+        topEdge={restaurantDetailStrips[restaurant.slug]?.topEdge}
+        bottomEdge={restaurantDetailStrips[restaurant.slug]?.bottomEdge}
       />
       {featuredGalleryConfig && featuredGallerySlides.length > 0 ? (
         <RestaurantFeaturedGallerySlider
@@ -490,17 +511,14 @@ if (restaurantError || !restaurant) {
           ) : null}
         </div>
       ) : null}
-      {featuredGalleryConfig?.patternSeparator && featuredGallerySlides.length > 0 ? (
-        <RestaurantPatternSeparator className={styles.patternSeparator} pattern={featuredGalleryConfig.patternSeparator} />
-      ) : null}
       <RestaurantFooter
-        className={styles.homepageFooter}
         navigation={restaurantPresentation.navigation}
         address={address}
         directionsUrl={directionsUrl}
         homeHref={`/r/${restaurant.slug}`}
         logoUrl={identity?.markUrl ?? restaurant.logo_url}
         artworkMark={identity?.artworkMark}
+        brandLockup={identity?.brandLockup}
         name={restaurant.name}
         phone={phone}
         restaurantId={restaurant.id}

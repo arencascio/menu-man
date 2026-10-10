@@ -1,4 +1,5 @@
 .footer {
+  --restaurant-footer-reveal-offset: -110px;
   position: relative;
   overflow: hidden;
   color: var(--theme-surface);
@@ -49,6 +50,8 @@
 }
 
 .identity { min-width: 0; }
+.withLockup .inner { grid-template-columns: minmax(0, 1fr) auto; }
+.withLockup .brand { margin-bottom: .65rem; }
 
 .brand {
   display: inline-flex;
@@ -159,6 +162,8 @@
 @media (max-width: 900px) {
   .inner { grid-template-columns: auto minmax(0, 1fr); }
   .actions { grid-column: 2; }
+  .withLockup .inner { grid-template-columns: minmax(0, 1fr); }
+  .withLockup .actions { grid-column: 1; }
 }
 
 @media (max-width: 700px) {
@@ -170,8 +175,7 @@
 
   .artworkArea { width: 6rem; height: 5.5rem; }
   .brand { font-size: 1.5rem; }
-  .actions { grid-column: 1; margin-top: .35rem; }
-  .action:first-child { padding-left: 0; }
+  .actions { grid-column: 1; margin-top: .35rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .copyright { margin-top: .75rem; }
 }
 

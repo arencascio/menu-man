@@ -1,0 +1,38 @@
+.edged {
+  /* Shared composition tolerance for fractional CSS/device-pixel boundaries. */
+  --section-edge-overlap: 2px;
+  --section-surface-top-height: var(--section-surface-top-edge-height, 0px);
+  --section-surface-bottom-height: var(--section-surface-bottom-edge-height, 0px);
+}
+.surface.center {
+  position: absolute;
+  inset: 0;
+}
+.edged .center {
+  top: max(0px, calc(var(--section-surface-top-height) - var(--section-edge-overlap)));
+  bottom: max(0px, calc(var(--section-surface-bottom-height) - var(--section-edge-overlap)));
+}
+@media (max-width: 700px) {
+  .edged {
+    --section-surface-top-height: var(--section-surface-top-edge-mobile-height, var(--section-surface-top-edge-height, 0px));
+    --section-surface-bottom-height: var(--section-surface-bottom-edge-mobile-height, var(--section-surface-bottom-edge-height, 0px));
+  }
+}
+.surface {
+  position: relative;
+  isolation: isolate;
+  background: var(--section-surface-background, var(--pattern-background, var(--theme-surface)));
+}
+.surface::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  background-color: var(--pattern-color);
+  opacity: var(--section-surface-pattern-opacity, var(--pattern-opacity, 0));
+  mask-image: var(--section-surface-pattern, var(--pattern-asset, none));
+  mask-size: var(--pattern-size);
+  mask-repeat: var(--pattern-repeat);
+  mask-position: var(--pattern-position);
+  pointer-events: none;
+}

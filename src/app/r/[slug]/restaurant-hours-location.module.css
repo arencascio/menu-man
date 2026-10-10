@@ -254,6 +254,46 @@
   .directionsAction { transition: none; }
 }
 
+.compact { background: var(--theme-primary); }
+.compact .inner { padding: 1.5rem 2rem; }
+.compact .grid { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 1.25rem; }
+.compact .locationCard,
+.compact .hoursCard { padding: 1.25rem; }
+.compact .locationCard,
+.compact .hoursCard {
+  color: var(--theme-text);
+  background: color-mix(in srgb, var(--theme-surface) 88%, #ead5ae);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 16%, transparent);
+}
+.compact .address,
+.compact .cardLabel,
+.compact .hoursHeading h3 { color: var(--theme-primary); }
+.compact .contact span,
+.compact .unavailable,
+.compact .hourTimes,
+.compact .specialHourTimes,
+.compact .timezone { color: color-mix(in srgb, var(--theme-text) 80%, var(--theme-primary)); }
+.compact .contact a { color: var(--theme-primary); }
+.compact .contact a:focus-visible,
+.compact .directionsAction:focus-visible { outline-color: var(--theme-primary); }
+.compact .cardLabel { font-size: 1rem; letter-spacing: 0; text-transform: none; }
+.compact .address { max-width: 28ch; margin-top: .6rem; font-size: clamp(1.4rem, 2vw, 1.85rem); line-height: 1.2; }
+.compact .contact { margin-top: .9rem; }
+.compact .contact a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.compact .directionsAction { margin-top: 1rem; min-height: 2.75rem; }
+.compact .hoursHeading { flex-wrap: wrap; gap: .25rem .75rem; padding-bottom: .5rem; }
+.compact .hoursHeading h3 { font-size: 1.35rem; }
+.compact .hourRow,
+.compact .specialHourRow { padding: .4rem 0; }
+.compact .specialHours { margin-top: .9rem; padding-top: .75rem; }
+
+@media (max-width: 800px) {
+  .compact .inner { padding: 1rem 1.25rem; }
+  .compact .grid { grid-template-columns: minmax(0, 1fr); gap: .85rem; }
+  .compact .locationCard,
+  .compact .hoursCard { padding: 1rem; }
+}
+
 @media (max-width: 440px) {
   .hoursHeading {
     display: block;

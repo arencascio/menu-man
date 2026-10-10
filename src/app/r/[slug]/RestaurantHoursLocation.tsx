@@ -6,6 +6,7 @@ type RestaurantHoursLocationProps = {
   addressLine1: string | null;
   city: string | null;
   description?: string | null;
+  density?: "comfortable" | "compact";
   eyebrow?: string;
   directionsUrl: string | null;
   hours: readonly BusinessHour[];
@@ -27,6 +28,7 @@ export default function RestaurantHoursLocation({
   addressLine1,
   city,
   description,
+  density = "comfortable",
   eyebrow,
   directionsUrl,
   hours,
@@ -46,7 +48,7 @@ export default function RestaurantHoursLocation({
   return (
     <section
       id="restaurant-information"
-      className={styles.section}
+      className={`${styles.section} ${density === "compact" ? styles.compact : ""}`}
       aria-labelledby={showHeading ? "restaurant-information-title" : undefined}
       aria-label={showHeading ? undefined : "Hours and location"}
     >

@@ -1,7 +1,21 @@
 .strip {
+  position: relative;
   padding: .75rem 2rem;
   color: var(--theme-primary);
-  background-color: var(--pattern-background, var(--theme-surface));
+  isolation: isolate;
+  background: transparent;
+}
+.strip .patternLayer {
+  z-index: -1;
+  pointer-events: none;
+}
+.strip.withEdges {
+  /* Let actual adjacent sections sit behind the transparent torn regions. */
+  z-index: 1;
+  margin-top: calc(-1 * var(--section-surface-top-height));
+  margin-bottom: calc(-1 * var(--section-surface-bottom-height));
+  padding-top: calc(var(--section-surface-top-height) + .35rem);
+  padding-bottom: calc(var(--section-surface-bottom-height) + .35rem);
 }
 .list {
   display: flex;
@@ -13,9 +27,11 @@
   max-width: min(100%, var(--theme-content-width));
   margin: 0 auto;
   padding: .85rem 1.25rem;
-  border-radius: .25rem;
-  background: color-mix(in srgb, var(--pattern-background, var(--theme-surface)) 96%, transparent);
   list-style: none;
+}
+.contentPlate {
+  border-radius: .2rem;
+  background: color-mix(in srgb, var(--pattern-background, var(--theme-surface)) 90%, transparent);
 }
 .item {
   display: flex;

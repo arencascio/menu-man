@@ -1,3 +1,4 @@
+import { getRestaurantNavigation } from "../restaurant-navigation-actions";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
@@ -117,15 +118,10 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     name: restaurant.name,
     logoUrl: identity?.markUrl ?? restaurant.logo_url,
     artworkMark: identity?.artworkMark,
+    brandLockup: identity?.brandLockup,
     homeHref,
     deliveryOptions,
-    navigation: [
-      { label: "Menu", href: `${homeHref}/menu` },
-      ...(deliveryOptions.length > 0 ? [{ kind: "delivery" as const, label: "Order Delivery" }] : []),
-      { label: "Location", href: `${homeHref}/location` },
-      ...(directionsUrl ? [{ label: "Directions", href: directionsUrl, external: true, icon: "directions" as const }] : []),
-      ...(phone ? [{ label: "Call Us", href: `tel:${phone}`, icon: "phone" as const }] : []),
-    ],
+    navigation: getRestaurantNavigation({ homeHref, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone }),
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
@@ -160,6 +156,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
       homeHref={homeHref}
       logoUrl={identity?.markUrl ?? restaurant.logo_url}
       artworkMark={identity?.artworkMark}
+      brandLockup={identity?.brandLockup}
       name={restaurant.name}
       phone={phone}
       restaurantId={restaurant.id}

@@ -75,22 +75,22 @@
 .aboutMedia img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 .mapSection { color: var(--theme-text); background: var(--theme-surface); }
-.mapInner { width: min(100%, var(--theme-content-width)); margin: 0 auto; padding: clamp(2.25rem, 4vw, 4rem) 2rem; }
-.mapHeading { max-width: 42rem; margin-bottom: 1.5rem; }
+.mapInner { width: min(100%, var(--theme-content-width)); margin: 0 auto; padding: 1.25rem 2rem 1.5rem; }
+.mapHeading { max-width: 42rem; margin-bottom: .85rem; }
 .mapHeading .eyebrow { color: var(--theme-accent); }
 .mapHeading h2 {
   margin: 0;
   font-family: var(--theme-heading-font);
-  font-size: clamp(2.3rem, 4vw, 4rem);
-  letter-spacing: -.055em;
-  line-height: 1.02;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  letter-spacing: -.035em;
+  line-height: 1.2;
 }
 .mapHeading .eyebrow + h2 { margin-top: .65rem; }
-.mapHeading > p:last-child { margin: .75rem 0 0; color: var(--theme-muted-text); line-height: 1.5; }
 .mapGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--theme-card-gap); }
-.mapCard { min-width: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--theme-text) 8%, transparent); border-radius: var(--theme-radius); background: var(--theme-background); }
-.mapCard h3 { padding: 1.1rem 1.3rem; font-size: .95rem; font-weight: 800; }
-.mapCard iframe { display: block; width: 100%; height: clamp(18rem, 30vw, 24rem); border: 0; }
+.mapCard { min-width: 0; overflow: hidden; padding: .35rem; border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, transparent); border-radius: min(var(--theme-radius), 6px); background: color-mix(in srgb, var(--theme-surface) 88%, #ead5ae); }
+.mapCard h3 { color: var(--theme-primary); }
+.mapCard h3 { margin: 0; padding: .75rem 1rem; font-size: .95rem; font-weight: 800; }
+.mapCard iframe { display: block; width: 100%; height: clamp(16rem, 23vw, 20rem); border: 0; }
 
 @media (max-width: 860px) {
   .aboutWithImage { grid-template-columns: minmax(0, 1fr); }
@@ -103,9 +103,9 @@
   .aboutContent { padding: 2.5rem 1.25rem 2.75rem; }
   .about h1 { font-size: clamp(2.6rem, 10vw, 3.7rem); }
   .aboutMedia { min-height: 13rem; }
-  .mapInner { padding: 2.25rem 1.25rem; }
-  .mapGrid { grid-template-columns: minmax(0, 1fr); }
-  .mapCard iframe { height: 18rem; }
+  .mapInner { padding: 1rem 1.25rem 1.25rem; }
+  .mapGrid { grid-template-columns: minmax(0, 1fr); gap: .85rem; }
+  .mapCard iframe { height: 16rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
