@@ -1,6 +1,11 @@
-import { createModifierSelections, getDefaultModifierOptionIds, getModifierValidationErrors } from "@/lib/cart/cart";
+import { createModifierSelections, getCartLineSignature, getDefaultModifierOptionIds, getModifierValidationErrors } from "@/lib/cart/cart";
 import type { CartLine } from "@/lib/cart/types";
 import type { MenuItem, MenuSection } from "./MenuBrowser";
+
+// Read the committed cart configuration, rather than treating dispatch as success.
+export function getConfiguredCartQuantity(lines: readonly CartLine[], signature: string) {
+  return lines.reduce((total, line) => total + (getCartLineSignature(line) === signature ? line.quantity : 0), 0);
+}
 
 export function canAddMenuItemDirectly(item: MenuItem) {
   if (!item.is_orderable || item.modifierGroups.some((group) => group.minSelections > 0)) return false;

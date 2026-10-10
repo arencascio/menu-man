@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import {
   calculateUnitPriceCents,
   createModifierSelections,
@@ -13,6 +13,8 @@ import type { MenuItem } from "./MenuBrowser";
 import { createMenuCartLine, type MenuItemDraft } from "./menu-card-ordering";
 import ModifierGroupFieldset from "./ModifierGroupFieldset";
 import QuantityControl from "./QuantityControl";
+import MenuFavoriteButton from "./MenuFavoriteButton";
+import MenuIcon from "./MenuIcon";
 import styles from "./menu-browser.module.css";
 
 type OrderItemPanelProps = {
@@ -29,6 +31,10 @@ type OrderItemPanelProps = {
   heartCount: number;
   heartPending: boolean;
   onHeart: () => void;
+  saving: boolean;
+  saveFeedback: "sparkles" | "smile" | null;
+  saveError: string;
+  onSuccessComplete: () => void;
 };
 
 export default function OrderItemPanel({
@@ -45,7 +51,23 @@ export default function OrderItemPanel({
   heartCount,
   heartPending,
   onHeart,
+  saving,
+  saveFeedback,
+  saveError,
+  onSuccessComplete,
 }: OrderItemPanelProps) {
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const successCallback = useRef(onSuccessComplete);
+  useLayoutEffect(() => { successCallback.current = onSuccessComplete; });
+  useLayoutEffect(() => {
+    if (!saveFeedback) return;
+    let active = true;
+    const animations = submitRef.current?.getAnimations() ?? [];
+    void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+      if (active) successCallback.current();
+    });
+    return () => { active = false; };
+  }, [saveFeedback]);
   const validationErrors = useMemo(
     () => getModifierValidationErrors(item.modifierGroups, draft.selectedOptionIds),
     [item.modifierGroups, draft.selectedOptionIds],
@@ -61,7 +83,7 @@ export default function OrderItemPanel({
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!item.is_orderable || validationErrors.size > 0) return;
+    if (saving || !item.is_orderable || validationErrors.size > 0) return;
 
     onSave(createMenuCartLine(item, { id: sectionId, name: sectionName }, editingLine?.lineId || crypto.randomUUID(), draft));
   }
@@ -76,7 +98,7 @@ export default function OrderItemPanel({
           <span className={styles.expandedPlaceholder}>{item.name.charAt(0)}</span>
         )}
       </div>
-      <form className={styles.orderForm} onSubmit={submit}>
+      <form className={styles.orderForm} onSubmit={submit} aria-busy={saving}>
         <div className={styles.orderFormHeader}>
           <div>
             <p className={styles.expandedLabel}>{item.is_orderable ? "Build your order" : "Menu item"}</p>
@@ -85,15 +107,12 @@ export default function OrderItemPanel({
             {inCartQuantity > 0 && <p className={styles.detailCartStatus}>{inCartQuantity} in cart</p>}
           </div>
           <div className={styles.detailActions}>
-            <button className={styles.detailHeartButton} type="button" aria-pressed={liked} aria-label={`${liked ? "Unlike" : "Like"} ${item.name}`} disabled={heartPending} onClick={onHeart}>
-              <span aria-hidden="true">{liked ? "♥" : "♡"}</span>
-            </button>
-            {heartCount > 0 && <span className={styles.detailHeartCount} aria-hidden="true">{heartCount}</span>}
+            <MenuFavoriteButton detail name={item.name} liked={liked} count={heartCount} pending={heartPending} onClick={onHeart} />
           </div>
         </div>
         {item.description && <p className={styles.expandedDescription}>{item.description}</p>}
         {item.is_orderable ? (
-          <>
+          <fieldset disabled={saving} className={styles.detailOrderFields}>
             {item.modifierGroups.map((group) => (
               <ModifierGroupFieldset
                 key={group.id}
@@ -124,13 +143,16 @@ export default function OrderItemPanel({
               <p className={styles.formHint}>Complete the required selections to add this item.</p>
             )}
             <button
+              ref={submitRef}
               className={styles.addToCartButton}
+              data-success={Boolean(saveFeedback)}
               type="submit"
-              disabled={validationErrors.size > 0}
+              disabled={saving || validationErrors.size > 0}
             >
-              {editingLine ? "Update Cart" : "Add to Cart"} · {formatPrice(unitPriceCents * draft.quantity, currency)}
+              {saveFeedback ? <span role="status" className={styles.detailSuccess}><MenuIcon name={saveFeedback} size={24} />Added to cart</span> : <>{editingLine ? "Update Cart" : "Add to Cart"} · {formatPrice(unitPriceCents * draft.quantity, currency)}</>}
             </button>
-          </>
+            {saveError && <p role="alert" className={styles.formError}>{saveError}</p>}
+          </fieldset>
         ) : (
           <p className={styles.notOrderable}>Online ordering is not available for this item yet.</p>
         )}

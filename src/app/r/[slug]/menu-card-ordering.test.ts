@@ -2,10 +2,27 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canAddMenuItemDirectly, createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, hasOptionalCustomization } from "./menu-card-ordering";
 import type { MenuItem, MenuSection } from "./MenuBrowser";
-import { cartReducer, createCartState } from "@/lib/cart/cart";
+import { cartReducer, createCartState, getCartLineSignature } from "@/lib/cart/cart";
+import { getConfiguredCartQuantity } from "./menu-card-ordering";
 
 const plain: MenuItem = { id: "item", name: "Dish", description: null, price_cents: 500, image_url: null, is_orderable: true, modifierGroups: [] };
 const section: MenuSection = { id: "featured", name: "Featured", description: null, sort_order: -2, items: [plain] };
+
+test("detail feedback observes committed additions, including merges and quantity saturation", () => {
+  const line = createDirectCartLine(plain, section, "line");
+  const signature = getCartLineSignature(line);
+  let state = createCartState("restaurant", "USD");
+  assert.equal(getConfiguredCartQuantity(state.lines, signature), 0);
+  state = cartReducer(state, { type: "add", line });
+  assert.equal(getConfiguredCartQuantity(state.lines, signature), 1);
+  state = cartReducer(state, { type: "add", line: { ...line, quantity: 97 } });
+  assert.equal(getConfiguredCartQuantity(state.lines, signature), 98);
+  state = cartReducer(state, { type: "add", line: { ...line, quantity: 3 } });
+  assert.equal(getConfiguredCartQuantity(state.lines, signature), 99);
+  const saturated = cartReducer(state, { type: "add", line });
+  assert.equal(getConfiguredCartQuantity(saturated.lines, signature), 99);
+  assert.equal(getConfiguredCartQuantity(saturated.lines, getCartLineSignature({ ...line, specialInstructions: "different" })), 0);
+});
 
 test("quick-add and modal-add of the same effective configuration share one cart line", () => {
   for (const item of [plain, { ...plain, modifierGroups: [{

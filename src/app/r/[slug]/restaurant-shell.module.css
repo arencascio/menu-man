@@ -203,24 +203,7 @@
     flex: 0 0 auto;
   }
 
-  .navigationLinks {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    left: 0;
-    display: none;
-    align-items: stretch;
-    flex-direction: column;
-    gap: .25rem;
-    padding: .75rem 1.25rem 1rem;
-    background: var(--theme-surface);
-    border-bottom: 1px solid color-mix(in srgb, var(--theme-text) 14%, transparent);
-    box-shadow: 0 16px 30px color-mix(in srgb, var(--theme-text) 14%, transparent);
-  }
-
-  .navigationLinksOpen {
-    display: flex;
-  }
+  .navigationLinks { display: none; }
 
   .navigationLink {
     padding: .9rem;
@@ -249,3 +232,19 @@
 @media (prefers-reduced-motion: no-preference) {
   :global(html):has(.smoothScroll) { scroll-behavior: smooth; }
 }
+
+.navigationDialog { box-sizing: border-box; position: fixed; inset: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; color: var(--theme-text); background: transparent; font-family: inherit; }
+.navigationDialog::backdrop { background: #0005; }
+.mobileNavigation { position: absolute; top: var(--navigation-top); right: 8px; display: flex; width: min(352px, calc(100% - 16px)); max-height: calc(100dvh - var(--navigation-top) - 8px); overflow-y: auto; overscroll-behavior: contain; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid color-mix(in srgb, var(--theme-text) 14%, transparent); border-radius: 0 0 12px 12px; background: var(--theme-surface); box-shadow: 0 16px 30px #0002; transform-origin: top right; animation: navigation-in 180ms ease-out; }
+.mobileNavigation[data-closing="true"] { animation: navigation-out 180ms ease-in forwards; }
+.navigationClose { display: inline-flex; align-items: center; gap: 6px; align-self: flex-end; min-height: 40px; border: 0; padding: 8px 12px; color: var(--theme-text); background: transparent; font: inherit; cursor: pointer; }
+.navigationClose:focus-visible { outline: 3px solid var(--theme-accent); }
+@keyframes navigation-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@keyframes navigation-out { to { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .mobileNavigation, .mobileNavigation[data-closing="true"] { animation: none; } }
+
+.navigationDialog::backdrop { animation: navigation-backdrop-in 180ms ease-out; }
+.navigationDialog[data-closing="true"]::backdrop { animation: navigation-backdrop-out 180ms ease-in forwards; }
+@keyframes navigation-backdrop-in { from { opacity: 0; } }
+@keyframes navigation-backdrop-out { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .navigationDialog::backdrop, .navigationDialog[data-closing="true"]::backdrop { animation: none; } }

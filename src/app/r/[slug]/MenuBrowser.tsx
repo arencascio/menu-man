@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
-import { formatPrice, getModifierValidationErrors } from "@/lib/cart/cart";
+import { formatPrice, getCartLineSignature, getModifierValidationErrors } from "@/lib/cart/cart";
 import type { CartLine, MenuModifierGroup } from "@/lib/cart/types";
 import { paymentStatusSchema } from "@/lib/payments/contracts";
 import {
@@ -18,11 +18,14 @@ import { pickupIntentEvent } from "@/lib/checkout/pickup-intent";
 import { composePersonalizedMenuSections } from "@/lib/menu-engagement/sections";
 import { clearSearchIntent, consumeNavigationIntent, searchIntent } from "@/lib/menu-engagement/navigation-intent";
 import CartPanel from "./CartPanel";
+import useExitAnimation from "./useExitAnimation";
 import { getMenuPageScrollY, lockMenuPageScroll } from "./menu-surface-scroll";
 import MenuIcon from "./MenuIcon";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
-import { createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, type MenuItemDraft } from "./menu-card-ordering";
+import { createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, getConfiguredCartQuantity, type MenuItemDraft } from "./menu-card-ordering";
 import MenuCardImage from "./MenuCardImage";
+import MenuCardText from "./MenuCardText";
+import MenuFavoriteButton from "./MenuFavoriteButton";
 import OrderItemPanel from "./OrderItemPanel";
 import QuickChoicePanel from "./QuickChoicePanel";
 import useRestaurantCart from "./useRestaurantCart";
@@ -98,6 +101,22 @@ export default function MenuBrowser({
   const [shareStatus, setShareStatus] = useState("");
   const searchId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const detailOpenRef = useRef(false);
+  const saveGuardRef = useRef(false);
+  const pendingDetailAddRef = useRef<{ signature: string; quantityBefore: number; itemId: string } | null>(null);
+  const [detailSaving, setDetailSaving] = useState(false);
+  const [detailSaveFeedback, setDetailSaveFeedback] = useState<"sparkles" | "smile" | null>(null);
+  const [detailSaveError, setDetailSaveError] = useState("");
+  const { closing: detailClosing, requestClose: requestDetailClose, reset: resetDetailExit } = useExitAnimation(dialogRef, () => {
+    detailOpenRef.current = false;
+    pendingDetailAddRef.current = null;
+    saveGuardRef.current = false;
+    setDetailSaving(false);
+    setDetailSaveFeedback(null);
+    setDetailSaveError("");
+    setDetailItem(null);
+    setEditingLineId(null);
+  });
   const sectionDialogRef = useRef<HTMLDialogElement>(null);
   const sectionDialogOpenerRef = useRef<HTMLElement | null>(null);
   const sectionDialogScrollLockRef = useRef<{
@@ -214,15 +233,15 @@ export default function MenuBrowser({
   }, [activeCategory, ensureActiveCategoryVisible]);
 
   useEffect(() => {
-    function handlePopState() {
+    function handlePopState(event?: PopStateEvent) {
       const params = new URLSearchParams(window.location.search);
       const itemId = params.get("item");
       if (!itemId) {
         detailHistoryRef.current = false;
-        setDetailItem(null);
-        setEditingLineId(null);
+        if (detailOpenRef.current) requestDetailClose();
         return;
       }
+      if (!event && detailOpenRef.current) return;
       const section = menuSections.find((candidate) => candidate.items.some((item) => item.id === itemId));
       const item = section?.items.find((candidate) => candidate.id === itemId);
       if (!section || !item) return;
@@ -237,12 +256,18 @@ export default function MenuBrowser({
       detailScrollYRef.current = window.scrollY;
       detailHistoryRef.current = true;
       setActiveDraft(draftCacheRef.current.get(item.id) ?? createMenuItemDraft(item));
-      setDetailItem({ sectionId: section.id, itemId: item.id, mode: "full" });
+      resetDetailExit();
+      detailOpenRef.current = true;
+      saveGuardRef.current = false;
+      pendingDetailAddRef.current = null;
+      setDetailSaving(false);
+      setDetailSaveFeedback(null);
+      setDetailItem((current) => current?.itemId === item.id ? current : { sectionId: section.id, itemId: item.id, mode: "full" });
     }
     window.addEventListener("popstate", handlePopState);
     handlePopState();
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [menuSections]);
+  }, [menuSections, requestDetailClose, resetDetailExit]);
 
   useLayoutEffect(() => {
     if (window.matchMedia("(max-width: 760px)").matches) return;
@@ -531,6 +556,8 @@ export default function MenuBrowser({
     detailScrollYRef.current = window.scrollY;
     const line = editingLineId ? cart.lines.find((candidate) => candidate.lineId === editingLineId) : null;
     setActiveDraft(line ? createMenuItemDraft(item, line) : draftCacheRef.current.get(item.id) ?? createMenuItemDraft(item));
+    resetDetailExit();
+    detailOpenRef.current = true;
     setDetailItem({ sectionId: section.id, itemId: item.id, mode });
     setIsCartOpen(false);
     if (!editingLineId) setEditingLineId(null);
@@ -586,8 +613,7 @@ export default function MenuBrowser({
       window.history.back();
     } else {
       clearItemUrl();
-      setDetailItem(null);
-      setEditingLineId(null);
+      requestDetailClose();
     }
   }
 
@@ -604,16 +630,43 @@ export default function MenuBrowser({
     });
   }
 
+  useEffect(() => {
+    const pending = pendingDetailAddRef.current;
+    if (!pending) return;
+    pendingDetailAddRef.current = null;
+    const quantityAfter = getConfiguredCartQuantity(cart.lines, pending.signature);
+    if (quantityAfter <= pending.quantityBefore) {
+      saveGuardRef.current = false;
+      setDetailSaving(false);
+      setDetailSaveError("This item is already at the cart quantity limit.");
+      return;
+    }
+    draftCacheRef.current.delete(pending.itemId);
+    showAddFeedback(pending.itemId);
+    setDetailSaveFeedback(Math.random() < .5 ? "sparkles" : "smile");
+  }, [cart.lines]);
+
   function saveCartLine(line: CartLine) {
-    if (cartLocked) return;
-    if (editingLineId) cart.replaceLine(line);
-    else {
+    if (cartLocked || saveGuardRef.current || detailClosing) return;
+    saveGuardRef.current = true;
+    setDetailSaveError("");
+    if (editingLineId) {
+      cart.replaceLine(line);
+    } else if (detailItem?.mode === "full") {
+      const signature = getCartLineSignature(line);
+      pendingDetailAddRef.current = {
+        signature, itemId: line.menuItemId,
+        quantityBefore: getConfiguredCartQuantity(cart.lines, signature),
+      };
+      setDetailSaving(true);
+      cart.addLine(line);
+      return;
+    } else {
       cart.addLine(line);
       showAddFeedback(line.menuItemId);
     }
     draftCacheRef.current.delete(line.menuItemId);
     closeDetailSurface();
-    setEditingLineId(null);
   }
 
   function editCartLine(line: CartLine) {
@@ -627,6 +680,8 @@ export default function MenuBrowser({
     detailOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     detailScrollYRef.current = getMenuPageScrollY();
     setActiveDraft(createMenuItemDraft(section.items.find((item) => item.id === line.menuItemId)!, line));
+    resetDetailExit();
+    detailOpenRef.current = true;
     setDetailItem({ sectionId: section.id, itemId: line.menuItemId, mode: "full" });
     setEditingLineId(line.lineId);
     setItemUrl(line.menuItemId, "push");
@@ -925,27 +980,12 @@ export default function MenuBrowser({
                       aria-expanded={isOpen}
                     >
                       <MenuCardImage name={item.name} url={item.image_url} priority={priorityImage} />
-                      <span className={styles.itemInfo}>
-                        <span className={styles.itemName}>{item.name}</span>
-                        <span className={styles.price}>{formatPrice(item.price_cents, resolvedCurrency)}</span>
-                        {item.description && <span className={styles.itemDescription}>{item.description}</span>}
-                        {!item.is_orderable && <span className={styles.cardAvailability}>Not available for online ordering</span>}
-                      </span>
+                      <MenuCardText name={item.name} price={formatPrice(item.price_cents, resolvedCurrency)} description={item.description} orderable={item.is_orderable} />
                     </button>
                     {item.is_orderable && <span className={`${styles.cardFooter} ${inCartQuantity > 0 ? styles.cardFooterActive : ""}`} aria-live="polite">{inCartQuantity > 0 ? `${inCartQuantity} in cart` : ""}</span>}
                     <div className={styles.cardImageActions}>
                       {inCartQuantity > 0 && <span className={styles.imageCartStatus} aria-live="polite">In cart{inCartQuantity > 1 ? ` · ${inCartQuantity}` : ""}</span>}
-                      <button
-                        className={styles.heartButton}
-                        type="button"
-                        aria-label={`${likedItemIds.includes(item.id) ? "Unlike" : "Like"} ${item.name}`}
-                        aria-pressed={likedItemIds.includes(item.id)}
-                        disabled={pendingHearts.includes(item.id)}
-                        onClick={() => void toggleHeart(item.id)}
-                      >
-                        <MenuIcon name={likedItemIds.includes(item.id) ? "heartFilled" : "heart"} size={20} />
-                      </button>
-                      {heartCounts[item.id] ? <span className={styles.heartCount} aria-hidden="true">{heartCounts[item.id]}</span> : null}
+                      <MenuFavoriteButton name={item.name} liked={likedItemIds.includes(item.id)} count={heartCounts[item.id] ?? 0} pending={pendingHearts.includes(item.id)} onClick={() => void toggleHeart(item.id)} />
                       {item.is_orderable && <button className={styles.cardAddButton} data-added={addFeedback?.itemId === item.id} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name={addFeedback?.itemId === item.id ? "check" : "plus"} size={20} /></button>}
                     </div>
                     </div>;
@@ -961,6 +1001,7 @@ export default function MenuBrowser({
       {selectedDetail && !cartLocked && <dialog
         ref={dialogRef}
         className={`${styles.itemDialog} ${selectedDetail.mode === "quick" ? styles.itemDialogQuick : ""}`}
+        data-closing={detailClosing}
         aria-label={`Item details: ${selectedDetail.item.name}`}
         onClick={(event) => {
           if (event.target === event.currentTarget && window.matchMedia("(pointer: fine)").matches) {
@@ -1017,6 +1058,10 @@ export default function MenuBrowser({
           onDraftChange={updateActiveDraft}
           inCartQuantity={cartQuantities[selectedDetail.item.id] ?? 0}
           onSave={saveCartLine}
+          saving={detailSaving || detailClosing}
+          saveFeedback={detailSaveFeedback}
+          saveError={detailSaveError}
+          onSuccessComplete={closeDetailSurface}
           liked={likedItemIds.includes(selectedDetail.item.id)}
           heartCount={heartCounts[selectedDetail.item.id] ?? 0}
           heartPending={pendingHearts.includes(selectedDetail.item.id)}

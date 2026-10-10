@@ -3,7 +3,7 @@
 // Chrome must expose its DevTools endpoint on port 9223. No orders are submitted.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const base = 'http://localhost:3100';
+const base = process.env.QA_BASE_URL || 'http://localhost:3100';
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 (async () => {
@@ -16,6 +16,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id) { const p = pending.get(m.id); pending.delete(m.id); if (m.error) p.reject(m.error); else p.resolve(m.result); } };
   const call = (method, params = {}) => new Promise((resolve, reject) => { const i = ++id; pending.set(i, {resolve, reject}); ws.send(JSON.stringify({id:i, method, params})); });
   const run = async expression => { const r = await call('Runtime.evaluate', {expression, returnByValue:true, awaitPromise:true}); if (r.exceptionDetails) throw r.exceptionDetails; return r.result.value; };
+  const ready = async () => { await pause(600); for (let i=0;i<200;i++) { if (await run('Boolean(document.querySelector("button[class*=cardAddButton]"))')) { await pause(800); return; } await pause(50); } throw new Error('Menu did not load'); };
   const click = async expression => { assert.equal(await run(`(()=>{const e=${expression};if(!e||e.disabled)return false;e.click();return true})()`), true, expression); await pause(300); };
   const shot = async name => { fs.mkdirSync('node_modules/.cache', {recursive:true}); fs.writeFileSync('node_modules/.cache/cart-sheet-' + name + '.png', Buffer.from((await call('Page.captureScreenshot')).data, 'base64')); };
   const cartButton = '[...document.querySelectorAll("button")].find(e=>e.textContent.trim().startsWith("Cart ("))';
@@ -41,8 +42,8 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     const mobile = width < 761;
     await call('Emulation.setDeviceMetricsOverride', {width,height:915,deviceScaleFactor:1,mobile});
     await call('Emulation.setTouchEmulationEnabled', {enabled:mobile});
-    await call('Page.navigate', {url:base+'/r/armandos/menu'}); await pause(1800);
-    await run('localStorage.clear();sessionStorage.clear()');await call('Page.reload');await pause(1800);
+    await call('Page.navigate', {url:base+'/r/armandos/menu'}); await ready();
+    await run('localStorage.clear();sessionStorage.clear()');await call('Page.reload');await ready();
     for (const name of ['Carne Asada Fries','Carne Asada Fries','Carne Asada Fries','Super Nachos','California Burrito','Caldo de Camarón','Adobada Burrito','Asada Burrito with Cheese','Asada Burrito with Cheese and Sour Cream']) {
       await click(`document.querySelector('button[aria-label=${JSON.stringify('Add '+name+' to cart')}]')`);
       assert.equal(await run('Boolean(document.querySelector("dialog[open]"))'),false);
@@ -61,23 +62,23 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       await run('document.querySelector("aside [class*=checkoutButton]").focus()');await tab();assert.equal(await run('document.activeElement.getAttribute("aria-label")'),'Close cart');await tab(true);assert.equal(await run('document.activeElement.textContent'),'Continue to Checkout');
       await click(`${row(0)}.querySelector('button[aria-label="Increase quantity"]')`);assert.equal((await rows())[0].quantity,4);
       await click(`${row(0)}.querySelector('button[aria-label="Decrease quantity"]')`);assert.equal((await rows())[0].quantity,3);
-      await swipe(0,-85);assert.equal(await run(`${row(0)}.dataset.revealed`),'remove');assert.equal((await rows()).length,7);await shot(width+'-swipe-delete');
-      await swipe(1,85);assert.equal(await run(`${row(1)}.dataset.revealed`),'edit');assert.equal(await run('document.querySelectorAll("article[data-revealed]").length'),1);
+      await swipe(0,-85);assert.equal(await run(`${row(0)}.dataset.revealed`),undefined);assert.equal((await rows()).length,7);
+      await swipe(1,85);assert.equal(await run(`${row(1)}.dataset.revealed`),undefined);assert.equal(await run('document.querySelectorAll("[data-cart-swipe-action]").length'),0);
       await swipe(2,4,-100);assert.equal(await run('document.querySelectorAll("article[data-revealed]").length'),0);
       assert.ok(await run('document.querySelector("aside [class*=cartLines]").scrollTop')>0,'Vertical touch scroll remains natural');
       const pinned=await run('(()=>{const p=document.querySelector("aside[aria-label=\\"Your cart\\"]");return {headerY:p.querySelector("[class*=cartHeader]").getBoundingClientRect().y,footerY:p.querySelector("[class*=cartFooter]").getBoundingClientRect().y}})()');assert.equal(pinned.headerY,sheet.headerY);assert.equal(pinned.footerY,sheet.footerY);
       await run('document.querySelector("aside [class*=cartLines]").scrollTop=0');await pause(200);
-      await swipe(0,85);await tap(`${row(0)}.querySelector('[data-cart-swipe-action]:not(:disabled)')`);
+      await tap(`${row(0)}.querySelector('[class*=cartLineActions] button[aria-label^=Edit]')`);
       assert.equal(await run('document.querySelectorAll("dialog[open]").length'),2);
       await setInput('dialog[open][aria-label^="Item details"] textarea','no cheese',true);
       await click('document.querySelector(`dialog[aria-label^="Item details"] button[type=submit]`)');await pause(400);
       assert.equal((await rows())[0].notes,'no cheese');assert.equal((await rows())[0].quantity,3);assert.equal(await run('document.body.style.position'),'fixed');
       assert.equal(await run('document.activeElement.getAttribute("aria-label")'),'Edit Carne Asada Fries');
-      await swipe(1,-85);await tap(`${row(1)}.querySelector('[data-cart-swipe-action]:not(:disabled)')`);assert.equal((await rows()).length,6);
+      await tap(`${row(1)}.querySelector('[class*=cartLineActions] button[aria-label^=Remove]')`);assert.equal((await rows()).length,6);
       assert.equal(await run('document.activeElement.getAttribute("aria-label")'),'Close cart');
       await escape();assert.equal(await run('Boolean(document.querySelector("dialog[open]"))'),false);assert.equal(await run('document.body.style.position'),'');
       const after=await menuState();assert.deepEqual(after,before,'Exact menu scroll, query, category strip and active context survive sheet/edit/close');assert.equal(await run(`document.activeElement===${cartButton}`),true);
-      console.log('PASS',width,'both swipe directions, reveal-only removal, one-row reveal, vertical scroll, sticky header/footer, nested edit, exact menu state, Escape/focus');
+      console.log('PASS',width,'disabled swipe gestures, explicit edit/remove, vertical scroll, sticky header/footer, nested edit, exact menu state, Escape/focus');
       await click('document.querySelector(`button[aria-label="Clear search"]`)');await click('document.querySelector(`button[aria-label="Add Carne Asada Fries to cart"]`)');await click(cartButton);
       result=await rows();assert.equal(result.filter(e=>e.name==='Carne Asada Fries').length,2);
       await click(`${row(0)}.querySelector('[class*=cartLineActions] button[aria-label="Edit Carne Asada Fries"]')`);

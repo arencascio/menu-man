@@ -4,6 +4,7 @@ import {
   createContext,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
   useCallback,
   useContext,
   useEffect,
@@ -30,9 +31,13 @@ const DeliveryChooserContext = createContext<DeliveryChooserContextValue | null>
 export function RestaurantDeliveryTrigger({
   children,
   className,
+  beforeOpen,
+  returnFocusRef,
 }: {
   children: ReactNode;
   className?: string;
+  beforeOpen?: (open: () => void) => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const chooser = useContext(DeliveryChooserContext);
 
@@ -43,7 +48,11 @@ export function RestaurantDeliveryTrigger({
       aria-haspopup="dialog"
       className={className}
       type="button"
-      onClick={(event) => chooser.open(event.currentTarget)}
+      onClick={(event) => {
+        const trigger = event.currentTarget;
+        const open = () => chooser.open(returnFocusRef?.current ?? trigger);
+        if (beforeOpen) beforeOpen(open); else open();
+      }}
     >
       {children}
     </button>

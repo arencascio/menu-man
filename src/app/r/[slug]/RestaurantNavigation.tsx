@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import RestaurantNavigationIcon, { type RestaurantNavigationIconName } from "./RestaurantNavigationIcon";
 import styles from "./restaurant-shell.module.css";
+import useExitAnimation from "./useExitAnimation";
+import { containOverlayFocus } from "./overlay-focus";
+import { lockMenuPageScroll } from "./menu-surface-scroll";
+import MenuIcon from "./MenuIcon";
 import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 
 type RestaurantNavigationDestination = {
@@ -44,23 +48,62 @@ export default function RestaurantNavigation({
   const navigationId = useId();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const afterCloseRef = useRef<(() => void) | null>(null);
+  const unlockRef = useRef<(() => void) | null>(null);
+  const { closing, requestClose, reset } = useExitAnimation(panelRef, () => {
+    dialogRef.current?.close();
+    unlockRef.current?.();
+    unlockRef.current = null;
+    setIsOpen(false);
+    menuButtonRef.current?.focus({ preventScroll: true });
+    const next = afterCloseRef.current;
+    afterCloseRef.current = null;
+    next?.();
+  });
+  useLayoutEffect(() => {
     if (!isOpen) return;
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      setIsOpen(false);
-      menuButtonRef.current?.focus();
-    }
-
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const header = menuButtonRef.current?.closest("header");
+    dialog.style.setProperty("--navigation-top", (header?.getBoundingClientRect().bottom ?? 80) + "px");
+    unlockRef.current = lockMenuPageScroll();
+    dialog.showModal();
+    panelRef.current?.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
+    return () => { dialog.close(); unlockRef.current?.(); unlockRef.current = null; };
   }, [isOpen]);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1100px)");
+    const resize = () => { if (!query.matches) { afterCloseRef.current = null; setIsOpen(false); reset(); } };
+    query.addEventListener("change", resize);
+    return () => query.removeEventListener("change", resize);
+  }, [reset]);
+
+  const links = (mobile: boolean) => items.map((item) => (
+    item.kind === "delivery" ? (
+      <RestaurantDeliveryTrigger className={styles.navigationLink} key={item.label + ":delivery"}
+        returnFocusRef={mobile ? menuButtonRef : undefined}
+        beforeOpen={mobile ? (open) => { if (closing) return; afterCloseRef.current = open; requestClose(); } : undefined}>
+        {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
+      </RestaurantDeliveryTrigger>
+    ) : item.external || item.href.startsWith("tel:") ? (
+      <a key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href}
+        target={item.external ? "_blank" : undefined} rel={item.external ? "noreferrer" : undefined}
+        onClick={mobile ? requestClose : undefined}>
+        {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
+      </a>
+    ) : (
+      <Link key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href} onClick={mobile ? requestClose : undefined}>
+        {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
+      </Link>
+    )
+  ));
 
   return (
     <header className={styles.siteHeader} data-restaurant-header>
       <div className={styles.navigationInner}>
-        <Link className={styles.brand} href={homeHref} aria-label={`${name} home`} onClick={() => setIsOpen(false)}>
+        <Link className={styles.brand} href={homeHref} aria-label={`${name} home`} onClick={() => { afterCloseRef.current = null; setIsOpen(false); }}>
           {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} /> : <>
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -81,52 +124,22 @@ export default function RestaurantNavigation({
           aria-controls={navigationId}
           aria-expanded={isOpen}
           aria-label={isOpen ? "Close navigation" : "Open navigation"}
-          onClick={() => setIsOpen((open) => !open)}
+          onClick={() => { reset(); setIsOpen(true); }}
         >
           <span aria-hidden="true" />
           <span aria-hidden="true" />
           <span aria-hidden="true" />
         </button>
 
-        <nav
-          id={navigationId}
-          className={`${styles.navigationLinks} ${isOpen ? styles.navigationLinksOpen : ""}`}
-          aria-label={`${name} navigation`}
-        >
-          {items.map((item) => (
-            item.kind === "delivery" ? (
-              <RestaurantDeliveryTrigger
-                className={styles.navigationLink}
-                key={`${item.label}:delivery`}
-              >
-                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
-                {item.label}
-              </RestaurantDeliveryTrigger>
-            ) : item.external || item.href.startsWith("tel:") ? (
-              <a
-                key={`${item.label}:${item.href}`}
-                className={styles.navigationLink}
-                href={item.href}
-                target={item.external ? "_blank" : undefined}
-                rel={item.external ? "noreferrer" : undefined}
-                onClick={() => setIsOpen(false)}
-              >
-                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
-                {item.label}
-              </a>
-            ) : (
-              <Link
-                key={`${item.label}:${item.href}`}
-                className={styles.navigationLink}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-              >
-                {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
-                {item.label}
-              </Link>
-            )
-          ))}
-        </nav>
+        <nav className={styles.navigationLinks} aria-label={name + " navigation"}>{links(false)}</nav>
+        <dialog ref={dialogRef} id={navigationId} className={styles.navigationDialog} data-closing={closing} aria-label={name + " navigation"}
+          onKeyDown={containOverlayFocus} onCancel={(event) => { event.preventDefault(); requestClose(); }}
+          onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
+          <nav ref={panelRef} className={styles.mobileNavigation} data-closing={closing} aria-label={name + " navigation"}>
+            <button className={styles.navigationClose} type="button" aria-label="Close navigation" onClick={requestClose}>Close <MenuIcon name="close" size={18} /></button>
+            {links(true)}
+          </nav>
+        </dialog>
       </div>
     </header>
   );

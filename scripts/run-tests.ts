@@ -26,6 +26,7 @@ import "../src/lib/menu-engagement/featured-picker.test";
 import "../src/lib/menu-engagement/heart-security.test";
 import "../src/lib/menu-engagement/heart-mutation.test";
 import "../src/app/r/[slug]/menu-card-ordering.test";
+import "../src/app/r/[slug]/menu-card-text.test";
 import "../src/app/r/[slug]/cart-swipe.test";
 import "../src/app/r/[slug]/menu-surface-scroll.test";
 import "../src/app/r/[slug]/restaurant-menu-modifiers.test";

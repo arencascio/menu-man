@@ -61,7 +61,6 @@ export default function RestaurantHoursLocation({
 
         <div className={styles.grid}>
           <div className={styles.locationCard}>
-            <p className={styles.cardLabel}>Find us</p>
             {hasAddress ? (
               <address className={styles.address}>{addressParts.join(", ")}</address>
             ) : (
