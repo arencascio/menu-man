@@ -18,6 +18,7 @@ import { pickupIntentEvent } from "@/lib/checkout/pickup-intent";
 import { composePersonalizedMenuSections } from "@/lib/menu-engagement/sections";
 import { clearSearchIntent, consumeNavigationIntent, searchIntent } from "@/lib/menu-engagement/navigation-intent";
 import CartPanel from "./CartPanel";
+import { getMenuPageScrollY, lockMenuPageScroll } from "./menu-surface-scroll";
 import MenuIcon from "./MenuIcon";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
 import { createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, type MenuItemDraft } from "./menu-card-ordering";
@@ -105,6 +106,10 @@ export default function MenuBrowser({
     scrollY: number;
   } | null>(null);
   const cartRef = useRef<HTMLDivElement>(null);
+  const cartTriggerRef = useRef<HTMLButtonElement>(null);
+  const [addFeedback, setAddFeedback] = useState<{ itemId: string; revision: number } | null>(null);
+  const addFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addFeedbackRevision = useRef(0);
   const cardRefs = useRef(new Map<string, HTMLButtonElement>());
   const [likedItemIds, setLikedItemIds] = useState<string[]>([]);
   const [likedItemsLoaded, setLikedItemsLoaded] = useState(false);
@@ -120,6 +125,17 @@ export default function MenuBrowser({
   const cart = useRestaurantCart(restaurantId, resolvedCurrency);
   const cartLocked = Boolean(activePayment?.locksCart);
   const hasActiveSurface = Boolean(detailItem || isCartOpen);
+  const cartImageUrls = useMemo(() => new Map(sections.flatMap((section) => section.items.map((item) => [item.id, item.image_url] as const))), [sections]);
+
+  useEffect(() => () => {
+    if (addFeedbackTimer.current) clearTimeout(addFeedbackTimer.current);
+  }, []);
+
+  function showAddFeedback(itemId: string) {
+    if (addFeedbackTimer.current) clearTimeout(addFeedbackTimer.current);
+    setAddFeedback({ itemId, revision: ++addFeedbackRevision.current });
+    addFeedbackTimer.current = setTimeout(() => { setAddFeedback(null); addFeedbackTimer.current = null; }, 500);
+  }
   const menuSections = useMemo(
     () => composePersonalizedMenuSections(sections, likedItemsLoaded ? likedItemIds : []),
     [likedItemIds, likedItemsLoaded, sections],
@@ -229,6 +245,7 @@ export default function MenuBrowser({
   }, [menuSections]);
 
   useLayoutEffect(() => {
+    if (window.matchMedia("(max-width: 760px)").matches) return;
     const target = isCartOpen && !detailItem ? cartRef.current : null;
     if (!target) return;
     const frame = requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -239,15 +256,8 @@ export default function MenuBrowser({
     if (!detailItem) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
-    const scrollY = detailScrollYRef.current;
-    const body = document.body;
-    const originalPosition = body.style.position;
-    const originalTop = body.style.top;
-    const originalWidth = body.style.width;
-    const bodyWidth = body.getBoundingClientRect().width;
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.width = `${bodyWidth}px`;
+    const cartCloseButton = cartRef.current?.querySelector<HTMLButtonElement>("[data-cart-close]");
+    const unlock = lockMenuPageScroll(detailScrollYRef.current);
     dialog.showModal();
     if (detailItem.mode === "quick" && window.matchMedia("(min-width: 761px) and (pointer: fine)").matches) {
       const opener = detailOpenerRef.current;
@@ -268,12 +278,10 @@ export default function MenuBrowser({
       dialog.style.removeProperty("margin");
       dialog.style.removeProperty("left");
       dialog.style.removeProperty("top");
-      body.style.position = originalPosition;
-      body.style.top = originalTop;
-      body.style.width = originalWidth;
-      window.scrollTo({ top: scrollY, behavior: "instant" });
+      unlock();
       const opener = detailOpenerRef.current;
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
+      if (opener?.isConnected && !opener.matches(":disabled")) opener.focus({ preventScroll: true });
+      else if (cartCloseButton?.isConnected) cartCloseButton.focus({ preventScroll: true });
       detailOpenerRef.current = null;
     };
   }, [detailItem]);
@@ -548,6 +556,7 @@ export default function MenuBrowser({
       return;
     }
     cart.addLine(createDirectCartLine(item, section, crypto.randomUUID()));
+    showAddFeedback(item.id);
   }
 
   function navigateToSection(section: MenuSection, fromSectionList = false) {
@@ -598,7 +607,10 @@ export default function MenuBrowser({
   function saveCartLine(line: CartLine) {
     if (cartLocked) return;
     if (editingLineId) cart.replaceLine(line);
-    else cart.addLine(line);
+    else {
+      cart.addLine(line);
+      showAddFeedback(line.menuItemId);
+    }
     draftCacheRef.current.delete(line.menuItemId);
     closeDetailSurface();
     setEditingLineId(null);
@@ -613,7 +625,7 @@ export default function MenuBrowser({
     if (!section) return;
 
     detailOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    detailScrollYRef.current = window.scrollY;
+    detailScrollYRef.current = getMenuPageScrollY();
     setActiveDraft(createMenuItemDraft(section.items.find((item) => item.id === line.menuItemId)!, line));
     setDetailItem({ sectionId: section.id, itemId: line.menuItemId, mode: "full" });
     setEditingLineId(line.lineId);
@@ -760,7 +772,7 @@ export default function MenuBrowser({
         </aside>
       )}
       <span ref={controlsAnchorRef} className={styles.controlsAnchor} aria-hidden="true" />
-      <div ref={controlsRef} className={`${styles.controls} ${isCartOpen ? styles.controlsInactive : ""}`}>
+      <div ref={controlsRef} className={styles.controls}>
         <div className={styles.categoryNav}>
           <div className={`${styles.categoryStrip} ${categoryEdges.left ? styles.categoryStripLeftEdge : ""} ${categoryEdges.right ? styles.categoryStripRightEdge : ""}`}>
           {categoryEdges.left && <button className={`${styles.categoryArrow} ${styles.categoryArrowLeft}`} type="button" aria-label="Scroll categories left" onClick={() => scrollCategories(-1)}><MenuIcon name="chevronLeft" size={18} /></button>}
@@ -803,7 +815,7 @@ export default function MenuBrowser({
               setSearchInput(event.target.value);
               setEditingLineId(null);
             }}
-            placeholder="Search the menu..."
+            placeholder="Search"
           />
           {searchInput && <button className={styles.searchClear} type="button" aria-label="Clear search" onClick={() => {
             navigationIntentRef.current = clearSearchIntent();
@@ -813,7 +825,9 @@ export default function MenuBrowser({
           }}><MenuIcon name="close" size={17} /></button>}
         </div>
         <button
+          ref={cartTriggerRef}
           className={styles.cartButton}
+          data-cart-empty={cart.totalQuantity === 0}
           type="button"
           aria-expanded={isCartOpen}
           disabled={cartLocked}
@@ -827,8 +841,9 @@ export default function MenuBrowser({
             }
           }}
         >
-          <MenuIcon name="cart" size={17} /> Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}
+          <span key={addFeedback?.revision ?? 0} className={addFeedback ? styles.cartCountPulse : undefined}><MenuIcon name="cart" size={17} /> Cart ({cart.totalQuantity}) · {formatPrice(cart.subtotalCents, resolvedCurrency)}</span>
         </button>
+        <span className={styles.visuallyHidden} role="status">{addFeedback ? `Cart updated. ${cart.totalQuantity} ${cart.totalQuantity === 1 ? "item" : "items"} in cart.` : ""}</span>
         {showResultCount && <p className={styles.resultCount} aria-live="polite">{visibleItemCount === 0 ? "No results" : `${visibleItemCount} ${visibleItemCount === 1 ? "result" : "results"}`}</p>}
       </div>
 
@@ -871,6 +886,8 @@ export default function MenuBrowser({
             lines={cart.lines}
             currency={resolvedCurrency}
             subtotalCents={cart.subtotalCents}
+            imageUrls={cartImageUrls}
+            triggerRef={cartTriggerRef}
             onClose={() => setIsCartOpen(false)}
             onEdit={editCartLine}
             onRemove={cart.removeLine}
@@ -916,18 +933,21 @@ export default function MenuBrowser({
                       </span>
                     </button>
                     {item.is_orderable && <span className={`${styles.cardFooter} ${inCartQuantity > 0 ? styles.cardFooterActive : ""}`} aria-live="polite">{inCartQuantity > 0 ? `${inCartQuantity} in cart` : ""}</span>}
-                    <button
-                      className={styles.heartButton}
-                      type="button"
-                      aria-label={`${likedItemIds.includes(item.id) ? "Unlike" : "Like"} ${item.name}`}
-                      aria-pressed={likedItemIds.includes(item.id)}
-                      disabled={pendingHearts.includes(item.id)}
-                      onClick={() => void toggleHeart(item.id)}
-                    >
-                      <MenuIcon name={likedItemIds.includes(item.id) ? "heartFilled" : "heart"} size={20} />
-                    </button>
-                    {heartCounts[item.id] ? <span className={styles.heartCount} aria-hidden="true">{heartCounts[item.id]}</span> : null}
-                    {item.is_orderable && <button className={styles.cardAddButton} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name="plus" size={20} /></button>}
+                    <div className={styles.cardImageActions}>
+                      {inCartQuantity > 0 && <span className={styles.imageCartStatus} aria-live="polite">In cart{inCartQuantity > 1 ? ` · ${inCartQuantity}` : ""}</span>}
+                      <button
+                        className={styles.heartButton}
+                        type="button"
+                        aria-label={`${likedItemIds.includes(item.id) ? "Unlike" : "Like"} ${item.name}`}
+                        aria-pressed={likedItemIds.includes(item.id)}
+                        disabled={pendingHearts.includes(item.id)}
+                        onClick={() => void toggleHeart(item.id)}
+                      >
+                        <MenuIcon name={likedItemIds.includes(item.id) ? "heartFilled" : "heart"} size={20} />
+                      </button>
+                      {heartCounts[item.id] ? <span className={styles.heartCount} aria-hidden="true">{heartCounts[item.id]}</span> : null}
+                      {item.is_orderable && <button className={styles.cardAddButton} data-added={addFeedback?.itemId === item.id} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name={addFeedback?.itemId === item.id ? "check" : "plus"} size={20} /></button>}
+                    </div>
                     </div>;
                   })}
                 </div>

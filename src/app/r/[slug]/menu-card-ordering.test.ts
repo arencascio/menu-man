@@ -2,9 +2,25 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canAddMenuItemDirectly, createDirectCartLine, createMenuCartLine, createMenuItemDraft, getCardAddMode, hasOptionalCustomization } from "./menu-card-ordering";
 import type { MenuItem, MenuSection } from "./MenuBrowser";
+import { cartReducer, createCartState } from "@/lib/cart/cart";
 
 const plain: MenuItem = { id: "item", name: "Dish", description: null, price_cents: 500, image_url: null, is_orderable: true, modifierGroups: [] };
 const section: MenuSection = { id: "featured", name: "Featured", description: null, sort_order: -2, items: [plain] };
+
+test("quick-add and modal-add of the same effective configuration share one cart line", () => {
+  for (const item of [plain, { ...plain, modifierGroups: [{
+    id: "extras", name: "Extras", description: null, minSelections: 0, maxSelections: 1, sortOrder: 0,
+    options: [{ id: "sauce", name: "Sauce", priceAdjustmentCents: 75, sortOrder: 0, isDefault: true }],
+  }] }]) {
+    let state = createCartState("restaurant", "USD");
+    state = cartReducer(state, { type: "add", line: createDirectCartLine(item, section, "quick") });
+    const draft = createMenuItemDraft(item);
+    state = cartReducer(state, { type: "add", line: createMenuCartLine(item, { id: "regular", name: "Regular" }, "modal", draft) });
+    assert.equal(state.lines.length, 1);
+    assert.equal(state.lines[0].quantity, 2);
+    assert.equal(state.lines[0].lineId, "quick");
+  }
+});
 
 test("simple canonical items add from synthetic sections without changing item identity", () => {
   assert.equal(canAddMenuItemDirectly(plain), true);

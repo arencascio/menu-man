@@ -5,6 +5,7 @@ import {
   calculateLineTotalCents,
   cartReducer,
   createCartState,
+  getCartLineSignature,
   getDefaultModifierOptionIds,
   getModifierValidationErrors,
   isMenuModifierOptionAvailable,
@@ -19,6 +20,7 @@ import {
   saveRestaurantCart,
 } from "./storage";
 import type { CartLine, MenuModifierGroup, MenuModifierOption } from "./types";
+import { fingerprintCart } from "../payments/browser-session";
 
 const line: CartLine = {
   lineId: "line-1",
@@ -244,4 +246,128 @@ test("migrates the matching legacy cart without deleting another restaurant's le
     parseStoredCart(storage.getItem(restaurantCartStorageKey("restaurant-1")))?.lines.length,
     1,
   );
+});
+
+const simpleLine: CartLine = { ...line, quantity: 1, selectedModifiers: [] };
+
+function addLines(...lines: CartLine[]) {
+  return lines.reduce((state, line) => cartReducer(state, { type: "add", line }), createCartState("restaurant-1", "USD"));
+}
+
+for (const count of [2, 3]) {
+  test(`identical simple item added ${count} times becomes one line with quantity ${count}`, () => {
+    const state = addLines(...Array.from({ length: count }, (_, index) => ({ ...simpleLine, lineId: `add-${index}` })));
+    assert.equal(state.lines.length, 1);
+    assert.equal(state.lines[0].quantity, count);
+    assert.equal(state.lines[0].lineId, "add-0");
+    assert.equal(calculateCartSubtotalCents(state.lines), simpleLine.basePriceCents * count);
+  });
+}
+
+test("identical customized additions merge quantities without changing snapshots", () => {
+  const state = addLines(line, { ...line, lineId: "second", quantity: 3 });
+  assert.deepEqual(state.lines, [{ ...line, quantity: 5 }]);
+  assert.equal(calculateCartSubtotalCents(state.lines), 5750);
+  assert.equal(line.quantity, 2);
+});
+
+test("normal, ingredient removal, extras, and different modifier groups/options remain separate", () => {
+  const removal = { ...line.selectedModifiers[0], modifierGroupId: "removals", modifierOptionId: "no-cheese", priceAdjustmentCents: 0 };
+  const variants = [
+    simpleLine,
+    { ...simpleLine, lineId: "removed", selectedModifiers: [removal] },
+    { ...simpleLine, lineId: "extra", selectedModifiers: line.selectedModifiers },
+    { ...simpleLine, lineId: "different-group", selectedModifiers: [{ ...removal, modifierGroupId: "other-removals" }] },
+    { ...simpleLine, lineId: "different-option", selectedModifiers: [{ ...removal, modifierOptionId: "no-onion" }] },
+    { ...simpleLine, lineId: "different-item", menuItemId: "item-2" },
+  ];
+  assert.equal(addLines(...variants).lines.length, variants.length);
+});
+
+test("modifier ordering and display labels do not affect equivalence", () => {
+  const secondModifier = { ...line.selectedModifiers[0], modifierGroupId: "removals", modifierOptionId: "no-rice", priceAdjustmentCents: 0 };
+  const original = { ...line, selectedModifiers: [...line.selectedModifiers, secondModifier] };
+  const reordered = {
+    ...original, lineId: "reordered", sectionId: "featured", sectionName: "Featured", itemName: "Updated label",
+    selectedModifiers: [...original.selectedModifiers].reverse().map((modifier) => ({ ...modifier, modifierGroupName: "Updated group", modifierOptionName: "Updated option" })),
+  };
+  assert.equal(getCartLineSignature(original), getCartLineSignature(reordered));
+  assert.deepEqual(addLines(original, reordered).lines, [{ ...original, quantity: 4 }]);
+  assert.equal(original.selectedModifiers[0].modifierOptionId, "guacamole");
+});
+
+test("distinct instructions remain separate while outer whitespace is normalized", () => {
+  const state = addLines(
+    simpleLine,
+    { ...simpleLine, lineId: "no-cheese", specialInstructions: "no cheese" },
+    { ...simpleLine, lineId: "same-note", specialInstructions: "  no cheese  " },
+    { ...simpleLine, lineId: "other-note", specialInstructions: "extra crispy" },
+  );
+  assert.deepEqual(state.lines.map(({ specialInstructions, quantity }) => [specialInstructions, quantity]), [["", 1], ["no cheese", 2], ["extra crispy", 1]]);
+});
+
+test("price snapshot differences remain separate so consolidation cannot reprice stored lines", () => {
+  const lines = [line, { ...line, lineId: "base-price", basePriceCents: 1200 }, {
+    ...line, lineId: "modifier-price", selectedModifiers: [{ ...line.selectedModifiers[0], priceAdjustmentCents: 200 }],
+  }];
+  const state = addLines(...lines);
+  assert.equal(state.lines.length, 3);
+  assert.equal(calculateCartSubtotalCents(state.lines), calculateCartSubtotalCents(lines));
+});
+
+test("merged lines retain the 1-99 quantity rules and still decrement and remove by their retained ID", () => {
+  let state = addLines(simpleLine, { ...simpleLine, lineId: "new", quantity: 98 }, { ...simpleLine, lineId: "at-limit" });
+  assert.equal(state.lines.length, 1);
+  assert.equal(state.lines[0].quantity, 99);
+  state = cartReducer(state, { type: "set_quantity", lineId: simpleLine.lineId, quantity: 2 });
+  assert.equal(state.lines[0].quantity, 2);
+  state = cartReducer(state, { type: "set_quantity", lineId: simpleLine.lineId, quantity: 1 });
+  assert.equal(state.lines[0].quantity, 1);
+  state = cartReducer(state, { type: "set_quantity", lineId: simpleLine.lineId, quantity: 0 });
+  assert.equal(state.lines[0].quantity, 1);
+  state = cartReducer(state, { type: "remove", lineId: simpleLine.lineId });
+  assert.equal(state.lines.length, 0);
+});
+
+test("edit-to-equivalent collision combines the edited quantity with the existing quantity", () => {
+  const customized = { ...simpleLine, lineId: "custom", quantity: 2, specialInstructions: "no cheese" };
+  const state = addLines({ ...simpleLine, quantity: 3 }, customized);
+  const edited = cartReducer(state, { type: "replace", line: { ...customized, specialInstructions: "" } });
+  assert.deepEqual(edited.lines, [{ ...simpleLine, quantity: 5 }]);
+  assert.equal(state.lines.length, 2);
+});
+
+test("edit collisions over 99 retain both bounded lines without discarding quantities", () => {
+  const customized = { ...simpleLine, lineId: "custom", quantity: 20, specialInstructions: "no cheese" };
+  const state = addLines({ ...simpleLine, quantity: 90 }, customized);
+  const edited = cartReducer(state, { type: "replace", line: { ...customized, specialInstructions: "" } });
+  assert.deepEqual(edited.lines.map(({ quantity }) => quantity), [90, 20]);
+  assert.equal(calculateCartSubtotalCents(edited.lines), simpleLine.basePriceCents * 110);
+});
+
+test("persistence and hydration preserve historical row shape, customized lines, and active-order fingerprints", async () => {
+  const storage = new MemoryStorage();
+  const historical = [simpleLine, { ...simpleLine, lineId: "duplicate" }, {
+    ...simpleLine, lineId: "notes", specialInstructions: "no cheese",
+  }, { ...line, lineId: "extras" }];
+  saveRestaurantCart(storage, { restaurantId: "restaurant-1", currency: "USD", lines: historical });
+  const loaded = loadRestaurantCart(storage, "restaurant-1", "USD");
+  const hydrated = cartReducer(createCartState("restaurant-1", "USD"), { type: "hydrate", cart: loaded });
+  assert.deepEqual(hydrated.lines, historical);
+  assert.equal(await fingerprintCart(hydrated.lines), await fingerprintCart(historical));
+  const added = cartReducer(hydrated, { type: "add", line: { ...simpleLine, lineId: "new" } });
+  assert.deepEqual(added.lines.map(({ lineId, quantity }) => [lineId, quantity]), [[simpleLine.lineId, 3], ["notes", 1], ["extras", 2]]);
+  saveRestaurantCart(storage, { restaurantId: "restaurant-1", currency: "USD", lines: added.lines });
+  assert.deepEqual(loadRestaurantCart(storage, "restaurant-1", "USD").lines, added.lines);
+  assert.equal(loadRestaurantCart(storage, "restaurant-2", "USD").lines.length, 0);
+});
+
+test("explicit additions preserve historical overflow quantities and never create a new overflow row", () => {
+  const stored = { version: 1 as const, restaurantId: "restaurant-1", currency: "USD", updatedAt: new Date(0).toISOString(), lines: [
+    { ...simpleLine, quantity: 99 }, { ...simpleLine, lineId: "overflow", quantity: 2 },
+  ] };
+  const hydrated = cartReducer(createCartState("restaurant-1", "USD"), { type: "hydrate", cart: stored });
+  const added = cartReducer(hydrated, { type: "add", line: { ...simpleLine, lineId: "new" } });
+  assert.deepEqual(added.lines.map(({ quantity }) => quantity), [99, 3]);
+  assert.equal(calculateCartSubtotalCents(added.lines), simpleLine.basePriceCents * 102);
 });

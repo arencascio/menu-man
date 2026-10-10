@@ -119,8 +119,46 @@ export function createCartState(restaurantId: string, currency: string): CartSta
   return { restaurantId, currency, lines: [], hydrated: false };
 }
 
+export function getCartLineSignature(line: CartLine) {
+  // Quantity, row IDs, menu-section placement, and display labels are not
+  // customer configuration. Keep price snapshots as a conservative merge guard
+  // so consolidation never reprices an existing line or changes its subtotal.
+  const modifiers = line.selectedModifiers.map((selection) => [
+    selection.modifierGroupId,
+    selection.modifierOptionId,
+    selection.priceAdjustmentCents,
+  ]).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+  return JSON.stringify([
+    line.menuItemId,
+    modifiers,
+    line.specialInstructions.trim(),
+    line.basePriceCents,
+  ]);
+}
+
+function consolidateCartLines(lines: readonly CartLine[]) {
+  const consolidated: CartLine[] = [];
+  const signatures = new Map<string, number[]>();
+  for (const line of lines) {
+    const signature = getCartLineSignature(line);
+    const candidates = signatures.get(signature) ?? [];
+    const index = candidates.find((candidate) => consolidated[candidate].quantity + line.quantity <= MAX_CART_QUANTITY);
+    if (index !== undefined) {
+      consolidated[index] = { ...consolidated[index], quantity: consolidated[index].quantity + line.quantity };
+    } else {
+      // Retain overflow rows from historical carts or edit collisions rather
+      // than dropping ordered quantities or exceeding the per-line limit.
+      signatures.set(signature, [...candidates, consolidated.length]);
+      consolidated.push(line);
+    }
+  }
+  return consolidated;
+}
+
 export function cartReducer(state: CartState, action: CartAction): CartState {
   if (action.type === "hydrate") {
+    // Existing active-order fingerprints include row IDs and quantities. Keep
+    // hydration lossless; consolidate only when the customer mutates the cart.
     return {
       restaurantId: action.cart.restaurantId,
       currency: action.cart.currency,
@@ -130,13 +168,24 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
   }
 
   if (action.type === "add") {
-    return { ...state, lines: [...state.lines, action.line] };
+    const signature = getCartLineSignature(action.line);
+    const matching = state.lines.findIndex((line) => getCartLineSignature(line) === signature && line.quantity < MAX_CART_QUANTITY);
+    const equivalentExists = state.lines.some((line) => getCartLineSignature(line) === signature);
+    const lines = matching >= 0
+      ? state.lines.map((line, index) => index === matching
+        ? { ...line, quantity: clampQuantity(line.quantity + clampQuantity(action.line.quantity)) }
+        : line)
+      : equivalentExists ? state.lines : [...state.lines, { ...action.line, quantity: clampQuantity(action.line.quantity) }];
+    return { ...state, lines: consolidateCartLines(lines) };
   }
 
   if (action.type === "replace") {
+    if (!state.lines.some((line) => line.lineId === action.line.lineId)) return state;
     return {
       ...state,
-      lines: state.lines.map((line) => (line.lineId === action.line.lineId ? action.line : line)),
+      lines: consolidateCartLines(state.lines.map((line) => (line.lineId === action.line.lineId
+        ? { ...action.line, quantity: clampQuantity(action.line.quantity) }
+        : line))),
     };
   }
 
