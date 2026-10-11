@@ -20,10 +20,16 @@ export function lockMenuPageScroll(scrollY = window.scrollY) {
       rootOverflow: document.documentElement.style.overflow,
     };
     const width = body.getBoundingClientRect().width;
-    body.style.position = "fixed";
-    body.style.top = `-${snapshot.scrollY}px`;
+    // Desktop keeps its native scroll position so sticky page chrome remains
+    // visible. Mobile retains the fixed-body lock used by the existing sheet.
+    const mobile = window.innerWidth <= 760;
+    if (mobile) {
+      body.style.position = "fixed";
+      body.style.top = `-${snapshot.scrollY}px`;
+    }
     body.style.width = `${width}px`;
-    body.style.overflow = "hidden";
+    // Clip without creating a new scrolling ancestor for desktop sticky chrome.
+    body.style.overflow = mobile ? "hidden" : "clip";
     document.documentElement.style.overflow = "hidden";
   }
   lockCount += 1;

@@ -168,3 +168,9 @@
     transition: none;
   }
 }
+
+.compact .inner { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 22px clamp(20px, 3vw, 32px); }
+.compact .copy h2 { max-width: none; font-size: 20px; line-height: 1.25; letter-spacing: -.02em; }
+.compact .quicklinks { width: 100%; }
+.compact .quicklinkScroller { flex-wrap: wrap; width: 100%; padding: 0; overflow: visible; }
+.compact .quicklinkScroller a { min-height: 40px; padding: 8px 12px; font-size: 13px; }

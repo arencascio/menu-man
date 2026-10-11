@@ -93,11 +93,11 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       await call('Emulation.setEmulatedMedia',{features:[]});
       console.log('PASS',width,'distinct configurations, edit collision quantity 4, max 99, 500ms feedback, reduced motion');
     } else {
-      assert.equal(await run('Boolean(document.querySelector("dialog[aria-label=Cart]"))'),false);assert.equal(await run('document.body.style.position'),'');
+      assert.equal(await run('document.querySelector("dialog[aria-label=Cart]").matches(":modal")'),true);assert.equal(await run('document.documentElement.style.overflow'),'hidden');
       assert.equal(await run('getComputedStyle(document.querySelector("input[type=search]").closest("[class*=controls]")).display'),'grid');
-      assert.equal(await run(`${row(0)}.querySelector('[class*=cartLineActions] button').textContent`),'Edit');assert.equal(await run('Boolean(document.querySelector("aside [class*=cartThumbnail]"))'),false);
+      assert.equal(await run(`${row(0)}.querySelector('[class*=cartLineActions] button').textContent`),'Edit');assert.equal(await run('Boolean(document.querySelector("aside [class*=cartThumbnail]"))'),true);
       await click(`${row(0)}.querySelector('button[aria-label="Increase quantity"]')`);assert.equal((await rows())[0].quantity,4);await click(`${row(0)}.querySelector('button[aria-label="Decrease quantity"]')`);assert.equal((await rows())[0].quantity,3);
-      await shot(width+'-desktop');console.log('PASS',width,'desktop remains in flow with text actions; consolidated quantities update');
+      await shot(width+'-desktop');console.log('PASS',width,'desktop uses modal overlay with text actions and thumbnails; consolidated quantities update');
     }
     assert.equal(await run('document.documentElement.scrollWidth>innerWidth'),false);
     await click('document.querySelector("aside [class*=checkoutButton]")');await pause(1500);assert.equal(await run('location.pathname'),'/r/armandos/checkout');assert.equal(await run('document.body.style.position'),'');await shot(width+'-checkout');

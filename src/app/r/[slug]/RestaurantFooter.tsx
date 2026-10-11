@@ -1,6 +1,6 @@
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
 import RestaurantContactIcon from "./RestaurantContactIcon";
-import RestaurantFooterArtwork from "./RestaurantFooterArtwork";
+import RestaurantFooterArtwork, { RestaurantFooterReveal } from "./RestaurantFooterArtwork";
 import styles from "./restaurant-footer.module.css";
 import Link from "next/link";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
@@ -51,7 +51,7 @@ export default function RestaurantFooter({
 
         <div className={styles.identity}>
           <a className={styles.brand} href={homeHref} aria-label={`${name} home`}>
-            {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} size="footer" /> : <>
+            {brandLockup ? <RestaurantFooterReveal><RestaurantBrandLockup presentation={brandLockup} size="footer" /></RestaurantFooterReveal> : <>
             {!artworkMark && logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img className={styles.logo} src={logoUrl} alt="" />

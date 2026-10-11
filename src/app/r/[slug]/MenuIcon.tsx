@@ -1,6 +1,6 @@
 import styles from "./menu-browser.module.css";
 
-type MenuIconName = "chevronLeft" | "chevronRight" | "close" | "heart" | "heartFilled" | "minus" | "plus" | "search" | "share" | "cart" | "sections" | "mapPin" | "hourglass" | "truck" | "edit" | "trash" | "check" | "heartCrack" | "sparkles" | "smile";
+type MenuIconName = "chevronLeft" | "chevronRight" | "close" | "heart" | "heartFilled" | "minus" | "plus" | "search" | "share" | "cart" | "sections" | "mapPin" | "hourglass" | "truck" | "edit" | "trash" | "check" | "heartCrack" | "sparkles" | "smile" | "sad";
 
 const iconFiles: Record<Exclude<MenuIconName, "heart" | "heartFilled">, string> = {
   chevronLeft: "chevron-right",
@@ -21,6 +21,7 @@ const iconFiles: Record<Exclude<MenuIconName, "heart" | "heartFilled">, string> 
   heartCrack: "heart-crack",
   sparkles: "sparkles",
   smile: "face-slightly-smiling",
+  sad: "face-slightly-frowning",
 };
 
 export default function MenuIcon({ name, size = 18 }: { name: MenuIconName; size?: number }) {

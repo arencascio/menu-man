@@ -12,7 +12,7 @@ test("Armando's homepage has a direct menu gateway and the dedicated route owns 
   const home = source("src", "app", "r", "[slug]", "page.tsx");
   const menu = source("src", "app", "r", "[slug]", "menu", "page.tsx");
   const menuData = source("src", "app", "r", "[slug]", "restaurant-menu-data.ts");
-  assert.match(home, /armandos: \{ orderingActions: false, hoursLocation: false, menuIntro: false \}/);
+  assert.match(home, /armandos: \{ orderingActions: false, hoursLocation: false, menuIntro: true \}/);
   assert.ok(home.indexOf("<RestaurantHero") < home.indexOf("<RestaurantAnnouncementStrip"));
   assert.ok(home.indexOf("<RestaurantAnnouncementStrip") < home.indexOf("<RestaurantFeaturedGallerySlider"));
   assert.ok(home.indexOf("<RestaurantFeaturedGallerySlider") < home.indexOf("<RestaurantFooter"));

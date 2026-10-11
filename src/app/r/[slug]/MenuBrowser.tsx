@@ -119,11 +119,7 @@ export default function MenuBrowser({
   });
   const sectionDialogRef = useRef<HTMLDialogElement>(null);
   const sectionDialogOpenerRef = useRef<HTMLElement | null>(null);
-  const sectionDialogScrollLockRef = useRef<{
-    body: Pick<CSSStyleDeclaration, "left" | "overflow" | "position" | "right" | "top" | "width">;
-    documentElement: Pick<CSSStyleDeclaration, "overflow" | "overscrollBehavior">;
-    scrollY: number;
-  } | null>(null);
+  const sectionDialogScrollLockRef = useRef<(() => void) | null>(null);
   const cartRef = useRef<HTMLDivElement>(null);
   const cartTriggerRef = useRef<HTMLButtonElement>(null);
   const [addFeedback, setAddFeedback] = useState<{ itemId: string; revision: number } | null>(null);
@@ -268,14 +264,6 @@ export default function MenuBrowser({
     handlePopState();
     return () => window.removeEventListener("popstate", handlePopState);
   }, [menuSections, requestDetailClose, resetDetailExit]);
-
-  useLayoutEffect(() => {
-    if (window.matchMedia("(max-width: 760px)").matches) return;
-    const target = isCartOpen && !detailItem ? cartRef.current : null;
-    if (!target) return;
-    const frame = requestAnimationFrame(() => target.scrollIntoView({ behavior: "smooth", block: "start" }));
-    return () => cancelAnimationFrame(frame);
-  }, [detailItem, isCartOpen]);
 
   useLayoutEffect(() => {
     if (!detailItem) return;
@@ -643,7 +631,7 @@ export default function MenuBrowser({
     }
     draftCacheRef.current.delete(pending.itemId);
     showAddFeedback(pending.itemId);
-    setDetailSaveFeedback(Math.random() < .5 ? "sparkles" : "smile");
+    setDetailSaveFeedback("smile");
   }, [cart.lines]);
 
   function saveCartLine(line: CartLine) {
@@ -773,32 +761,12 @@ export default function MenuBrowser({
   }
 
   function lockSectionDialogScroll() {
-    if (sectionDialogScrollLockRef.current) return;
-    const { body, documentElement } = document;
-    const scrollY = window.scrollY;
-    sectionDialogScrollLockRef.current = {
-      body: { left: body.style.left, overflow: body.style.overflow, position: body.style.position, right: body.style.right, top: body.style.top, width: body.style.width },
-      documentElement: { overflow: documentElement.style.overflow, overscrollBehavior: documentElement.style.overscrollBehavior },
-      scrollY,
-    };
-    documentElement.style.overflow = "hidden";
-    documentElement.style.overscrollBehavior = "none";
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.right = "0";
-    body.style.left = "0";
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
+    if (!sectionDialogScrollLockRef.current) sectionDialogScrollLockRef.current = lockMenuPageScroll();
   }
 
   function unlockSectionDialogScroll() {
-    const lock = sectionDialogScrollLockRef.current;
-    if (!lock) return;
-    const { body, documentElement } = document;
-    Object.assign(body.style, lock.body);
-    Object.assign(documentElement.style, lock.documentElement);
+    sectionDialogScrollLockRef.current?.();
     sectionDialogScrollLockRef.current = null;
-    window.scrollTo({ top: lock.scrollY, behavior: "instant" });
   }
 
   useEffect(() => () => unlockSectionDialogScroll(), []);
@@ -986,7 +954,7 @@ export default function MenuBrowser({
                     <div className={styles.cardImageActions}>
                       {inCartQuantity > 0 && <span className={styles.imageCartStatus} aria-live="polite">In cart{inCartQuantity > 1 ? ` · ${inCartQuantity}` : ""}</span>}
                       <MenuFavoriteButton name={item.name} liked={likedItemIds.includes(item.id)} count={heartCounts[item.id] ?? 0} pending={pendingHearts.includes(item.id)} onClick={() => void toggleHeart(item.id)} />
-                      {item.is_orderable && <button className={styles.cardAddButton} data-added={addFeedback?.itemId === item.id} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name={addFeedback?.itemId === item.id ? "check" : "plus"} size={20} /></button>}
+                      {item.is_orderable && <button className={styles.cardAddButton} data-added={addFeedback?.itemId === item.id} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name={addFeedback?.itemId === item.id ? "smile" : "plus"} size={20} /></button>}
                     </div>
                     </div>;
                   })}

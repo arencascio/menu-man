@@ -29,6 +29,7 @@ import "../src/app/r/[slug]/menu-card-ordering.test";
 import "../src/app/r/[slug]/menu-card-text.test";
 import "../src/app/r/[slug]/cart-swipe.test";
 import "../src/app/r/[slug]/menu-surface-scroll.test";
+import "../src/app/r/[slug]/restaurant-menu-links.test";
 import "../src/app/r/[slug]/restaurant-menu-modifiers.test";
 import "../src/app/r/[slug]/ordering-status.test";
 import "../src/app/r/[slug]/pickup-time-chooser.test";

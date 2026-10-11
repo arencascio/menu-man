@@ -5,7 +5,7 @@ const base = process.env.QA_BASE_URL || 'http://localhost:3100';
 const phase1 = process.argv.includes('--phase1');
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 assert.ok((await (await fetch(base + '/diagnostics')).text()).includes('jjvongzvtnzlvwdfcnjk'));
-for (const icon of ['heart-crack', 'sparkles', 'face-slightly-smiling']) assert.equal((await fetch(base + '/img/icons/' + icon + '.svg')).status, 200);
+for (const icon of ['face-slightly-frowning', 'face-slightly-smiling']) assert.equal((await fetch(base + '/img/icons/' + icon + '.svg')).status, 200);
 const page = (await (await fetch('http://localhost:9223/json')).json()).find(p => p.type === 'page');
 const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise(resolve => ws.onopen = resolve);
@@ -55,7 +55,7 @@ try {
       const empty=await run('(()=>{const p=document.querySelector("aside[class*=cartPanel]"),h=p.querySelector("[class*=cartHeader]").getBoundingClientRect(),e=p.querySelector("[class*=cartEmpty]").getBoundingClientRect(),s=p.getBoundingClientRect();return {center:Math.abs((e.top+e.bottom)/2-(h.bottom+s.bottom)/2),overflow:p.scrollHeight>p.clientHeight,icon:p.querySelector("[class*=cartEmpty] [class*=menuIcon]").getBoundingClientRect().width}})()');assert.ok(empty.center<2);assert.equal(empty.overflow,false);assert.equal(empty.icon,72);await screenshot(width+'-empty-short');
       await call('Emulation.setDeviceMetricsOverride',{width,height:915,deviceScaleFactor:1,mobile});
     }
-    await click('[data-cart-close]');assert.equal(await run('document.activeElement.className.includes("cartButton")'),mobile);
+    await click('[data-cart-close]');assert.equal(await run('document.activeElement.className.includes("cartButton")'),true);
     if(mobile) {
       // Native modal background interception: place a test target directly under an outside tap.
       await run('(()=>{const b=document.createElement("button");b.id="qa-underlay";b.style="position:fixed;left:12px;bottom:12px;width:80px;height:44px;z-index:99";b.textContent="Underlay";window.qaClicks=0;b.onclick=()=>window.qaClicks++;document.body.append(b)})()');
@@ -75,12 +75,11 @@ try {
       if(mobile){await run('document.querySelector("[data-cart-close]").click()');await pause(50);assert.equal(await run('document.querySelector("dialog[aria-label=Cart]").open'),true);assert.equal(await run('document.body.style.position'),'fixed');await pause(300);assert.equal(await run('document.querySelectorAll("dialog[open]").length'),0);}else await click('[data-cart-close]');
       await run('(()=>{const b=[...document.querySelectorAll("[class*=itemCard] > button")].find(e=>e.textContent.includes("Carne Asada Fries"));b.click()})()');await wait('Boolean(document.querySelector("dialog[aria-label^=\\"Item details\\"][open]"))');await pause(300);
       const beforeAdd=await run('Number(document.querySelector("button[class*=cartButton]").textContent.match(/[0-9]+/)[0])');
-      await run(`window.qaRandom=Math.random;Math.random=()=>${width===320?.8:.2}`);
       await run('(()=>{const form=document.querySelector("dialog[aria-label^=\\"Item details\\"] form");form.requestSubmit();form.requestSubmit();form.requestSubmit()})()');await pause(100);
       assert.equal(await run('Number(document.querySelector("button[class*=cartButton]").textContent.match(/[0-9]+/)[0])'),beforeAdd+1);
       assert.equal(await run('document.querySelector("dialog[aria-label^=\\"Item details\\"] button[type=submit]").dataset.success'), 'true');assert.equal(await run('document.querySelector("dialog[aria-label^=\\"Item details\\"] button[type=submit]").disabled'),true);
-      assert.ok(await run(`document.querySelector('[class*=detailSuccess] [class*=menuIcon]').style.maskImage.includes('${width===320?'face-slightly-smiling':'sparkles'}')`));
-      await run('Math.random=window.qaRandom');await screenshot(width+'-success');
+      assert.ok(await run(`document.querySelector('[class*=detailSuccess] [class*=menuIcon]').style.maskImage.includes('${'face-slightly-smiling'}')`));
+      await screenshot(width+'-success');
       await wait('!document.querySelector("dialog[aria-label^=\\"Item details\\"][open]")');assert.equal(await run('document.body.style.position'),'');
       await run('(()=>{const b=[...document.querySelectorAll("[class*=itemCard] > button")].find(e=>e.textContent.includes("Carne Asada Fries"));b.click()})()');await pause(300);await run('document.querySelector("[data-detail-close]").click()');await pause(50);assert.equal(await run('document.querySelector("dialog[aria-label^=\\"Item details\\"]").open'),true);await pause(300);assert.equal(await run('document.querySelectorAll("dialog[open]").length'),0);
       await run('(()=>{const b=[...document.querySelectorAll("[class*=itemCard] > button")].find(e=>e.textContent.includes("Carne Asada Fries"));b.click()})()');await pause(300);await run('history.back()');await pause(50);assert.equal(await run('document.querySelector("dialog[aria-label^=\\"Item details\\"]").open'),true);await pause(300);assert.equal(await run('document.querySelectorAll("dialog[open]").length'),0);

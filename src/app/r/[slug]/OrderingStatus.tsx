@@ -110,7 +110,7 @@ export default function OrderingStatus({
       {(hasPickupAction || hasDelivery) ? (
         <div className={styles.actions}>
           {hasPickupAction ? <button className={pickupIntent ? styles.schedulePickup : styles.orderPickup} type="button" aria-haspopup="dialog" onClick={(event) => openPickupChooser(pickupIntent ? changePickupMode : canOrderPickup ? "order" : "schedule", event.currentTarget)}><MenuIcon name={pickupIntent || !canOrderPickup ? "hourglass" : "mapPin"} size={16} />{pickupIntent ? "Change Pickup Time" : canOrderPickup ? "Order Pickup" : "Schedule Pickup"}</button> : null}
-          {hasDelivery ? <RestaurantDeliveryTrigger className={styles.delivery}><MenuIcon name="truck" size={16} />Delivery <span aria-hidden="true">&rarr;</span></RestaurantDeliveryTrigger> : null}
+          {hasDelivery ? <RestaurantDeliveryTrigger className={styles.delivery}><MenuIcon name="truck" size={16} />Order Delivery <span aria-hidden="true">&rarr;</span></RestaurantDeliveryTrigger> : null}
         </div>
       ) : null}
       {chooser && <RestaurantPickupTimeChooser

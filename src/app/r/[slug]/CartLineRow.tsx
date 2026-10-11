@@ -20,7 +20,7 @@ type Props = {
 export default function CartLineRow({ line, currency, imageUrl, mobile, onEdit, onRemove, onQuantityChange }: Props) {
   return <article className={styles.cartLine}>
     <div className={styles.cartRowSurface}>
-      {mobile && <div className={styles.cartThumbnail}><MenuCardImage name={line.itemName} url={imageUrl} priority={false} /></div>}
+      <div className={styles.cartThumbnail}><MenuCardImage name={line.itemName} url={imageUrl} priority={false} /></div>
       <div className={styles.cartRowContent}>
         <div className={styles.cartLineHeading}>
           <div className={styles.cartLineIdentity}><h3>{line.itemName}</h3></div>

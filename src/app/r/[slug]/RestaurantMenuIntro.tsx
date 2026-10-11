@@ -6,6 +6,7 @@ export type RestaurantMenuQuicklink = {
 };
 
 type RestaurantMenuIntroProps = {
+  compact?: boolean;
   eyebrow?: string;
   title: string;
   description?: string;
@@ -14,6 +15,7 @@ type RestaurantMenuIntroProps = {
 };
 
 export default function RestaurantMenuIntro({
+  compact = false,
   eyebrow,
   title,
   description,
@@ -23,20 +25,20 @@ export default function RestaurantMenuIntro({
   return (
     <section
       id="restaurant-menu"
-      className={styles.section}
+      className={`${styles.section} ${compact ? styles.compact : ""}`}
       aria-labelledby="restaurant-menu-intro-title"
     >
       <div className={styles.inner}>
         <div className={styles.copy}>
-          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
+          {!compact && eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
           <h2 id="restaurant-menu-intro-title">{title}</h2>
-          {description ? <p className={styles.description}>{description}</p> : null}
-          {primaryAction ? <a className={styles.primaryAction} href={primaryAction.href}>{primaryAction.label} <span aria-hidden="true">&rarr;</span></a> : null}
+          {!compact && description ? <p className={styles.description}>{description}</p> : null}
+          {!compact && primaryAction ? <a className={styles.primaryAction} href={primaryAction.href}>{primaryAction.label} <span aria-hidden="true">&rarr;</span></a> : null}
         </div>
 
         {quicklinks.length > 0 ? (
           <nav className={styles.quicklinks} aria-label="Popular menu categories">
-            <p>Jump to a favorite</p>
+            {!compact && <p>Jump to a favorite</p>}
             <div className={styles.quicklinkScroller}>
               {quicklinks.map((quicklink) => (
                 <a href={quicklink.href} key={quicklink.href}>

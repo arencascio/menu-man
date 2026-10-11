@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import styles from "./restaurant-footer.module.css";
 import { subscribeRestaurantScroll } from "./restaurant-scroll-observer";
 
-export default function RestaurantFooterArtwork({ src }: { src: string }) {
-  const artworkRef = useRef<HTMLImageElement>(null);
+export function RestaurantFooterReveal({ children, variant = "brand" }: { children: ReactNode; variant?: "brand" | "artwork" }) {
+  const artworkRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -58,6 +58,12 @@ export default function RestaurantFooterArtwork({ src }: { src: string }) {
     };
   }, []);
 
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img ref={artworkRef} className={`${styles.artwork} ${visible ? styles.artworkVisible : ""}`} src={src} alt="" />;
+  return <span ref={artworkRef} className={variant === "artwork" ? `${styles.artwork} ${visible ? styles.artworkVisible : ""}` : `${styles.brandReveal} ${visible ? styles.brandRevealVisible : ""}`}>{children}</span>;
+}
+
+export default function RestaurantFooterArtwork({ src }: { src: string }) {
+  return <RestaurantFooterReveal variant="artwork">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img className={styles.artworkImage} src={src} alt="" />
+  </RestaurantFooterReveal>;
 }

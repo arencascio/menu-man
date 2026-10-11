@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import RestaurantJsonLd from "@/lib/seo/RestaurantJsonLd";
 import { createRestaurantMetadata } from "@/lib/seo/restaurant-metadata";
 import { getMenuSectionAnchorId } from "./menu-section-anchor";
+import { getGalleryPickupHref } from "./restaurant-menu-links";
 import PageViewTracker from "./PageViewTracker";
 import { getRestaurantDeliveryOptions } from "./restaurant-delivery-options";
 import { restaurantIdentities } from "./restaurant-identity";
@@ -159,7 +160,7 @@ type RestaurantMenuIntroConfig = {
 
 const restaurantMenuIntros: Readonly<Partial<Record<string, RestaurantMenuIntroConfig>>> = {
   armandos: {
-    title: "Find your next favorite.",
+    title: "Find your next favorite",
     description: "From breakfast served all day to street tacos, burritos, loaded fries, and combination plates—start with a favorite or explore everything.",
     quicklinks: [
       { label: "Breakfast", sectionName: "Breakfast Plates" },
@@ -176,7 +177,7 @@ const restaurantHomepageSections: Readonly<Partial<Record<string, {
   hoursLocation: boolean;
   menuIntro: boolean;
 }>>> = {
-  armandos: { orderingActions: false, hoursLocation: false, menuIntro: false },
+  armandos: { orderingActions: false, hoursLocation: false, menuIntro: true },
 };
 
 export async function generateMetadata({ params }: RestaurantPageProps): Promise<Metadata> {
@@ -382,7 +383,7 @@ if (restaurantError || !restaurant) {
       href: menuHref,
     },
     secondaryAction: deliveryOptions.length > 0
-      ? { kind: "delivery", label: "Get delivery" }
+      ? { kind: "delivery", label: "Order Delivery" }
       : restaurant.pickup_url
         ? {
             label: "Order pickup",
@@ -408,7 +409,7 @@ if (restaurantError || !restaurant) {
         ...(deliveryOptions.length > 0
           ? [{
               kind: "delivery" as const,
-              label: "Order delivery",
+              label: "Order Delivery",
               description: "Choose a delivery provider and continue to place your order.",
             }]
           : []),
@@ -428,7 +429,7 @@ if (restaurantError || !restaurant) {
           title: menuItem.name,
           description: menuItem.description ?? undefined,
           primaryAction: configuredSlide.primaryAction
-            ? { ...configuredSlide.primaryAction, href: menuHref }
+            ? { ...configuredSlide.primaryAction, href: getGalleryPickupHref(menuHref, menuItem.id), external: false, trackingEvent: "pickup_clicked" }
             : undefined,
           secondaryAction: configuredSlide.secondaryAction,
         }];
@@ -505,7 +506,7 @@ if (restaurantError || !restaurant) {
               description={menuIntroConfig.description}
               eyebrow={menuIntroConfig.eyebrow}
               quicklinks={menuQuicklinks}
-              primaryAction={{ label: "View the full menu", href: menuHref }}
+              compact
               title={menuIntroConfig.title}
             />
           ) : null}

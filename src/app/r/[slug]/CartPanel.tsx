@@ -54,7 +54,7 @@ export default function CartPanel({
   const confirmationId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { closing, requestClose } = useExitAnimation(dialogRef, onClose);
-  const closeCart = mobile ? requestClose : onClose;
+  const closeCart = requestClose;
 
   useLayoutEffect(() => () => confirmationLockRef.current?.(), []);
 
@@ -67,7 +67,7 @@ export default function CartPanel({
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
-    if (!mobile || !dialog) return;
+    if (!dialog) return;
     const opener = triggerRef.current;
     const unlock = lockMenuPageScroll();
     dialog.showModal();
@@ -77,7 +77,7 @@ export default function CartPanel({
       unlock();
       if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
-  }, [mobile, triggerRef]);
+  }, [triggerRef]);
 
   const panel = (
     <aside className={styles.cartPanel} aria-label="Your cart">
@@ -87,7 +87,7 @@ export default function CartPanel({
       </div>
 
       {lines.length === 0 ? (
-        <div className={styles.cartEmpty}><MenuIcon name="heartCrack" size={72} /><p>Your cart is empty</p></div>
+        <div className={styles.cartEmpty}><MenuIcon name="sad" size={72} /><p>Your cart is empty</p></div>
       ) : (
         <>
           <div className={styles.cartLines}>
@@ -99,7 +99,7 @@ export default function CartPanel({
               mobile={mobile}
               onEdit={() => onEdit(line)}
               onRemove={() => {
-                if (mobile) dialogRef.current?.querySelector<HTMLButtonElement>("[data-cart-close]")?.focus({ preventScroll: true });
+                dialogRef.current?.querySelector<HTMLButtonElement>("[data-cart-close]")?.focus({ preventScroll: true });
                 onRemove(line.lineId);
               }}
               onQuantityChange={(quantity) => onQuantityChange(line.lineId, quantity)}
@@ -129,7 +129,6 @@ export default function CartPanel({
     </aside>
   );
 
-  if (!mobile) return panel;
   return <dialog ref={dialogRef} className={styles.cartSheet} data-closing={closing} aria-label="Cart" onCancel={(event) => {
     event.preventDefault();
     requestClose();
