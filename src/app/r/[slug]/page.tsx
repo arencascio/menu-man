@@ -165,9 +165,13 @@ const restaurantMenuIntros: Readonly<Partial<Record<string, RestaurantMenuIntroC
     quicklinks: [
       { label: "Breakfast", sectionName: "Breakfast Plates" },
       { label: "Burritos", sectionName: "Burritos" },
-      { label: "Street tacos", sectionName: "Street Tacos" },
-      { label: "Loaded favorites", sectionName: "Carne Asada Fries, Nachos, Quesadillas & Sides" },
-      { label: "Combination plates", sectionName: "Combination Plates" },
+      { label: "Tacos", sectionName: "Street Tacos" },
+      { label: "Tortas", sectionName: "Tortas" },
+      { label: "Loaded Favorites", sectionName: "Carne Asada Fries, Nachos, Quesadillas & Sides" },
+      { label: "Combo Plates", sectionName: "Combination Plates" },
+      { label: "Fajitas", sectionName: "Fajitas" },
+      { label: "Kids Meals", sectionName: "Kids' Meals" },
+      { label: "Drinks", sectionName: "Bottled Drinks & Sodas" },
     ],
   },
 };
@@ -507,6 +511,7 @@ if (restaurantError || !restaurant) {
               eyebrow={menuIntroConfig.eyebrow}
               quicklinks={menuQuicklinks}
               compact
+              transitionPattern="brick-wall"
               title={menuIntroConfig.title}
             />
           ) : null}

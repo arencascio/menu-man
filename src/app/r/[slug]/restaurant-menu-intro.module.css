@@ -174,3 +174,16 @@
 .compact .quicklinks { width: 100%; }
 .compact .quicklinkScroller { flex-wrap: wrap; width: 100%; padding: 0; overflow: visible; }
 .compact .quicklinkScroller a { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+
+/* Reveal the registered surface itself, including its brickwork, beneath the red. */
+.withPatternTransition { isolation: isolate; background: var(--theme-primary); }
+.withPatternTransition::before { content: none; }
+.patternTransition {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, transparent 35%, rgb(0 0 0 / .12) 55%, black 100%);
+}
+.withPatternTransition .inner { position: relative; padding-bottom: 32px; }
+.withPatternTransition .quicklinkScroller a { background: var(--theme-primary); }
+.withPatternTransition .quicklinkScroller a:hover { background: var(--theme-surface); }

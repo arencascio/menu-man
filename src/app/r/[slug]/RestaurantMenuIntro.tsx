@@ -1,3 +1,5 @@
+import { getRestaurantPatternStyle, type RestaurantPatternName } from "@/lib/restaurant-presentation/patterns";
+import patternStyles from "@/lib/restaurant-presentation/patterns.module.css";
 import styles from "./restaurant-menu-intro.module.css";
 
 export type RestaurantMenuQuicklink = {
@@ -7,6 +9,7 @@ export type RestaurantMenuQuicklink = {
 
 type RestaurantMenuIntroProps = {
   compact?: boolean;
+  transitionPattern?: RestaurantPatternName;
   eyebrow?: string;
   title: string;
   description?: string;
@@ -16,6 +19,7 @@ type RestaurantMenuIntroProps = {
 
 export default function RestaurantMenuIntro({
   compact = false,
+  transitionPattern,
   eyebrow,
   title,
   description,
@@ -25,9 +29,17 @@ export default function RestaurantMenuIntro({
   return (
     <section
       id="restaurant-menu"
-      className={`${styles.section} ${compact ? styles.compact : ""}`}
+      className={`${styles.section} ${compact ? styles.compact : ""} ${transitionPattern ? styles.withPatternTransition : ""}`}
       aria-labelledby="restaurant-menu-intro-title"
     >
+      {transitionPattern ? (
+        <div
+          className={`${patternStyles.pattern} ${styles.patternTransition}`}
+          style={getRestaurantPatternStyle(transitionPattern)}
+          data-restaurant-pattern={transitionPattern}
+          aria-hidden="true"
+        />
+      ) : null}
       <div className={styles.inner}>
         <div className={styles.copy}>
           {!compact && eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}

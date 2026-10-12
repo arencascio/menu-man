@@ -185,6 +185,6 @@
 }
 
 .artworkImage { display: block; width: 100%; height: 100%; object-fit: contain; }
-.brandReveal { display: block; max-width: 100%; opacity: 0; transform: translateY(-12px) rotate(-1deg); }
-.brandRevealVisible { opacity: 1; transform: none; transition: opacity 450ms ease-out, transform 450ms ease-out; }
+.brandReveal { display: block; max-width: 100%; opacity: 0; transform: translateY(-40px) rotate(-1deg); }
+.brandRevealVisible { opacity: 1; transform: none; transition: opacity 700ms ease-out, transform 700ms cubic-bezier(.22, .61, .36, 1); }
 @media (prefers-reduced-motion: reduce) { .brandReveal { opacity: 1; transform: none; transition: none; } }
