@@ -213,8 +213,7 @@
 }
 
 .heroVisual,
-.workHeroVisual,
-.homeWorkVisual { position: relative; min-width: 0; }
+.workHeroVisual { position: relative; min-width: 0; }
 
 .productCallout {
   position: absolute;
@@ -432,10 +431,10 @@
   padding: 90px clamp(22px, 7vw, 120px);
 }
 .subpageHero > div:first-child { max-width: 900px; }
-.subpageHero > div:first-child > p:last-child { max-width: 690px; margin-top: 24px; color: var(--charcoal); font-size: 1.12rem; line-height: 1.65; }
-.priceCard { display: grid; padding: 28px; border: 1px solid var(--warm-gray); background: var(--white); }
+.subpageHero > div:first-child > p { max-width: 690px; margin-top: 24px; color: var(--charcoal); font-size: 1.12rem; line-height: 1.65; }
+.priceCard { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; padding: 28px; border: 1px solid var(--warm-gray); background: var(--white); }
 .priceCard > h2 { color: var(--ink); font-size: 1.35rem; line-height: 1.15; }
-.priceCard > strong { margin-top: 30px; font-family: var(--font-menu-man-display); font-size: clamp(3rem, 5vw, 5rem); line-height: .9; letter-spacing: -.05em; }
+.priceCard > strong { margin-top: 30px; font-family: var(--font-menu-man-display); font-size: clamp(2.3rem, 3.3vw, 3.35rem); line-height: .9; letter-spacing: -.05em; }
 .priceCard > p { margin: 9px 0 30px; color: var(--charcoal); }
 .priceCard .primaryButton { width: 100%; margin-top: 30px; }
 
@@ -472,6 +471,7 @@
 .quotedSection li::before { margin-right: 10px; color: var(--paprika); content: "+"; font-weight: 900; }
 
 .workHero { grid-template-columns: .8fr 1.2fr; }
+.workHero .actionRow { margin-top: 24px; }
 .caseIntro { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: end; padding: 90px clamp(22px, 7vw, 120px); background: var(--white); }
 .caseIntro > p { max-width: 600px; color: var(--charcoal); line-height: 1.7; }
 .gallerySection { background: var(--pale-paprika); }

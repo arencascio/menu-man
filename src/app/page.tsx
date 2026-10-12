@@ -97,7 +97,7 @@ export default function Home() {
           <p className={styles.eyebrow}>Working product</p>
           <h2>A restaurant website built around your customers.</h2>
           <p>A large menu becomes fast to search, easy to browse, and ready for a clear ordering path on any screen.</p>
-          <p>Explore the product capabilities. This is a product overview, not a client portfolio.</p>
+          <p>Explore the capabilities in our product overview.</p>
           <ul>
             <li>Searchable menu</li>
             <li>Mobile-first browsing</li>

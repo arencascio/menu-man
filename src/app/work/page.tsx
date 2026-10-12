@@ -7,7 +7,7 @@ import styles from "../page.module.css";
 
 export const metadata: Metadata = {
   title: "Work",
-  description: "Explore Menu Man's restaurant website capabilities: mobile-friendly menus, existing ordering links, hours, and location details. A product overview, not a client portfolio.",
+  description: "Explore Menu Man's restaurant website capabilities: mobile-friendly menus, existing ordering links, hours, and location details. An illustrated product overview.",
 };
 
 export default function WorkPage() {
@@ -16,7 +16,7 @@ export default function WorkPage() {
       <section className={`${styles.subpageHero} ${styles.workHero}`}>
         <div>
           <h1>A closer look at the product.</h1>
-          <p>Explore the capabilities of a managed restaurant website. This product overview uses Menu Man&apos;s own artwork, not client screenshots or results.</p>
+          <p>Explore the capabilities of a managed restaurant website. This illustrated product overview uses Menu Man&apos;s own artwork.</p>
           <div className={styles.actionRow}>
             <PrimaryLink>↗ {CTA_LABELS.showcase}</PrimaryLink>
           </div>
