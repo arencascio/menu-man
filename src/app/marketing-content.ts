@@ -7,8 +7,11 @@ export const CTA_LABELS = {
 } as const;
 
 export const PUBLIC_PRICING = {
-  monthly: "$149/month",
-  setup: "$149 one-time setup",
+  monthly: "$99/month",
+  deliveryFirstPlatform: "$25/month",
+  deliveryAdditionalPlatform: "+$10/month",
+  pickupPerOrder: "$0.50",
+  pickupMonthlyCap: "$50/month",
 } as const;
 
 export const DINER_RESEARCH = {
@@ -42,28 +45,24 @@ export const processSteps = [
   },
 ] as const;
 
-export const armandoFeatures = [
+export const productFeatures = [
   {
     id: "mobile",
-    kicker: "Mobile first",
     title: "Built for the phone in your customer's hand.",
     copy: "The menu, hours, location, and ordering path stay easy to reach on a small screen.",
   },
   {
     id: "search",
-    kicker: "Menu search",
     title: "Search a huge menu in seconds.",
     copy: "Guests can search dishes and move between categories without wrestling with a PDF.",
   },
   {
     id: "order",
-    kicker: "Clear next step",
     title: "Make ordering obvious.",
     copy: "A prominent ordering path connects the website to the restaurant's current workflow.",
   },
   {
     id: "details",
-    kicker: "Practical details",
     title: "Put the important details where customers expect them.",
     copy: "Hours, phone, location, and directions stay close to the decision.",
   },
@@ -82,16 +81,16 @@ export const includedServices = [
   "Ongoing human support",
 ] as const;
 
-export const laterServices = [
+export const optionalServices = [
   {
-    title: "Deeper reporting",
-    copy: "Recurring interpretation and recommendations can be added when the deliverable fits your restaurant.",
-    label: "Working add-on",
+    title: "Delivery app updates",
+    price: `${PUBLIC_PRICING.deliveryFirstPlatform} for the first supported platform. ${PUBLIC_PRICING.deliveryAdditionalPlatform} for each additional supported platform.`,
+    copy: "We handle routine menu, price, photo, hours, and business-profile updates you request. Daily order management and customer support are not included.",
   },
   {
-    title: "Delivery app management",
-    copy: "Routine menu, price, availability, and hours help across third-party platforms can be scoped separately.",
-    label: "Variable service",
+    title: "Menu Man pickup ordering",
+    price: `${PUBLIC_PRICING.pickupPerOrder} per completed pickup order, capped at ${PUBLIC_PRICING.pickupMonthlyCap}.`,
+    copy: "Optional, only where supported and launch-ready. Payment processing fees are separate. Keep your existing ordering provider with no Menu Man per-order fee.",
   },
 ] as const;
 
@@ -124,14 +123,14 @@ export const faqs: readonly Faq[] = [
     answer: "Yes. Your restaurant should own its domain. We can help connect and manage it.",
   },
   {
-    question: "What does $149/month include?",
+    question: `What does ${PUBLIC_PRICING.monthly} include?`,
     answer:
       "The managed website, hosting, searchable menu, routine updates, ordering connections, basic SEO and analytics, and ongoing support. It is more than hosting.",
   },
   {
-    question: "What does setup cost?",
+    question: "Do I pay a fee to keep my current ordering provider?",
     answer:
-      "Setup is $149 one time for the initial site configuration, menu setup, brand styling, domain connection, and launch.",
+      "No. Links to your existing ordering provider are included in the managed website, with no Menu Man per-order fee. Optional Menu Man pickup ordering is available only where supported and launch-ready; payment processing fees are separate.",
   },
   {
     question: "Can you redesign my current site?",

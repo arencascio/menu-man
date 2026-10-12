@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
-  ArmandoDevice,
   FinalCta,
   MarketingPage,
   PrimaryLink,
@@ -14,6 +14,7 @@ import {
   faqs,
   guestQuestions,
   processSteps,
+  productFeatures,
 } from "./marketing-content";
 import styles from "./page.module.css";
 
@@ -28,7 +29,6 @@ export default function Home() {
     <MarketingPage>
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Managed websites for restaurants</p>
           <h1>Get more customers with a better restaurant website.</h1>
           <p className={styles.heroLead}>
             Menu Man builds and manages your restaurant website so hungry customers can find what they need and choose you.
@@ -40,7 +40,7 @@ export default function Home() {
           <p className={styles.heroNote}>No website dashboard to learn. No new system for your staff to run.</p>
         </div>
         <div className={styles.heroVisual}>
-          <ArmandoDevice />
+          <Image className={styles.brandArtwork} src="/brand/menu-man-phone.png" alt="Menu Man's phone and chef-hat illustration" width={800} height={800} priority />
           <span className={`${styles.productCallout} ${styles.calloutMenu}`}>Searchable menu</span>
           <span className={`${styles.productCallout} ${styles.calloutOrder}`}>Clear ordering path</span>
           <span className={`${styles.productCallout} ${styles.calloutDetails}`}>Hours &amp; location</span>
@@ -49,7 +49,6 @@ export default function Home() {
 
       <section className={styles.evidenceSection}>
         <div className={styles.evidenceCopy}>
-          <p className={styles.eyebrow}>Before they choose</p>
           <h2>Your next customer is looking you up.</h2>
           <p>A strong restaurant can still lose the decision when its menu, hours, or website is hard to use.</p>
         </div>
@@ -64,7 +63,6 @@ export default function Home() {
 
       <section className={styles.questionsSection}>
         <SectionHeading
-          eyebrow="The five-second check"
           title="Hungry customers are looking for a few simple answers."
           copy="Your website should answer them before someone taps back to search."
         />
@@ -74,18 +72,14 @@ export default function Home() {
               <li key={question}><span>{String(index + 1).padStart(2, "0")}</span><strong>{question}</strong></li>
             ))}
           </ol>
-          <div className={styles.questionVisual} aria-label="Replaceable restaurant photography slot">
-            <div className={styles.photoPlaceholder}>
-              <span>Restaurant photography</span>
-              <small>Replace with final client image</small>
-            </div>
+          <div className={styles.questionVisual}>
             <p>If those answers are hard to find, the next restaurant is one tap away.</p>
           </div>
         </div>
       </section>
 
       <section className={styles.processSection} id="how-it-works">
-        <SectionHeading eyebrow="How it works" title="You run the restaurant. We'll handle the website." />
+        <SectionHeading title="You run the restaurant. We'll handle the website." />
         <ol className={styles.processGrid}>
           {processSteps.map((step, index) => (
             <li key={step.title}>
@@ -101,8 +95,9 @@ export default function Home() {
       <section className={styles.homeWorkSection}>
         <div className={styles.homeWorkCopy}>
           <p className={styles.eyebrow}>Working product</p>
-          <h2>Armando&apos;s shows what the website can do.</h2>
+          <h2>A restaurant website built around your customers.</h2>
           <p>A large menu becomes fast to search, easy to browse, and ready for a clear ordering path on any screen.</p>
+          <p>Explore the product capabilities. This is a product overview, not a client portfolio.</p>
           <ul>
             <li>Searchable menu</li>
             <li>Mobile-first browsing</li>
@@ -110,16 +105,19 @@ export default function Home() {
             <li>Hours and location close at hand</li>
           </ul>
           <div className={styles.actionRow}>
-            <PrimaryLink href="/build-my-website?inspiredBy=armandos">↗ {CTA_LABELS.showcase}</PrimaryLink>
-            <Link className={styles.secondaryLink} href="/work">Explore the work</Link>
+            <PrimaryLink>↗ {CTA_LABELS.showcase}</PrimaryLink>
+            <Link className={styles.secondaryLink} href="/work">Explore the product</Link>
           </div>
         </div>
-        <div className={styles.homeWorkVisual}><ArmandoDevice mode="menu" /></div>
+        <div className={styles.productHighlights}>
+          {productFeatures.slice(0, 3).map((feature) => (
+            <article key={feature.id}><h3>{feature.title}</h3><p>{feature.copy}</p></article>
+          ))}
+        </div>
       </section>
 
       <section className={styles.reviewSection}>
         <div>
-          <p className={styles.eyebrow}>A useful first step</p>
           <h2>See how your restaurant looks online.</h2>
           <p>We will look at the menu, mobile experience, hours, location, and ordering path, then point out what matters most.</p>
         </div>

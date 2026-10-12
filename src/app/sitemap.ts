@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/seo/restaurant-metadata";
+import { isRestaurantPublicationRestricted } from "@/lib/public-restaurant-access";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const marketingRoutes: MetadataRoute.Sitemap = [
@@ -32,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return marketingRoutes;
   }
 
-  return marketingRoutes.concat((restaurants || []).map((restaurant) => ({
+  return marketingRoutes.concat((restaurants || []).filter((restaurant) => !isRestaurantPublicationRestricted(restaurant.slug)).map((restaurant) => ({
     url: `${siteUrl.replace(/\/$/, "")}/r/${restaurant.slug}`,
   })));
 }

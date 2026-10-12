@@ -4,8 +4,6 @@ import { CTA_LABELS } from "./marketing-content";
 import { MarketingHeader, ReviewButton, ReviewModal } from "./MarketingInteractions";
 import styles from "./page.module.css";
 
-export { default as ArmandoDevice } from "./ArmandoDevice";
-
 export function BrandLockup({ compact = false }: { compact?: boolean }) {
   return (
     <Link className={styles.brand} href="/" aria-label="Menu Man home">
@@ -37,14 +35,14 @@ export function SectionHeading({
   copy,
   align = "left",
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   copy?: string;
   align?: "left" | "center";
 }) {
   return (
     <div className={`${styles.sectionHeading} ${align === "center" ? styles.sectionHeadingCenter : ""}`}>
-      <p className={styles.eyebrow}>{eyebrow}</p>
+      {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
       <h2>{title}</h2>
       {copy ? <p className={styles.sectionLead}>{copy}</p> : null}
     </div>
@@ -72,7 +70,6 @@ export function FinalCta() {
   return (
     <section className={styles.finalCta}>
       <div>
-        <p className={styles.eyebrow}>Ready when you are</p>
         <h2>Let&apos;s make your website feel as welcoming as your front door.</h2>
       </div>
       <div className={styles.finalCtaActions}>

@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
-import ArmandoDevice from "./ArmandoDevice";
-import { armandoFeatures, CTA_LABELS } from "./marketing-content";
+import smartphoneIcon from "../../img/icons/smartphone.svg";
+import searchIcon from "../../img/icons/search.svg";
+import linkIcon from "../../img/icons/link-2.svg";
+import locationIcon from "../../img/icons/map-pinned.svg";
+import { productFeatures, CTA_LABELS } from "./marketing-content";
 import styles from "./page.module.css";
 
 const REVIEW_EVENT = "menu-man:open-review";
@@ -161,7 +165,6 @@ export function ReviewModal() {
         {submitted ? (
           <div className={styles.formSuccess} role="status">
             <span aria-hidden="true">✓</span>
-            <p className={styles.eyebrow}>Form preview</p>
             <h2 id={titleId}>Your details are ready.</h2>
             <p>This website does not send submissions yet. Email us and we will take it from here.</p>
             <a href="mailto:hello@getmenuman.com?subject=Free%20restaurant%20website%20review">Email hello@getmenuman.com</a>
@@ -206,31 +209,33 @@ export function ReviewModal() {
   );
 }
 
-export function ArmandoGallery() {
-  const [active, setActive] = useState<(typeof armandoFeatures)[number]["id"]>("mobile");
-  const activeFeature = armandoFeatures.find((feature) => feature.id === active) ?? armandoFeatures[0];
-  const mode = active === "mobile" ? "home" : active === "search" ? "menu" : active;
+const productIcons = { mobile: smartphoneIcon, search: searchIcon, order: linkIcon, details: locationIcon };
+
+export function ProductGallery() {
+  const [active, setActive] = useState<(typeof productFeatures)[number]["id"]>("mobile");
+  const activeFeature = productFeatures.find((feature) => feature.id === active) ?? productFeatures[0];
+  const galleryId = useId();
 
   return (
     <div className={styles.gallery}>
-      <div className={styles.galleryTabs} role="tablist" aria-label="Armando's website features">
-        {armandoFeatures.map((feature) => (
+      <div className={styles.galleryTabs} role="tablist" aria-label="Restaurant website features">
+        {productFeatures.map((feature) => (
           <button
             key={feature.id}
             type="button"
             role="tab"
+            id={`${galleryId}-${feature.id}`}
+            aria-controls={`${galleryId}-panel`}
             aria-selected={active === feature.id}
             onClick={() => setActive(feature.id)}
           >
-            <span>{feature.kicker}</span>
             <strong>{feature.title}</strong>
           </button>
         ))}
       </div>
-      <div className={styles.galleryDisplay} role="tabpanel">
-        <div className={styles.galleryVisual}><ArmandoDevice mode={mode} /></div>
+      <div className={styles.galleryDisplay} role="tabpanel" id={`${galleryId}-panel`} aria-labelledby={`${galleryId}-${active}`}>
+        <Image className={styles.productIcon} src={productIcons[active]} alt="" width={128} height={128} />
         <div className={styles.galleryCaption}>
-          <p className={styles.eyebrow}>{activeFeature.kicker}</p>
           <h3>{activeFeature.title}</h3>
           <p>{activeFeature.copy}</p>
         </div>
@@ -239,9 +244,8 @@ export function ArmandoGallery() {
   );
 }
 
-export function BuildWebsiteForm({ inspiredBy }: { inspiredBy?: string }) {
+export function BuildWebsiteForm() {
   const [submitted, setSubmitted] = useState(false);
-  const inspiredByArmando = inspiredBy?.toLowerCase() === "armandos";
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -262,13 +266,6 @@ export function BuildWebsiteForm({ inspiredBy }: { inspiredBy?: string }) {
 
   return (
     <form className={`${styles.form} ${styles.leadForm}`} onSubmit={submit}>
-      {inspiredByArmando ? (
-        <div className={styles.referralContext}>
-          <span aria-hidden="true">↗</span>
-          <div><strong>Inspired by Armando&apos;s</strong><small>We will use that example as a starting point for the conversation.</small></div>
-        </div>
-      ) : null}
-      <input type="hidden" name="inspiredBy" value={inspiredBy ?? ""} />
       <div className={styles.fieldGrid}>
         <label>Restaurant name<input name="restaurantName" required autoComplete="organization" /></label>
         <label>Your name<input name="name" required autoComplete="name" /></label>

@@ -1,7 +1,22 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isRestaurantPublicationRestricted } from "./lib/public-restaurant-access";
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const restaurantPath = pathname.match(/^\/(?:r|api\/restaurants)\/([^/]+)(?:\/|$)/);
+  if (restaurantPath) {
+    let slug = restaurantPath[1];
+    try { slug = decodeURIComponent(slug); } catch { /* Invalid slugs reveal no restaurant. */ }
+    if (isRestaurantPublicationRestricted(slug)) {
+      return new NextResponse("Not found", {
+        status: 404,
+        headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" },
+      });
+    }
+    return NextResponse.next({ request });
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !publishableKey) return NextResponse.next({ request });
@@ -22,5 +37,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/manage/:path*", "/auth/:path*", "/api/manage/:path*"],
+  matcher: ["/manage/:path*", "/auth/:path*", "/api/manage/:path*", "/r/:path*", "/api/restaurants/:path*"],
 };
