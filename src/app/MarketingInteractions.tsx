@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FormEvent, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import smartphoneIcon from "../../img/icons/smartphone.svg";
 import searchIcon from "../../img/icons/search.svg";
 import linkIcon from "../../img/icons/link-2.svg";
 import locationIcon from "../../img/icons/map-pinned.svg";
 import { productFeatures, CTA_LABELS } from "./marketing-content";
 import styles from "./page.module.css";
+import { LeadFormFeedback, useMarketingLead } from "./MarketingLeadForm";
 
 const REVIEW_EVENT = "menu-man:open-review";
 
@@ -87,7 +88,8 @@ export function ReviewButton({
 
 export function ReviewModal() {
   const [open, setOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const lead = useMarketingLead("review");
+  const { resetSuccess } = lead;
   const [noWebsite, setNoWebsite] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -96,22 +98,22 @@ export function ReviewModal() {
   useEffect(() => {
     function show() {
       openerRef.current = document.activeElement as HTMLElement | null;
-      setSubmitted(false);
+      resetSuccess();
       setOpen(true);
     }
     window.addEventListener(REVIEW_EVENT, show);
     return () => window.removeEventListener(REVIEW_EVENT, show);
-  }, []);
+  }, [resetSuccess]);
 
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const dialog = dialogRef.current;
-    const focusable = dialog?.querySelectorAll<HTMLElement>(
-      'button, input, a[href], textarea, select, [tabindex]:not([tabindex="-1"])',
+    const getFocusable = () => dialog?.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled):not([tabindex="-1"]), a[href], textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])',
     );
-    focusable?.[0]?.focus();
+    getFocusable()?.[0]?.focus();
 
     function handleKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -119,6 +121,7 @@ export function ReviewModal() {
         close();
         return;
       }
+      const focusable = getFocusable();
       if (event.key !== "Tab" || !focusable?.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -143,11 +146,6 @@ export function ReviewModal() {
     window.setTimeout(() => openerRef.current?.focus(), 0);
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitted(true);
-  }
-
   if (!open) return null;
 
   return (
@@ -162,27 +160,28 @@ export function ReviewModal() {
         <button className={styles.modalClose} type="button" aria-label="Close website review form" onClick={close}>
           &times;
         </button>
-        {submitted ? (
+        {lead.state.accepted ? (
           <div className={styles.formSuccess} role="status">
             <span aria-hidden="true">✓</span>
-            <h2 id={titleId}>Your details are ready.</h2>
-            <p>This website does not send submissions yet. Email us and we will take it from here.</p>
-            <a href="mailto:hello@getmenuman.com?subject=Free%20restaurant%20website%20review">Email hello@getmenuman.com</a>
-            <button type="button" onClick={() => setSubmitted(false)}>Back to the form</button>
+            <h2 id={titleId}>Your review request has been sent.</h2>
+            <p>Our email provider accepted your request. We will follow up at the email address you provided.</p>
+            <a href={lead.emailHref}>Email hello@getmenuman.com</a>
+            <button type="button" onClick={lead.resetSuccess}>Back to the form</button>
           </div>
         ) : (
           <>
             <p className={styles.eyebrow}>Free restaurant website review</p>
             <h2 id={titleId}>See how your restaurant looks online.</h2>
             <p className={styles.modalLead}>Share the basics. We will look for the clearest ways to make your restaurant easier to choose.</p>
-            <form className={styles.form} onSubmit={submit}>
+            <form className={styles.form} onSubmit={lead.submit} onChange={(event) => lead.capture(event.currentTarget)} aria-busy={lead.state.pending}>
+              <fieldset className={styles.leadFields} disabled={lead.state.pending}>
               <label>
                 Restaurant name
-                <input name="restaurantName" required autoComplete="organization" />
+                <input name="restaurantName" maxLength={160} required autoComplete="organization" />
               </label>
               <label>
                 Website URL
-                <input name="website" type="url" inputMode="url" disabled={noWebsite} required={!noWebsite} placeholder="https://" />
+                <input name="website" maxLength={500} type="url" inputMode="url" disabled={noWebsite} required={!noWebsite} placeholder="https://" />
               </label>
               <label className={styles.checkboxLabel}>
                 <input
@@ -195,12 +194,13 @@ export function ReviewModal() {
               </label>
               <label>
                 Email
-                <input name="email" type="email" required autoComplete="email" />
+                <input name="email" maxLength={254} type="email" required autoComplete="email" />
               </label>
               <button className={styles.formSubmit} type="submit">
-                {CTA_LABELS.review} <span aria-hidden="true">&rarr;</span>
+                {lead.state.pending ? "Sending..." : CTA_LABELS.review} <span aria-hidden="true">&rarr;</span>
               </button>
-              <p className={styles.formNote}>Demo form only. Nothing is sent yet.</p>
+              </fieldset>
+              <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} />
             </form>
           </>
         )}
@@ -245,34 +245,30 @@ export function ProductGallery() {
 }
 
 export function BuildWebsiteForm() {
-  const [submitted, setSubmitted] = useState(false);
+  const lead = useMarketingLead("website");
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitted(true);
-  }
-
-  if (submitted) {
+  if (lead.state.accepted) {
     return (
       <div className={`${styles.formSuccess} ${styles.leadFormSuccess}`} role="status">
         <span aria-hidden="true">✓</span>
-        <h2>Your project details are ready.</h2>
-        <p>This demo does not send submissions yet. Email us to start the conversation.</p>
-        <a href="mailto:hello@getmenuman.com?subject=Build%20my%20restaurant%20website">Email hello@getmenuman.com</a>
-        <button type="button" onClick={() => setSubmitted(false)}>Back to the form</button>
+        <h2>Your inquiry has been sent.</h2>
+        <p>Our email provider accepted your inquiry. We will follow up at the email address you provided.</p>
+        <a href={lead.emailHref}>Email hello@getmenuman.com</a>
+        <button type="button" onClick={lead.resetSuccess}>Back to the form</button>
       </div>
     );
   }
 
   return (
-    <form className={`${styles.form} ${styles.leadForm}`} onSubmit={submit}>
+    <form className={`${styles.form} ${styles.leadForm}`} onSubmit={lead.submit} onChange={(event) => lead.capture(event.currentTarget)} aria-busy={lead.state.pending}>
+      <fieldset className={styles.leadFields} disabled={lead.state.pending}>
       <div className={styles.fieldGrid}>
-        <label>Restaurant name<input name="restaurantName" required autoComplete="organization" /></label>
-        <label>Your name<input name="name" required autoComplete="name" /></label>
-        <label>Email<input name="email" type="email" required autoComplete="email" /></label>
-        <label>Phone<input name="phone" type="tel" required autoComplete="tel" /></label>
-        <label>City<input name="city" required autoComplete="address-level2" /></label>
-        <label>Current website<input name="website" type="url" inputMode="url" placeholder="https:// (optional)" /></label>
+        <label>Restaurant name<input name="restaurantName" maxLength={160} required autoComplete="organization" /></label>
+        <label>Your name<input name="name" maxLength={160} required autoComplete="name" /></label>
+        <label>Email<input name="email" maxLength={254} type="email" required autoComplete="email" /></label>
+        <label>Phone (optional)<input name="phone" maxLength={50} type="tel" autoComplete="tel" /></label>
+        <label>City<input name="city" maxLength={160} required autoComplete="address-level2" /></label>
+        <label>Current website<input name="website" maxLength={500} type="url" inputMode="url" placeholder="https:// (optional)" /></label>
       </div>
       <fieldset>
         <legend>Do you currently offer online ordering?</legend>
@@ -282,7 +278,7 @@ export function BuildWebsiteForm() {
           <label><input type="radio" name="onlineOrdering" value="unsure" /> Not sure</label>
         </div>
       </fieldset>
-      <label>Current ordering provider(s)<input name="orderingProviders" placeholder="Clover, Square, Toast, DoorDash..." /></label>
+      <label>Current ordering provider(s)<input name="orderingProviders" maxLength={300} placeholder="Clover, Square, Toast, DoorDash..." /></label>
       <label>
         What do you need help with?
         <select name="help" required defaultValue="">
@@ -295,32 +291,10 @@ export function BuildWebsiteForm() {
           <option>Not sure yet</option>
         </select>
       </label>
-      <label>Anything else we should know?<textarea name="notes" rows={4} /></label>
-      <button className={styles.formSubmit} type="submit">{CTA_LABELS.primary} <span aria-hidden="true">&rarr;</span></button>
-      <p className={styles.formNote}>Demo form only. Nothing is sent yet.</p>
-    </form>
-  );
-}
-
-export function NominationForm() {
-  const [submitted, setSubmitted] = useState(false);
-
-  if (submitted) {
-    return (
-      <div className={styles.nominationThanks} role="status">
-        <strong>Thanks for the recommendation.</strong>
-        <span>This demo does not send nominations yet.</span>
-        <button type="button" onClick={() => setSubmitted(false)}>Back</button>
-      </div>
-    );
-  }
-
-  return (
-    <form className={styles.nominationForm} onSubmit={(event) => { event.preventDefault(); setSubmitted(true); }}>
-      <label><span className={styles.visuallyHidden}>Restaurant name</span><input required name="restaurant" placeholder="Restaurant name" /></label>
-      <label><span className={styles.visuallyHidden}>City</span><input required name="city" placeholder="City" /></label>
-      <button type="submit">HELP MY LOCAL RESTAURANT <span aria-hidden="true">&rarr;</span></button>
-      <small>Demo only. Nothing is sent yet.</small>
+      <label>Anything else we should know?<textarea name="notes" maxLength={2000} rows={4} /></label>
+      <button className={styles.formSubmit} type="submit">{lead.state.pending ? "Sending..." : CTA_LABELS.primary} <span aria-hidden="true">&rarr;</span></button>
+      </fieldset>
+      <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} />
     </form>
   );
 }

@@ -7,7 +7,7 @@ import {
   PrimaryLink,
   SectionHeading,
 } from "./MarketingComponents";
-import { NominationForm, ReviewButton } from "./MarketingInteractions";
+import { ReviewButton } from "./MarketingInteractions";
 import {
   CTA_LABELS,
   DINER_RESEARCH,
@@ -137,14 +137,6 @@ export default function Home() {
       </section>
 
       <FinalCta />
-
-      <aside className={styles.nominationSection}>
-        <div>
-          <p className={styles.eyebrow}>Community referral</p>
-          <h2>Know a great restaurant that needs a better website?</h2>
-        </div>
-        <NominationForm />
-      </aside>
     </MarketingPage>
   );
 }
