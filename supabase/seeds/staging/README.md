@@ -4,6 +4,12 @@ These files contain staging-only test data. They are intentionally outside
 `supabase/seed.sql`, so normal migration or production deployment commands do
 not apply them automatically.
 
+Super Tacos Step 0A is a separate, **unapplied**, browse-only fixture:
+[`014_super_tacos.sql`](014_super_tacos.sql). Follow
+[`SUPER_TACOS.md`](SUPER_TACOS.md) for its independent target verification,
+guards, and manual application procedure. Do not rerun the Armando's sequence
+below to provision Super Tacos.
+
 Run the sequence only against the separately created staging project:
 
 1. Apply `001_armandos_restaurant.sql`.
