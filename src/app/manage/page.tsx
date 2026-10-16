@@ -15,7 +15,9 @@ export default async function ManagementHomePage() {
     ? `/manage/${membership.restaurantSlug}/orders`
     : membership.capabilities.includes("manage_memberships")
       ? `/manage/${membership.restaurantSlug}/team`
-      : `/manage/${membership.restaurantSlug}/settings`;
+      : membership.capabilities.some((capability) => capability === "manage_restaurant_settings" || capability === "manage_notifications")
+        ? `/manage/${membership.restaurantSlug}/settings`
+        : membership.memberRole === "owner" ? `/manage/${membership.restaurantSlug}/analytics` : `/manage/${membership.restaurantSlug}/settings`;
   if (memberships.length === 1) redirect(membershipPath(memberships[0]));
   if (memberships.length === 0) {
     return <main className={styles.main}><section className={styles.empty}><h1>No restaurant access</h1><p className={styles.muted}>Your sign-in is valid, but it does not have an active restaurant membership. Ask an owner or Menu Man operator for access.</p><form action="/auth/sign-out" method="post"><button className={styles.buttonSecondary} style={{ marginTop: 18 }}>Sign out</button></form></section></main>;

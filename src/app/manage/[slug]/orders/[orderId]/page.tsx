@@ -35,7 +35,7 @@ export default async function ManagedOrderDetailPage({ params }: { params: Promi
     <main className={sharedStyles.main}>
       <OrderDetailAccessGuard slug={slug} orderId={orderId} restaurantId={membership.restaurantId} restaurantName={membership.restaurantName}>
       <div className={styles.page}>
-        <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
+        <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} memberRole={membership.memberRole} />
         <Link className={styles.backLink} href={`/manage/${slug}/orders`}>← Back to orders</Link>
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Order #{order.orderNumber}</h1><p className={styles.pickupHero}>{order.pickup.mode === "asap" ? "ASAP pickup" : "Pickup"} · {dateTime(order.pickup.pickupAt, order.pickup.timezone)}</p></div>

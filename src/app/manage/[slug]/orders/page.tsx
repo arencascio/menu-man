@@ -21,7 +21,7 @@ export default async function ManagedOrdersPage({ params }: { params: Promise<{ 
   return (
     <main className={sharedStyles.main}>
       <div className={styles.page}>
-        <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} />
+        <ManagementNav slug={slug} active="orders" capabilities={membership.capabilities} memberRole={membership.memberRole} />
         <header className={styles.pageHeader}>
           <div><p className={styles.eyebrow}>{membership.restaurantName}</p><h1 className={styles.title}>Orders</h1></div>
           <div className={styles.headerActions}><span className={styles.identity}>{membership.displayName}</span><span className={styles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={styles.secondaryButton}>Sign out</button></form></div>
