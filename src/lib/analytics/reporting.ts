@@ -83,7 +83,7 @@ export function reportingQueries(restaurantId: string, environment: ReportingEnv
     AND timestamp < toDateTime('${timestamp(range.until)}', 'UTC')
     AND NOT startsWith(coalesce(properties.utm_content, ''), 'internal_qa_')`;
   return {
-    daily: `SELECT toString(toDate(timestamp, 'UTC')) AS day,
+    daily: `SELECT formatDateTime(timestamp, '%Y-%m-%d', 'UTC') AS day,
       countIf(event = 'page_view'), countIf(event = 'page_view' AND properties.page_type = 'menu'),
       countIf(event = 'menu_item_expanded'), countIf(event = 'menu_search'),
       countIf(event = 'menu_search' AND properties.zero_results = true),

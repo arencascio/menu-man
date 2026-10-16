@@ -99,6 +99,10 @@ test("both bounded queries enforce tenant/environment/scope/date and QA filters 
     }
   }
   assert.throws(() => reporting.reportingQueries("' OR 1=1", "production", reporting.reportingRange("7", now)!));
+  const dailySql = reporting.reportingQueries(restaurantId, "staging", reporting.reportingRange("7", now)!).daily;
+  // Live HogQL rejects ClickHouse's two-argument toDate overload. Keep UTC explicit.
+  assert.match(dailySql, /formatDateTime\(timestamp, '%Y-%m-%d', 'UTC'\) AS day/);
+  assert.doesNotMatch(dailySql, /toDate\(/);
   assert.match(reporting.reportingQueries(restaurantId, "staging", reporting.reportingRange("7", now)!).items, /GROUP BY item_id ORDER BY openings DESC, item_id LIMIT 10/);
 });
 
