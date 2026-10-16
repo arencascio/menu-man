@@ -17,6 +17,7 @@ import {
   productFeatures,
 } from "./marketing-content";
 import styles from "./page.module.css";
+import { marketingCta } from "@/lib/analytics/marketing";
 
 export const metadata: Metadata = {
   title: "Restaurant Websites That Help You Get Chosen | Menu Man",
@@ -34,8 +35,8 @@ export default function Home() {
             Menu Man builds and manages your restaurant website so hungry customers can find what they need and choose you.
           </p>
           <div className={styles.actionRow}>
-            <PrimaryLink />
-            <ReviewButton className={styles.secondaryButton}>{CTA_LABELS.review}</ReviewButton>
+            <PrimaryLink placement="hero" />
+            <ReviewButton placement="hero" className={styles.secondaryButton}>{CTA_LABELS.review}</ReviewButton>
           </div>
           <p className={styles.heroNote}>No website dashboard to learn. No new system for your staff to run.</p>
         </div>
@@ -89,7 +90,7 @@ export default function Home() {
             </li>
           ))}
         </ol>
-        <Link className={styles.inlineLink} href="/services">See exactly what is included <span aria-hidden="true">&rarr;</span></Link>
+        <Link className={styles.inlineLink} href="/services" {...marketingCta("services_pricing", "section")}>See exactly what is included <span aria-hidden="true">&rarr;</span></Link>
       </section>
 
       <section className={styles.homeWorkSection}>
@@ -105,8 +106,8 @@ export default function Home() {
             <li>Hours and location close at hand</li>
           </ul>
           <div className={styles.actionRow}>
-            <PrimaryLink>↗ {CTA_LABELS.showcase}</PrimaryLink>
-            <Link className={styles.secondaryLink} href="/work">Explore the product</Link>
+            <PrimaryLink ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
+            <Link className={styles.secondaryLink} href="/work" {...marketingCta("explore_product", "section")}>Explore the product</Link>
           </div>
         </div>
         <div className={styles.productHighlights}>

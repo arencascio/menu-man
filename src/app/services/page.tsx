@@ -25,7 +25,7 @@ export default function ServicesPage() {
         <div className={styles.priceCard}>
           <h2>Managed Restaurant Website</h2>
           <strong>{PUBLIC_PRICING.monthly}</strong>
-          <PrimaryLink />
+          <PrimaryLink placement="hero" />
         </div>
       </section>
 

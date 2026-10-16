@@ -3,6 +3,8 @@ import Link from "next/link";
 import { CTA_LABELS } from "./marketing-content";
 import { MarketingHeader, ReviewButton, ReviewModal } from "./MarketingInteractions";
 import styles from "./page.module.css";
+import { marketingCta } from "@/lib/analytics/marketing";
+import type { MarketingCta, MarketingPlacement } from "@/lib/analytics/types";
 
 export function BrandLockup({ compact = false }: { compact?: boolean }) {
   return (
@@ -53,13 +55,17 @@ export function PrimaryLink({
   children = CTA_LABELS.primary,
   href = "/build-my-website",
   light = false,
+  ctaId = "build_website",
+  placement = "section",
 }: {
   children?: React.ReactNode;
   href?: string;
   light?: boolean;
+  ctaId?: MarketingCta;
+  placement?: MarketingPlacement;
 }) {
   return (
-    <Link className={`${styles.primaryButton} ${light ? styles.primaryButtonLight : ""}`} href={href}>
+    <Link className={`${styles.primaryButton} ${light ? styles.primaryButtonLight : ""}`} href={href} {...marketingCta(ctaId, placement)}>
       <span>{children}</span>
       <span aria-hidden="true">&rarr;</span>
     </Link>
@@ -73,8 +79,8 @@ export function FinalCta() {
         <h2>Let&apos;s make your website feel as welcoming as your front door.</h2>
       </div>
       <div className={styles.finalCtaActions}>
-        <PrimaryLink light />
-        <ReviewButton className={styles.reviewButtonDark}>{CTA_LABELS.review}</ReviewButton>
+        <PrimaryLink light placement="final_cta" />
+        <ReviewButton placement="final_cta" className={styles.reviewButtonDark}>{CTA_LABELS.review}</ReviewButton>
       </div>
     </section>
   );
@@ -90,13 +96,13 @@ function MarketingFooter() {
         </div>
         <nav aria-label="Footer navigation">
           <Link href="/#how-it-works">How It Works</Link>
-          <Link href="/services">Services &amp; Pricing</Link>
-          <Link href="/work">Work</Link>
-          <Link href="/build-my-website">Build My Website</Link>
+          <Link href="/services" {...marketingCta("services_pricing", "footer")}>Services &amp; Pricing</Link>
+          <Link href="/work" {...marketingCta("explore_product", "footer")}>Work</Link>
+          <Link href="/build-my-website" {...marketingCta("build_website", "footer")}>Build My Website</Link>
         </nav>
         <div className={styles.footerContact}>
-          <ReviewButton className={styles.footerReview}>Free Website Review</ReviewButton>
-          <a href="mailto:hello@getmenuman.com">hello@getmenuman.com</a>
+          <ReviewButton placement="footer" className={styles.footerReview}>Free Website Review</ReviewButton>
+          <a href="mailto:hello@getmenuman.com" data-marketing-email="general" data-marketing-placement="footer">hello@getmenuman.com</a>
         </div>
       </div>
       <div className={styles.footerBottom}>

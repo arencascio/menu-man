@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
+import { marketingEnvironment, sanitizeMarketingCapture } from "./marketing";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -31,10 +32,20 @@ export function initializePostHog() {
       rageclick: false,
       save_campaign_params: false,
       save_referrer: false,
+      before_send: (event) => event ? sanitizeMarketingCapture(event) : null,
     });
   } catch {
     // Analytics must never prevent the restaurant experience from loading.
   }
+}
+
+export function isMarketingCaptureAllowed() {
+  return posthog.__loaded && !posthog.has_opted_out_capturing();
+}
+
+export function captureMarketingEvent(name: string, properties: Record<string, unknown>) {
+  if (!isMarketingCaptureAllowed()) return;
+  posthog.capture(name, { ...properties, environment: marketingEnvironment(process.env.NEXT_PUBLIC_VERCEL_ENV) });
 }
 
 function getPostHogItem(item: AnalyticsCartItem) {
