@@ -3,11 +3,92 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { createLeadHandler, createLeadLimiter } from "./handler";
 import { createLeadSubmitter, initialLeadState, leadFallback, leadFormReducer } from "./client";
+import { normalizeWebsite } from "./website";
+import { leadSchema } from "./contracts";
 
 const id = "20000000-0000-4000-8000-000000000999";
 const inquiry = { type: "website", submissionId: id, restaurantName: "Tacos <&>", email: "owner@example.com", help: "Build my first website", notes: "<script>sample</script>" };
 const request = (body: unknown = inquiry, headers: Record<string, string> = {}) => new Request("https://getmenuman.com/api/marketing/leads", {
   method: "POST", headers: { origin: "https://getmenuman.com", "Content-Type": "application/json", ...headers }, body: JSON.stringify(body),
+});
+
+const validWebsites = [
+  ["restaurant.com", "https://restaurant.com"],
+  ["www.restaurant.com", "https://www.restaurant.com"],
+  [" menu.restaurant.co.uk/food/tacos?day=Friday#specials ", "https://menu.restaurant.co.uk/food/tacos?day=Friday#specials"],
+  ["tacos.restaurant/menu", "https://tacos.restaurant/menu"],
+  ["café.com/menu", "https://café.com/menu"],
+  ["http://restaurant.com/menu", "http://restaurant.com/menu"],
+  ["https://www.restaurant.com/menu", "https://www.restaurant.com/menu"],
+  ["", ""],
+] as const;
+const invalidWebsites = [
+  "restaurant", "restaurant.c", "restaurant.", ".com", "restaurant..com", "-restaurant.com", "restaurant-.com",
+  "https://", "https:///restaurant.com", "http:restaurant.com", "//restaurant.com",
+  "ftp://restaurant.com", "javascript:alert(1)", "mailto:owner@restaurant.com", "owner@restaurant.com",
+  "https://owner:password@restaurant.com", "restaurant .com", "restaurant.com/bad path", "restaurant.com/%zz",
+  "restaurant.com\\menu", "https://localhost", "https://127.0.0.1", "restaurant.com:99999", `${"a".repeat(64)}.com`,
+  `restaurant.com/${"a".repeat(500)}`,
+];
+
+test("shared website rules normalize ordinary domains and preserve explicit HTTP(S), paths and optional emptiness", () => {
+  for (const [input, expected] of validWebsites) {
+    assert.equal(normalizeWebsite(input), expected, input);
+    const parsed = leadSchema.safeParse({ ...inquiry, website: input });
+    assert.equal(parsed.success, true, input);
+    if (parsed.success) assert.equal(parsed.data.website, expected);
+  }
+  assert.equal(leadSchema.safeParse({ ...inquiry, type: "review", noWebsite: true }).success, true);
+  assert.equal(leadSchema.safeParse({ ...inquiry, type: "review", website: "" }).success, false);
+});
+
+test("malformed, incomplete and unsupported website addresses fail on both client and server", async () => {
+  let calls = 0;
+  const submit = createLeadSubmitter(async () => { calls++; return Response.json({ accepted: true }); }, () => id);
+  const send = createLeadHandler({ apiKey: "mock-secret", from: "verified@example.com", allow: () => true,
+    fetcher: async () => { calls++; return Response.json({ id: "unexpected" }); } });
+  for (const website of invalidWebsites) {
+    assert.equal(normalizeWebsite(website), null, website);
+    assert.ok("error" in await submit({ website }, "review"), website);
+    assert.equal((await send(request({ ...inquiry, type: "review", website }))).status, 400, website);
+  }
+  assert.equal(calls, 0);
+});
+
+test("both form types normalize before sending and retain raw website values after delivery failure", async () => {
+  for (const type of ["website", "review"] as const) {
+    const values = { restaurantName: "Tacos", email: "owner@example.com", help: "Website", website: "www.restaurant.com/menu" };
+    const original = { ...values };
+    const submit = createLeadSubmitter(async (_url, init) => {
+      const body = JSON.parse(init!.body as string);
+      assert.equal(body.website, "https://www.restaurant.com/menu");
+      assert.equal(body.type, type);
+      return Response.json({ error: "Temporary failure" }, { status: 502 });
+    }, () => id);
+    assert.ok("error" in await submit(values, type));
+    assert.deepEqual(values, original);
+    const state = leadFormReducer({ ...initialLeadState, values }, { type: "failed", error: "Retry" });
+    assert.equal(state.values.website, original.website);
+    assert.equal(state.accepted, false);
+  }
+});
+
+test("server independently normalizes website addresses in delivered emails for both request types", async () => {
+  const websites: string[] = [];
+  const send = createLeadHandler({ apiKey: "mock-secret", from: "verified@example.com", allow: () => true,
+    fetcher: async (_url, init) => {
+      const message = JSON.parse(init!.body as string);
+      websites.push(message.text.match(/Website: (.*)/)[1]);
+      assert.equal(message.reply_to, inquiry.email);
+      assert.deepEqual(message.to, ["hello@getmenuman.com"]);
+      return Response.json({ id: "mock-message" });
+    } });
+  for (const type of ["website", "review"] as const) {
+    for (const website of ["restaurant.com/menu", "http://restaurant.com/menu"]) {
+      assert.equal((await send(request({ ...inquiry, type, website }))).status, 200);
+    }
+  }
+  assert.deepEqual(websites, ["https://restaurant.com/menu", "http://restaurant.com/menu", "https://restaurant.com/menu", "http://restaurant.com/menu"]);
 });
 
 test("both submission types use customer Reply-To, the fixed recipient, escaped content, and stable provider keys", async () => {
@@ -124,4 +205,13 @@ test("failed submissions preserve form values and offer an encoded fallback; mal
   assert.doesNotMatch(component, /setSubmitted|Demo form|NominationForm/);
   assert.match(component, /Phone \(optional\)<input[^>]*name="phone"[^>]*>/);
   assert.doesNotMatch(component, /name="phone"[^>]*required/);
+  const websiteInputs = component.match(/<input name="website"[^>]*>/g)!;
+  assert.equal(websiteInputs.length, 2);
+  for (const input of websiteInputs) {
+    assert.match(input, /type="text"/);
+    assert.match(input, /inputMode="url"/);
+    assert.doesNotMatch(input, /pattern=/);
+  }
+  assert.match(websiteInputs[0], /disabled=\{noWebsite\} required=\{!noWebsite\}/);
+  assert.doesNotMatch(websiteInputs[1], /required/);
 });

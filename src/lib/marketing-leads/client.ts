@@ -1,4 +1,5 @@
 import { leadRecipient, leadText, leadTitles, type MarketingLead } from "./contracts";
+import { normalizeWebsite, websiteError } from "./website";
 
 export type LeadFormState = { values: Record<string, string>; pending: boolean; accepted: boolean; error: string };
 export const initialLeadState: LeadFormState = { values: {}, pending: false, accepted: false, error: "" };
@@ -23,7 +24,9 @@ export function createLeadSubmitter(fetcher: typeof fetch = fetch, newId = () =>
     if (pending) return { busy: true } as const;
     pending = true;
     try {
-      const payload = { ...values, type, noWebsite: values.noWebsite === "on" };
+      const website = normalizeWebsite(values.website ?? "");
+      if (website === null) return { error: websiteError } as const;
+      const payload = { ...values, website, type, noWebsite: values.noWebsite === "on" };
       const fingerprint = JSON.stringify(payload);
       if (fingerprint !== previous) { previous = fingerprint; submissionId = newId(); }
       const response = await fetcher("/api/marketing/leads", {

@@ -181,7 +181,7 @@ export function ReviewModal() {
               </label>
               <label>
                 Website URL
-                <input name="website" maxLength={500} type="url" inputMode="url" disabled={noWebsite} required={!noWebsite} placeholder="https://" />
+                <input name="website" maxLength={500} type="text" inputMode="url" disabled={noWebsite} required={!noWebsite} placeholder="restaurant.com" />
               </label>
               <label className={styles.checkboxLabel}>
                 <input
@@ -268,7 +268,7 @@ export function BuildWebsiteForm() {
         <label>Email<input name="email" maxLength={254} type="email" required autoComplete="email" /></label>
         <label>Phone (optional)<input name="phone" maxLength={50} type="tel" autoComplete="tel" /></label>
         <label>City<input name="city" maxLength={160} required autoComplete="address-level2" /></label>
-        <label>Current website<input name="website" maxLength={500} type="url" inputMode="url" placeholder="https:// (optional)" /></label>
+        <label>Current website<input name="website" maxLength={500} type="text" inputMode="url" placeholder="restaurant.com (optional)" /></label>
       </div>
       <fieldset>
         <legend>Do you currently offer online ordering?</legend>

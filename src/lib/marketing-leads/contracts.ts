@@ -1,10 +1,13 @@
 import { z } from "zod";
+import { normalizeWebsite, websiteError } from "./website";
 
 const short = z.string().trim().max(160);
-const website = z.string().trim().max(500).refine((value) => {
-  if (!value) return true;
-  try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; }
-}, "Enter a full http:// or https:// website address.");
+const website = z.string().trim().max(500).transform((value, context) => {
+  const normalized = normalizeWebsite(value);
+  if (normalized !== null) return normalized;
+  context.addIssue({ code: "custom", message: websiteError });
+  return z.NEVER;
+});
 
 export const leadSchema = z.object({
   type: z.enum(["website", "review"]),
