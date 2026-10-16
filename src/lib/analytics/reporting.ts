@@ -40,7 +40,8 @@ export function reportingEnvironment(env: Record<string, string | undefined>): R
 const count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const dailyRow = z.tuple([z.iso.date(), count, count, count, count, count, count, count, count, count, count, count]);
 const itemRow = z.tuple([z.uuid(), count]);
-const completedQuery = { error: z.null().optional(), hasMore: z.literal(false).optional(), query_status: z.object({ complete: z.literal(true) }).nullish() };
+// HogQL emits null when pagination metadata is inapplicable to bounded aggregates.
+const completedQuery = { error: z.null().optional(), hasMore: z.literal(false).nullish(), query_status: z.object({ complete: z.literal(true) }).nullish() };
 const dailyResponse = z.object({ ...completedQuery, results: z.array(dailyRow).max(90) });
 const itemsResponse = z.object({ ...completedQuery, results: z.array(itemRow).max(10) });
 const zeroMetrics = (): Metrics => Object.fromEntries(metricKeys.map((key) => [key, 0])) as Metrics;

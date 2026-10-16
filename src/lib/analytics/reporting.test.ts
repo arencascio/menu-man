@@ -18,8 +18,8 @@ const owner: RestaurantMembership = { membershipId: "20000000-0000-4000-8000-000
   restaurantSlug: "super-tacos", restaurantName: "Super Tacos", restaurantTimezone: "America/Los_Angeles",
   memberRole: "owner", displayName: "Owner", capabilities: [] };
 class ManagementError extends Error { constructor(public code: string, message: string) { super(message); } }
-const daily = { results: [["2026-10-16", 10, 6, 8, 4, 1, 2, 3, 4, 5, 1, 1]] };
-const items = { results: [[itemId, 5]] };
+const daily = { error: null, hasMore: null, query_status: null, results: [["2026-10-16", 10, 6, 8, 4, 1, 2, 3, 4, 5, 1, 1]] };
+const items = { error: null, hasMore: null, query_status: null, results: [[itemId, 5]] };
 const read = (file: string) => readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 function load(file: string, dependencies: Record<string, unknown>, globals: Record<string, unknown> = {}) {
   const exports: Record<string, unknown> = {};
@@ -130,6 +130,9 @@ test("aggregates exact event meanings, fills only successful empty days and reje
   assert.deepEqual(report.totals, { pageviews: 10, menuViews: 6, itemOpenings: 8, searches: 4, zeroResults: 1, delivery: 2, pickup: 3, phone: 4, directions: 5, internalPickup: 1, externalPickup: 1 });
   assert.equal(report.popularItems[0].openings, 5);
   assert.equal(reporting.assembleReport(range, "production", { results: [] }, { results: [] }).totals.pageviews, 0);
+  assert.equal(reporting.assembleReport(range, "staging", { ...daily, hasMore: false }, { ...items, hasMore: false }).totals.pageviews, 10);
+  assert.equal(reporting.assembleReport(range, "staging", { ...daily, results: [], hasMore: null }, { ...items, results: [], hasMore: null }).totals.pageviews, 0);
+  assert.throws(() => reporting.assembleReport(range, "staging", daily, { ...items, hasMore: true }));
   for (const bad of [{}, { results: [] , error: "PRIVATE_ERROR" }, { results: [], hasMore: true }, { results: [], query_status: { complete: false } },
     { results: [["2026-10-01", ...daily.results[0].slice(1)]] }, { results: [...daily.results, ...daily.results] }, { results: [["2026-10-16", -1]] }]) {
     assert.throws(() => reporting.assembleReport(range, "staging", bad, items));
