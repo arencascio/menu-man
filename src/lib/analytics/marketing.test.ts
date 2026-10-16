@@ -169,7 +169,7 @@ test("PostHog initialization and final outbound filter preserve restaurant event
     init(_key: string, settings: Record<string, unknown>) { config = settings; this.__loaded = true; },
     capture(event: string, properties: Record<string, unknown>) {
       const before = config.before_send as (event: { event: string; properties: Record<string, unknown> } | null) => { event: string; properties: Record<string, unknown> } | null;
-      const result = before({ event, properties: { ...properties, token: "test-token", distinct_id: "anonymous", "$current_url": "https://site/?email=private@example.com", "$referrer": "https://private.example/", "$set_once": { "$initial_current_url": "private URL" }, "$initial_person_info": { email: "private@example.com" } } });
+      const result = before({ event, properties: { ...properties, token: "test-token", distinct_id: "anonymous", "$process_person_profile": false, "$current_url": "https://site/?email=private@example.com", "$referrer": "https://private.example/", "$set_once": { "$initial_current_url": "private URL" }, "$initial_person_info": { email: "private@example.com" } } });
       if (result) captures.push(result);
     },
   };
@@ -186,7 +186,7 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   for (const name of ["autocapture", "capture_pageview", "capture_pageleave", "save_campaign_params", "save_referrer"]) assert.equal(config[name], false);
   assert.equal(config.disable_session_recording, true); assert.equal(config.person_profiles, "never"); assert.equal(config.persistence, "memory");
   exports.captureMarketingEvent!("$pageview", { analytics_scope: "marketing", page: "/", utm_source: "card" });
-  assert.deepEqual(JSON.parse(JSON.stringify(captures[0])), { event: "$pageview", properties: { token: "test-token", distinct_id: "anonymous", analytics_scope: "marketing", environment: "staging", page: "/", utm_source: "card" } });
+  assert.deepEqual(JSON.parse(JSON.stringify(captures[0])), { event: "$pageview", properties: { token: "test-token", distinct_id: "anonymous", "$process_person_profile": false, analytics_scope: "marketing", environment: "staging", page: "/", utm_source: "card" } });
   assert.doesNotMatch(JSON.stringify(captures[0]), /private|url|referrer|email|\$set/);
   optedOut = true; exports.captureMarketingEvent!("$pageview", {}); assert.equal(captures.length, 1);
   optedOut = false; exports.posthogProvider!.track({ name: "page_view", restaurantId: "tenant" });

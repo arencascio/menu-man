@@ -107,7 +107,7 @@ export function createMarketingFormAnalytics(form_type: MarketingForm, track: (e
   };
 }
 
-const sdkKeys = ["token", "distinct_id", "$device_id", "$session_id", "$window_id", "$lib", "$lib_version", "$insert_id"];
+const sdkKeys = ["token", "distinct_id", "$device_id", "$session_id", "$window_id", "$lib", "$lib_version", "$insert_id", "$process_person_profile"];
 const eventKeys = ["analytics_scope", "environment", "page", "cta_id", "placement", "destination_type", "form_type", "failure_category", ...campaignKeys];
 
 // Final SDK boundary: strip automatic current/initial/referrer URLs and person properties,

@@ -33,7 +33,8 @@ errors, link hrefs/text, full current URLs or referrers are sent by this layer.
 The SDK `before_send` hook applies a final property allowlist **only** to scoped
 marketing events, stripping automatic current/initial/referrer URL and nested
 person properties. Existing SDK token, anonymous/session/window IDs, library
-version and insert ID can remain; no new identity is created. Other events pass
+version and insert ID can remain; `$process_person_profile=false` is retained
+so the SDK's no-profile instruction survives filtering. No new identity is created. Other events pass
 through unchanged. See [PostHog's privacy hook documentation](https://posthog.com/docs/product-analytics/privacy).
 
 ## Event dictionary
