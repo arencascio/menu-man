@@ -148,7 +148,7 @@ export default function RestaurantPickupTimeChooser({
         unlockPageScroll();
         onClose();
         if (confirmedRef.current) {
-          trackEvent({ name: "pickup_clicked", restaurantId });
+          trackEvent({ name: "pickup_clicked", restaurantId, surface: "pickup_chooser", pickupAction: "internal_selection" });
           window.dispatchEvent(new CustomEvent(pickupIntentEvent, { detail: restaurantId }));
         }
       }}

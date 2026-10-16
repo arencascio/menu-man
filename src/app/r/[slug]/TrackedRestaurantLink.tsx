@@ -1,15 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { trackEvent } from "@/lib/analytics/client";
+import { trackRestaurantAction, type RestaurantActionContext, type RestaurantLinkEvent } from "@/lib/analytics/restaurant-actions";
 
-export type RestaurantLinkEvent =
-  | "phone_clicked"
-  | "directions_clicked"
-  | "delivery_clicked"
-  | "pickup_clicked";
+export type { RestaurantLinkEvent } from "@/lib/analytics/restaurant-actions";
 
-type TrackedRestaurantLinkProps = {
+type TrackedRestaurantLinkProps = RestaurantActionContext & {
   children: ReactNode;
   className?: string;
   eventName: RestaurantLinkEvent;
@@ -29,6 +25,10 @@ export default function TrackedRestaurantLink({
   restaurantId,
   tabIndex,
   target,
+  surface,
+  placement,
+  providerId,
+  pickupAction,
 }: TrackedRestaurantLinkProps) {
   return (
     <a
@@ -37,7 +37,7 @@ export default function TrackedRestaurantLink({
       target={target}
       rel={rel}
       tabIndex={tabIndex}
-      onClick={() => trackEvent({ name: eventName, restaurantId })}
+      onClick={() => trackRestaurantAction(eventName, restaurantId, { surface, placement, providerId, pickupAction })}
     >
       {children}
     </a>

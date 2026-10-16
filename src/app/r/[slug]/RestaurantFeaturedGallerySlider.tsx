@@ -51,6 +51,8 @@ function GalleryAction({
       <TrackedRestaurantLink
         className={className}
         eventName={action.trackingEvent}
+        surface="featured_gallery"
+        pickupAction={action.trackingEvent === "pickup_clicked" ? (action.external ? "external_departure" : "internal_selection") : undefined}
         href={action.href}
         restaurantId={restaurantId}
         tabIndex={tabIndex}
@@ -269,7 +271,7 @@ export default function RestaurantFeaturedGallerySlider({
                         <GalleryAction action={slide.secondaryAction} className={styles.secondaryAction}
                           restaurantId={restaurantId} tabIndex={isActive ? 0 : -1} />
                       ) : (
-                        <RestaurantDeliveryTrigger className={styles.secondaryAction}>Order Delivery</RestaurantDeliveryTrigger>
+                        <RestaurantDeliveryTrigger surface="featured_gallery" className={styles.secondaryAction}>Order Delivery</RestaurantDeliveryTrigger>
                       )}
                     </div>
                   </div>

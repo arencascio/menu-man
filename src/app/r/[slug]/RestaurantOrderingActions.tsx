@@ -46,7 +46,7 @@ function OrderingActionLink({
 
   if (action.kind === "delivery") {
     return (
-      <RestaurantDeliveryTrigger className={styles.action}>
+      <RestaurantDeliveryTrigger surface="ordering_actions" className={styles.action}>
         {content}
       </RestaurantDeliveryTrigger>
     );
@@ -61,6 +61,8 @@ function OrderingActionLink({
       <TrackedRestaurantLink
         className={styles.action}
         eventName={action.trackingEvent}
+        surface="ordering_actions"
+        pickupAction={action.trackingEvent === "pickup_clicked" ? (action.external ? "external_departure" : "internal_selection") : undefined}
         href={action.href}
         restaurantId={restaurantId}
         {...externalProps}

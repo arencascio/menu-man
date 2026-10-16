@@ -1,4 +1,4 @@
-# Restaurant analytics: Phases A.2-A.3
+# Restaurant analytics: Phases A.2-B.1
 
 Browser restaurant events use the existing `trackEvent` -> PostHog adapter.
 `before_send` runs the existing marketing filter and then the restaurant filter,
@@ -10,7 +10,7 @@ No server purchase delivery or commerce behavior is changed here.
 Event names remain `page_view`, `category_selected`, `menu_search`,
 `menu_item_expanded`, `menu_item_collapsed`, `phone_clicked`, `directions_clicked`,
 `delivery_clicked`, `pickup_clicked`, `add_to_cart`, `remove_from_cart`,
-`cart_viewed`, `checkout_started`, and `order_created`.
+`cart_viewed`, `checkout_started`, `order_created`, and `menu_favorite_changed`.
 
 Every restaurant event retains `analytics_scope=restaurant`, `restaurant_id`,
 and the trusted deployment `environment` from Phase A.1 (production, staging,
@@ -22,7 +22,8 @@ The event-specific schemas in `src/lib/analytics/restaurant.ts` allow:
 | --- | --- |
 | Category selection | `section_id` |
 | Search | `query_length`, `result_count`, `zero_results` |
-| Item expansion/collapse | `section_id`, `item_id`, `price_cents` |
+| Item expansion/collapse | `section_id` when canonical, `item_id`, `price_cents`, optional `detail_mode` |
+| Successful favorite action | Canonical UUID `item_id`, boolean `liked` |
 | Cart addition/removal | `item_id`, `price_cents`, `quantity`, `value_cents`, `currency` |
 | Cart view / checkout start | `currency`, `value_cents`, `item_count`, `total_quantity`, `item_ids`, `items` |
 | Order created | Cart-summary fields plus `order_id`, `order_number`, `tax_cents`, `tip_cents`, `pickup_mode`, `idempotency_replay` |
@@ -100,7 +101,7 @@ deletions were performed. Existing historical events are not sanitized retroacti
 
 ## Remaining work
 
-Phase B can add deep-linked item coverage, confirmed favorite events, and provider/action identity.
+Phase B.2 can add provider/action identity, precise placements and reporting.
 Demo classification, restaurant first-touch attribution, safe checkout failures,
 owner reporting, and server purchase delivery remain separate tasks. Current browser
 order creation remains a best-effort observation of an unpaid order, not a purchase.
@@ -161,11 +162,9 @@ Limits and Phase B gaps:
 - A same-path navigation/reload wholly managed without a new document or pathname
   transition is treated as the same view. Query-only payment details are not an
   additional page type. Persisted document restoration is handled separately.
-- This does not add item-view events for deep-link/history openings or favorite
-  mutation events. Cart add/remove origins do not distinguish the originating
-  synthetic section because those existing calls lack that context.
-- Phone/directions default to current page, not exact header/footer placement.
-  Pickup/delivery remain intent events without new provider identifiers.
+- Phase B.1 adds deep-link/history openings and confirmed favorite events below.
+  Phase B.2 adds known new-add origins and external action attribution below.
+  Quantity/replacement/removal attribution remains deferred to Phase C.
 - Optional GA4 delivery and server purchase outbox attribution are unchanged;
   the new bounded interaction context is applied in the PostHog adapter.
 
@@ -176,3 +175,123 @@ restoration where supported. Verify one event per view, correct tenant/type/surf
 no synthetic canonical section IDs, no URL/query/referrer/PII, retained GeoIP-disable
 flag, and unchanged marketing events. Do not create real orders/payments merely
 to test pageviews. Browser/ingestion verification has not been performed here.
+
+## Phase B.1: menu engagement
+
+Classification: shared System Piece instrumentation using the existing adapter.
+No section composition, item identity/order, scrolling, URL/history behavior,
+heart requests/rate limits/persistence, or cart/payment business logic changes.
+
+Item opening/collapse events now come from one observer of the committed detail
+state, including closing state. Card, direct-link, popstate, quick-add, and cart-edit
+entry paths feed it. Effect replay and selected-detail/section rerenders do not
+duplicate the same active item's opening. Closing and reopening counts again;
+switching items closes the old observation and opens the new one. Back-to-menu,
+Escape, backdrop/close button and successful add closure share the same observer.
+Unmount/abandonment is not treated as a reliable collapse signal, avoiding false
+closes during React effect replay.
+
+`detail_mode` is `full` or `quick`, describing **initial entry mode**. Promoting an
+already-open quick panel to full customization does not count a second opening;
+the matching collapsed event retains its initial mode and origin. This is an
+item-opening metric, not a count of every panel-mode transition.
+
+Item event `surface` precedence:
+
+- Card from a synthetic section: `featured`, `popular`, or `favorites`, without a
+  canonical `section_id`. A real category named Favorites still has its UUID.
+- Ordinary card while searching: `menu_search`; otherwise `menu`.
+- Initial `?item` link: `direct_link`. Browser history opening: `history`.
+  These use the canonical section from ordinary sections for analytics even if the
+  UI first resolves that item in a synthetic placement. This prevents attributing
+  an inbound link to a Featured click that never happened.
+- Cart edit: `cart`, with a canonical section ID where available.
+
+No raw item query, URL, catalog text, or arbitrary origin is sent. Final schemas
+allow only those surface enums and the two detail modes. Restaurant/environment/
+page context, marketing privacy, no-profile flag and GeoIP-disable flag remain.
+
+`menu_favorite_changed` is emitted only after the existing successful HTTP response
+and JSON parse, and only when the body has the matching UUID `itemId`, requested
+boolean `liked`, and a valid nonnegative integer count. Rejected, rate-limited,
+network-failed, malformed or mismatched responses emit no successful event.
+The existing 428 visitor-refresh retry can emit once after its final success.
+Analytics failures cannot trigger UI rollback. No heart visitor cookie/key, source
+hash, aggregate count or new identity is included in this event. Existing anonymous
+PostHog SDK identity metadata remains under the existing privacy contract.
+The metric counts confirmed successful requested actions, not a guaranteed change
+in global totals: idempotent server operations and other tabs can affect totals.
+
+Category investigation: the actual handler extracted from MenuBrowser emits all
+three rapid activations in mocked execution, including same-category repeats,
+search clearing and section-list navigation. Final schemas accept them. No category
+deduplication or deliberate meaningful-change suppression exists. There is no
+confirmed application defect to repair from the A.4 observation. That observation
+lacked a network trace; browser dispatch timing, asynchronous ingestion, or delivery
+loss remain unproven possibilities. No timers, delays, or navigation changes were
+added. A separate approved staging reproduction should observe each action and
+capture outgoing request/ingestion evidence before changing delivery behavior.
+
+Validation is mocked/offline for this phase. Later staging verification is needed
+for these new item/favorite events; no deployment, live events, real heart mutation,
+or database writes were performed. Phase B.2 extends action attribution below;
+owner reporting and authoritative server purchase delivery remain separate work.
+
+## Phase B.2: external actions and ordering attribution
+
+Shared System Piece instrumentation; no ordering configuration, navigation
+destinations, cart reducer, checkout, payment, or restaurant content changes.
+Existing names, tenant/environment/page context and final privacy filtering remain.
+
+| Event | Additional bounded properties | Existing controls covered |
+| --- | --- | --- |
+| `delivery_clicked` | `provider_id`: configured provider-row UUID; `surface=delivery_chooser`; `placement`: initiating action surface | Chooser provider departure, opened from hero, ordering actions, featured gallery, header or footer |
+| `pickup_clicked` | `pickup_action=internal_selection\|external_departure`; `surface` | Hero/ordering external pickup links, featured-gallery internal item/pickup links, successful pickup-chooser confirmation |
+| `phone_clicked`, `directions_clicked` | `surface` | Header, restaurant information on home/location pages, footer |
+| `add_to_cart` | Existing menu interaction `surface` when known | Ordinary/search/synthetic card additions and detail additions retaining their opening origin |
+
+Action surfaces are exactly `hero`, `header`, `footer`, `restaurant_information`,
+`ordering_actions`, `featured_gallery`, `delivery_chooser`, `pickup_chooser`.
+Page type distinguishes restaurant information on home versus location pages.
+No new phone/directions control was added to the hero. Delivery chooser rendering
+and opening do not count as delivery clicks. Each actual provider activation
+emits once; repeated deliberate activations are separate actions. The initiating
+placement is refreshed on each chooser opening, including mobile header handoff.
+Provider IDs come from the existing restaurant-scoped active-provider query, never
+branding keys, names or destinations. Missing IDs retain an unattributed action
+for compatibility; malformed supplied IDs cause only that analytics event to be
+dropped. A direct delivery link without a configured provider likewise remains
+unattributed. No destination URL, phone, address or arbitrary provider data is sent.
+
+Pickup classification describes the action, not an order: explicitly configured
+external links are departures; internal gallery selection and the chooser's
+existing confirmed-success close are internal selection. Selecting an item and
+later confirming pickup are distinct actions, not duplicate order conversions.
+Cancelled/failed chooser interactions do not emit confirmation events.
+
+Only new cart additions receive known source context. Editing/replacing lines,
+quantity changes, removals and cart clearing retain existing semantics and page
+fallbacks. `cart_viewed`/`checkout_started` retain `surface=cart`; no inferred
+historical cart origin, new persistent metadata or confirmed-state claim is added.
+Favorites/search/Featured/Popular origins remain surfaces, not section IDs.
+
+The four action events use SDK `capture(..., { send_instantly: true })` to bypass
+the in-memory batching interval without awaiting delivery or delaying navigation.
+The installed `@posthog/types/src/capture.ts` documents normal active-page fetch
+keepalive/retries and SDK unload-beacon handling. No forced transport, custom
+flush, timeout, navigation blocking or delivery guarantee is added. Oversize/XHR
+requests, offline use, browser termination, privacy blockers and ingestion failures
+can still lose events; beacons do not prove ingestion. Other restaurant events and
+marketing delivery/privacy behavior are unchanged. `$geoip_disable=true` and
+profile/autocapture/recording restrictions remain enforced.
+
+Validation uses mocked SDK responses and local regression tests only. After an
+approved staging deployment, inspect received events and network requests for
+each available provider/source, internal versus external pickup, contact actions,
+and card/detail additions; check one capture per activation, correct scoped UUIDs,
+bounded source/classification, GeoIP-disable and absence of destinations/PII.
+Exercise mobile header-to-chooser handoff and immediate external departure without
+delays; verify marketing events separately. Super Tacos has ordering/providers
+disabled, so those cases require an already configured authorized staging tenant;
+do not enable ordering or create orders merely to test attribution. This phase
+does not verify actual ingestion or authoritative order/payment conversion.

@@ -251,7 +251,7 @@ test("restaurant server components pass serializable analytics data to a client 
   }
 
   assert.match(trackedLink, /^"use client";/);
-  assert.match(trackedLink, /onClick=\{\(\) => trackEvent\(\{ name: eventName, restaurantId \}\)\}/);
+  assert.match(trackedLink, /onClick=\{\(\) => trackRestaurantAction\(eventName, restaurantId, \{ surface, placement, providerId, pickupAction \}\)\}/);
   assert.match(trackedLink, /target=\{target\}/);
   assert.match(trackedLink, /rel=\{rel\}/);
 });

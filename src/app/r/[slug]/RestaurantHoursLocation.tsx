@@ -70,7 +70,7 @@ export default function RestaurantHoursLocation({
             {phone ? (
               <div className={styles.contact}>
                 <span>Call us</span>
-                <TrackedRestaurantLink
+                <TrackedRestaurantLink surface="restaurant_information"
                   href={`tel:${phone}`}
                   eventName="phone_clicked"
                   restaurantId={restaurantId}
@@ -81,7 +81,7 @@ export default function RestaurantHoursLocation({
             ) : null}
 
             {directionsUrl ? (
-              <TrackedRestaurantLink
+              <TrackedRestaurantLink surface="restaurant_information"
                 className={styles.directionsAction}
                 href={directionsUrl}
                 target="_blank"

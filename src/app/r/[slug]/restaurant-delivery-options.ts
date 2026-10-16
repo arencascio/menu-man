@@ -16,7 +16,7 @@ function isValidDeliveryUrl(value: unknown): value is string {
 export async function getRestaurantDeliveryOptions(restaurantId: string): Promise<RestaurantDeliveryOption[]> {
   const { data, error } = await supabaseServer
     .from("restaurant_delivery_providers")
-    .select("display_name, provider_key, destination_url, image_url, sort_order")
+    .select("id, display_name, provider_key, destination_url, image_url, sort_order")
     .eq("restaurant_id", restaurantId)
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
@@ -24,6 +24,7 @@ export async function getRestaurantDeliveryOptions(restaurantId: string): Promis
   if (error) console.error(error);
 
   return (data ?? []).flatMap((provider) => isValidDeliveryUrl(provider.destination_url) ? [{
+    providerId: provider.id,
     displayName: provider.display_name,
     imageUrl: provider.image_url ?? undefined,
     providerKey: provider.provider_key ?? undefined,

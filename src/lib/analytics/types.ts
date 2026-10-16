@@ -6,10 +6,14 @@ export type AnalyticsCartItem = {
 };
 
 export type RestaurantPageType = "home" | "menu" | "location" | "checkout" | "payment" | "confirmation";
+export type MenuInteractionSurface = "menu" | "featured" | "popular" | "favorites" | "menu_search" | "direct_link" | "history" | "cart";
+export type RestaurantActionSurface = "hero" | "header" | "footer" | "restaurant_information" | "ordering_actions" | "featured_gallery" | "delivery_chooser" | "pickup_chooser";
+export type PickupAction = "internal_selection" | "external_departure";
 export type AnalyticsEvent = { pageType?: RestaurantPageType } & (
   | { name: "page_view"; restaurantId: string }
   | { name: "category_selected"; restaurantId: string; sectionId: string; sectionName: string }
   | { name: "menu_search"; restaurantId: string; queryLength: number; resultCount: number }
+  | { name: "menu_favorite_changed"; restaurantId: string; itemId: string; liked: boolean }
   | {
       name: "menu_item_expanded" | "menu_item_collapsed";
       restaurantId: string;
@@ -18,8 +22,12 @@ export type AnalyticsEvent = { pageType?: RestaurantPageType } & (
       itemId: string;
       itemName: string;
       priceCents: number;
+      surface?: MenuInteractionSurface;
+      detailMode?: "full" | "quick";
     }
-  | { name: "phone_clicked" | "directions_clicked" | "delivery_clicked" | "pickup_clicked"; restaurantId: string }
+  | { name: "phone_clicked" | "directions_clicked"; restaurantId: string; surface?: RestaurantActionSurface }
+  | { name: "delivery_clicked"; restaurantId: string; surface?: RestaurantActionSurface; placement?: RestaurantActionSurface; providerId?: string }
+  | { name: "pickup_clicked"; restaurantId: string; surface?: RestaurantActionSurface; pickupAction?: PickupAction }
   | {
       name: "add_to_cart" | "remove_from_cart";
       restaurantId: string;
@@ -28,6 +36,7 @@ export type AnalyticsEvent = { pageType?: RestaurantPageType } & (
       priceCents: number;
       quantity: number;
       currency: string;
+      surface?: MenuInteractionSurface;
     }
   | {
       name: "cart_viewed" | "checkout_started";

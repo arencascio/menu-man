@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { trackRestaurantAction } from "@/lib/analytics/restaurant-actions";
 import { useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import RestaurantNavigationIcon, { type RestaurantNavigationIconName } from "./RestaurantNavigationIcon";
@@ -28,6 +29,7 @@ type RestaurantNavigationDelivery = {
 export type RestaurantNavigationItem = RestaurantNavigationDestination | RestaurantNavigationDelivery;
 
 type RestaurantNavigationProps = {
+  restaurantId: string;
   homeHref: string;
   items: readonly RestaurantNavigationItem[];
   logoUrl: string | null;
@@ -37,6 +39,7 @@ type RestaurantNavigationProps = {
 };
 
 export default function RestaurantNavigation({
+  restaurantId,
   homeHref,
   items,
   logoUrl,
@@ -80,9 +83,18 @@ export default function RestaurantNavigation({
     return () => query.removeEventListener("change", resize);
   }, [reset]);
 
+  const handleAction = (item: RestaurantNavigationDestination, mobile: boolean) => {
+    if (item.icon === "phone" || item.href.startsWith("tel:")) {
+      trackRestaurantAction("phone_clicked", restaurantId, { surface: "header" });
+    } else if (item.icon === "directions" || item.icon === "navigation") {
+      trackRestaurantAction("directions_clicked", restaurantId, { surface: "header" });
+    }
+    if (mobile) requestClose();
+  };
+
   const links = (mobile: boolean) => items.map((item) => (
     item.kind === "delivery" ? (
-      <RestaurantDeliveryTrigger className={styles.navigationLink} key={item.label + ":delivery"}
+      <RestaurantDeliveryTrigger surface="header" className={styles.navigationLink} key={item.label + ":delivery"}
         returnFocusRef={mobile ? menuButtonRef : undefined}
         beforeOpen={mobile ? (open) => { if (closing) return; afterCloseRef.current = open; requestClose(); } : undefined}>
         {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
@@ -90,11 +102,11 @@ export default function RestaurantNavigation({
     ) : item.external || item.href.startsWith("tel:") ? (
       <a key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href}
         target={item.external ? "_blank" : undefined} rel={item.external ? "noreferrer" : undefined}
-        onClick={mobile ? requestClose : undefined}>
+        onClick={() => handleAction(item, mobile)}>
         {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
       </a>
     ) : (
-      <Link key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href} onClick={mobile ? requestClose : undefined}>
+      <Link key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href} onClick={() => handleAction(item, mobile)}>
         {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
       </Link>
     )

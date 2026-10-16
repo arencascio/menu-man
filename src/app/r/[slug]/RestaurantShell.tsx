@@ -51,6 +51,7 @@ export default function RestaurantShell({ children, restaurant, smoothScroll = f
         restaurantId={restaurant.id}
       >
         <RestaurantNavigation
+          restaurantId={restaurant.id}
           homeHref={restaurant.homeHref}
           items={restaurant.navigation}
           logoUrl={restaurant.logoUrl}

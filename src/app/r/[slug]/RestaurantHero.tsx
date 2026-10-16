@@ -47,7 +47,7 @@ function HeroAction({ action, className, restaurantId }: {
 }) {
   if (action.kind === "delivery") {
     return (
-      <RestaurantDeliveryTrigger className={className}>
+      <RestaurantDeliveryTrigger surface="hero" className={className}>
         {action.label}
       </RestaurantDeliveryTrigger>
     );
@@ -63,6 +63,8 @@ function HeroAction({ action, className, restaurantId }: {
         className={className}
         href={action.href}
         eventName={action.trackingEvent}
+        surface="hero"
+        pickupAction={action.trackingEvent === "pickup_clicked" ? (action.external ? "external_departure" : "internal_selection") : undefined}
         restaurantId={restaurantId}
         {...externalProps}
       >

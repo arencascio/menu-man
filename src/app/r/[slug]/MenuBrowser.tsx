@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { menuSearchMetrics } from "@/lib/analytics/restaurant";
+import { createMenuEngagement, menuCardSurface } from "@/lib/analytics/menu-engagement";
 import { formatPrice, getCartLineSignature, getModifierValidationErrors } from "@/lib/cart/cart";
 import type { CartLine, MenuModifierGroup } from "@/lib/cart/types";
 import { paymentStatusSchema } from "@/lib/payments/contracts";
@@ -80,6 +81,12 @@ export default function MenuBrowser({
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [detailItem, setDetailItem] = useState<{ sectionId: string; itemId: string; mode: "full" | "quick" } | null>(null);
+  const engagementRef = useRef<{ restaurantId: string; tracker: ReturnType<typeof createMenuEngagement> } | null>(null);
+  if (!engagementRef.current || engagementRef.current.restaurantId !== restaurantId) {
+    engagementRef.current = { restaurantId, tracker: createMenuEngagement(restaurantId, trackEvent) };
+  }
+  const engagement = engagementRef.current.tracker;
+  const detailOriginRef = useRef<"card" | "direct_link" | "history" | "cart">("direct_link");
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(84);
@@ -165,6 +172,9 @@ export default function MenuBrowser({
     const fallbackItem = fallbackSection?.items.find((candidate) => candidate.id === detailItem.itemId);
     return fallbackSection && fallbackItem ? { section: fallbackSection, item: fallbackItem, mode: detailItem.mode } : null;
   }, [detailItem, menuSections]);
+  useEffect(() => {
+    engagement.sync(detailClosing ? null : selectedDetail, detailOriginRef.current, Boolean(search), sections);
+  }, [detailClosing, engagement, search, sections, selectedDetail]);
   const cartQuantities = useMemo(() => {
     const totals: Record<string, number> = {};
     for (const line of cart.lines) totals[line.menuItemId] = (totals[line.menuItemId] ?? 0) + line.quantity;
@@ -242,6 +252,7 @@ export default function MenuBrowser({
       const section = menuSections.find((candidate) => candidate.items.some((item) => item.id === itemId));
       const item = section?.items.find((candidate) => candidate.id === itemId);
       if (!section || !item) return;
+      detailOriginRef.current = event ? "history" : "direct_link";
       if (!window.history.state?.menuItem) {
         const itemUrl = new URL(window.location.href);
         const baseUrl = new URL(itemUrl);
@@ -336,6 +347,7 @@ export default function MenuBrowser({
       if (!response.ok) throw new Error("Heart request failed");
       const result = await response.json() as { count: number };
       setHeartCounts((current) => ({ ...current, [itemId]: result.count }));
+      engagement.favoriteSucceeded(itemId, liked, result);
     } catch {
       setLikedItemIds((current) => liked ? current.filter((id) => id !== itemId) : [...current.filter((id) => id !== itemId), itemId]);
       setHeartCounts((current) => ({ ...current, [itemId]: previousHeartCount }));
@@ -539,6 +551,7 @@ export default function MenuBrowser({
   }
 
   function openItem(item: MenuItem, section: MenuSection, mode: "full" | "quick" = "full", opener?: HTMLElement | null, history: "push" | "replace" = "push") {
+    detailOriginRef.current = "card";
     detailOpenerRef.current = opener ?? cardRefs.current.get(`${section.id}:${item.id}`) ?? null;
     detailScrollYRef.current = window.scrollY;
     const line = editingLineId ? cart.lines.find((candidate) => candidate.lineId === editingLineId) : null;
@@ -551,15 +564,6 @@ export default function MenuBrowser({
     setShareStatus("");
     setItemUrl(item.id, history);
     detailHistoryRef.current = history === "push";
-    trackEvent({
-      name: "menu_item_expanded",
-      restaurantId,
-      itemId: item.id,
-      itemName: item.name,
-      priceCents: item.price_cents,
-      sectionId: section.id,
-      sectionName: section.name,
-    });
   }
 
   function addFromCard(item: MenuItem, section: MenuSection, opener: HTMLElement) {
@@ -569,7 +573,7 @@ export default function MenuBrowser({
       openItem(item, section, mode, opener);
       return;
     }
-    cart.addLine(createDirectCartLine(item, section, crypto.randomUUID()));
+    cart.addLine(createDirectCartLine(item, section, crypto.randomUUID()), menuCardSurface(section.id, Boolean(search)));
     showAddFeedback(item.id);
   }
 
@@ -604,17 +608,8 @@ export default function MenuBrowser({
     }
   }
 
-  function closeDetail(item: MenuItem, section: MenuSection) {
+  function closeDetail() {
     closeDetailSurface();
-    trackEvent({
-      name: "menu_item_collapsed",
-      restaurantId,
-      itemId: item.id,
-      itemName: item.name,
-      priceCents: item.price_cents,
-      sectionId: section.id,
-      sectionName: section.name,
-    });
   }
 
   useEffect(() => {
@@ -646,10 +641,10 @@ export default function MenuBrowser({
         quantityBefore: getConfiguredCartQuantity(cart.lines, signature),
       };
       setDetailSaving(true);
-      cart.addLine(line);
+      cart.addLine(line, engagement.currentSurface());
       return;
     } else {
-      cart.addLine(line);
+      cart.addLine(line, engagement.currentSurface());
       showAddFeedback(line.menuItemId);
     }
     draftCacheRef.current.delete(line.menuItemId);
@@ -663,6 +658,7 @@ export default function MenuBrowser({
       && candidate.items.some((item) => item.id === line.menuItemId)
     )) || menuSections.find((candidate) => candidate.items.some((item) => item.id === line.menuItemId));
     if (!section) return;
+    detailOriginRef.current = "cart";
 
     detailOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     detailScrollYRef.current = getMenuPageScrollY();
@@ -972,7 +968,7 @@ export default function MenuBrowser({
         aria-label={`Item details: ${selectedDetail.item.name}`}
         onClick={(event) => {
           if (event.target === event.currentTarget && window.matchMedia("(pointer: fine)").matches) {
-            closeDetail(selectedDetail.item, selectedDetail.section);
+            closeDetail();
           }
         }}
         onKeyDown={(event) => {
@@ -992,13 +988,13 @@ export default function MenuBrowser({
         }}
         onCancel={(event) => {
           event.preventDefault();
-          closeDetail(selectedDetail.item, selectedDetail.section);
+          closeDetail();
         }}
       >
         <div className={`${styles.dialogToolbar} ${selectedDetail.mode === "quick" ? styles.dialogToolbarQuick : ""}`}>
           {selectedDetail.mode === "full" && <button className={styles.dialogShare} type="button" onClick={() => void shareItem(selectedDetail.item)}><MenuIcon name="share" size={16} /> Share</button>}
           {selectedDetail.mode === "full" && <span className={styles.shareStatus} aria-live="polite">{shareStatus}</span>}
-          <button data-detail-close className={`${styles.dialogClose} ${selectedDetail.mode === "quick" ? styles.quickClose : ""}`} type="button" onClick={() => closeDetail(selectedDetail.item, selectedDetail.section)}>{selectedDetail.mode === "quick" ? <span className={styles.visuallyHidden}>Close quick add</span> : "Close"}<MenuIcon name="close" size={17} /></button>
+          <button data-detail-close className={`${styles.dialogClose} ${selectedDetail.mode === "quick" ? styles.quickClose : ""}`} type="button" onClick={() => closeDetail()}>{selectedDetail.mode === "quick" ? <span className={styles.visuallyHidden}>Close quick add</span> : "Close"}<MenuIcon name="close" size={17} /></button>
         </div>
         {selectedDetail.mode === "quick" && activeDraft ? <QuickChoicePanel
           item={selectedDetail.item}

@@ -43,16 +43,20 @@ test("invalid restaurant names, metadata values and malformed payloads fail clos
     { page_type: "/menu?email=private@example.com" }, { surface: "PRIVATE NOTES" }]) {
     assert.equal(sanitizeRestaurantCapture({ event: "page_view", properties: { ...context, ...bad } }), null);
   }
+  assert.equal(sanitizeRestaurantCapture({ event: "menu_favorite_changed", properties: { ...context,
+    item_id: "20000000-0000-4000-8000-000000000201", liked: "true" } }), null);
+  assert.equal(sanitizeRestaurantCapture({ event: "menu_item_expanded", properties: { ...context,
+    section_id: "section-a", item_id: "item-a", price_cents: 350, detail_mode: "private notes" } }), null);
   const marketing = { event: "$pageview", properties: { analytics_scope: "marketing", page: "/", utm_source: "card" } };
   assert.equal(sanitizeRestaurantCapture(marketing), marketing);
 });
 
 test("every existing restaurant event keeps its name and meaningful identifiers under the bounded contract", () => {
-  const properties = { ...context, section_id: "section-a", item_id: "item-a", price_cents: 1000,
+  const properties = { ...context, section_id: "section-a", item_id: "20000000-0000-4000-8000-000000000201", liked: true, price_cents: 1000,
     query_length: 4, result_count: 1, zero_results: false, quantity: 1, value_cents: 1000, currency: "USD",
     item_count: 1, total_quantity: 1, item_ids: ["item-a"], items: [{ item_id: "item-a", price_cents: 1000, quantity: 1 }],
     order_id: "order-a", order_number: "1001", tax_cents: 0, tip_cents: 0, pickup_mode: "asap", idempotency_replay: false };
-  for (const event of ["page_view", "category_selected", "menu_search", "menu_item_expanded", "menu_item_collapsed",
+  for (const event of ["page_view", "category_selected", "menu_search", "menu_favorite_changed", "menu_item_expanded", "menu_item_collapsed",
     "phone_clicked", "directions_clicked", "delivery_clicked", "pickup_clicked", "add_to_cart", "remove_from_cart",
     "cart_viewed", "checkout_started", "order_created"]) {
     const result = sanitizeRestaurantCapture({ event, properties });
@@ -111,6 +115,15 @@ test("real adapter wiring applies the final filter after mocked SDK enrichment, 
     analytics_scope: "marketing", environment: "production", customer: unsafe });
   assert.deepEqual(JSON.parse(JSON.stringify(captures)), [{ event: "menu_search", properties: { ...context,
     surface: "menu_search", query_length: 19, result_count: 0, zero_results: true, $process_person_profile: false, $geoip_disable: true } }]);
+  const canonicalItem = "20000000-0000-4000-8000-000000000201";
+  exports.posthogProvider!.track({ name: "menu_favorite_changed", restaurantId: "tenant-a", itemId: canonicalItem, liked: true,
+    visitorKey: "PRIVATE_VISITOR", email: "private@example.com" });
+  assert.deepEqual(JSON.parse(JSON.stringify(captures[1])), { event: "menu_favorite_changed", properties: { ...context,
+    item_id: canonicalItem, liked: true, $process_person_profile: false, $geoip_disable: true } });
+  exports.posthogProvider!.track({ name: "menu_item_expanded", restaurantId: "tenant-a", itemId: canonicalItem,
+    itemName: "PRIVATE_TEXT", priceCents: 350, sectionId: "featured", sectionName: "PRIVATE_TEXT", surface: "featured", detailMode: "quick" });
+  assert.deepEqual(JSON.parse(JSON.stringify(captures[2])), { event: "menu_item_expanded", properties: { ...context,
+    surface: "featured", item_id: canonicalItem, price_cents: 350, detail_mode: "quick", $process_person_profile: false, $geoip_disable: true } });
   fail = true;
   assert.doesNotThrow(() => exports.posthogProvider!.track({ name: "page_view", restaurantId: "tenant-a" }));
 });

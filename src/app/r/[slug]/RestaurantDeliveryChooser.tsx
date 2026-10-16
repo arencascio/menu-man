@@ -9,12 +9,15 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
+import type { RestaurantActionSurface } from "@/lib/analytics/types";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
 import RestaurantDeliveryProviderIcon from "./RestaurantDeliveryProviderIcon";
 import styles from "./restaurant-delivery-chooser.module.css";
 
 export type RestaurantDeliveryOption = {
+  providerId?: string;
   displayName: string;
   url: string;
   imageUrl?: string;
@@ -23,7 +26,7 @@ export type RestaurantDeliveryOption = {
 };
 
 type DeliveryChooserContextValue = {
-  open: (trigger: HTMLElement) => void;
+  open: (trigger: HTMLElement, surface: RestaurantActionSurface) => void;
 };
 
 const DeliveryChooserContext = createContext<DeliveryChooserContextValue | null>(null);
@@ -33,11 +36,13 @@ export function RestaurantDeliveryTrigger({
   className,
   beforeOpen,
   returnFocusRef,
+  surface = "ordering_actions",
 }: {
   children: ReactNode;
   className?: string;
   beforeOpen?: (open: () => void) => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
+  surface?: RestaurantActionSurface;
 }) {
   const chooser = useContext(DeliveryChooserContext);
 
@@ -50,7 +55,7 @@ export function RestaurantDeliveryTrigger({
       type="button"
       onClick={(event) => {
         const trigger = event.currentTarget;
-        const open = () => chooser.open(returnFocusRef?.current ?? trigger);
+        const open = () => chooser.open(returnFocusRef?.current ?? trigger, surface);
         if (beforeOpen) beforeOpen(open); else open();
       }}
     >
@@ -69,6 +74,7 @@ export default function RestaurantDeliveryChooser({
   restaurantId: string;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [placement, setPlacement] = useState<RestaurantActionSurface>("ordering_actions");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const scrollLockRef = useRef<{
@@ -124,11 +130,12 @@ export default function RestaurantDeliveryChooser({
     dialogRef.current?.close();
   }, []);
 
-  const open = useCallback((trigger: HTMLElement) => {
+  const open = useCallback((trigger: HTMLElement, surface: RestaurantActionSurface) => {
     const dialog = dialogRef.current;
     if (!dialog || options.length === 0) return;
 
     returnFocusRef.current = trigger;
+    setPlacement(surface);
     lockPageScroll();
     dialog.showModal();
     closeButtonRef.current?.focus();
@@ -177,6 +184,9 @@ export default function RestaurantDeliveryChooser({
                 <TrackedRestaurantLink
                   className={styles.option}
                   eventName="delivery_clicked"
+                  providerId={option.providerId}
+                  surface="delivery_chooser"
+                  placement={placement}
                   href={option.url}
                   key={`${option.displayName}:${option.url}`}
                   rel="noreferrer"

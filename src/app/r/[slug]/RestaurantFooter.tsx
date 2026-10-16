@@ -64,7 +64,7 @@ export default function RestaurantFooter({
 
           {address ? (
             directionsUrl ? (
-              <TrackedRestaurantLink
+              <TrackedRestaurantLink surface="footer"
                 className={styles.contactLink}
                 eventName="directions_clicked"
                 href={directionsUrl}
@@ -78,7 +78,7 @@ export default function RestaurantFooter({
             ) : <p className={styles.contactText}>{address}</p>
           ) : null}
           {phone ? (
-            <TrackedRestaurantLink
+            <TrackedRestaurantLink surface="footer"
               className={styles.contactLink}
               eventName="phone_clicked"
               href={`tel:${phone}`}
@@ -93,12 +93,12 @@ export default function RestaurantFooter({
         <nav className={styles.actions} aria-label={`${name} footer navigation`}>
           {navigation.map((item) => (
             item.kind === "delivery" ? (
-              <RestaurantDeliveryTrigger className={styles.action} key={`${item.label}:delivery`}>
+              <RestaurantDeliveryTrigger surface="footer" className={styles.action} key={`${item.label}:delivery`}>
                 {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
                 {item.label}
               </RestaurantDeliveryTrigger>
             ) : item.icon === "phone" || item.icon === "directions" || item.icon === "navigation" ? (
-              <TrackedRestaurantLink
+              <TrackedRestaurantLink surface="footer"
                 key={`${item.label}:${item.href}`}
                 className={styles.action}
                 eventName={item.icon === "phone" ? "phone_clicked" : "directions_clicked"}

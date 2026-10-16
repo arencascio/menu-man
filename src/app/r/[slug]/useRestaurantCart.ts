@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import type { MenuInteractionSurface } from "@/lib/analytics/types";
 import { trackEvent } from "@/lib/analytics/client";
 import {
   calculateCartSubtotalCents,
@@ -23,6 +24,7 @@ function trackLineChange(
   currency: string,
   line: CartLine,
   quantity: number,
+  surface?: MenuInteractionSurface,
 ) {
   trackEvent({
     name,
@@ -32,6 +34,7 @@ function trackLineChange(
     priceCents: calculateUnitPriceCents(line),
     quantity,
     currency,
+    surface,
   });
 }
 
@@ -84,9 +87,9 @@ export default function useRestaurantCart(restaurantId: string, currency: string
     }
   }, [restaurantId, state]);
 
-  const addLine = useCallback((line: CartLine) => {
+  const addLine = useCallback((line: CartLine, surface?: MenuInteractionSurface) => {
     dispatch({ type: "add", line });
-    trackLineChange("add_to_cart", restaurantId, currency, line, line.quantity);
+    trackLineChange("add_to_cart", restaurantId, currency, line, line.quantity, surface);
   }, [currency, restaurantId]);
 
   const replaceLine = useCallback((line: CartLine) => {

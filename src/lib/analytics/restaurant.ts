@@ -24,6 +24,7 @@ export function restaurantEventContext(event: AnalyticsEvent, pathname = "") {
   else if (event.name === "order_created") surface = "checkout";
   else if ("sectionId" in event) surface = syntheticSections.includes(event.sectionId as typeof syntheticSections[number])
     ? event.sectionId : page_type === "home" ? "home" : "menu";
+  if ("surface" in event && event.surface) surface = event.surface;
   return { ...(page_type ? { page_type } : {}), ...(surface ? { surface } : {}) };
 }
 
@@ -62,7 +63,7 @@ const base = z.object({
   analytics_scope: z.literal("restaurant"), restaurant_id: id,
   environment: z.enum(["production", "staging", "development", "unknown"]),
   page_type: z.enum(pageTypes).optional(),
-  surface: z.enum(["home", "menu", "location", "featured", "popular", "favorites", "menu_search", "ordering_actions", "cart", "checkout", "payment", "confirmation", "navigation", "footer"]).optional(),
+  surface: z.enum(["home", "menu", "location", "featured", "popular", "favorites", "menu_search", "direct_link", "history", "ordering_actions", "cart", "checkout", "payment", "confirmation", "navigation", "footer", "hero", "header", "restaurant_information", "featured_gallery", "delivery_chooser", "pickup_chooser"]).optional(),
 });
 const section = base.extend({ section_id: id.refine((value) => !syntheticSections.includes(value as typeof syntheticSections[number])).optional() });
 const hasSection = (value: { section_id?: string; surface?: string }) => Boolean(value.section_id)
@@ -71,9 +72,12 @@ const schemas: Record<string, z.ZodType> = {
   page_view: base,
   category_selected: section.refine(hasSection),
   menu_search: base.extend({ query_length: count, result_count: count, zero_results: z.boolean() }),
-  menu_item_expanded: section.extend({ item_id: id, price_cents: count }).refine(hasSection),
-  menu_item_collapsed: section.extend({ item_id: id, price_cents: count }).refine(hasSection),
-  phone_clicked: base, directions_clicked: base, delivery_clicked: base, pickup_clicked: base,
+  menu_favorite_changed: base.extend({ item_id: z.uuid(), liked: z.boolean() }),
+  menu_item_expanded: section.extend({ item_id: id, price_cents: count, detail_mode: z.enum(["full", "quick"]).optional() }).refine(hasSection),
+  menu_item_collapsed: section.extend({ item_id: id, price_cents: count, detail_mode: z.enum(["full", "quick"]).optional() }).refine(hasSection),
+  phone_clicked: base, directions_clicked: base,
+  delivery_clicked: base.extend({ provider_id: z.uuid().optional(), placement: z.enum(["hero", "header", "footer", "restaurant_information", "ordering_actions", "featured_gallery", "delivery_chooser", "pickup_chooser"]).optional() }),
+  pickup_clicked: base.extend({ pickup_action: z.enum(["internal_selection", "external_departure"]).optional() }),
   add_to_cart: base.extend({ item_id: id, price_cents: count, quantity: count, value_cents: count, currency: totals.currency }),
   remove_from_cart: base.extend({ item_id: id, price_cents: count, quantity: count, value_cents: count, currency: totals.currency }),
   cart_viewed: base.extend(totals), checkout_started: base.extend(totals),

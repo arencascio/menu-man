@@ -66,14 +66,23 @@ function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
     ...restaurantEventContext(event, typeof window === "undefined" ? "" : window.location.pathname),
   };
 
-  if (event.name === "category_selected") {
+  if (event.name === "delivery_clicked") {
+    if (event.providerId !== undefined) properties.provider_id = event.providerId;
+    if (event.placement !== undefined) properties.placement = event.placement;
+  } else if (event.name === "pickup_clicked") {
+    if (event.pickupAction !== undefined) properties.pickup_action = event.pickupAction;
+  } else if (event.name === "category_selected") {
     if (!["featured", "popular", "favorites"].includes(event.sectionId)) properties.section_id = event.sectionId;
     properties.section_name = event.sectionName;
   } else if (event.name === "menu_search") {
     properties.query_length = event.queryLength;
     properties.result_count = event.resultCount;
     properties.zero_results = event.resultCount === 0;
+  } else if (event.name === "menu_favorite_changed") {
+    properties.item_id = event.itemId;
+    properties.liked = event.liked;
   } else if (event.name === "menu_item_expanded" || event.name === "menu_item_collapsed") {
+    if (event.detailMode) properties.detail_mode = event.detailMode;
     properties.item_id = event.itemId;
     properties.item_name = event.itemName;
     properties.price_cents = event.priceCents;
@@ -118,7 +127,10 @@ export const posthogProvider: AnalyticsProvider = {
     if (!posthog.__loaded) return;
 
     try {
-      posthog.capture(event.name, getPostHogProperties(event));
+      // Start departure-prone actions immediately; SDK keepalive/unload handling
+      // remains best effort and never delays customer navigation.
+      const action = ["delivery_clicked", "pickup_clicked", "phone_clicked", "directions_clicked"].includes(event.name);
+      posthog.capture(event.name, getPostHogProperties(event), action ? { send_instantly: true } : undefined);
     } catch {
       // A provider failure must not block UI behavior or other providers.
     }
