@@ -1,6 +1,7 @@
 export type ResendEmail = {
   from: string;
   to: string;
+  reply_to?: string;
   subject: string;
   html: string;
   text: string;
@@ -37,6 +38,7 @@ export async function sendResendEmail(
       body: JSON.stringify({
         from: email.from,
         to: [email.to],
+        ...(email.reply_to === undefined ? {} : { reply_to: email.reply_to }),
         subject: email.subject,
         html: email.html,
         text: email.text,

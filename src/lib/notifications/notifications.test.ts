@@ -80,6 +80,10 @@ test("Resend delivery sends a stable idempotency key and recognizes success", as
     return new Response(JSON.stringify({ id: "resend-message-1" }), { status: 200 });
   });
   assert.equal(new Headers(request?.headers).get("Idempotency-Key"), claim.idempotencyKey);
+  assert.deepEqual(JSON.parse(request?.body as string), {
+    from: "Menu Man <orders@getmenuman.com>", to: [claim.recipient],
+    subject: "Test", html: "<p>Test</p>", text: "Test",
+  });
   assert.equal(result.succeeded, true);
   assert.equal(result.providerMessageId, "resend-message-1");
 });
@@ -96,4 +100,25 @@ test("Resend retry policy separates transient and permanent failures", async () 
   }, async () => new Response(JSON.stringify({ name: "validation_error", message: "Bad sender" }), { status: 422 }));
   assert.equal(result.succeeded, false);
   assert.equal(result.retryable, false);
+});
+
+test("Resend optional Reply-To is serialized without changing sender, recipient, or failure handling", async () => {
+  for (const status of [200, 422, 503]) {
+    let payload: Record<string, unknown> | undefined;
+    const result = await sendResendEmail("mock-secret", {
+      from: "Menu Man <hello@getmenuman.com>", to: "hello@getmenuman.com",
+      reply_to: "customer@example.com", subject: "Inquiry", html: "<p>Test</p>",
+      text: "Test", idempotencyKey: "lead/test-reply-to",
+    }, async (_url, init) => {
+      payload = JSON.parse(init!.body as string);
+      return Response.json(status === 200 ? { id: "mock-message" } : { name: "provider_error" }, { status });
+    });
+    assert.deepEqual(payload, {
+      from: "Menu Man <hello@getmenuman.com>", to: ["hello@getmenuman.com"],
+      reply_to: "customer@example.com", subject: "Inquiry", html: "<p>Test</p>", text: "Test",
+    });
+    assert.equal(result.succeeded, status === 200);
+    assert.equal(result.retryable, status === 503);
+    assert.equal(result.providerMessageId, status === 200 ? "mock-message" : null);
+  }
 });
