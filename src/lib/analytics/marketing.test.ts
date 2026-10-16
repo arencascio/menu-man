@@ -6,6 +6,7 @@ import { ModuleKind, transpileModule } from "typescript";
 import { createMarketingAnalytics, createMarketingFormAnalytics, marketingClick, marketingCta, marketingEnvironment, sanitizeCampaign, sanitizeMarketingCapture } from "./marketing";
 import { createLeadSubmitter, type LeadOutcome } from "../marketing-leads/client";
 import type { MarketingEvent } from "./types";
+import { restaurantEventContext, sanitizeRestaurantCapture } from "./restaurant";
 
 function harness(allowed = () => true, storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">) {
   const events: Array<{ name: string; properties: Record<string, unknown> }> = [];
@@ -179,6 +180,7 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   runInNewContext(compiled, { exports, process: { env: { NEXT_PUBLIC_POSTHOG_KEY: "mock", NEXT_PUBLIC_POSTHOG_HOST: "https://mock.invalid", NEXT_PUBLIC_VERCEL_ENV: "preview" } }, require(id: string) {
     if (id === "posthog-js") return { default: sdk };
     if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
+    if (id === "./restaurant") return { restaurantEventContext, sanitizeRestaurantCapture };
     throw Error(id);
   } });
   exports.captureMarketingEvent!("$pageview", {}); assert.equal(captures.length, 0);
@@ -191,8 +193,40 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   optedOut = true; exports.captureMarketingEvent!("$pageview", {}); assert.equal(captures.length, 1);
   optedOut = false; exports.posthogProvider!.track({ name: "page_view", restaurantId: "tenant" });
   assert.equal(captures[1].event, "page_view"); assert.equal(captures[1].properties.restaurant_id, "tenant");
+  assert.equal(captures[1].properties.analytics_scope, "restaurant");
+  assert.equal(captures[1].properties.environment, "staging");
+  assert.equal(captures[1].properties.utm_source, undefined);
   const restaurant = { properties: { restaurant_id: "tenant", query: "tacos" } };
   assert.equal(sanitizeMarketingCapture(restaurant), restaurant);
+});
+
+test("restaurant context uses deployment configuration and stays isolated from marketing and other tenants", () => {
+  const source = readFileSync("src/lib/analytics/posthog.ts", "utf8");
+  const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
+  for (const [configured, expected] of [["production", "production"], ["preview", "staging"], ["development", "development"], [undefined, "unknown"], ["unexpected", "unknown"]]) {
+    const captures: Array<{ event: string; properties: Record<string, unknown> }> = [];
+    const sdk = { __loaded: true, has_opted_out_capturing: () => false,
+      capture(event: string, properties: Record<string, unknown>) { captures.push({ event, properties }); },
+    };
+    const exports: { captureMarketingEvent?: (name: string, properties: Record<string, unknown>) => void; posthogProvider?: { track(event: unknown): void } } = {};
+    runInNewContext(compiled, { exports, process: { env: { NEXT_PUBLIC_VERCEL_ENV: configured } }, require(id: string) {
+      if (id === "posthog-js") return { default: sdk };
+      if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
+      if (id === "./restaurant") return { restaurantEventContext, sanitizeRestaurantCapture };
+      throw Error(id);
+    } });
+    exports.captureMarketingEvent!("$pageview", { analytics_scope: "marketing", page: "/", utm_source: "card" });
+    exports.posthogProvider!.track({ name: "category_selected", restaurantId: "tenant-a", sectionId: "section-a", sectionName: "Tacos",
+      analytics_scope: "marketing", environment: "production", utm_source: "untrusted" });
+    exports.posthogProvider!.track({ name: "delivery_clicked", restaurantId: "tenant-b" });
+    exports.captureMarketingEvent!("marketing_form_opened", { analytics_scope: "marketing", page: "/work", form_type: "website_review" });
+    assert.deepEqual(JSON.parse(JSON.stringify(captures)), [
+      { event: "$pageview", properties: { analytics_scope: "marketing", environment: expected, page: "/", utm_source: "card" } },
+      { event: "category_selected", properties: { analytics_scope: "restaurant", environment: expected, restaurant_id: "tenant-a", surface: "menu", section_id: "section-a", section_name: "Tacos" } },
+      { event: "delivery_clicked", properties: { analytics_scope: "restaurant", environment: expected, restaurant_id: "tenant-b", surface: "ordering_actions" } },
+      { event: "marketing_form_opened", properties: { analytics_scope: "marketing", environment: expected, page: "/work", form_type: "website_review" } },
+    ]);
+  }
 });
 
 test("UI wiring uses one delegated click listener and pathname effects; lead success never comes from a click", () => {

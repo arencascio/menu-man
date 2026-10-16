@@ -4,6 +4,7 @@ import { getOrderPaymentView, getPaymentSession, PaymentServerError } from "@/li
 import { supabaseServer } from "@/lib/supabase/server";
 import Link from "next/link";
 import PaymentPanel from "../../../PaymentPanel";
+import PageViewTracker from "../../../PageViewTracker";
 import OrderSnapshot from "../../../OrderSnapshot";
 import styles from "../../../menu-browser.module.css";
 
@@ -35,6 +36,12 @@ export default async function PaymentPage({
   const viewIsPlaced = view.payment.orderStatus === "placed"
     && ["paid", "partially_refunded", "refunded"].includes(view.payment.paymentStatus);
   if (detailsRequested) {
+    // Analytics-only identity lookup; unavailable tracking must not change the details view.
+    let trackingRestaurant: { id: string } | null = null;
+    try {
+      const result = await supabaseServer.from("restaurants").select("id").eq("slug", slug).maybeSingle();
+      trackingRestaurant = result.data;
+    } catch { /* The details view remains available if analytics identity cannot load. */ }
     const returnHref = viewIsPlaced
       ? `/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`
       : view.payment.orderStatus === "pending_payment"
@@ -47,6 +54,7 @@ export default async function PaymentPage({
         : "Back to Menu";
     return (
       <main className={styles.page}>
+        {trackingRestaurant && <PageViewTracker restaurantId={trackingRestaurant.id} pageType="payment" path={`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/payment`} />}
         <section className={styles.checkoutPanel} aria-labelledby="order-details-title">
           <p className={styles.expandedLabel}>Order details</p>
           <h1 id="order-details-title">Order #{view.order.orderNumber}</h1>
@@ -78,5 +86,8 @@ export default async function PaymentPage({
   }
   const { data: restaurant } = await supabaseServer.from("restaurants").select("id").eq("slug", slug).maybeSingle();
   if (!restaurant) notFound();
-  return <PaymentPanel restaurantId={restaurant.id} restaurantSlug={slug} initialView={currentView} paymentSession={session} />;
+  return <>
+    <PageViewTracker restaurantId={restaurant.id} pageType="payment" path={`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/payment`} />
+    <PaymentPanel restaurantId={restaurant.id} restaurantSlug={slug} initialView={currentView} paymentSession={session} />
+  </>;
 }

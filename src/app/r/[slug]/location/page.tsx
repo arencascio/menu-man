@@ -110,6 +110,6 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
       phone={phone}
       restaurantId={restaurant.id}
     />
-    <PageViewTracker restaurantId={restaurant.id} />
+    <PageViewTracker restaurantId={restaurant.id} pageType="location" path={`/r/${encodeURIComponent(slug)}/location`} />
   </RestaurantShell>;
 }

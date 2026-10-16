@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import AnalyticsScripts from "./AnalyticsScripts";
 import MarketingAnalytics from "./MarketingAnalytics";
+import { RestaurantNavigationObserver } from "./r/[slug]/PageViewTracker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${manrope.variable}`}>
       <body>
         <MarketingAnalytics />
+        <RestaurantNavigationObserver />
         {children}
         <AnalyticsScripts />
       </body>

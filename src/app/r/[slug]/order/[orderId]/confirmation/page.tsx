@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import PageViewTracker from "../../../PageViewTracker";
 import { getGuestPaymentCapability } from "@/lib/payments/capability-cookie";
 import { getOrderPaymentView, PaymentServerError } from "@/lib/payments/server";
 import OrderSnapshot from "../../../OrderSnapshot";
@@ -28,6 +29,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
   if (!restaurant) notFound();
   return (
     <main className={styles.page}>
+      <PageViewTracker restaurantId={restaurant.id} pageType="confirmation" path={`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`} />
       <ConfirmationEffects restaurantId={restaurant.id} orderId={orderId} currency={view.order.currency} />
       <section className={`${styles.checkoutPanel} ${styles.confirmationPanel}`} aria-labelledby="confirmation-title">
         <header className={styles.confirmationHeader}>

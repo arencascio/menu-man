@@ -545,7 +545,7 @@ if (restaurantError || !restaurant) {
         longitude={restaurant.longitude}
         hours={hours}
       />
-      <PageViewTracker restaurantId={restaurant.id} />
+      <PageViewTracker restaurantId={restaurant.id} pageType="home" path={`/r/${encodeURIComponent(slug)}`} />
     </RestaurantShell>
   );
 }

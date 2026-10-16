@@ -1,6 +1,7 @@
 import posthog from "posthog-js";
 import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 import { marketingEnvironment, sanitizeMarketingCapture } from "./marketing";
+import { restaurantEventContext, sanitizeRestaurantCapture } from "./restaurant";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -32,7 +33,7 @@ export function initializePostHog() {
       rageclick: false,
       save_campaign_params: false,
       save_referrer: false,
-      before_send: (event) => event ? sanitizeMarketingCapture(event) : null,
+      before_send: (event) => event ? sanitizeRestaurantCapture(sanitizeMarketingCapture(event)) : null,
     });
   } catch {
     // Analytics must never prevent the restaurant experience from loading.
@@ -59,21 +60,24 @@ function getPostHogItem(item: AnalyticsCartItem) {
 
 function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
   const properties: Record<string, unknown> = {
+    analytics_scope: "restaurant",
+    environment: marketingEnvironment(process.env.NEXT_PUBLIC_VERCEL_ENV),
     restaurant_id: event.restaurantId,
+    ...restaurantEventContext(event, typeof window === "undefined" ? "" : window.location.pathname),
   };
 
   if (event.name === "category_selected") {
-    properties.section_id = event.sectionId;
+    if (!["featured", "popular", "favorites"].includes(event.sectionId)) properties.section_id = event.sectionId;
     properties.section_name = event.sectionName;
   } else if (event.name === "menu_search") {
-    properties.query = event.query;
     properties.query_length = event.queryLength;
     properties.result_count = event.resultCount;
+    properties.zero_results = event.resultCount === 0;
   } else if (event.name === "menu_item_expanded" || event.name === "menu_item_collapsed") {
     properties.item_id = event.itemId;
     properties.item_name = event.itemName;
     properties.price_cents = event.priceCents;
-    properties.section_id = event.sectionId;
+    if (!["featured", "popular", "favorites"].includes(event.sectionId)) properties.section_id = event.sectionId;
     properties.section_name = event.sectionName;
   } else if (event.name === "add_to_cart" || event.name === "remove_from_cart") {
     properties.item_id = event.itemId;

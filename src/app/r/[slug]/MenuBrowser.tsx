@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
+import { menuSearchMetrics } from "@/lib/analytics/restaurant";
 import { formatPrice, getCartLineSignature, getModifierValidationErrors } from "@/lib/cart/cart";
 import type { CartLine, MenuModifierGroup } from "@/lib/cart/types";
 import { paymentStatusSchema } from "@/lib/payments/contracts";
@@ -428,9 +429,7 @@ export default function MenuBrowser({
       navigationIntentRef.current = nextSearch ? searchIntent() : clearSearchIntent();
       setSearch(nextSearch);
       if (nextSearch) {
-        const resultCount = menuSections
-          .reduce((count, section) => count + section.items.filter((item) => [item.name, item.description || ""].join(" ").toLowerCase().includes(nextSearch)).length, 0);
-        trackEvent({ name: "menu_search", restaurantId, query: nextSearch, queryLength: nextSearch.length, resultCount });
+        trackEvent({ name: "menu_search", restaurantId, ...menuSearchMetrics(menuSections, nextSearch) });
       }
     }, 200);
     return () => window.clearTimeout(timeout);

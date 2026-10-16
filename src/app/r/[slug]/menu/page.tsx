@@ -161,6 +161,6 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
       phone={phone}
       restaurantId={restaurant.id}
     />
-    <PageViewTracker restaurantId={restaurant.id} />
+    <PageViewTracker restaurantId={restaurant.id} pageType="menu" path={`/r/${encodeURIComponent(slug)}/menu`} />
   </RestaurantShell>;
 }

@@ -5,6 +5,7 @@ import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
 import { paymentLocksCart } from "@/lib/payments/state";
 import { getCustomerNotificationPreferences } from "@/lib/checkout/server";
 import CheckoutPanel from "../CheckoutPanel";
+import PageViewTracker from "../PageViewTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,8 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
   const notificationPreferences = await getCustomerNotificationPreferences(slug);
 
   return (
+    <>
+    <PageViewTracker restaurantId={restaurant.id} pageType="checkout" path={`/r/${encodeURIComponent(slug)}/checkout`} />
     <CheckoutPanel
       restaurantId={restaurant.id}
       restaurantSlug={restaurant.slug}
@@ -58,5 +61,6 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
       }}
       notificationPreferences={notificationPreferences}
     />
+    </>
   );
 }
