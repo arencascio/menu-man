@@ -12,13 +12,17 @@ function configuration() {
   return { key, url: `${host}/api/projects/${project}/query/` };
 }
 
+class ReportingHttpError extends Error {
+  constructor(readonly status: number) { super("Reporting provider unavailable"); }
+}
+
 async function query(config: NonNullable<ReturnType<typeof configuration>>, sql: string) {
   const response = await fetch(config.url, {
     method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(12_000),
     headers: { Authorization: `Bearer ${config.key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ query: { kind: "HogQLQuery", query: sql }, refresh: "force_blocking" }),
   });
-  if (!response.ok) throw Error("Reporting provider unavailable");
+  if (!response.ok) throw new ReportingHttpError(response.status);
   return response.json() as Promise<unknown>;
 }
 
@@ -56,8 +60,13 @@ export async function loadOwnerAnalytics(slug: string, requestedRange: unknown) 
         } catch { /* Historical/deleted items still have valid aggregate counts. */ }
       }
       state = { status: "ready", report };
-    } catch {
-      // Never log credentials, provider responses, queries or raw events.
+    } catch (error) {
+      // Bounded operational diagnostics only; never provider text, queries or data.
+      console.error("[analytics-reporting]", error instanceof ReportingHttpError
+        ? { category: "http", status: error.status }
+        : error instanceof z.ZodError
+          ? { category: "invalid_response", fields: [...new Set(error.issues.map((issue) => issue.path[0]).filter((field) => ["results", "error", "hasMore", "query_status"].includes(String(field))))] }
+          : { category: "request_or_aggregation" });
       state = { status: "unavailable", reason: "provider" };
     }
   }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
-import { JsxEmit, ModuleKind, transpileModule } from "typescript";
+import { JsxEmit, ModuleKind, ScriptTarget, transpileModule } from "typescript";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as jsx from "react/jsx-runtime";
@@ -23,7 +23,7 @@ const items = { results: [[itemId, 5]] };
 const read = (file: string) => readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 function load(file: string, dependencies: Record<string, unknown>, globals: Record<string, unknown> = {}) {
   const exports: Record<string, unknown> = {};
-  runInNewContext(transpileModule(read(file), { compilerOptions: { module: ModuleKind.CommonJS, jsx: JsxEmit.ReactJSX } }).outputText, {
+  runInNewContext(transpileModule(read(file), { compilerOptions: { target: ScriptTarget.ES2017, module: ModuleKind.CommonJS, jsx: JsxEmit.ReactJSX } }).outputText, {
     exports, ...globals, require(id: string) {
       assert.ok(Object.hasOwn(dependencies, id), `Unexpected dependency ${id}`);
       return dependencies[id];
@@ -38,6 +38,7 @@ function server(options: {
 } = {}) {
   const requests: { url: string; init: RequestInit }[] = [];
   const catalog: unknown[] = [];
+  const diagnostics: unknown[][] = [];
   let authorizationReads = 0;
   const exports = load("src/lib/analytics/reporting-server.ts", {
     "server-only": {}, zod: { z },
@@ -54,18 +55,33 @@ function server(options: {
       } }) }) }) }),
     },
   }, { process: { env: options.env ?? { POSTHOG_PERSONAL_API_KEY: "private-mock-key", POSTHOG_PROJECT_ID: "599948", VERCEL_ENV: "preview" } },
-    AbortSignal,
+    AbortSignal, console: { error: (...args: unknown[]) => { diagnostics.push(args); } },
     fetch: async (url: string, init: RequestInit) => {
       requests.push({ url, init });
       if (options.failure === "network") throw Error("PRIVATE_PROVIDER_DETAILS");
       const sql = JSON.parse(init.body as string).query.query as string;
-      return { ok: options.failure !== "http", json: async () => options.failure === "malformed" ? { results: [["PRIVATE_RAW_EVENT"]] }
+      return { ok: options.failure !== "http", status: options.failure === "http" ? 403 : 200, json: async () => options.failure === "malformed" ? { results: [["PRIVATE_RAW_EVENT"]] }
         : options.failure === "pending" ? { query_status: { complete: false } }
           : options.failure === "empty" ? { results: [] } : sql.includes("GROUP BY day") ? daily : items };
     },
   });
-  return { load: exports.loadOwnerAnalytics as (slug: string, range?: unknown) => Promise<{ membership: RestaurantMembership; state: reporting.ReportingState }>, requests, catalog, reads: () => authorizationReads };
+  return { load: exports.loadOwnerAnalytics as (slug: string, range?: unknown) => Promise<{ membership: RestaurantMembership; state: reporting.ReportingState }>, requests, catalog, diagnostics, reads: () => authorizationReads };
 }
+
+test("reporting diagnostics contain only bounded status or schema fields, never credentials or raw data", async () => {
+  for (const failure of ["http", "network", "malformed", "pending"] as const) {
+    const harness = server({ failure });
+    await harness.load("super-tacos", "7");
+    assert.ok(harness.diagnostics.length);
+    const output = JSON.stringify(harness.diagnostics);
+    assert.doesNotMatch(output, /PRIVATE_|private-mock|SELECT|Bearer|restaurant_id|20000000/);
+    if (failure === "http") assert.match(output, /"category":"http","status":403/);
+    else if (failure === "network") assert.match(output, /request_or_aggregation/);
+    else assert.match(output, /invalid_response/);
+  }
+  const success = server(); await success.load("super-tacos", "7");
+  assert.equal(success.diagnostics.length, 0);
+});
 
 test("reporting range validates only 7/30/90 and uses UTC calendar days including partial today across DST/year boundaries", () => {
   assert.deepEqual(reporting.reportingRange("7", now), { days: 7, from: "2026-10-10T00:00:00.000Z", until: "2026-10-16T12:34:56.000Z" });
