@@ -1,4 +1,47 @@
-# Restaurant visitor continuity — Phase D.0 assessment
+# Restaurant visitor continuity — D.2.1 implementation
+
+Status: **implemented locally, not deployed or verified in live PostHog**.
+The D.0 assessment below records the original blocker and proposed design; its
+"not implemented" statements describe that earlier state.
+
+For a trusted U.S.-eligible request, restaurant events now receive a cryptographically
+random `distinct_id` and matching `$device_id` scoped to `(environment,
+restaurant_id)`. `$session_id` is a separate random visit ID; the shared SDK's
+`$window_id`, `$insert_id`, person fields and other shared identity metadata are
+removed at the final synchronous `before_send` boundary. The installed SDK's
+actual intercepted Chrome request bodies were checked after this hook. Marketing
+events continue using their existing memory-only SDK identity. Restaurant events
+carry `identity_version=1` and `identity_mode=persistent|ephemeral`.
+
+Version 1 is stored in first-party `localStorage` only after eligibility and the
+SDK opt-out check pass. It has a fixed 90-day lifetime from creation; activity
+does not extend expiry. A new visit ID starts after at least 30 minutes without
+an eligible event. Web Locks serialize first creation, visit rollover and
+withdrawal across tabs. Without usable storage or Web Locks, an in-document,
+tenant-scoped ephemeral ID is used and labeled as such. Without secure random
+UUID generation, restaurant capture is dropped. Unknown deployment environment
+or denied/failed regional eligibility creates no restaurant identity.
+
+An eligible visitor can turn off restaurant analytics in the restaurant footer.
+Withdrawal suppresses further restaurant capture for that tenant, clears its
+stored identity and persists a tenant-specific opt-out marker when storage works.
+The visitor can turn it on again; that starts a fresh identity. If storage fails
+during withdrawal, capture remains off in the current document and the control
+states that the choice is session-only. Global PostHog opt-out also suppresses
+capture; neither choice affects marketing identity or another restaurant.
+
+Owner reporting must filter to `identity_version=1` and
+`identity_mode=persistent` before presenting unique or returning browser counts.
+It must use distinct visit IDs, not repeated pageviews, for returning status.
+The existing owner dashboard is unchanged. Same-origin localStorage is accessible
+to other same-origin scripts, and event ingestion still exposes network IP to
+PostHog under the existing project settings. Client expiry/withdrawal does not
+erase already-ingested events. The legacy optional GA4 restaurant path has its
+own client identity and is **not** a source for D.2.1 visitor metrics; its
+configuration should be reviewed before any claim of cross-provider identity
+isolation. Full browser QA and live ingestion remain staging follow-ups.
+
+## Historical D.0 assessment
 
 Status: **blocked pending an analytics-storage permission mechanism/policy**.
 No runtime identity or persistence changes were made. The design below is a

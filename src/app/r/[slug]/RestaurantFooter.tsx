@@ -8,6 +8,7 @@ import type { RestaurantNavigationItem } from "./RestaurantNavigation";
 import RestaurantNavigationIcon from "./RestaurantNavigationIcon";
 import RestaurantPatternSeparator from "./RestaurantPatternSeparator";
 import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
+import RestaurantAnalyticsChoice from "./RestaurantAnalyticsChoice";
 
 type RestaurantFooterProps = {
   className?: string;
@@ -120,6 +121,7 @@ export default function RestaurantFooter({
           ))}
         </nav>
 
+        <RestaurantAnalyticsChoice restaurantId={restaurantId} />
         <p className={styles.copyright}>&copy; {currentYear} {name}</p>
       </div>
     </footer>

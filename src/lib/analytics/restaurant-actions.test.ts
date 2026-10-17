@@ -8,7 +8,9 @@ import { restaurantEventContext, sanitizeRestaurantCapture } from "./restaurant"
 import { createMenuEngagement, menuCardSurface } from "./menu-engagement";
 
 const providerId = "20000000-0000-4000-8000-000000000301";
-const base = { analytics_scope: "restaurant", restaurant_id: "tenant-a", environment: "staging" };
+const base = { analytics_scope: "restaurant", restaurant_id: "tenant-a", environment: "staging",
+  distinct_id: "20000000-0000-4000-8000-000000000001", $device_id: "20000000-0000-4000-8000-000000000001",
+  $session_id: "20000000-0000-4000-8000-000000000002", identity_version: 1, identity_mode: "persistent" };
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 const component = (name: string) => read(`src/app/r/[slug]/${name}.tsx`);
 const plain = (value: unknown) => JSON.parse(JSON.stringify(value));
@@ -23,7 +25,7 @@ function load(path: string, dependencies: Record<string, unknown>, globals: Reco
   return exports;
 }
 
-test("action adapter retains canonical provider/source and pickup semantics, privacy and tenant context; only actions bypass batching", () => {
+test("action adapter retains canonical provider/source and pickup semantics, privacy and tenant context; only actions bypass batching", async () => {
   const captures: { event: string; properties: Record<string, unknown> }[] = [];
   const options: unknown[] = [];
   let beforeSend: (event: typeof captures[number]) => typeof captures[number] | null;
@@ -38,10 +40,14 @@ test("action adapter retains canonical provider/source and pickup semantics, pri
     },
   };
   const adapter = load("src/lib/analytics/posthog.ts", { "posthog-js": { default: sdk },
-    "./marketing": { marketingEnvironment, sanitizeMarketingCapture }, "./restaurant": { restaurantEventContext, sanitizeRestaurantCapture } },
+    "./marketing": { marketingEnvironment, sanitizeMarketingCapture }, "./restaurant": { restaurantEventContext, sanitizeRestaurantCapture },
+    "./eligibility": { analyticsEligibility: { check: async () => true, isAllowed: () => true } },
+    "./restaurant-identity": { restaurantIdentity: { withIdentity: async (_environment: string, _restaurantId: string,
+      _allowed: () => boolean, deliver: (identity: unknown) => void) => deliver({ distinctId: base.distinct_id,
+        visitId: base.$session_id, mode: "persistent" }) } } },
   { process: { env: { NEXT_PUBLIC_POSTHOG_KEY: "mock", NEXT_PUBLIC_POSTHOG_HOST: "https://mock.invalid", NEXT_PUBLIC_VERCEL_ENV: "preview" } },
     window: { location: { pathname: "/r/a/location" } } });
-  adapter.initializePostHog();
+  await adapter.initializePostHog();
   const provider = adapter.posthogProvider as unknown as { track(event: unknown): void };
   provider.track({ name: "delivery_clicked", restaurantId: "tenant-a", providerId, surface: "delivery_chooser", placement: "hero",
     url: "https://private.example/", providerName: "Private name", phone: "5555555555" });
@@ -60,7 +66,7 @@ test("action adapter retains canonical provider/source and pickup semantics, pri
   assert.ok(options.every((option) => JSON.stringify(option) === '{"send_instantly":true}'));
   provider.track({ name: "page_view", restaurantId: "tenant-b" });
   assert.equal(captures.at(-1)?.properties.restaurant_id, "tenant-b");
-  assert.equal(options.at(-1), null);
+  assert.deepEqual(options.at(-1), { send_instantly: true });
   adapter.captureMarketingEvent(...["marketing_cta_clicked", { analytics_scope: "marketing", page: "/", cta_id: "build_website", placement: "hero", destination_type: "page" }] as never[]);
   assert.equal(captures.at(-1)?.properties.analytics_scope, "marketing");
   assert.equal(Object.hasOwn(captures.at(-1)!.properties, "restaurant_id"), false);

@@ -1,5 +1,5 @@
 import { createMarketingAnalytics } from "./marketing";
-import { captureMarketingEvent, isMarketingCaptureAllowed } from "./posthog";
+import { captureMarketingEvent, initializePostHog, isMarketingCaptureAllowed } from "./posthog";
 import type { MarketingEvent } from "./types";
 
 // Campaign codes only: no stored identity, form data, URL or referrer.
@@ -8,9 +8,18 @@ const storage = {
   setItem: (key: string, value: string) => window.sessionStorage.setItem(key, value),
   removeItem: (key: string) => window.sessionStorage.removeItem(key),
 };
-export const marketingAnalytics = createMarketingAnalytics(captureMarketingEvent, isMarketingCaptureAllowed, storage);
+const analytics = createMarketingAnalytics(captureMarketingEvent, isMarketingCaptureAllowed, storage);
+
+// Preserve the source page and campaign while the request-specific decision
+// resolves. The underlying helper still deduplicates page visits.
+export const marketingAnalytics = {
+  visit(path: string, search = "") {
+    void initializePostHog().then(() => analytics.visit(path, search));
+  },
+};
 
 export function trackMarketing(event: MarketingEvent) {
   if (typeof window === "undefined") return;
-  marketingAnalytics.track(event, window.location.pathname, window.location.search);
+  const { pathname, search } = window.location;
+  void initializePostHog().then(() => analytics.track(event, pathname, search));
 }

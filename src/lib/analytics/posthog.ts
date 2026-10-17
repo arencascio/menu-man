@@ -2,6 +2,8 @@ import posthog from "posthog-js";
 import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 import { marketingEnvironment, sanitizeMarketingCapture } from "./marketing";
 import { restaurantEventContext, sanitizeRestaurantCapture } from "./restaurant";
+import { analyticsEligibility } from "./eligibility";
+import { restaurantIdentity, type RestaurantIdentity } from "./restaurant-identity";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -10,43 +12,69 @@ export function isPostHogConfigured() {
   return Boolean(posthogKey && posthogHost);
 }
 
-export function initializePostHog() {
-  if (!posthogKey || !posthogHost || posthog.__loaded) return;
+let initialization: Promise<void> | undefined;
+let activeRestaurantCapture: { name: string; restaurantId: string; environment: string; identity: RestaurantIdentity } | null = null;
 
-  try {
-    posthog.init(posthogKey, {
-      api_host: posthogHost,
-      defaults: "2026-05-30",
-      advanced_disable_flags: true,
-      autocapture: false,
-      capture_dead_clicks: false,
-      capture_exceptions: false,
-      capture_heatmaps: false,
-      capture_pageleave: false,
-      capture_pageview: false,
-      capture_performance: false,
-      disable_external_dependency_loading: true,
-      disable_session_recording: true,
-      disableDeviceModel: true,
-      person_profiles: "never",
-      persistence: "memory",
-      rageclick: false,
-      save_campaign_params: false,
-      save_referrer: false,
-      before_send: (event) => event ? sanitizeRestaurantCapture(sanitizeMarketingCapture(event)) : null,
-    });
-  } catch {
-    // Analytics must never prevent the restaurant experience from loading.
-  }
+function sanitizeOutbound<T extends { event: string; properties: Record<string, unknown> }>(event: T): T | null {
+  if (!analyticsEligibility.isAllowed()) return null;
+  if (event.properties.analytics_scope === "marketing") return sanitizeMarketingCapture(event);
+  if (event.properties.analytics_scope !== "restaurant") return null;
+  const safe = sanitizeRestaurantCapture(event);
+  if (!safe) return null;
+  const active = activeRestaurantCapture;
+  if (!active || safe.event !== active.name || safe.properties.restaurant_id !== active.restaurantId
+    || safe.properties.environment !== active.environment) return null;
+  return { ...safe, properties: { ...safe.properties,
+    distinct_id: active.identity.distinctId, $device_id: active.identity.distinctId,
+    $session_id: active.identity.visitId, identity_version: 1, identity_mode: active.identity.mode,
+  } };
+}
+
+export function initializePostHog(): Promise<void> {
+  if (!posthogKey || !posthogHost) return Promise.resolve();
+  return initialization ??= (async () => {
+    if (!await analyticsEligibility.check() || posthog.__loaded) return;
+
+    try {
+      posthog.init(posthogKey, {
+        api_host: posthogHost,
+        defaults: "2026-05-30",
+        advanced_disable_flags: true,
+        autocapture: false,
+        capture_dead_clicks: false,
+        capture_exceptions: false,
+        capture_heatmaps: false,
+        capture_pageleave: false,
+        capture_pageview: false,
+        capture_performance: false,
+        disable_external_dependency_loading: true,
+        disable_session_recording: true,
+        disableDeviceModel: true,
+        person_profiles: "never",
+        persistence: "memory",
+        rageclick: false,
+        save_campaign_params: false,
+        save_referrer: false,
+        before_send: (event) => event ? sanitizeOutbound(event) : null,
+      });
+    } catch {
+      // Analytics must never prevent the restaurant experience from loading.
+    }
+  })().catch(() => { /* Eligibility and SDK failures never block the site. */ });
+}
+
+function isPostHogCaptureAllowed() {
+  return analyticsEligibility.isAllowed() && posthog.__loaded && !posthog.has_opted_out_capturing();
 }
 
 export function isMarketingCaptureAllowed() {
-  return posthog.__loaded && !posthog.has_opted_out_capturing();
+  return isPostHogCaptureAllowed();
 }
 
 export function captureMarketingEvent(name: string, properties: Record<string, unknown>) {
   if (!isMarketingCaptureAllowed()) return;
-  posthog.capture(name, { ...properties, environment: marketingEnvironment(process.env.NEXT_PUBLIC_VERCEL_ENV) });
+  posthog.capture(name, { ...properties, analytics_scope: "marketing",
+    environment: marketingEnvironment(process.env.NEXT_PUBLIC_VERCEL_ENV) });
 }
 
 function getPostHogItem(item: AnalyticsCartItem) {
@@ -124,13 +152,26 @@ function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
 
 export const posthogProvider: AnalyticsProvider = {
   track(event) {
-    if (!posthog.__loaded) return;
-
     try {
-      // Start departure-prone actions immediately; SDK keepalive/unload handling
-      // remains best effort and never delays customer navigation.
-      const action = ["delivery_clicked", "pickup_clicked", "phone_clicked", "directions_clicked"].includes(event.name);
-      posthog.capture(event.name, getPostHogProperties(event), action ? { send_instantly: true } : undefined);
+      const properties = getPostHogProperties(event);
+      const send = () => {
+        try {
+          if (!isPostHogCaptureAllowed()) return;
+          const environment = properties.environment as string;
+          void restaurantIdentity.withIdentity(environment, event.restaurantId, isPostHogCaptureAllowed, (identity) => {
+            if (!isPostHogCaptureAllowed()) return;
+            activeRestaurantCapture = { name: event.name, restaurantId: event.restaurantId, environment, identity };
+            try {
+              // Avoid retaining this tenant's event in the shared SDK batch after withdrawal.
+              posthog.capture(event.name, properties, { send_instantly: true });
+            } catch { /* Analytics must not interrupt restaurant interactions. */ }
+            finally { activeRestaurantCapture = null; }
+          }).catch(() => { /* Storage and browser-lock failures never block interactions. */ });
+        }
+        catch { /* Analytics must not interrupt restaurant interactions. */ }
+      };
+      if (analyticsEligibility.isAllowed() && posthog.__loaded) send();
+      else void initializePostHog().then(send);
     } catch {
       // A provider failure must not block UI behavior or other providers.
     }

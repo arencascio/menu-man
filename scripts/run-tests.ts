@@ -38,6 +38,8 @@ import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test"
 import "./staging-safety.test";
 import "../src/lib/marketing-leads/leads.test";
 import "../src/lib/analytics/marketing.test";
+import "../src/lib/analytics/eligibility.test";
+import "../src/lib/analytics/restaurant-identity.test";
 import "../src/lib/analytics/restaurant.test";
 import "../src/lib/analytics/menu-engagement.test";
 import "../src/lib/analytics/restaurant-actions.test";

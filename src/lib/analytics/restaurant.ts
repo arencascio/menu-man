@@ -62,6 +62,8 @@ const totals = {
 const base = z.object({
   analytics_scope: z.literal("restaurant"), restaurant_id: id,
   environment: z.enum(["production", "staging", "development", "unknown"]),
+  identity_version: z.literal(1).optional(),
+  identity_mode: z.enum(["persistent", "ephemeral"]).optional(),
   page_type: z.enum(pageTypes).optional(),
   surface: z.enum(["home", "menu", "location", "featured", "popular", "favorites", "menu_search", "direct_link", "history", "ordering_actions", "cart", "checkout", "payment", "confirmation", "navigation", "footer", "hero", "header", "restaurant_information", "featured_gallery", "delivery_chooser", "pickup_chooser"]).optional(),
 });
@@ -85,10 +87,8 @@ const schemas: Record<string, z.ZodType> = {
     tax_cents: count, tip_cents: count, pickup_mode: z.enum(["asap", "scheduled"]), idempotency_replay: z.boolean() }),
 };
 const sdk = z.object({
-  token: z.string().max(200).optional(), distinct_id: id.optional(),
-  $device_id: id.optional(), $session_id: id.optional(), $window_id: id.optional(),
+  token: z.string().max(200).optional(),
   $lib: z.literal("web").optional(), $lib_version: z.string().regex(/^[\d.a-zA-Z_-]{1,40}$/).optional(),
-  $insert_id: id.optional(),
 });
 
 // Final boundary, after SDK enrichment. No catalog display text, raw input, URLs,
@@ -100,8 +100,13 @@ export function sanitizeRestaurantCapture<T extends { event: string; properties:
     const parsed = schema?.safeParse(event.properties);
     const sdkProperties = sdk.safeParse(event.properties);
     if (!parsed?.success || !sdkProperties.success) return null;
-    return { ...event, properties: { ...sdkProperties.data, ...parsed.data as Record<string, unknown>,
-      ...sanitizeCampaign(event.properties), $process_person_profile: false, $geoip_disable: true } };
+    // SDK identity and person fields are excluded. The adapter supplies scoped
+    // identity after this validation, at the final before_send boundary.
+    const input = event as T & { uuid?: unknown; timestamp?: unknown };
+    return { event: event.event, properties: { ...sdkProperties.data, ...parsed.data as Record<string, unknown>,
+      ...sanitizeCampaign(event.properties), $process_person_profile: false, $geoip_disable: true },
+      ...(typeof input.uuid === "string" && /^[0-9a-f-]{36}$/i.test(input.uuid) ? { uuid: input.uuid } : {}),
+      ...(input.timestamp instanceof Date ? { timestamp: input.timestamp } : {}) } as unknown as T;
   } catch { return null; } // Invalid analytics must not interrupt restaurant behavior.
 }
 

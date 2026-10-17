@@ -1,5 +1,6 @@
 import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 import { isPostHogConfigured, posthogProvider } from "./posthog";
+import { analyticsEligibility } from "./eligibility";
 
 interface GtagWindow extends Window {
   dataLayer?: unknown[];
@@ -21,7 +22,7 @@ function getGa4Item(item: AnalyticsCartItem) {
 const ga4Provider: AnalyticsProvider = {
   track(event) {
     const win = window as GtagWindow;
-    if (!win.gtag || !measurementId) return;
+    if (!analyticsEligibility.isAllowed() || !win.gtag || !measurementId) return;
     const parameters: Record<string, unknown> = { restaurant_id: event.restaurantId };
     let eventName: string = event.name;
 

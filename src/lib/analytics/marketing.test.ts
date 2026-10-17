@@ -162,7 +162,7 @@ test("opt-out suppresses events and clears campaign data; blocked storage and fa
   assert.doesNotThrow(() => createMarketingFormAnalytics("website_review", () => { throw Error(); }).open());
 });
 
-test("PostHog initialization and final outbound filter preserve restaurant events while removing automatic marketing URL/PII properties", () => {
+test("PostHog initialization and final outbound filter preserve restaurant events while removing automatic marketing URL/PII properties", async () => {
   const captures: Array<{ event: string; properties: Record<string, unknown> }> = [];
   let config: Record<string, unknown> = {};
   let optedOut = false;
@@ -176,15 +176,17 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   };
   const source = readFileSync("src/lib/analytics/posthog.ts", "utf8");
   const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
-  const exports: { initializePostHog?: () => void; captureMarketingEvent?: (name: string, properties: Record<string, unknown>) => void; posthogProvider?: { track(event: unknown): void } } = {};
+  const exports: { initializePostHog?: () => Promise<void>; captureMarketingEvent?: (name: string, properties: Record<string, unknown>) => void; posthogProvider?: { track(event: unknown): void } } = {};
   runInNewContext(compiled, { exports, process: { env: { NEXT_PUBLIC_POSTHOG_KEY: "mock", NEXT_PUBLIC_POSTHOG_HOST: "https://mock.invalid", NEXT_PUBLIC_VERCEL_ENV: "preview" } }, require(id: string) {
     if (id === "posthog-js") return { default: sdk };
     if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
     if (id === "./restaurant") return { restaurantEventContext, sanitizeRestaurantCapture };
+    if (id === "./eligibility") return { analyticsEligibility: { check: async () => true, isAllowed: () => true } };
+    if (id === "./restaurant-identity") return { restaurantIdentity: { withIdentity: async (_env: string, _id: string, _allowed: () => boolean, deliver: (identity: unknown) => void) => deliver({ distinctId: "20000000-0000-4000-8000-000000000001", visitId: "20000000-0000-4000-8000-000000000002", mode: "persistent" }) } };
     throw Error(id);
   } });
   exports.captureMarketingEvent!("$pageview", {}); assert.equal(captures.length, 0);
-  exports.initializePostHog!(); exports.initializePostHog!();
+  await Promise.all([exports.initializePostHog!(), exports.initializePostHog!()]);
   for (const name of ["autocapture", "capture_pageview", "capture_pageleave", "save_campaign_params", "save_referrer"]) assert.equal(config[name], false);
   assert.equal(config.disable_session_recording, true); assert.equal(config.person_profiles, "never"); assert.equal(config.persistence, "memory");
   exports.captureMarketingEvent!("$pageview", { analytics_scope: "marketing", page: "/", utm_source: "card" });
@@ -192,6 +194,7 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   assert.doesNotMatch(JSON.stringify(captures[0]), /private|url|referrer|email|\$set/);
   optedOut = true; exports.captureMarketingEvent!("$pageview", {}); assert.equal(captures.length, 1);
   optedOut = false; exports.posthogProvider!.track({ name: "page_view", restaurantId: "tenant" });
+  await new Promise(setImmediate);
   assert.equal(captures[1].event, "page_view"); assert.equal(captures[1].properties.restaurant_id, "tenant");
   assert.equal(captures[1].properties.analytics_scope, "restaurant");
   assert.equal(captures[1].properties.environment, "staging");
@@ -200,7 +203,7 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   assert.equal(sanitizeMarketingCapture(restaurant), restaurant);
 });
 
-test("restaurant context uses deployment configuration and stays isolated from marketing and other tenants", () => {
+test("restaurant context uses deployment configuration and stays isolated from marketing and other tenants", async () => {
   const source = readFileSync("src/lib/analytics/posthog.ts", "utf8");
   const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
   for (const [configured, expected] of [["production", "production"], ["preview", "staging"], ["development", "development"], [undefined, "unknown"], ["unexpected", "unknown"]]) {
@@ -213,6 +216,8 @@ test("restaurant context uses deployment configuration and stays isolated from m
       if (id === "posthog-js") return { default: sdk };
       if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
       if (id === "./restaurant") return { restaurantEventContext, sanitizeRestaurantCapture };
+      if (id === "./eligibility") return { analyticsEligibility: { check: async () => true, isAllowed: () => true } };
+      if (id === "./restaurant-identity") return { restaurantIdentity: { withIdentity: async (_env: string, _id: string, _allowed: () => boolean, deliver: (identity: unknown) => void) => deliver({ distinctId: "20000000-0000-4000-8000-000000000001", visitId: "20000000-0000-4000-8000-000000000002", mode: "persistent" }) } };
       throw Error(id);
     } });
     exports.captureMarketingEvent!("$pageview", { analytics_scope: "marketing", page: "/", utm_source: "card" });
@@ -220,6 +225,7 @@ test("restaurant context uses deployment configuration and stays isolated from m
       analytics_scope: "marketing", environment: "production", utm_source: "untrusted" });
     exports.posthogProvider!.track({ name: "delivery_clicked", restaurantId: "tenant-b" });
     exports.captureMarketingEvent!("marketing_form_opened", { analytics_scope: "marketing", page: "/work", form_type: "website_review" });
+    await new Promise(setImmediate);
     assert.deepEqual(JSON.parse(JSON.stringify(captures)), [
       { event: "$pageview", properties: { analytics_scope: "marketing", environment: expected, page: "/", utm_source: "card" } },
       { event: "category_selected", properties: { analytics_scope: "restaurant", environment: expected, restaurant_id: "tenant-a", surface: "menu", section_id: "section-a", section_name: "Tacos" } },

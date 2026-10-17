@@ -19,7 +19,7 @@ test("restaurant final boundary strips raw input, URL/referrer and person metada
     query_length: 19, result_count: 0, zero_results: true, token: "mock", distinct_id: "anonymous",
     $process_person_profile: true, $geoip_disable: false, page_type: "menu", surface: "favorites",
     utm_source: "business_card", utm_campaign: "private@example.com", utm_medium: "https://private.example/" } });
-  assert.deepEqual(result?.properties, { ...context, token: "mock", distinct_id: "anonymous", query_length: 19,
+  assert.deepEqual(result?.properties, { ...context, token: "mock", query_length: 19,
     result_count: 0, zero_results: true, page_type: "menu", surface: "favorites", utm_source: "business_card",
     $process_person_profile: false, $geoip_disable: true });
   assert.doesNotMatch(JSON.stringify(result), /PRIVATE|private@|https:|192\.0\.2/);
@@ -88,11 +88,11 @@ test("menu retains normalized meaningful-state guard, 200ms debounce and present
   assert.match(browser, /return \[item.name, item.description \|\| ""\][\s\S]*?\.includes\(search\)/);
 });
 
-test("real adapter wiring applies the final filter after mocked SDK enrichment, ignores extra call properties, and never throws on analytics failure", () => {
+test("real adapter wiring applies the final filter after mocked SDK enrichment, ignores extra call properties, and never throws on analytics failure", async () => {
   let beforeSend: (event: { event: string; properties: Record<string, unknown> }) => unknown;
   const captures: unknown[] = [];
   let fail = false;
-  const sdk = { __loaded: false,
+  const sdk = { __loaded: false, has_opted_out_capturing: () => false,
     init(_key: string, config: Record<string, unknown>) { beforeSend = config.before_send as typeof beforeSend; this.__loaded = true; },
     capture(event: string, properties: Record<string, unknown>) {
       if (fail) throw Error("Provider unavailable");
@@ -100,30 +100,39 @@ test("real adapter wiring applies the final filter after mocked SDK enrichment, 
     },
   };
   const source = readFileSync("src/lib/analytics/posthog.ts", "utf8");
-  const exports: { initializePostHog?: () => void; posthogProvider?: { track(event: unknown): void } } = {};
+  const exports: { initializePostHog?: () => Promise<void>; posthogProvider?: { track(event: unknown): void } } = {};
+  const identity = { distinctId: "20000000-0000-4000-8000-000000000001", visitId: "20000000-0000-4000-8000-000000000002", mode: "persistent" };
   runInNewContext(transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText, {
     exports, process: { env: { NEXT_PUBLIC_POSTHOG_KEY: "mock", NEXT_PUBLIC_POSTHOG_HOST: "https://mock.invalid", NEXT_PUBLIC_VERCEL_ENV: "preview" } },
     require(id: string) {
       if (id === "posthog-js") return { default: sdk };
       if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
       if (id === "./restaurant") return { restaurantEventContext, sanitizeRestaurantCapture };
+      if (id === "./eligibility") return { analyticsEligibility: { check: async () => true, isAllowed: () => true } };
+      if (id === "./restaurant-identity") return { restaurantIdentity: { withIdentity: async (_env: string, _id: string, _allowed: () => boolean, deliver: (identity: unknown) => void) => deliver(identity) } };
       throw Error(id);
     },
   });
-  exports.initializePostHog!();
+  await exports.initializePostHog!();
   exports.posthogProvider!.track({ name: "menu_search", restaurantId: "tenant-a", query: "private@example.com", queryLength: 19, resultCount: 0,
     analytics_scope: "marketing", environment: "production", customer: unsafe });
+  await new Promise(setImmediate);
   assert.deepEqual(JSON.parse(JSON.stringify(captures)), [{ event: "menu_search", properties: { ...context,
-    surface: "menu_search", query_length: 19, result_count: 0, zero_results: true, $process_person_profile: false, $geoip_disable: true } }]);
+    surface: "menu_search", query_length: 19, result_count: 0, zero_results: true, $process_person_profile: false, $geoip_disable: true,
+    distinct_id: identity.distinctId, $device_id: identity.distinctId, $session_id: identity.visitId, identity_version: 1, identity_mode: "persistent" } }]);
   const canonicalItem = "20000000-0000-4000-8000-000000000201";
   exports.posthogProvider!.track({ name: "menu_favorite_changed", restaurantId: "tenant-a", itemId: canonicalItem, liked: true,
     visitorKey: "PRIVATE_VISITOR", email: "private@example.com" });
+  await new Promise(setImmediate);
   assert.deepEqual(JSON.parse(JSON.stringify(captures[1])), { event: "menu_favorite_changed", properties: { ...context,
-    item_id: canonicalItem, liked: true, $process_person_profile: false, $geoip_disable: true } });
+    item_id: canonicalItem, liked: true, $process_person_profile: false, $geoip_disable: true,
+    distinct_id: identity.distinctId, $device_id: identity.distinctId, $session_id: identity.visitId, identity_version: 1, identity_mode: "persistent" } });
   exports.posthogProvider!.track({ name: "menu_item_expanded", restaurantId: "tenant-a", itemId: canonicalItem,
     itemName: "PRIVATE_TEXT", priceCents: 350, sectionId: "featured", sectionName: "PRIVATE_TEXT", surface: "featured", detailMode: "quick" });
+  await new Promise(setImmediate);
   assert.deepEqual(JSON.parse(JSON.stringify(captures[2])), { event: "menu_item_expanded", properties: { ...context,
-    surface: "featured", item_id: canonicalItem, price_cents: 350, detail_mode: "quick", $process_person_profile: false, $geoip_disable: true } });
+    surface: "featured", item_id: canonicalItem, price_cents: 350, detail_mode: "quick", $process_person_profile: false, $geoip_disable: true,
+    distinct_id: identity.distinctId, $device_id: identity.distinctId, $session_id: identity.visitId, identity_version: 1, identity_mode: "persistent" } });
   fail = true;
   assert.doesNotThrow(() => exports.posthogProvider!.track({ name: "page_view", restaurantId: "tenant-a" }));
 });

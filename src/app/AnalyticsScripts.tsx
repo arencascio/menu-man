@@ -1,9 +1,20 @@
+"use client";
+
 import Script from "next/script";
+import { useEffect, useState } from "react";
+import { analyticsEligibility } from "@/lib/analytics/eligibility";
 
 export default function AnalyticsScripts() {
   const provider = process.env.NEXT_PUBLIC_ANALYTICS_PROVIDER;
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-  if (provider !== "ga4" || !measurementId) return null;
+  const [allowed, setAllowed] = useState(false);
+  useEffect(() => {
+    if (provider !== "ga4" || !measurementId) return;
+    let active = true;
+    void analyticsEligibility.check().then((eligible) => { if (active) setAllowed(eligible); });
+    return () => { active = false; };
+  }, [provider, measurementId]);
+  if (!allowed || provider !== "ga4" || !measurementId) return null;
 
   return (
     <>
