@@ -23,10 +23,16 @@ are separate work and do not block this event-count dashboard.
   checks. Unauthenticated requests redirect to login; denied requests to /manage.
 - No raw events, anonymous visitor IDs, queries or private credentials are sent
   to owners. The server selects aggregate counts and canonical item UUIDs only.
-  Item names are read separately using the authenticated Supabase client with
-  the authorized restaurant_id filter and the validated top-item UUIDs. Deleted,
-  historical or unreadable catalog items retain an aggregate with an ID suffix
-  label. Restaurant data is never changed.
+  Item names are read separately using the platform's existing server-only
+  service-role catalog client, only after owner authorization, with the authorized restaurant_id filter
+  and at most ten validated top-item UUIDs. Returned IDs and restaurant ownership
+  are checked again before assigning labels. The client loads lazily so unavailable
+  catalog configuration cannot prevent a report. No database permissions change.
+  Retained same-tenant items can still be named when unpublished; no published-menu
+  join is required for historical reporting. Deleted, invalid or unreadable items
+  retain their ranking/count with the neutral label "Unavailable menu item";
+  neither a UUID nor its suffix appears in that fallback. Restaurant data is never
+  changed. The existing final membership recheck also protects enriched reports.
 - Reports are dynamic and unshared: existing `/manage/*` private/no-store headers,
   force-dynamic/revalidate=0, no React/global report cache, and no-store fetch.
   Authorization is rechecked on every server request. Revocation cannot erase
@@ -128,12 +134,12 @@ pageview/action meanings. See [the D.0 assessment](restaurant-visitor-continuity
 
 ## Validation and staging follow-up
 
-- 11 focused tests cover date validation/UTC boundaries, environment separation,
+- 15 focused tests cover date validation/UTC boundaries, environment separation,
   mandatory query filters, aggregation, owner-only access, cross-tenant denial,
   revocation during reporting, server credentials, scoped catalog reads,
   incomplete/error/empty states, escaped/accessible responsive markup, navigation
   visibility, owner entry routing and actual page login/denial redirects.
-- Full regression suite: 318 tests passed. TypeScript, lint (excluding ignored
+- Full regression suite: 322 tests passed. TypeScript, lint (excluding ignored
   .vercel artifacts), diff checks and production build passed.
 - Local built-route smoke test: unauthenticated Super Tacos and another slug both
   returned 307 to the matching login next URL, private/no-store and noindex headers;

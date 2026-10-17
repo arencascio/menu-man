@@ -69,7 +69,7 @@ export function assembleReport(range: NonNullable<ReturnType<typeof reportingRan
     if (!Number.isSafeInteger(totals[key])) throw Error("Invalid reporting total");
   }
   if (new Set(items.map(([id]) => id)).size !== items.length || items.reduce((n, [, value]) => n + value, 0) > totals.itemOpenings) throw Error("Invalid item counts");
-  return { ...range, environment, daily, totals, popularItems: items.map(([itemId, openings]) => ({ itemId, openings, label: `Menu item ${itemId.slice(-6)}` })) };
+  return { ...range, environment, daily, totals, popularItems: items.map(([itemId, openings]) => ({ itemId, openings, label: "Unavailable menu item" })) };
 }
 
 export function reportingQueries(restaurantId: string, environment: ReportingEnvironment, range: NonNullable<ReturnType<typeof reportingRange>>) {

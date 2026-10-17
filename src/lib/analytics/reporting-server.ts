@@ -1,7 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
-import { authenticatedClient, listRestaurantMemberships, ManagementError } from "@/lib/order-management/server";
+import { listRestaurantMemberships, ManagementError } from "@/lib/order-management/server";
 import { assembleReport, reportingEnvironment, reportingQueries, reportingRange, type ReportingState } from "./reporting";
 
 function configuration() {
@@ -50,12 +50,14 @@ export async function loadOwnerAnalytics(slug: string, requestedRange: unknown) 
       // Catalog names are optional decoration, always scoped to this membership.
       if (report.popularItems.length) {
         try {
-          const client = await authenticatedClient();
-          const { data, error } = await client.from("menu_items").select("id, name")
+          // Reuse the platform's server-only catalog reader after owner authorization.
+          // Load lazily so missing catalog configuration only affects optional labels.
+          const { supabaseServer } = await import("@/lib/supabase/server");
+          const { data, error } = await supabaseServer.from("menu_items").select("id, restaurant_id, name")
             .eq("restaurant_id", membership.restaurantId).in("id", report.popularItems.map((item) => item.itemId));
           if (!error) {
-            const names = z.array(z.object({ id: z.uuid(), name: z.string().min(1).max(300) })).parse(data);
-            for (const item of report.popularItems) item.label = names.find((name) => name.id === item.itemId)?.name ?? item.label;
+            const names = z.array(z.object({ id: z.uuid(), restaurant_id: z.uuid(), name: z.string().trim().min(1).max(300) })).max(10).parse(data);
+            for (const item of report.popularItems) item.label = names.find((name) => name.restaurant_id === membership.restaurantId && name.id === item.itemId)?.name ?? item.label;
           }
         } catch { /* Historical/deleted items still have valid aggregate counts. */ }
       }

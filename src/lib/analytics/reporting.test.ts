@@ -35,6 +35,7 @@ function load(file: string, dependencies: Record<string, unknown>, globals: Reco
 function server(options: {
   memberships?: RestaurantMembership[][]; authError?: boolean; env?: Record<string, string | undefined>;
   failure?: "http" | "network" | "malformed" | "pending" | "empty"; namesError?: boolean;
+  names?: unknown[]; catalogThrows?: boolean; itemRows?: [string, number][];
 } = {}) {
   const requests: { url: string; init: RequestInit }[] = [];
   const catalog: unknown[] = [];
@@ -49,11 +50,14 @@ function server(options: {
         if (options.authError) throw new ManagementError("UNAUTHENTICATED", "Sign in");
         return options.memberships?.[Math.min(authorizationReads - 1, options.memberships.length - 1)] ?? [owner];
       },
-      authenticatedClient: async () => ({ from: (table: string) => ({ select: (columns: string) => ({ eq: (key: string, value: string) => ({ in: async (field: string, ids: string[]) => {
-        catalog.push({ table, columns, key, value, field, ids });
-        return { data: [{ id: itemId, name: "<Sample taco>" }], error: options.namesError ? {} : null };
-      } }) }) }) }),
     },
+    "@/lib/supabase/server": { supabaseServer: { from: (table: string) => {
+      if (options.catalogThrows) throw Error("PRIVATE_CATALOG_CONFIGURATION");
+      return { select: (columns: string) => ({ eq: (key: string, value: string) => ({ in: async (field: string, ids: string[]) => {
+        catalog.push({ table, columns, key, value, field, ids });
+        return { data: options.names ?? [{ id: itemId, restaurant_id: restaurantId, name: "<Sample taco>" }], error: options.namesError ? {} : null };
+      } }) }) };
+    } } },
   }, { process: { env: options.env ?? { POSTHOG_PERSONAL_API_KEY: "private-mock-key", POSTHOG_PROJECT_ID: "599948", VERCEL_ENV: "preview" } },
     AbortSignal, console: { error: (...args: unknown[]) => { diagnostics.push(args); } },
     fetch: async (url: string, init: RequestInit) => {
@@ -62,7 +66,7 @@ function server(options: {
       const sql = JSON.parse(init.body as string).query.query as string;
       return { ok: options.failure !== "http", status: options.failure === "http" ? 403 : 200, json: async () => options.failure === "malformed" ? { results: [["PRIVATE_RAW_EVENT"]] }
         : options.failure === "pending" ? { query_status: { complete: false } }
-          : options.failure === "empty" ? { results: [] } : sql.includes("GROUP BY day") ? daily : items };
+          : options.failure === "empty" ? { results: [] } : sql.includes("GROUP BY day") ? daily : { ...items, results: options.itemRows ?? items.results } };
     },
   });
   return { load: exports.loadOwnerAnalytics as (slug: string, range?: unknown) => Promise<{ membership: RestaurantMembership; state: reporting.ReportingState }>, requests, catalog, diagnostics, reads: () => authorizationReads };
@@ -151,6 +155,7 @@ test("owner authorization is independent of order capabilities; unauthenticated/
     const denied = server({ memberships: [memberships] });
     await assert.rejects(denied.load("super-tacos", "7"), (error: unknown) => error instanceof ManagementError && error.code === "FORBIDDEN");
     assert.equal(denied.requests.length, 0);
+    assert.equal(denied.catalog.length, 0);
   }
   const loggedOut = server({ authError: true });
   await assert.rejects(loggedOut.load("super-tacos"), /Sign in/);
@@ -169,12 +174,69 @@ test("queries use membership IDs only, private server credentials and no-store f
     assert.equal((request.init.headers as Record<string, string>).Authorization, "Bearer private-mock-key");
     assert.match(String(request.init.body), new RegExp(restaurantId));
   }
-  assert.deepEqual(JSON.parse(JSON.stringify(harness.catalog)), [{ table: "menu_items", columns: "id, name", key: "restaurant_id", value: restaurantId, field: "id", ids: [itemId] }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(harness.catalog)), [{ table: "menu_items", columns: "id, restaurant_id, name", key: "restaurant_id", value: restaurantId, field: "id", ids: [itemId] }]);
   assert.equal(result.state.status === "ready" && result.state.report.popularItems[0].label, "<Sample taco>");
   assert.doesNotMatch(JSON.stringify(result), /private-mock-key|HogQL|SELECT |distinct_id|Authorization/);
   const secondTenant = server({ memberships: [[{ ...owner, restaurantId: otherId }]] });
   await secondTenant.load("super-tacos", "7");
   assert.ok(secondTenant.requests.every((r) => !String(r.init.body).includes(restaurantId) && String(r.init.body).includes(otherId)));
+});
+
+test("owner catalog labels resolve current same-tenant items, including unpublished items, without changing ranking or counts", async () => {
+  const secondItem = "20000000-0000-4000-8000-000000000202";
+  const harness = server({ itemRows: [[itemId, 3], [secondItem, 2]], names: [
+    { id: secondItem, restaurant_id: restaurantId, name: "Unpublished burrito", is_published: false },
+    { id: itemId, restaurant_id: restaurantId, name: " Street taco " },
+  ] });
+  const result = await harness.load("super-tacos", "30");
+  assert.equal(result.state.status, "ready");
+  if (result.state.status !== "ready") return;
+  assert.deepEqual(JSON.parse(JSON.stringify(result.state.report.popularItems)), [
+    { itemId, openings: 3, label: "Street taco" },
+    { itemId: secondItem, openings: 2, label: "Unpublished burrito" },
+  ]);
+  assert.equal(result.state.report.totals.itemOpenings, 8);
+  assert.equal(result.state.report.days, 30);
+  assert.equal(harness.reads(), 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(harness.catalog)), [{ table: "menu_items", columns: "id, restaurant_id, name", key: "restaurant_id", value: restaurantId, field: "id", ids: [itemId, secondItem] }]);
+});
+
+test("catalog responses cannot label foreign tracked IDs or substitute another tenant's item name", async () => {
+  const secondItem = "20000000-0000-4000-8000-000000000202";
+  const foreignItem = "30000000-0000-4000-8000-000000000201";
+  const harness = server({ itemRows: [[itemId, 3], [secondItem, 2], [foreignItem, 1]], names: [
+    { id: itemId, restaurant_id: otherId, name: "OTHER_TENANT_NAME" },
+    { id: secondItem, restaurant_id: restaurantId, name: "Safe burrito" },
+    { id: foreignItem, restaurant_id: otherId, name: "FOREIGN_ITEM_NAME" },
+    { id: "20000000-0000-4000-8000-000000000203", restaurant_id: restaurantId, name: "UNREQUESTED_ITEM_NAME" },
+  ] });
+  const result = await harness.load("super-tacos", "7");
+  assert.equal(result.state.status, "ready");
+  if (result.state.status !== "ready") return;
+  assert.deepEqual(JSON.parse(JSON.stringify(result.state.report.popularItems.map((item) => [item.label, item.openings]))), [
+    ["Unavailable menu item", 3], ["Safe burrito", 2], ["Unavailable menu item", 1],
+  ]);
+  assert.doesNotMatch(JSON.stringify(result), /OTHER_TENANT_NAME|FOREIGN_ITEM_NAME|UNREQUESTED_ITEM_NAME/);
+});
+
+test("deleted items and unavailable or invalid catalog reads retain counts with a neutral, escaped fallback", async () => {
+  for (const options of [{ names: [] }, { namesError: true }, { catalogThrows: true },
+    { names: [{ id: itemId, restaurant_id: restaurantId, name: "   " }] },
+    { names: [{ id: itemId, name: "Missing tenant" }] }]) {
+    const harness = server(options);
+    const result = await harness.load("super-tacos", "90");
+    assert.equal(result.state.status, "ready");
+    if (result.state.status !== "ready") continue;
+    assert.equal(result.state.report.popularItems[0].label, "Unavailable menu item");
+    assert.equal(result.state.report.popularItems[0].openings, 5);
+    assert.equal(result.state.report.days, 90);
+    assert.equal(harness.diagnostics.length, 0);
+    const html = renderToStaticMarkup(createElement(dashboard(), { state: result.state }));
+    assert.match(html, /Unavailable menu item/);
+    assert.doesNotMatch(html, new RegExp(itemId + "|" + itemId.slice(-6) + "|PRIVATE_"));
+  }
+  const empty = server({ failure: "empty" }); await empty.load("super-tacos");
+  assert.equal(empty.catalog.length, 0);
 });
 
 test("missing configuration, unknown environment, malformed ranges and provider failures never become zero-valued reports", async () => {
