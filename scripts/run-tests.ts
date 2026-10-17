@@ -37,6 +37,7 @@ import "../src/app/r/[slug]/RestaurantDeliveryProviderIcon.test";
 import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test";
 import "./staging-safety.test";
 import "../src/lib/marketing-leads/leads.test";
+import "../src/lib/analytics/marketing.test";
 import "./public-restaurant-access.test";
 import "./route-checkout-contract.test";
 import "./order-management-route-contract.test";

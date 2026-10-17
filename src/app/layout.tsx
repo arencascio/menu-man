@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import AnalyticsScripts from "./AnalyticsScripts";
+import MarketingAnalytics from "./MarketingAnalytics";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${manrope.variable}`}>
       <body>
+        <MarketingAnalytics />
         {children}
         <AnalyticsScripts />
       </body>

@@ -18,7 +18,7 @@ export default function WorkPage() {
           <h1>A closer look at the product.</h1>
           <p>Explore the capabilities of a managed restaurant website. This illustrated product overview uses Menu Man&apos;s own artwork.</p>
           <div className={styles.actionRow}>
-            <PrimaryLink>↗ {CTA_LABELS.showcase}</PrimaryLink>
+            <PrimaryLink ctaId="site_like_this" placement="hero">↗ {CTA_LABELS.showcase}</PrimaryLink>
           </div>
         </div>
         <div className={styles.workHeroVisual}><Image className={styles.brandArtwork} src="/brand/menu-man-phone.png" alt="Menu Man's phone and chef-hat illustration" width={800} height={800} priority /></div>
@@ -35,7 +35,7 @@ export default function WorkPage() {
 
       <section className={styles.galleryCta}>
         <p>Want this kind of clarity for your restaurant?</p>
-        <PrimaryLink>↗ {CTA_LABELS.showcase}</PrimaryLink>
+        <PrimaryLink ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
       </section>
 
       <FinalCta />

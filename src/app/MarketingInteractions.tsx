@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import smartphoneIcon from "../../img/icons/smartphone.svg";
 import searchIcon from "../../img/icons/search.svg";
 import linkIcon from "../../img/icons/link-2.svg";
@@ -10,6 +10,8 @@ import locationIcon from "../../img/icons/map-pinned.svg";
 import { productFeatures, CTA_LABELS } from "./marketing-content";
 import styles from "./page.module.css";
 import { LeadFormFeedback, useMarketingLead } from "./MarketingLeadForm";
+import { marketingCta } from "@/lib/analytics/marketing";
+import type { MarketingPlacement } from "@/lib/analytics/types";
 
 const REVIEW_EVENT = "menu-man:open-review";
 
@@ -52,10 +54,10 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
         aria-label="Main navigation"
       >
         <Link href="/#how-it-works" onClick={close}>How It Works</Link>
-        <Link href="/services" onClick={close}>Services &amp; Pricing</Link>
-        <Link href="/work" onClick={close}>Work</Link>
-        <ReviewButton className={styles.navReview} onOpen={close}>Free Website Review</ReviewButton>
-        <Link className={styles.navCta} href="/build-my-website" onClick={close}>
+        <Link href="/services" onClick={close} {...marketingCta("services_pricing", "navigation")}>Services &amp; Pricing</Link>
+        <Link href="/work" onClick={close} {...marketingCta("explore_product", "navigation")}>Work</Link>
+        <ReviewButton placement="navigation" className={styles.navReview} onOpen={close}>Free Website Review</ReviewButton>
+        <Link className={styles.navCta} href="/build-my-website" onClick={close} {...marketingCta("build_website", "navigation")}>
           Build My Website <span aria-hidden="true">&rarr;</span>
         </Link>
       </nav>
@@ -67,15 +69,18 @@ export function ReviewButton({
   children = CTA_LABELS.review,
   className = "",
   onOpen,
+  placement = "section",
 }: {
   children?: React.ReactNode;
   className?: string;
   onOpen?: () => void;
+  placement?: MarketingPlacement;
 }) {
   return (
     <button
       className={className}
       type="button"
+      {...marketingCta("website_review", placement, "modal")}
       onClick={() => {
         onOpen?.();
         window.dispatchEvent(new CustomEvent(REVIEW_EVENT));
@@ -89,21 +94,31 @@ export function ReviewButton({
 export function ReviewModal() {
   const [open, setOpen] = useState(false);
   const lead = useMarketingLead("review");
-  const { resetSuccess } = lead;
+  const { resetSuccess, open: trackOpen, close: trackClose } = lead;
+  const openedRef = useRef(false);
   const [noWebsite, setNoWebsite] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
+  const close = useCallback(() => {
+    openedRef.current = false;
+    trackClose();
+    setOpen(false);
+    window.setTimeout(() => openerRef.current?.focus(), 0);
+  }, [trackClose]);
 
   useEffect(() => {
     function show() {
+      if (openedRef.current) return;
+      openedRef.current = true;
+      trackOpen();
       openerRef.current = document.activeElement as HTMLElement | null;
       resetSuccess();
       setOpen(true);
     }
     window.addEventListener(REVIEW_EVENT, show);
     return () => window.removeEventListener(REVIEW_EVENT, show);
-  }, [resetSuccess]);
+  }, [resetSuccess, trackOpen]);
 
   useEffect(() => {
     if (!open) return;
@@ -139,12 +154,7 @@ export function ReviewModal() {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = previousOverflow;
     };
-  }, [open]);
-
-  function close() {
-    setOpen(false);
-    window.setTimeout(() => openerRef.current?.focus(), 0);
-  }
+  }, [open, close]);
 
   if (!open) return null;
 
@@ -165,7 +175,7 @@ export function ReviewModal() {
             <span aria-hidden="true">✓</span>
             <h2 id={titleId}>Your review request has been sent.</h2>
             <p>Our email provider accepted your request. We will follow up at the email address you provided.</p>
-            <a href={lead.emailHref}>Email hello@getmenuman.com</a>
+            <a href={lead.emailHref} data-marketing-email="website_review" data-marketing-placement="form">Email hello@getmenuman.com</a>
             <button type="button" onClick={lead.resetSuccess}>Back to the form</button>
           </div>
         ) : (
@@ -200,7 +210,7 @@ export function ReviewModal() {
                 {lead.state.pending ? "Sending..." : CTA_LABELS.review} <span aria-hidden="true">&rarr;</span>
               </button>
               </fieldset>
-              <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} />
+              <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} formType="website_review" />
             </form>
           </>
         )}
@@ -253,7 +263,7 @@ export function BuildWebsiteForm() {
         <span aria-hidden="true">✓</span>
         <h2>Your inquiry has been sent.</h2>
         <p>Our email provider accepted your inquiry. We will follow up at the email address you provided.</p>
-        <a href={lead.emailHref}>Email hello@getmenuman.com</a>
+        <a href={lead.emailHref} data-marketing-email="website_inquiry" data-marketing-placement="form">Email hello@getmenuman.com</a>
         <button type="button" onClick={lead.resetSuccess}>Back to the form</button>
       </div>
     );
@@ -294,7 +304,7 @@ export function BuildWebsiteForm() {
       <label>Anything else we should know?<textarea name="notes" maxLength={2000} rows={4} /></label>
       <button className={styles.formSubmit} type="submit">{lead.state.pending ? "Sending..." : CTA_LABELS.primary} <span aria-hidden="true">&rarr;</span></button>
       </fieldset>
-      <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} />
+      <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} formType="website_inquiry" />
     </form>
   );
 }

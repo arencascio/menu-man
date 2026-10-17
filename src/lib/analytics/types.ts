@@ -52,3 +52,15 @@ export type AnalyticsEvent =
 export type AnalyticsProvider = {
   track: (event: AnalyticsEvent) => void;
 };
+
+export type MarketingPage = "/" | "/services" | "/work" | "/build-my-website";
+export type MarketingForm = "website_inquiry" | "website_review";
+export type MarketingPlacement = "hero" | "navigation" | "section" | "footer" | "final_cta" | "form";
+export type MarketingCta = "build_website" | "website_review" | "explore_product" | "services_pricing" | "site_like_this";
+export type LeadFailureCategory = "validation" | "network" | "rate_limit" | "provider_failure" | "configuration" | "unconfirmed";
+export type MarketingEvent =
+  | { name: "$pageview" }
+  | { name: "marketing_cta_clicked"; cta_id: MarketingCta; placement: MarketingPlacement; destination_type: "page" | "modal" }
+  | { name: "marketing_form_opened" | "marketing_form_started" | "marketing_lead_accepted"; form_type: MarketingForm }
+  | { name: "marketing_lead_failed"; form_type: MarketingForm; failure_category: LeadFailureCategory }
+  | { name: "marketing_email_clicked"; placement: MarketingPlacement; form_type?: MarketingForm };
