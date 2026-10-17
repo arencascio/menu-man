@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as jsx from "react/jsx-runtime";
 import { z } from "zod";
 import * as reporting from "./reporting";
+import type { FinancialState } from "./financial-reporting";
 import type { RestaurantMembership } from "../order-management/contracts";
 
 const now = new Date("2026-10-16T12:34:56.987Z");
@@ -36,13 +37,19 @@ function server(options: {
   memberships?: RestaurantMembership[][]; authError?: boolean; env?: Record<string, string | undefined>;
   failure?: "http" | "network" | "malformed" | "pending" | "empty"; namesError?: boolean;
   names?: unknown[]; catalogThrows?: boolean; itemRows?: [string, number][];
+  financialUnavailable?: boolean;
 } = {}) {
   const requests: { url: string; init: RequestInit }[] = [];
   const catalog: unknown[] = [];
   const diagnostics: unknown[][] = [];
+  const financialReads: unknown[] = [];
   let authorizationReads = 0;
   const exports = load("src/lib/analytics/reporting-server.ts", {
     "server-only": {}, zod: { z },
+    "./financial-reporting-server": { readOwnerFinancials: async (...args: unknown[]) => {
+      financialReads.push(args);
+      return options.financialUnavailable ? { status: "unavailable" } : { status: "ready", report: { ...(args[2] as object), environment: args[1], paidOrders: 2, completedPaidOrders: 1, cancelledPaidOrders: 0, currencies: [] } };
+    } },
     "./reporting": { ...reporting, reportingRange: (value: unknown) => reporting.reportingRange(value, now) },
     "@/lib/order-management/server": { ManagementError,
       listRestaurantMemberships: async () => {
@@ -69,7 +76,7 @@ function server(options: {
           : options.failure === "empty" ? { results: [] } : sql.includes("GROUP BY day") ? daily : { ...items, results: options.itemRows ?? items.results } };
     },
   });
-  return { load: exports.loadOwnerAnalytics as (slug: string, range?: unknown) => Promise<{ membership: RestaurantMembership; state: reporting.ReportingState }>, requests, catalog, diagnostics, reads: () => authorizationReads };
+  return { load: exports.loadOwnerAnalytics as (slug: string, range?: unknown) => Promise<{ membership: RestaurantMembership; state: reporting.ReportingState; financialState: FinancialState }>, requests, catalog, diagnostics, financialReads, reads: () => authorizationReads };
 }
 
 test("reporting diagnostics contain only bounded status or schema fields, never credentials or raw data", async () => {
@@ -156,13 +163,37 @@ test("owner authorization is independent of order capabilities; unauthenticated/
     await assert.rejects(denied.load("super-tacos", "7"), (error: unknown) => error instanceof ManagementError && error.code === "FORBIDDEN");
     assert.equal(denied.requests.length, 0);
     assert.equal(denied.catalog.length, 0);
+    assert.equal(denied.financialReads.length, 0);
   }
   const loggedOut = server({ authError: true });
   await assert.rejects(loggedOut.load("super-tacos"), /Sign in/);
   assert.equal(loggedOut.requests.length, 0);
+  assert.equal(loggedOut.financialReads.length, 0);
   const revoked = server({ memberships: [[owner], []] });
   await assert.rejects(revoked.load("super-tacos"), (error: unknown) => error instanceof ManagementError && error.code === "FORBIDDEN");
   assert.equal(revoked.reads(), 2);
+});
+
+test("financial reporting uses the authorized tenant and same range, independently of PostHog failures, and is withheld on revocation", async () => {
+  for (const options of [{}, { failure: "http" as const }, { env: { VERCEL_ENV: "preview" } }]) {
+    const harness = server(options);
+    const result = await harness.load("super-tacos", "90");
+    assert.equal(result.financialState.status, "ready");
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.financialReads)), [[restaurantId, "staging", reporting.reportingRange("90", now)]]);
+  }
+  const other = server({ memberships: [[{ ...owner, restaurantId: otherId }]] });
+  await other.load("super-tacos", "7");
+  assert.equal((other.financialReads[0] as unknown[])[0], otherId);
+  const revoked = server({ memberships: [[owner], []] });
+  await assert.rejects(revoked.load("super-tacos", "7"), /Owner access/);
+  assert.equal(revoked.financialReads.length, 1);
+  for (const [env, range] of [[{}, "7"], [{ VERCEL_ENV: "preview" }, "invalid"]] as const) {
+    const invalid = server({ env }); await invalid.load("super-tacos", range);
+    assert.equal(invalid.financialReads.length, 0);
+  }
+  const unavailable = await server({ financialUnavailable: true }).load("super-tacos", "7");
+  assert.equal(unavailable.state.status, "ready");
+  assert.equal(unavailable.financialState.status, "unavailable");
 });
 
 test("queries use membership IDs only, private server credentials and no-store fetch; responses expose aggregates only", async () => {
@@ -269,10 +300,10 @@ test("dashboard renders truthful counts, no-search denominator, empty/failure st
   assert.doesNotMatch(html, /<script>|distinct_id|private-mock-key/);
   const empty = reporting.assembleReport(reporting.reportingRange("7", now)!, "staging", { results: [] }, { results: [] });
   const emptyHtml = renderToStaticMarkup(createElement(Component, { state: { status: "ready", report: empty } }));
-  assert.match(emptyHtml, /No recorded activity/); assert.match(emptyHtml, /Not available/);
+  assert.match(emptyHtml, /No recorded website activity/); assert.match(emptyHtml, /Not available/);
   for (const reason of ["configuration", "provider", "environment"] as const) {
     const failed = renderToStaticMarkup(createElement(Component, { state: { status: "unavailable", reason } }));
-    assert.match(failed, /Analytics unavailable/); assert.doesNotMatch(failed, /<dd>|<svg/);
+    assert.match(failed, /Website engagement unavailable/); assert.doesNotMatch(failed, /<dd>|<svg/);
   }
   const styles = read("src/app/manage/[slug]/analytics/analytics.module.css");
   assert.match(styles, /repeat\(2, minmax\(0, 1fr\)\)/); assert.match(styles, /@media \(max-width: 600px\)/);
@@ -318,7 +349,7 @@ test("actual analytics page redirects unauthenticated/denied users and ignores c
   const props = { params: Promise.resolve({ slug: "super-tacos" }), searchParams: Promise.resolve({ range: "7", restaurantId: otherId, environment: "production" }) };
   const html = renderToStaticMarkup(await page(props));
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [["super-tacos", "7"]]);
-  assert.match(html, /Super Tacos/); assert.match(html, /Last 7 days/); assert.match(html, /Analytics unavailable/);
+  assert.match(html, /Super Tacos/); assert.match(html, /Last 7 days/); assert.match(html, /Website engagement unavailable/);
   assert.doesNotMatch(html, new RegExp(otherId));
   failure = "UNAUTHENTICATED";
   await assert.rejects(page(props), /REDIRECT:\/manage\/login\?next=%2Fmanage%2Fsuper-tacos%2Fanalytics/);

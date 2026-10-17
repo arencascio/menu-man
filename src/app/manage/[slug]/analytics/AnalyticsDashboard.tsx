@@ -1,4 +1,5 @@
 import type { AnalyticsReport, ReportingState } from "@/lib/analytics/reporting";
+import type { FinancialState } from "@/lib/analytics/financial-reporting";
 import styles from "./analytics.module.css";
 
 const number = (value: number) => value.toLocaleString("en-US");
@@ -26,17 +27,43 @@ function Trend({ report }: { report: AnalyticsReport }) {
   </div>;
 }
 
-export default function AnalyticsDashboard({ state }: { state: ReportingState }) {
+function FinancialSummary({ state }: { state: FinancialState }) {
+  if (state.status !== "ready") return <section className={styles.notice} role="status"><h2>Orders &amp; captured sales unavailable</h2><p>We could not establish complete financial totals. Refresh to try again or contact Menu Man. No financial counts or amounts are shown.</p></section>;
+  const { report } = state;
+  const money = (cents: number, currency: string) => new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
+  return <section className={styles.section} aria-labelledby="financial-heading"><h2 id="financial-heading">Orders &amp; captured sales</h2>
+    <p>{report.from.slice(0, 10)} through {report.until.slice(0, 10)} · UTC · {report.environment}. Today is partial, through {report.until.slice(11, 19)} UTC.</p>
+    {report.environment !== "production" ? <p><strong>Test money only.</strong> Sandbox and test payments are shown; these are not live sales.</p> : null}
+    <dl className={styles.metrics}>
+      <Metric label="Paid orders" value={report.paidOrders} description="Orders with a positive capture first confirmed in this range, including subsequently refunded or cancelled orders." />
+      <Metric label="Completed paid orders" value={report.completedPaidOrders} description="Of those paid orders, the number currently marked completed. This is not a completion-date count." />
+      <Metric label="Cancelled paid orders" value={report.cancelledPaidOrders} description="Of those paid orders, the number currently cancelled. Cancellation alone does not reverse captured money." />
+    </dl>
+    {report.currencies.map((value) => <div key={value.currency}><h3>{value.currency} captured amounts</h3><dl className={styles.metrics}>
+      <Metric label="Gross captured sales" value={money(value.grossCents, value.currency)} description="Captured payment totals by first-success time. Includes tax and tips; not profit or bank settlement." />
+      <Metric label="Successful refunds" value={money(value.refundCents, value.currency)} description="Completed refunds by refund completion time, including refunds of sales before this range." />
+      <Metric label="Net captured sales" value={money(value.netCents, value.currency)} description="Gross captures minus successful refunds in this range. Can be negative; fees and chargebacks are not included." />
+    </dl></div>)}
+    {!report.currencies.length ? <p>No captured payments or successful refunds were recorded in this range.</p> : null}
+    <p>Unpaid orders, authorizations, failed attempts and pending refunds do not count as captured sales. Amounts come from payment records, never website clicks. Current fulfillment status may change; recent payment updates may take time to arrive.</p>
+  </section>;
+}
+
+export default function AnalyticsDashboard({ state, financialState }: { state: ReportingState; financialState?: FinancialState }) {
+  return <>{state.status !== "invalid_range" && financialState ? <FinancialSummary state={financialState} /> : null}<EngagementSummary state={state} /></>;
+}
+
+function EngagementSummary({ state }: { state: ReportingState }) {
   if (state.status === "invalid_range") return <section className={styles.notice} role="alert"><h2>Choose a reporting range</h2><p>Select 7, 30 or 90 days above.</p></section>;
-  if (state.status === "unavailable") return <section className={styles.notice} role="status"><h2>Analytics unavailable</h2>
-    <p>{state.reason === "configuration" ? "Reporting is not configured yet. Ask Menu Man to connect the reporting service." : state.reason === "environment" ? "This deployment has no verified reporting environment. Ask Menu Man to check its configuration." : "We could not load reporting data. Refresh this page to try again. If the problem continues, contact Menu Man."}</p><p>No counts are shown because the data is unavailable.</p></section>;
+  if (state.status === "unavailable") return <section className={styles.notice} role="status"><h2>Website engagement unavailable</h2>
+    <p>{state.reason === "configuration" ? "Reporting is not configured yet. Ask Menu Man to connect the reporting service." : state.reason === "environment" ? "This deployment has no verified reporting environment. Ask Menu Man to check its configuration." : "We could not load reporting data. Refresh this page to try again. If the problem continues, contact Menu Man."}</p><p>No engagement counts are shown because the data is unavailable.</p></section>;
   const { report } = state;
   const { totals } = report;
   const empty = totals.pageviews + totals.itemOpenings + totals.searches + totals.delivery + totals.pickup + totals.phone + totals.directions === 0;
   const rate = totals.searches ? `${(totals.zeroResults / totals.searches * 100).toFixed(1)}%` : "Not available";
   return <>
     <p className={styles.period}>{report.from.slice(0, 10)} through {report.until.slice(0, 10)} · UTC · {report.environment}<br />Today is partial, through {report.until.slice(11, 19)} UTC. Recent activity may take time to arrive.</p>
-    {empty ? <section className={styles.notice} role="status"><h2>No recorded activity</h2><p>No matching restaurant events were received in this date range. Try another range. This does not prove nobody visited.</p></section> : null}
+    {empty ? <section className={styles.notice} role="status"><h2>No recorded website activity</h2><p>No matching restaurant events were received in this date range. Try another range. This does not prove nobody visited.</p></section> : null}
     <section className={styles.section} aria-labelledby="traffic-heading"><h2 id="traffic-heading">Website traffic</h2>
       <dl className={styles.metrics}><Metric label="Restaurant pageviews" value={totals.pageviews} description="Recorded page entries and revisits, including reloads." /><Metric label="Menu pageviews" value={totals.menuViews} description="Pageviews on the dedicated menu page." /></dl>
       <Trend report={report} />

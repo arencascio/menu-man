@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { listRestaurantMemberships, ManagementError } from "@/lib/order-management/server";
 import { assembleReport, reportingEnvironment, reportingQueries, reportingRange, type ReportingState } from "./reporting";
+import { readOwnerFinancials } from "./financial-reporting-server";
 
 function configuration() {
   const key = process.env.POSTHOG_PERSONAL_API_KEY;
@@ -72,10 +73,14 @@ export async function loadOwnerAnalytics(slug: string, requestedRange: unknown) 
       state = { status: "unavailable", reason: "provider" };
     }
   }
+  // Financial reporting is independent of PostHog configuration or availability.
+  const financialState = range && environment
+    ? await readOwnerFinancials(membership.restaurantId, environment, range)
+    : { status: "unavailable" as const };
   // Re-read authoritative membership before releasing results, including failures.
   const current = await authorize();
   if (current.membershipId !== membership.membershipId || current.restaurantId !== membership.restaurantId) {
     throw new ManagementError("FORBIDDEN", "Restaurant access changed. Reload to continue.");
   }
-  return { membership: current, state };
+  return { membership: current, state, financialState };
 }

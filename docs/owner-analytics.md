@@ -119,6 +119,81 @@ Absence of received events does not prove absence of visitors. Instrumentation
 rollout dates, retention, ingestion delay, blocked/opted-out capture and delivery
 loss can produce partial coverage, including inside the 90-day range.
 
+## Confirmed orders and captured amounts — D.3
+
+The dashboard now includes a separate **Orders & captured sales** System Piece.
+It reads existing `payments`, `refunds`, `orders`, and
+`restaurant_payment_connections` using the existing server-only Supabase reader,
+after the same owner membership authorization and before the final membership
+recheck. There are no new permissions, RPCs, migrations, writes or PostHog financial
+queries. No payment, attempt, refund, customer or provider records reach the browser;
+only aggregate counts and amounts do. Financial availability is independent of
+PostHog availability. Existing dynamic/private/no-store management behavior applies.
+
+The shared 7/30/90 UTC calendar-date interval uses the same inclusive lower bound
+and exclusive request-time upper bound as engagement reports; today is partial.
+
+| Metric | Authoritative definition |
+| --- | --- |
+| Paid orders | Count of unique `payments` with `captured_cents > 0` and persisted `succeeded_at` inside the interval. The schema permits one payment summary per order. Includes later refunds/cancellations. Zero-value/free orders are not paid captures. |
+| Completed paid orders | Subset of that capture cohort whose order is **currently** `completed`; not orders completed during the interval. There is no historical completion-date metric here. |
+| Cancelled paid orders | Subset of that capture cohort whose order is **currently** `cancelled`. Captured money remains captured until a successful refund. Unpaid cancellations are not in this cohort. |
+| Gross captured sales | Sum of `payments.captured_cents` by `succeeded_at`, separately per currency. Includes tax/tips; not pretax revenue, profit, fees or bank settlement. |
+| Successful refunds | Sum of distinct `refunds.amount_cents` where `status=succeeded` and `completed_at` is inside the interval. Partial refunds are separate records; refunds of captures before the interval are included. Pending/failed/cancelled refunds are excluded. |
+| Net captured sales | Gross captures less successful refunds **in the interval**, per currency. May be negative when older sales are refunded. Not the lifetime net of the capture cohort. |
+
+Amounts use the application's existing integer-cent representation, not browser
+events or order totals. Captures are counted from payment summaries, never payment
+attempts, webhook callbacks or `order_created`. Callback replay does not create
+additional payment/refund identities; the existing payment/refund application path
+preserves `succeeded_at`/`completed_at` with `coalesce`. Do not sum cumulative
+`payments.refunded_cents` for period refunds. The current schema records the single
+full capture per payment, not a general incremental-capture ledger. Unsupported
+chargebacks, disputes, fees, settlement and arbitrary accounting revenue are omitted.
+
+Every read is scoped to the authorized membership restaurant, including embedded
+connection ownership. Returned restaurant/order/payment identities and currencies
+are validated again. Production accepts only production provider connections;
+staging/development accept test and sandbox connections and prominently label
+amounts **test money only**. This uses provider environment, not browser event
+properties. There is no separate reliable internal/test-order flag within production
+connections; a real production capture counts even if someone intended it as a test.
+
+Reads paginate in 500-row pages with exact counts and a stable primary-key order.
+All financial reads share a 12-second timeout budget.
+At most 10,000 captures and 10,000 completed refunds per report are supported.
+Missing counts, truncation, changing page counts, duplicate IDs, invalid joins or
+amounts, query/credential failures, or any positive capture/successful refund with
+an unassignable null transaction timestamp in the same restaurant/environment make
+financial reporting unavailable. They never become zero or partial totals. Successful
+empty queries show zero paid counts and an explicit no-transactions message, without
+inventing a currency. Currencies are never added together.
+
+These are current authoritative application records, not an atomic financial ledger
+snapshot or a statement reconciled with the provider. Multiple read requests may see
+concurrent updates. Late webhook processing can change a historical interval; current
+fulfillment classifications can also change. Refresh after operational activity settles
+when comparing totals. No new financial records or real test orders are needed for QA.
+
+Staging follow-up (requires a separately authorized deployment): sign in manually
+with an existing owner in temporary Playwright Chrome. Compare 7/30/90-day counts
+and per-currency sums to read-only staging queries on these same timestamps,
+restaurant and provider environments. Use existing captures/refunds, including
+partial refunds and cancellations if available; mark absent cases test-only. Check
+anonymous/non-owner/cross-tenant denial and unavailable reporting without changing
+memberships, records, permissions or provider settings. Recheck 320/412/1440 layouts.
+
+Local D.3 validation: 23 focused reporting tests and 330 full regressions pass,
+including financial/payment/cancellation contracts. TypeScript, lint on changed
+code and production build pass. Playwright Google Chrome 155 component rendering
+on localhost passed populated/empty/unavailable states at 320/412/1440, including
+large amounts, separate currencies and negative net. Screenshots are ignored under
+`.playwright/d3-dashboard/`. This uses sample aggregates and the real component/CSS;
+authenticated full-route/live database verification remains a staging follow-up.
+Repository-wide lint also completes with two existing warnings in the ignored
+`.playwright/trace-dashboard-400.mjs` diagnostic. Unrelated local project-state
+edits have pre-existing trailing whitespace; the D.3 diff itself is clean.
+
 ## Visitor-continuity integration point
 
 Unique visitors/browsers, returning visitors, retention and cross-session funnels

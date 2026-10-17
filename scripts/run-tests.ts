@@ -42,6 +42,7 @@ import "../src/lib/analytics/restaurant.test";
 import "../src/lib/analytics/menu-engagement.test";
 import "../src/lib/analytics/restaurant-actions.test";
 import "../src/lib/analytics/reporting.test";
+import "../src/lib/analytics/financial-reporting.test";
 import "./public-restaurant-access.test";
 import "./route-checkout-contract.test";
 import "./order-management-route-contract.test";
