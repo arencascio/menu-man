@@ -10,16 +10,16 @@ retain their existing provider contracts; they are not marketing `$pageview`s.
 ## Configuration and privacy
 
 Reuses `src/instrumentation-client.ts` and the existing public PostHog project
-configuration (`NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`). No backend
-analytics service, new credentials or deployment configuration is added.
-`AnalyticsScripts.tsx` remains the optional GA4 loader; marketing events are sent
-only to PostHog and do not change GA4 or restaurant tracking.
+configuration (`NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`). No new
+analytics service or credentials are added. The request-specific regional gate
+below applies before PostHog initialization and to the existing optional GA4
+loader. Marketing events are still sent only to PostHog.
 
 Autocapture, automatic pageviews/pageleaves, recording, exception capture, flags,
 heatmaps and performance capture remain disabled. Identity remains memory-only;
 person profiles remain `never`. Marketing checks SDK initialization and its
-existing opt-out state. It does not add a consent banner or change project consent
-policy. Disabled/unavailable PostHog and tracking exceptions never block UI,
+existing opt-out state. No consent banner is displayed. Disabled/unavailable
+PostHog and tracking exceptions never block UI,
 navigation or lead delivery.
 
 All marketing events have `analytics_scope=marketing`, `environment`, and `page`
@@ -82,8 +82,9 @@ The first nonempty valid campaign is retained across marketing navigation and
 reloads in **tab-scoped sessionStorage** under `menu-man:marketing-campaign:v1`.
 Only the four sanitized campaign codes are stored, with no identity or original
 URL. A later campaign does not overwrite first touch or fill its missing fields.
-Storage is accessed only when PostHog is initialized and not opted out. A subsequent
-marketing tracking call while opted out clears it; storage failures fall back to
+Campaign storage is read/written only after regional eligibility is confirmed,
+PostHog is initialized and capture is not opted out. A subsequent marketing
+tracking call while denied or opted out clears it; storage failures fall back to
 memory for the current document. Closing the tab ends normal session storage
 lifetime (browser restore behavior may vary). No cookies/localStorage or anonymous
 identity persistence are added. SDK anonymous identity still resets on reload,
@@ -100,8 +101,83 @@ so cross-reload attribution does not guarantee cross-reload visitor continuity.
   no submission ID or extra persistent deduplication identifier is sent to PostHog.
 - Counts are best effort, not billing/accounting records. Form opens can exceed
   visits when someone reopens the review modal. A new modal instance can start again.
-- Existing IP/consent policy is unchanged; configure additional consent controls
-  at the project/product level if required. Do not place personal data in UTMs.
+- The US-only regional gate below applies. Existing PostHog IP receipt and
+  project-side GeoIP processing remain for eligible events; regional suppression
+  does not change those settings. Do not place personal data in UTMs.
+
+## Banner-free regional eligibility
+
+Approved initial policy: optional analytics runs only for a reliably determined
+`US` country. All other countries (including EU/UK), missing/invalid location,
+failed requests and invalid responses deny analytics. This is the approved
+product policy, not a claim that IP geolocation proves physical location.
+
+`GET /api/analytics/eligibility` reads only Vercel's server-provided
+`x-vercel-ip-country`, and only when server-side `VERCEL=1` and `VERCEL_ENV` is
+`production` or `preview`. It returns only `{ "allowed": true | false }`, never
+IP, country, city, region or coordinates. There are no URL, locale, cookie,
+client-country-header or environment-variable country overrides. Local and
+self-hosted runtimes deny even with spoofed Vercel-looking request headers.
+
+Trust boundary: deploy directly behind Vercel ingress, where these geo headers
+are supplied by the platform, as described in [Vercel's request headers](https://vercel.com/docs/headers/request-headers)
+and [conditional analytics example](https://vercel.com/kb/guide/geolocation-script).
+Do not self-host with manually set `VERCEL` flags or put an unreviewed proxy in
+front of Vercel. A VPN/proxy can change the IP's inferred country. No application
+code can prove a visitor's physical location or stop a modified browser from
+calling a public analytics project directly.
+
+The endpoint is `force-dynamic`, with `Cache-Control: private, no-store,
+max-age=0`, `CDN-Cache-Control: no-store` and `Vercel-CDN-Cache-Control: no-store`.
+The browser uses same-origin, non-cacheable fetch, rejects redirects and allows
+five seconds before failing closed. No eligibility result is shared between
+requests/users or persisted in browser storage. One in-memory decision is shared
+across a document's interactions; a full document load checks again. A retained
+document (including browser back/forward cache) retains its decision; changing
+network/location mid-document is not continuously detected.
+
+`initializePostHog()` now returns a shared promise. Until allowed, it never calls
+`posthog.init`; capture and `before_send` also enforce the gate. Denial initializes
+no PostHog instance. The GA4 loader likewise renders no scripts before allow.
+Hydration, navigation and lead submission never wait for analytics. Marketing
+visit/action callbacks wait in memory for the decision, preserve their original
+source page/campaign, and then use the existing opt-out and deduplication rules.
+No optional events or campaign storage writes occur before allow. Denied events
+are discarded; existing campaign storage is cleared on the next tracking call.
+
+Integration with the newer restaurant branch: retain this single eligibility
+module and gated shared PostHog initializer/capture boundary; combine both
+privacy filters in `before_send`. Keep Phase A/B restaurant context and property
+contracts. Restaurant initial page tracking must wait for this initializer's
+promise, just as the marketing bridge does, rather than losing early pageviews.
+Do not create a separate restaurant region lookup or persistent decision.
+
+### Validation before promotion
+
+Unit fixtures inject server runtime/header inputs and mock the browser fetch/SDK;
+Playwright intercepts the eligibility response locally. No test override exists
+in application routes or production configuration.
+
+1. Deploy the reviewed candidate to **Preview only** when authorized. Check
+   `/api/analytics/eligibility` from actual US and non-US (EU/UK) network egress:
+   expected allow/deny respectively. Check response cache headers and absence of
+   `Age`/a cached `HIT` across alternating requests. No credentials are required.
+2. From non-US egress, try `?country=US`, locale headers and forged
+   `x-vercel-ip-country: US`/forwarded-IP headers. They must not turn denial into
+   allow. Failure blocks promotion: investigate ingress rather than weakening
+   the gate. Verify missing location is denied in unit/local fixtures.
+3. In Chrome, confirm no PostHog or GA4 requests before eligibility resolves or
+   when denied, errored, timed out or malformed. Check initial load, client
+   navigation and both lead forms; mock lead delivery to avoid real mail.
+4. On an allowed US Preview visit, check initial pageview once, CTA/form events,
+   first-touch campaign across navigation and `environment=staging`. Check
+   opt-out and privacy properties using the established staging workflow.
+   Any live event test must use the designated staging project/test tags.
+
+This task's localhost Chrome fixtures do not establish real Vercel ingress
+spoof resistance, global CDN behavior or live PostHog ingestion. Those Preview
+checks remain required before production approval. No Production settings change
+is required; built-in Vercel server environment variables must be available.
 
 ## Suggested PostHog dashboard
 

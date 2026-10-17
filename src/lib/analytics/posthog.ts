@@ -1,6 +1,7 @@
 import posthog from "posthog-js";
 import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 import { marketingEnvironment, sanitizeMarketingCapture } from "./marketing";
+import { analyticsEligibility } from "./eligibility";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -9,38 +10,43 @@ export function isPostHogConfigured() {
   return Boolean(posthogKey && posthogHost);
 }
 
-export function initializePostHog() {
-  if (!posthogKey || !posthogHost || posthog.__loaded) return;
+let initialization: Promise<void> | undefined;
 
-  try {
-    posthog.init(posthogKey, {
-      api_host: posthogHost,
-      defaults: "2026-05-30",
-      advanced_disable_flags: true,
-      autocapture: false,
-      capture_dead_clicks: false,
-      capture_exceptions: false,
-      capture_heatmaps: false,
-      capture_pageleave: false,
-      capture_pageview: false,
-      capture_performance: false,
-      disable_external_dependency_loading: true,
-      disable_session_recording: true,
-      disableDeviceModel: true,
-      person_profiles: "never",
-      persistence: "memory",
-      rageclick: false,
-      save_campaign_params: false,
-      save_referrer: false,
-      before_send: (event) => event ? sanitizeMarketingCapture(event) : null,
-    });
-  } catch {
-    // Analytics must never prevent the restaurant experience from loading.
-  }
+export function initializePostHog(): Promise<void> {
+  if (!posthogKey || !posthogHost) return Promise.resolve();
+  return initialization ??= (async () => {
+    if (!await analyticsEligibility.check() || posthog.__loaded) return;
+
+    try {
+      posthog.init(posthogKey, {
+        api_host: posthogHost,
+        defaults: "2026-05-30",
+        advanced_disable_flags: true,
+        autocapture: false,
+        capture_dead_clicks: false,
+        capture_exceptions: false,
+        capture_heatmaps: false,
+        capture_pageleave: false,
+        capture_pageview: false,
+        capture_performance: false,
+        disable_external_dependency_loading: true,
+        disable_session_recording: true,
+        disableDeviceModel: true,
+        person_profiles: "never",
+        persistence: "memory",
+        rageclick: false,
+        save_campaign_params: false,
+        save_referrer: false,
+        before_send: (event) => analyticsEligibility.isAllowed() && event ? sanitizeMarketingCapture(event) : null,
+      });
+    } catch {
+      // Analytics must never prevent the restaurant experience from loading.
+    }
+  })().catch(() => { /* Eligibility and initialization failures never block the site. */ });
 }
 
 export function isMarketingCaptureAllowed() {
-  return posthog.__loaded && !posthog.has_opted_out_capturing();
+  return analyticsEligibility.isAllowed() && posthog.__loaded && !posthog.has_opted_out_capturing();
 }
 
 export function captureMarketingEvent(name: string, properties: Record<string, unknown>) {
@@ -111,7 +117,7 @@ function getPostHogProperties(event: AnalyticsEvent): Record<string, unknown> {
 
 export const posthogProvider: AnalyticsProvider = {
   track(event) {
-    if (!posthog.__loaded) return;
+    if (!isMarketingCaptureAllowed()) return;
 
     try {
       posthog.capture(event.name, getPostHogProperties(event));

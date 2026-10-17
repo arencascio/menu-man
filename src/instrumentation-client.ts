@@ -1,3 +1,4 @@
 import { initializePostHog } from "@/lib/analytics/posthog";
 
-initializePostHog();
+// Fire-and-forget: the regional decision must not hold up hydration.
+void initializePostHog();

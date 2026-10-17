@@ -161,7 +161,7 @@ test("opt-out suppresses events and clears campaign data; blocked storage and fa
   assert.doesNotThrow(() => createMarketingFormAnalytics("website_review", () => { throw Error(); }).open());
 });
 
-test("PostHog initialization and final outbound filter preserve restaurant events while removing automatic marketing URL/PII properties", () => {
+test("PostHog initialization and final outbound filter preserve restaurant events while removing automatic marketing URL/PII properties", async () => {
   const captures: Array<{ event: string; properties: Record<string, unknown> }> = [];
   let config: Record<string, unknown> = {};
   let optedOut = false;
@@ -175,14 +175,15 @@ test("PostHog initialization and final outbound filter preserve restaurant event
   };
   const source = readFileSync("src/lib/analytics/posthog.ts", "utf8");
   const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
-  const exports: { initializePostHog?: () => void; captureMarketingEvent?: (name: string, properties: Record<string, unknown>) => void; posthogProvider?: { track(event: unknown): void } } = {};
+  const exports: { initializePostHog?: () => Promise<void>; captureMarketingEvent?: (name: string, properties: Record<string, unknown>) => void; posthogProvider?: { track(event: unknown): void } } = {};
   runInNewContext(compiled, { exports, process: { env: { NEXT_PUBLIC_POSTHOG_KEY: "mock", NEXT_PUBLIC_POSTHOG_HOST: "https://mock.invalid", NEXT_PUBLIC_VERCEL_ENV: "preview" } }, require(id: string) {
     if (id === "posthog-js") return { default: sdk };
     if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
+    if (id === "./eligibility") return { analyticsEligibility: { check: async () => true, isAllowed: () => true } };
     throw Error(id);
   } });
   exports.captureMarketingEvent!("$pageview", {}); assert.equal(captures.length, 0);
-  exports.initializePostHog!(); exports.initializePostHog!();
+  await Promise.all([exports.initializePostHog!(), exports.initializePostHog!()]);
   for (const name of ["autocapture", "capture_pageview", "capture_pageleave", "save_campaign_params", "save_referrer"]) assert.equal(config[name], false);
   assert.equal(config.disable_session_recording, true); assert.equal(config.person_profiles, "never"); assert.equal(config.persistence, "memory");
   exports.captureMarketingEvent!("$pageview", { analytics_scope: "marketing", page: "/", utm_source: "card" });
