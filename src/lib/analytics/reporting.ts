@@ -5,6 +5,9 @@ export type ReportingEnvironment = "production" | "staging" | "development";
 export const metricKeys = ["pageviews", "menuViews", "itemOpenings", "searches", "zeroResults", "delivery", "pickup", "phone", "directions", "internalPickup", "externalPickup"] as const;
 export type Metrics = Record<typeof metricKeys[number], number>;
 export type DailyMetrics = Metrics & { day: string };
+export type AudienceState =
+  | { status: "ready"; uniqueBrowsers: number; visits: number; returningBrowsers: number; trackedPageviews: number }
+  | { status: "unavailable" };
 export type AnalyticsReport = {
   environment: ReportingEnvironment;
   days: number;
@@ -13,6 +16,7 @@ export type AnalyticsReport = {
   daily: DailyMetrics[];
   totals: Metrics;
   popularItems: { itemId: string; openings: number; label: string }[];
+  audience: AudienceState;
 };
 export type ReportingState =
   | { status: "ready"; report: AnalyticsReport }
@@ -44,6 +48,7 @@ const itemRow = z.tuple([z.uuid(), count]);
 const completedQuery = { error: z.null().optional(), hasMore: z.literal(false).nullish(), query_status: z.object({ complete: z.literal(true) }).nullish() };
 const dailyResponse = z.object({ ...completedQuery, results: z.array(dailyRow).max(90) });
 const itemsResponse = z.object({ ...completedQuery, results: z.array(itemRow).max(10) });
+const audienceResponse = z.object({ ...completedQuery, results: z.array(z.tuple([count, count, count, count])).length(1) });
 const zeroMetrics = (): Metrics => Object.fromEntries(metricKeys.map((key) => [key, 0])) as Metrics;
 
 export function assembleReport(range: NonNullable<ReturnType<typeof reportingRange>>, environment: ReportingEnvironment, dailyInput: unknown, itemsInput: unknown): AnalyticsReport {
@@ -69,7 +74,13 @@ export function assembleReport(range: NonNullable<ReturnType<typeof reportingRan
     if (!Number.isSafeInteger(totals[key])) throw Error("Invalid reporting total");
   }
   if (new Set(items.map(([id]) => id)).size !== items.length || items.reduce((n, [, value]) => n + value, 0) > totals.itemOpenings) throw Error("Invalid item counts");
-  return { ...range, environment, daily, totals, popularItems: items.map(([itemId, openings]) => ({ itemId, openings, label: "Unavailable menu item" })) };
+  return { ...range, environment, daily, totals, popularItems: items.map(([itemId, openings]) => ({ itemId, openings, label: "Unavailable menu item" })), audience: { status: "unavailable" } };
+}
+
+export function assembleAudience(input: unknown, pageviews: number): AudienceState {
+  const [uniqueBrowsers, visits, returningBrowsers, trackedPageviews] = audienceResponse.parse(input).results[0];
+  if (returningBrowsers > uniqueBrowsers || uniqueBrowsers > visits || visits > trackedPageviews || trackedPageviews > pageviews) throw Error("Invalid audience counts");
+  return { status: "ready", uniqueBrowsers, visits, returningBrowsers, trackedPageviews };
 }
 
 export function reportingQueries(restaurantId: string, environment: ReportingEnvironment, range: NonNullable<ReturnType<typeof reportingRange>>) {
@@ -77,6 +88,7 @@ export function reportingQueries(restaurantId: string, environment: ReportingEnv
   z.uuid().parse(restaurantId);
   z.enum(["production", "staging", "development"]).parse(environment);
   const timestamp = (value: string) => z.iso.datetime().parse(value).slice(0, 19).replace("T", " ");
+  const historyFrom = new Date(Date.parse(range.from) - 90 * 24 * 60 * 60 * 1000).toISOString();
   const where = `properties.restaurant_id = '${restaurantId}'
     AND properties.analytics_scope = 'restaurant'
     AND properties.environment = '${environment}'
@@ -99,5 +111,27 @@ export function reportingQueries(restaurantId: string, environment: ReportingEnv
       FROM events WHERE ${where} AND event = 'menu_item_expanded'
       AND match(toString(properties.item_id), '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$')
       GROUP BY item_id ORDER BY openings DESC, item_id LIMIT 10`,
+    audience: `SELECT countIf(active_visits > 0) AS unique_browsers,
+      sum(active_visits) AS visits,
+      countIf(active_visits > 0 AND recorded_visits > 1) AS returning_browsers,
+      sum(active_pageviews) AS tracked_pageviews
+      FROM (
+        SELECT distinct_id,
+          uniqExactIf(properties.$session_id, timestamp >= toDateTime('${timestamp(range.from)}', 'UTC')) AS active_visits,
+          uniqExact(properties.$session_id) AS recorded_visits,
+          countIf(timestamp >= toDateTime('${timestamp(range.from)}', 'UTC')) AS active_pageviews
+        FROM events WHERE properties.restaurant_id = '${restaurantId}'
+          AND properties.analytics_scope = 'restaurant'
+          AND properties.environment = '${environment}'
+          AND event = 'page_view'
+          AND properties.identity_version = 1 AND properties.identity_mode = 'persistent'
+          AND match(toString(distinct_id), '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$')
+          AND match(toString(properties.$session_id), '^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$')
+          AND toString(properties.$device_id) = toString(distinct_id)
+          AND timestamp >= toDateTime('${timestamp(historyFrom)}', 'UTC')
+          AND timestamp < toDateTime('${timestamp(range.until)}', 'UTC')
+          AND NOT startsWith(coalesce(properties.utm_content, ''), 'internal_qa_')
+        GROUP BY distinct_id
+      )`,
   };
 }

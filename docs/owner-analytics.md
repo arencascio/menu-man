@@ -194,18 +194,40 @@ Repository-wide lint also completes with two existing warnings in the ignored
 `.playwright/trace-dashboard-400.mjs` diagnostic. Unrelated local project-state
 edits have pre-existing trailing whitespace; the D.3 diff itself is clean.
 
-## Visitor-continuity integration point
+## D.2.2 tracked-browser audience metrics
 
-Unique visitors/browsers, returning visitors, retention and cross-session funnels
-are intentionally not calculated from document-lifetime SDK distinct IDs.
-The dashboard explains their unavailability. No new analytics events or SDK
-identity properties were introduced.
+The dashboard now adds one aggregate-only PostHog query. It filters to the
+authorized restaurant, trusted environment, `analytics_scope=restaurant`,
+`page_view`, `identity_version=1`, `identity_mode=persistent`, valid UUID
+`distinct_id` and `$session_id`, and matching `$device_id`. Legacy and ephemeral
+events remain in ordinary pageview totals but never in audience counts. The
+query returns four numbers only; neither browser IDs nor raw events reach the
+owner response. It uses the same private, no-store Query API request and final
+owner-membership recheck as the other reports.
 
-After the separate D.0 permission/identity contract is approved, add eligible
-browser/visit aggregates alongside the existing reporting query contracts and
-tests, with an explicit rollout cutoff and fallback-coverage definitions. Do not
-reinterpret historical memory-only IDs as durable visitors or alter existing
-pageview/action meanings. See [the D.0 assessment](restaurant-visitor-continuity.md).
+For each selected 7/30/90-day UTC window, unique browsers are distinct eligible
+IDs with a received pageview; visits are distinct visit IDs with a pageview;
+returning browsers have a different, earlier recorded pageview visit within the
+bounded 90-day historical lookback. Repeated pageviews in one visit do not create
+a return. Observed return rate is returning browsers divided by unique browsers;
+it is unavailable when that denominator is zero. Today retains the existing
+partial-day cutoff. Coverage is shown as persistent-identity pageviews out of all
+recorded restaurant pageviews, rather than claiming all visitors are counted.
+
+The history query spans at most 180 UTC days for a 90-day report and groups on
+the provider side, returning a single aggregate row. It adds one query request
+per dashboard load; the existing 12-second timeout applies. An incomplete or
+failed audience query shows an unavailable audience section while valid
+engagement and financial reports remain available. A valid empty aggregate
+shows zero browsers and visits. Returning counts/rates are observed lower bounds:
+events from before rollout, outside the 90-day lookback, blocked delivery, or
+prior to identity rotation cannot establish an earlier visit. A rotated or
+cleared browser ID can be counted as a new browser; these are not people or
+cross-device retention metrics. No visitor-tracking behavior changed here.
+
+Before staging release, compare all ranges to independent PostHog queries using
+these exact filters and inspect an authorized owner dashboard at mobile/desktop
+widths. See [visitor-continuity semantics](restaurant-visitor-continuity.md).
 
 ## Validation and staging follow-up
 

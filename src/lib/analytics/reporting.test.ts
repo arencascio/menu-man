@@ -21,6 +21,7 @@ const owner: RestaurantMembership = { membershipId: "20000000-0000-4000-8000-000
 class ManagementError extends Error { constructor(public code: string, message: string) { super(message); } }
 const daily = { error: null, hasMore: null, query_status: null, results: [["2026-10-16", 10, 6, 8, 4, 1, 2, 3, 4, 5, 1, 1]] };
 const items = { error: null, hasMore: null, query_status: null, results: [[itemId, 5]] };
+const audience = { error: null, hasMore: null, query_status: null, results: [[3, 4, 1, 7]] };
 const read = (file: string) => readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 function load(file: string, dependencies: Record<string, unknown>, globals: Record<string, unknown> = {}) {
   const exports: Record<string, unknown> = {};
@@ -35,7 +36,8 @@ function load(file: string, dependencies: Record<string, unknown>, globals: Reco
 
 function server(options: {
   memberships?: RestaurantMembership[][]; authError?: boolean; env?: Record<string, string | undefined>;
-  failure?: "http" | "network" | "malformed" | "pending" | "empty"; namesError?: boolean;
+  failure?: "http" | "network" | "malformed" | "pending" | "empty"; audienceFailure?: boolean; audienceRows?: unknown;
+  namesError?: boolean;
   names?: unknown[]; catalogThrows?: boolean; itemRows?: [string, number][];
   financialUnavailable?: boolean;
 } = {}) {
@@ -71,6 +73,13 @@ function server(options: {
       requests.push({ url, init });
       if (options.failure === "network") throw Error("PRIVATE_PROVIDER_DETAILS");
       const sql = JSON.parse(init.body as string).query.query as string;
+      if (sql.includes("AS unique_browsers")) {
+        if (options.audienceFailure) return { ok: false, status: 503 };
+        return { ok: options.failure !== "http", status: options.failure === "http" ? 403 : 200,
+          json: async () => options.failure === "malformed" ? { results: [["PRIVATE_RAW_EVENT"]] }
+            : options.failure === "pending" ? { query_status: { complete: false } }
+              : options.audienceRows ?? (options.failure === "empty" ? { results: [[0, 0, 0, 0]] } : audience) };
+      }
       return { ok: options.failure !== "http", status: options.failure === "http" ? 403 : 200, json: async () => options.failure === "malformed" ? { results: [["PRIVATE_RAW_EVENT"]] }
         : options.failure === "pending" ? { query_status: { complete: false } }
           : options.failure === "empty" ? { results: [] } : sql.includes("GROUP BY day") ? daily : { ...items, results: options.itemRows ?? items.results } };
@@ -113,17 +122,26 @@ test("trusted reporting environment separates production/preview/local and fails
   assert.equal(reporting.reportingEnvironment({}), null);
 });
 
-test("both bounded queries enforce tenant/environment/scope/date and QA filters without querying raw identities or marketing pageviews", () => {
+test("bounded queries enforce tenant/environment/scope/date and QA filters; audience returns only aggregate identities", () => {
   for (const environment of ["production", "staging", "development"] as const) {
-    for (const sql of Object.values(reporting.reportingQueries(restaurantId, environment, reporting.reportingRange("30", now)!))) {
+    const queries = reporting.reportingQueries(restaurantId, environment, reporting.reportingRange("30", now)!);
+    for (const sql of Object.values(queries)) {
       assert.ok(sql.includes(`properties.restaurant_id = '${restaurantId}'`));
       assert.ok(sql.includes(`properties.environment = '${environment}'`));
       assert.ok(sql.includes("properties.analytics_scope = 'restaurant'"));
-      assert.match(sql, /timestamp >= toDateTime\('2026-09-17 00:00:00', 'UTC'\)/);
+      assert.match(sql, /timestamp >= toDateTime\('2026-(?:06-19|09-17) 00:00:00', 'UTC'\)/);
       assert.match(sql, /timestamp < toDateTime\('2026-10-16 12:34:56', 'UTC'\)/);
       assert.match(sql, /internal_qa_/);
-      assert.doesNotMatch(sql, /distinct_id|\$device_id|\$pageview|SELECT \*|customer|properties\.query\b/i);
+      assert.doesNotMatch(sql, /\$pageview|SELECT \*|customer|properties\.query\b/i);
     }
+    for (const sql of [queries.daily, queries.items]) assert.doesNotMatch(sql, /distinct_id|\$device_id/);
+    assert.match(queries.audience, /event = 'page_view'/);
+    assert.match(queries.audience, /identity_version = 1 AND properties.identity_mode = 'persistent'/);
+    assert.match(queries.audience, /uniqExactIf\(properties\.\$session_id, timestamp >=/);
+    assert.match(queries.audience, /uniqExact\(properties\.\$session_id\) AS recorded_visits/);
+    assert.match(queries.audience, /countIf\(active_visits > 0 AND recorded_visits > 1\)/);
+    assert.match(queries.audience, /toString\(properties\.\$device_id\) = toString\(distinct_id\)/);
+    assert.doesNotMatch(queries.audience, /ORDER BY|LIMIT \d+|person_id|properties\.\$current_url/);
   }
   assert.throws(() => reporting.reportingQueries("' OR 1=1", "production", reporting.reportingRange("7", now)!));
   const dailySql = reporting.reportingQueries(restaurantId, "staging", reporting.reportingRange("7", now)!).daily;
@@ -152,11 +170,77 @@ test("aggregates exact event meanings, fills only successful empty days and reje
   assert.throws(() => reporting.assembleReport(range, "staging", daily, { results: [[itemId, 100]] }));
 });
 
+test("audience aggregates validate distinct visit and browser counts without exposing identities", () => {
+  assert.deepEqual(reporting.assembleAudience(audience, 10), {
+    status: "ready", uniqueBrowsers: 3, visits: 4, returningBrowsers: 1, trackedPageviews: 7,
+  });
+  assert.deepEqual(reporting.assembleAudience({ results: [[0, 0, 0, 0]] }, 0), {
+    status: "ready", uniqueBrowsers: 0, visits: 0, returningBrowsers: 0, trackedPageviews: 0,
+  });
+  for (const response of [{ results: [] }, { results: [[1, 1, 0, 1]], hasMore: true },
+    { results: [[1, 1, 0, 1]], query_status: { complete: false } }, { results: [[1, 1, 0, 1], [0, 0, 0, 0]] },
+    { results: [[1, 1, 2, 2]] }, { results: [[2, 1, 0, 2]] }, { results: [[1, 2, 0, 1]] },
+    { results: [[1, 1, 0, 11]] }, { results: [["private-id", 1, 0, 1]] }]) {
+    assert.throws(() => reporting.assembleAudience(response, 10));
+  }
+});
+
+test("audience result contract represents repeat pageviews, separate visits, prior-window returns and rotated identities", async () => {
+  const cases = [
+    { name: "three reloads in one visit", row: [1, 1, 0, 3], expected: [1, 1, 0] },
+    { name: "two visits in the selected period", row: [1, 2, 1, 3], expected: [1, 2, 1] },
+    { name: "one selected visit after a historical visit", row: [1, 1, 1, 2], expected: [1, 1, 1] },
+    { name: "90-day identity rotation creates a separate browser", row: [2, 2, 0, 2], expected: [2, 2, 0] },
+  ];
+  for (const scenario of cases) {
+    const result = await server({ audienceRows: { results: [scenario.row] } }).load("super-tacos", "7");
+    assert.equal(result.state.status, "ready", scenario.name);
+    if (result.state.status !== "ready" || result.state.report.audience.status !== "ready") continue;
+    const { uniqueBrowsers, visits, returningBrowsers } = result.state.report.audience;
+    assert.deepEqual([uniqueBrowsers, visits, returningBrowsers], scenario.expected, scenario.name);
+    assert.equal(result.state.report.totals.pageviews, 10, "overall pageviews remain unchanged");
+  }
+});
+
+test("audience query has a fixed 90-day prior lookback and counts pageview visits, not reloads or actions", () => {
+  for (const days of [7, 30, 90] as const) {
+    const range = reporting.reportingRange(String(days), now)!;
+    const sql = reporting.reportingQueries(restaurantId, "staging", range).audience;
+    const history = new Date(Date.parse(range.from) - 90 * 86_400_000).toISOString().slice(0, 19).replace("T", " ");
+    assert.ok(sql.includes(`timestamp >= toDateTime('${history}', 'UTC')`));
+    assert.ok(sql.includes(`timestamp >= toDateTime('${range.from.slice(0, 19).replace("T", " ")}', 'UTC')`));
+    assert.match(sql, /uniqExactIf\(properties\.\$session_id, timestamp >=/);
+    assert.match(sql, /uniqExact\(properties\.\$session_id\) AS recorded_visits/);
+    assert.match(sql, /event = 'page_view'/);
+    assert.doesNotMatch(sql, /menu_search|menu_item_expanded|\$pageview/);
+  }
+});
+
+test("audience failures leave engagement available and genuinely empty periods show zero counts", async () => {
+  const failed = await server({ audienceFailure: true }).load("super-tacos", "7");
+  assert.equal(failed.state.status, "ready");
+  if (failed.state.status === "ready") {
+    assert.equal(failed.state.report.totals.pageviews, 10);
+    assert.deepEqual(failed.state.report.audience, { status: "unavailable" });
+    const html = renderToStaticMarkup(createElement(dashboard(), { state: failed.state }));
+    assert.match(html, /Tracked-browser and visit metrics are unavailable/);
+    assert.doesNotMatch(html, /Unique browsers<\/dt><dd>0/);
+  }
+  const empty = await server({ failure: "empty" }).load("super-tacos", "7");
+  assert.equal(empty.state.status, "ready");
+  if (empty.state.status === "ready") {
+    assert.equal(empty.state.report.audience.status, "ready");
+    const html = renderToStaticMarkup(createElement(dashboard(), { state: empty.state }));
+    assert.match(html, /Unique browsers/);
+    assert.match(html, /Observed return rate<\/dt><dd>Not available/);
+  }
+});
+
 test("owner authorization is independent of order capabilities; unauthenticated/non-owner/other-tenant/revoked requests never query", async () => {
   const authorized = server();
   const result = await authorized.load("super-tacos", "7");
   assert.equal(result.state.status, "ready");
-  assert.equal(authorized.requests.length, 2);
+  assert.equal(authorized.requests.length, 3);
   assert.equal(authorized.reads(), 2);
   for (const memberships of [[], [{ ...owner, memberRole: "manager" as const, capabilities: ["view_orders" as const, "manage_memberships" as const] }], [{ ...owner, memberRole: "staff" as const }], [{ ...owner, restaurantSlug: "another", restaurantId: otherId }]]) {
     const denied = server({ memberships: [memberships] });
@@ -294,9 +378,10 @@ function dashboard() {
 test("dashboard renders truthful counts, no-search denominator, empty/failure states, escaped labels and accessible daily details", () => {
   const Component = dashboard();
   const report = reporting.assembleReport(reporting.reportingRange("7", now)!, "staging", daily, items);
+  report.audience = reporting.assembleAudience(audience, report.totals.pageviews);
   report.popularItems[0].label = "<script>private()</script>";
   const html = renderToStaticMarkup(createElement(Component, { state: { status: "ready", report } }));
-  for (const text of ["Website traffic", "Menu engagement", "Customer actions", "25.0%", "partial", "UTC", "Daily totals", "not orders", "Unique browsers", "&lt;script&gt;"]) assert.ok(html.includes(text), text);
+  for (const text of ["Website traffic", "Menu engagement", "Customer actions", "25.0%", "33.3%", "partial", "UTC", "Daily totals", "not orders", "Unique browsers", "Returning browsers", "Visits", "Coverage among received events: 7 of 10", "&lt;script&gt;"]) assert.ok(html.includes(text), text);
   assert.doesNotMatch(html, /<script>|distinct_id|private-mock-key/);
   const empty = reporting.assembleReport(reporting.reportingRange("7", now)!, "staging", { results: [] }, { results: [] });
   const emptyHtml = renderToStaticMarkup(createElement(Component, { state: { status: "ready", report: empty } }));

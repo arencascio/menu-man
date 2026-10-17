@@ -66,6 +66,16 @@ function EngagementSummary({ state }: { state: ReportingState }) {
     {empty ? <section className={styles.notice} role="status"><h2>No recorded website activity</h2><p>No matching restaurant events were received in this date range. Try another range. This does not prove nobody visited.</p></section> : null}
     <section className={styles.section} aria-labelledby="traffic-heading"><h2 id="traffic-heading">Website traffic</h2>
       <dl className={styles.metrics}><Metric label="Restaurant pageviews" value={totals.pageviews} description="Recorded page entries and revisits, including reloads." /><Metric label="Menu pageviews" value={totals.menuViews} description="Pageviews on the dedicated menu page." /></dl>
+      <h3>Tracked browsers &amp; visits</h3>
+      {report.audience.status === "ready" ? <>
+        <dl className={styles.metrics}>
+          <Metric label="Unique browsers" value={report.audience.uniqueBrowsers} description="Distinct eligible, persistent anonymous browser IDs with a recorded pageview in this range; not people." />
+          <Metric label="Visits" value={report.audience.visits} description="Distinct recorded visit IDs with a pageview in this range. A new visit starts after 30 minutes of inactivity; repeat pageviews count once." />
+          <Metric label="Returning browsers" value={report.audience.returningBrowsers} description="Tracked browsers with an earlier, separate recorded visit within the 90-day history lookback." />
+          <Metric label="Observed return rate" value={report.audience.uniqueBrowsers ? `${(report.audience.returningBrowsers / report.audience.uniqueBrowsers * 100).toFixed(1)}%` : "Not available"} description="Returning browsers divided by unique tracked browsers. Incomplete history makes this a lower bound." />
+        </dl>
+        <p>Coverage among received events: {number(report.audience.trackedPageviews)} of {number(totals.pageviews)} pageviews had a valid persistent browser and visit identity. Legacy and storage-disabled events are excluded. Opt-outs and blocked delivery are not measured here.</p>
+      </> : <p role="status">Tracked-browser and visit metrics are unavailable. Other website activity counts can still be used.</p>}
       <Trend report={report} />
     </section>
     <section className={styles.section} aria-labelledby="menu-heading"><h2 id="menu-heading">Menu engagement</h2>
@@ -76,6 +86,6 @@ function EngagementSummary({ state }: { state: ReportingState }) {
     <section className={styles.section} aria-labelledby="actions-heading"><h2 id="actions-heading">Customer actions</h2><p>These are customer interactions, not orders, sales or completed calls.</p>
       <dl className={styles.metrics}><Metric label="Delivery-provider clicks" value={totals.delivery} description="Activations of delivery links, not chooser openings." /><Metric label="Pickup actions" value={totals.pickup} description={`${number(totals.internalPickup)} internal selections · ${number(totals.externalPickup)} external departures · ${number(totals.pickup - totals.internalPickup - totals.externalPickup)} unclassified.`} /><Metric label="Telephone clicks" value={totals.phone} description="Phone-link activations, not confirmed calls." /><Metric label="Directions clicks" value={totals.directions} description="Directions-link activations, not restaurant visits." /></dl>
     </section>
-    <aside className={styles.notice}><h2>About these numbers</h2><p>Unique browsers, returning visitors and retention are unavailable while visitor continuity is deferred. These are received event counts; blockers, opt-out and delivery failures can reduce them.</p><p>Only this restaurant’s events in the displayed environment are included. Explicit internal QA campaign tags are excluded; untagged internal or demo activity cannot be reliably separated. Counts may begin partway through a range if tracking was introduced recently.</p></aside>
+    <aside className={styles.notice}><h2>About these numbers</h2><p>These are received event counts; blockers, opt-out and delivery failures can reduce them. Browser identities last at most 90 days before rotating, and earlier visits may be missing. A browser is not a person; the same person may use several browsers.</p><p>Only this restaurant’s events in the displayed environment are included. Explicit internal QA campaign tags are excluded; untagged internal or demo activity cannot be reliably separated. Counts may begin partway through a range if tracking was introduced recently.</p></aside>
   </>;
 }

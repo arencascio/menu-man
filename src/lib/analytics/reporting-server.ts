@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { listRestaurantMemberships, ManagementError } from "@/lib/order-management/server";
-import { assembleReport, reportingEnvironment, reportingQueries, reportingRange, type ReportingState } from "./reporting";
+import { assembleAudience, assembleReport, reportingEnvironment, reportingQueries, reportingRange, type ReportingState } from "./reporting";
 import { readOwnerFinancials } from "./financial-reporting-server";
 
 function configuration() {
@@ -46,8 +46,17 @@ export async function loadOwnerAnalytics(slug: string, requestedRange: unknown) 
   else {
     try {
       const sql = reportingQueries(membership.restaurantId, environment, range);
-      const [daily, items] = await Promise.all([query(config, sql.daily), query(config, sql.items)]);
+      const [daily, items, audience] = await Promise.all([
+        query(config, sql.daily), query(config, sql.items), query(config, sql.audience).catch(() => null),
+      ]);
       const report = assembleReport(range, environment, daily, items);
+      try {
+        if (audience === null) throw Error("Audience query unavailable");
+        report.audience = assembleAudience(audience, report.totals.pageviews);
+      } catch {
+        // Audience failure must not turn valid engagement or financial counts into zeros.
+        console.error("[analytics-audience]", { category: "unavailable" });
+      }
       // Catalog names are optional decoration, always scoped to this membership.
       if (report.popularItems.length) {
         try {
