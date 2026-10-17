@@ -225,38 +225,54 @@ test("restaurant events queued during a denied or failed decision are discarded"
   }
 });
 
-test("direct GA4 events require eligibility even if gtag is present", () => {
-  let allowed = false;
+test("restaurant events never reach GA4, including after eligibility and withdrawal", () => {
   const events: unknown[][] = [];
   const app = load<{ trackEvent(event: unknown): void }>("src/lib/analytics/client.ts", {
     "./posthog": { isPostHogConfigured: () => false, posthogProvider: { track() {} } },
-    "./eligibility": { analyticsEligibility: { isAllowed: () => allowed } },
   }, { process: { env: { NEXT_PUBLIC_ANALYTICS_PROVIDER: "ga4", NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST" } },
     window: { gtag: (...args: unknown[]) => events.push(args) } });
   app.trackEvent({ name: "page_view", restaurantId: "tenant-a" });
-  assert.equal(events.length, 0);
-  allowed = true;
-  app.trackEvent({ name: "page_view", restaurantId: "tenant-a" });
-  assert.equal(events.length, 1);
-  assert.equal((events[0][2] as { restaurant_id: string }).restaurant_id, "tenant-a");
+  app.trackEvent({ name: "menu_item_expanded", restaurantId: "tenant-a", itemId: "item-a" });
+  app.trackEvent({ name: "phone_clicked", restaurantId: "tenant-a" });
+  assert.deepEqual(events, []);
 });
 
-test("GA4 script is absent before or after denial and appears only after an allowed decision", async () => {
+test("GA4 loads only on eligible marketing routes and is disabled on restaurant navigation", async () => {
   for (const eligible of [false, true]) {
     let allowed = false;
+    let pathname = "/";
     const effects: Array<() => void> = [];
+    const layoutEffects: Array<() => void> = [];
+    const win: Record<string, unknown> = {
+      history: { pushState() {}, replaceState() {} },
+      addEventListener() {}, removeEventListener() {},
+    };
     const component = load<{ default(): unknown }>("src/app/AnalyticsScripts.tsx", {
       "next/script": { default: "Script" },
-      react: { useState: () => [allowed, (value: boolean) => { allowed = value; }], useEffect: (effect: () => void) => { effects.push(effect); } },
+      "next/navigation": { usePathname: () => pathname },
+      react: { useState: () => [allowed, (value: boolean) => { allowed = value; }], useEffect: (effect: () => void) => { effects.push(effect); },
+        useLayoutEffect: (effect: () => void) => { layoutEffects.push(effect); } },
       "@/lib/analytics/eligibility": { analyticsEligibility: { check: async () => eligible } },
+      "@/lib/analytics/marketing": { marketingPages: ["/", "/services", "/work", "/build-my-website"] },
       "react/jsx-runtime": { jsx: (type: unknown, props: unknown) => ({ type, props }), jsxs: (type: unknown, props: unknown) => ({ type, props }), Fragment: "Fragment" },
-    }, { process: { env: { NEXT_PUBLIC_ANALYTICS_PROVIDER: "ga4", NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST" } } });
+    }, { process: { env: { NEXT_PUBLIC_ANALYTICS_PROVIDER: "ga4", NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST" } }, window: win });
     assert.equal(component.default(), null);
+    layoutEffects[0]();
+    layoutEffects[1]();
+    assert.equal(win["ga-disable-G-TEST"], false);
     effects[0]();
     assert.equal(component.default(), null);
     await new Promise(setImmediate);
     const rendered = component.default();
     assert.equal(rendered === null, !eligible);
     if (eligible) assert.match(JSON.stringify(rendered), /googletagmanager\.com/);
+    pathname = "/r/super-tacos/menu";
+    assert.equal(component.default(), null);
+    layoutEffects.at(-2)!();
+    assert.equal(win["ga-disable-G-TEST"], true);
+    pathname = "/services";
+    component.default();
+    layoutEffects.at(-2)!();
+    assert.equal(win["ga-disable-G-TEST"], false);
   }
 });
