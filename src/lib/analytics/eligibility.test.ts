@@ -71,6 +71,39 @@ test("client decision is non-cacheable, same-origin, shared per document, and de
   assert.equal(calls, 1);
 });
 
+test("restaurant area lookup is US-gated, tenant-scoped, non-cacheable and accepts only the enum", async () => {
+  const id = "20000000-0000-4000-8000-000000000001";
+  const requests: Array<{ url: string; options?: RequestInit }> = [];
+  const gate = createAnalyticsEligibility(async (url, options) => {
+    requests.push({ url: String(url), options });
+    return String(url).endsWith("/eligibility")
+      ? Response.json({ allowed: true })
+      : Response.json({ visitor_area: "local" });
+  });
+  assert.equal(await gate.restaurantArea(id), "unknown");
+  await gate.check();
+  assert.equal(await gate.restaurantArea(id), "local");
+  assert.equal(await gate.restaurantArea(id), "local");
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1].url, "/api/analytics/restaurant-geography");
+  assert.equal(requests[1].options?.method, "POST");
+  assert.equal(requests[1].options?.cache, "no-store");
+  assert.equal(requests[1].options?.mode, "same-origin");
+  assert.equal(requests[1].options?.redirect, "error");
+  assert.equal(requests[1].options?.body, JSON.stringify({ restaurant_id: id }));
+
+  const denied = createAnalyticsEligibility(async () => Response.json({ allowed: false }));
+  await denied.check();
+  assert.equal(await denied.restaurantArea(id), "unknown");
+
+  for (const invalidResponse of [Response.json({ visitor_area: "private city" }), Response.json({ visitor_area: "local", city: "private" })]) {
+    const malformed = createAnalyticsEligibility(async (url) => String(url).endsWith("/eligibility")
+      ? Response.json({ allowed: true }) : invalidResponse);
+    await malformed.check();
+    assert.equal(await malformed.restaurantArea(id), "unknown");
+  }
+});
+
 test("request errors, timeouts, redirects, bad HTTP and invalid response shapes all fail closed", async () => {
   const failures = [
     async () => { throw new TypeError("Network unavailable"); },
@@ -100,13 +133,14 @@ function adapter(gate: ReturnType<typeof createAnalyticsEligibility>, optedOut =
       if (outgoing) captures.push({ name: outgoing.event, properties: outgoing.properties });
     },
   };
+  const posthogGate = { ...gate, restaurantArea: async () => "local" as const };
   const api = load<{
     initializePostHog(): Promise<void>;
     isMarketingCaptureAllowed(): boolean;
     captureMarketingEvent(name: string, properties: Record<string, unknown>): void;
     posthogProvider: { track(event: unknown): void };
   }>("src/lib/analytics/posthog.ts", {
-    "posthog-js": { default: sdk }, "./eligibility": { analyticsEligibility: gate },
+    "posthog-js": { default: sdk }, "./eligibility": { analyticsEligibility: posthogGate },
     "./marketing": { marketingEnvironment, sanitizeMarketingCapture },
     "./restaurant": { restaurantEventContext, sanitizeRestaurantCapture },
     "./restaurant-identity": { restaurantIdentity: { withIdentity: async (_environment: string, _restaurantId: string,
@@ -200,9 +234,13 @@ test("restaurant events wait for eligibility, then retain current tenant, enviro
   await api.initializePostHog();
   await new Promise(setImmediate);
   assert.equal(initializations(), 1);
-  assert.deepEqual(captures.map(({ name, properties }) => [name, properties.restaurant_id, properties.environment]), [
-    ["page_view", "tenant-a", "production"], ["menu_search", "tenant-b", "production"],
+  assert.deepEqual(captures.map(({ name, properties }) => [name, properties.restaurant_id, properties.environment]).sort(), [
+    ["menu_search", "tenant-b", "production"], ["page_view", "tenant-a", "production"],
   ]);
+  const pageView = captures.find(({ name }) => name === "page_view")!;
+  const menuSearch = captures.find(({ name }) => name === "menu_search")!;
+  assert.equal(pageView.properties.visitor_area, "local");
+  assert.equal(Object.hasOwn(menuSearch.properties, "visitor_area"), false);
   for (const { properties } of captures) {
     assert.equal(properties.analytics_scope, "restaurant");
     assert.equal(properties.$geoip_disable, true);

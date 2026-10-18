@@ -4,6 +4,7 @@ import type { AnalyticsEvent, RestaurantPageType } from "./types";
 
 const syntheticSections = ["featured", "popular", "favorites"] as const;
 const pageTypes = ["home", "menu", "location", "checkout", "payment", "confirmation"] as const;
+const visitorAreas = ["local", "same_state", "out_of_state", "unknown"] as const;
 
 // Paths are used locally for matching only. Neither paths nor dynamic segments are sent.
 export function restaurantPageType(pathname: string): RestaurantPageType | undefined {
@@ -71,7 +72,7 @@ const section = base.extend({ section_id: id.refine((value) => !syntheticSection
 const hasSection = (value: { section_id?: string; surface?: string }) => Boolean(value.section_id)
   || syntheticSections.includes(value.surface as typeof syntheticSections[number]);
 const schemas: Record<string, z.ZodType> = {
-  page_view: base,
+  page_view: base.extend({ visitor_area: z.enum(visitorAreas).optional() }),
   category_selected: section.refine(hasSection),
   menu_search: base.extend({ query_length: count, result_count: count, zero_results: z.boolean() }),
   menu_favorite_changed: base.extend({ item_id: z.uuid(), liked: z.boolean() }),

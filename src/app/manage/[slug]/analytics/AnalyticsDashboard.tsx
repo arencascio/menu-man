@@ -3,6 +3,7 @@ import type { FinancialState } from "@/lib/analytics/financial-reporting";
 import styles from "./analytics.module.css";
 
 const number = (value: number) => value.toLocaleString("en-US");
+const percentage = (part: number, total: number) => total ? `${(part / total * 100).toFixed(1)}%` : "Not available";
 const dayLabel = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
 
 function Metric({ label, value, description }: { label: string; value: number | string; description: string }) {
@@ -77,6 +78,20 @@ function EngagementSummary({ state }: { state: ReportingState }) {
         <p>Coverage among received events: {number(report.audience.trackedPageviews)} of {number(totals.pageviews)} pageviews had a valid persistent browser and visit identity. Legacy and storage-disabled events are excluded. Opt-outs and blocked delivery are not measured here.</p>
       </> : <p role="status">Tracked-browser and visit metrics are unavailable. Other website activity counts can still be used.</p>}
       <Trend report={report} />
+    </section>
+    <section className={styles.section} aria-labelledby="geography-heading">
+      <h2 id="geography-heading">Estimated pageview geography</h2>
+      <p>Approximate classifications of pageviews, not unique visitors or customers. Percentages use all restaurant pageviews in this range, including unknown and unclassified events.</p>
+      {report.geography.status === "unavailable" ? <p role="status">Geographic reporting is unavailable. Refresh to try again; no geography counts are shown.</p>
+        : totals.pageviews === 0 ? <p role="status">No restaurant pageviews were recorded in this date range.</p> : <>
+          <dl className={styles.metrics}>
+            <Metric label="Local" value={`${number(report.geography.local)} (${percentage(report.geography.local, totals.pageviews)})`} description="Estimated same city and state as the restaurant." />
+            <Metric label="Same state" value={`${number(report.geography.sameState)} (${percentage(report.geography.sameState, totals.pageviews)})`} description="Estimated in the restaurant’s state, outside its city." />
+            <Metric label="Out of state" value={`${number(report.geography.outOfState)} (${percentage(report.geography.outOfState, totals.pageviews)})`} description="Estimated in another U.S. state." />
+            <Metric label="Unknown or unclassified" value={`${number(report.geography.unknown)} (${percentage(report.geography.unknown, totals.pageviews)})`} description="Location was unknown or unavailable, including historical pageviews without a classification." />
+          </dl>
+          <p>Classification coverage: {number(report.geography.classifiedPageviews)} of {number(totals.pageviews)} pageviews ({percentage(report.geography.classifiedPageviews, totals.pageviews)}). {number(report.geography.unclassifiedPageviews)} pageviews had no valid location classification; these are included in Unknown above.</p>
+        </>}
     </section>
     <section className={styles.section} aria-labelledby="menu-heading"><h2 id="menu-heading">Menu engagement</h2>
       <dl className={styles.metrics}><Metric label="Item openings" value={totals.itemOpenings} description="Full-detail and quick-add openings; repeat openings count again." /><Metric label="Search interactions" value={totals.searches} description="Debounced searches, not submitted search forms." /><Metric label="Zero-result searches" value={totals.zeroResults} description="Recorded searches with no matching canonical items." /><Metric label="Zero-result rate" value={rate} description={totals.searches ? "Zero-result searches divided by recorded searches." : "A rate needs at least one recorded search."} /></dl>

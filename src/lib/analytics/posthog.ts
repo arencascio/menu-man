@@ -2,7 +2,7 @@ import posthog from "posthog-js";
 import type { AnalyticsCartItem, AnalyticsEvent, AnalyticsProvider } from "./types";
 import { marketingEnvironment, sanitizeMarketingCapture } from "./marketing";
 import { restaurantEventContext, sanitizeRestaurantCapture } from "./restaurant";
-import { analyticsEligibility } from "./eligibility";
+import { analyticsEligibility, type VisitorArea } from "./eligibility";
 import { restaurantIdentity, type RestaurantIdentity } from "./restaurant-identity";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -158,15 +158,24 @@ export const posthogProvider: AnalyticsProvider = {
         try {
           if (!isPostHogCaptureAllowed()) return;
           const environment = properties.environment as string;
-          void restaurantIdentity.withIdentity(environment, event.restaurantId, isPostHogCaptureAllowed, (identity) => {
+          const capture = (visitorArea?: VisitorArea) => {
             if (!isPostHogCaptureAllowed()) return;
-            activeRestaurantCapture = { name: event.name, restaurantId: event.restaurantId, environment, identity };
-            try {
-              // Avoid retaining this tenant's event in the shared SDK batch after withdrawal.
-              posthog.capture(event.name, properties, { send_instantly: true });
-            } catch { /* Analytics must not interrupt restaurant interactions. */ }
-            finally { activeRestaurantCapture = null; }
-          }).catch(() => { /* Storage and browser-lock failures never block interactions. */ });
+            const eventProperties = event.name === "page_view"
+              ? { ...properties, visitor_area: visitorArea ?? "unknown" }
+              : properties;
+            void restaurantIdentity.withIdentity(environment, event.restaurantId, isPostHogCaptureAllowed, (identity) => {
+              if (!isPostHogCaptureAllowed()) return;
+              activeRestaurantCapture = { name: event.name, restaurantId: event.restaurantId, environment, identity };
+              try {
+                // Avoid retaining this tenant's event in the shared SDK batch after withdrawal.
+                posthog.capture(event.name, eventProperties, { send_instantly: true });
+              } catch { /* Analytics must not interrupt restaurant interactions. */ }
+              finally { activeRestaurantCapture = null; }
+            }).catch(() => { /* Storage and browser-lock failures never block interactions. */ });
+          };
+          if (event.name === "page_view") {
+            void analyticsEligibility.restaurantArea(event.restaurantId).then(capture).catch(() => capture("unknown"));
+          } else capture();
         }
         catch { /* Analytics must not interrupt restaurant interactions. */ }
       };

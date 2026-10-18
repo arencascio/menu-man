@@ -8,6 +8,9 @@ export type DailyMetrics = Metrics & { day: string };
 export type AudienceState =
   | { status: "ready"; uniqueBrowsers: number; visits: number; returningBrowsers: number; trackedPageviews: number }
   | { status: "unavailable" };
+export type GeographyState =
+  | { status: "ready"; local: number; sameState: number; outOfState: number; unknown: number; classifiedPageviews: number; unclassifiedPageviews: number }
+  | { status: "unavailable" };
 export type AnalyticsReport = {
   environment: ReportingEnvironment;
   days: number;
@@ -17,6 +20,7 @@ export type AnalyticsReport = {
   totals: Metrics;
   popularItems: { itemId: string; openings: number; label: string }[];
   audience: AudienceState;
+  geography: GeographyState;
 };
 export type ReportingState =
   | { status: "ready"; report: AnalyticsReport }
@@ -49,6 +53,7 @@ const completedQuery = { error: z.null().optional(), hasMore: z.literal(false).n
 const dailyResponse = z.object({ ...completedQuery, results: z.array(dailyRow).max(90) });
 const itemsResponse = z.object({ ...completedQuery, results: z.array(itemRow).max(10) });
 const audienceResponse = z.object({ ...completedQuery, results: z.array(z.tuple([count, count, count, count])).length(1) });
+const geographyResponse = z.object({ ...completedQuery, results: z.array(z.tuple([count, count, count, count, count])).length(1) });
 const zeroMetrics = (): Metrics => Object.fromEntries(metricKeys.map((key) => [key, 0])) as Metrics;
 
 export function assembleReport(range: NonNullable<ReturnType<typeof reportingRange>>, environment: ReportingEnvironment, dailyInput: unknown, itemsInput: unknown): AnalyticsReport {
@@ -74,13 +79,23 @@ export function assembleReport(range: NonNullable<ReturnType<typeof reportingRan
     if (!Number.isSafeInteger(totals[key])) throw Error("Invalid reporting total");
   }
   if (new Set(items.map(([id]) => id)).size !== items.length || items.reduce((n, [, value]) => n + value, 0) > totals.itemOpenings) throw Error("Invalid item counts");
-  return { ...range, environment, daily, totals, popularItems: items.map(([itemId, openings]) => ({ itemId, openings, label: "Unavailable menu item" })), audience: { status: "unavailable" } };
+  return { ...range, environment, daily, totals, popularItems: items.map(([itemId, openings]) => ({ itemId, openings, label: "Unavailable menu item" })), audience: { status: "unavailable" }, geography: { status: "unavailable" } };
 }
 
 export function assembleAudience(input: unknown, pageviews: number): AudienceState {
   const [uniqueBrowsers, visits, returningBrowsers, trackedPageviews] = audienceResponse.parse(input).results[0];
   if (returningBrowsers > uniqueBrowsers || uniqueBrowsers > visits || visits > trackedPageviews || trackedPageviews > pageviews) throw Error("Invalid audience counts");
   return { status: "ready", uniqueBrowsers, visits, returningBrowsers, trackedPageviews };
+}
+
+export function assembleGeography(input: unknown, pageviews: number): GeographyState {
+  const [local, sameState, outOfState, explicitUnknown, unclassifiedPageviews] = geographyResponse.parse(input).results[0];
+  const classifiedPageviews = local + sameState + outOfState + explicitUnknown;
+  const unknown = explicitUnknown + unclassifiedPageviews;
+  if (![classifiedPageviews, unknown].every(Number.isSafeInteger) || local + sameState + outOfState + unknown !== pageviews) {
+    throw Error("Invalid geography counts");
+  }
+  return { status: "ready", local, sameState, outOfState, unknown, classifiedPageviews, unclassifiedPageviews };
 }
 
 export function reportingQueries(restaurantId: string, environment: ReportingEnvironment, range: NonNullable<ReturnType<typeof reportingRange>>) {
@@ -133,5 +148,12 @@ export function reportingQueries(restaurantId: string, environment: ReportingEnv
           AND NOT startsWith(coalesce(properties.utm_content, ''), 'internal_qa_')
         GROUP BY distinct_id
       )`,
+    geography: `SELECT
+      countIf(properties.visitor_area = 'local') AS local_pageviews,
+      countIf(properties.visitor_area = 'same_state') AS same_state_pageviews,
+      countIf(properties.visitor_area = 'out_of_state') AS out_of_state_pageviews,
+      countIf(properties.visitor_area = 'unknown') AS explicit_unknown_pageviews,
+      countIf(properties.visitor_area IS NULL OR properties.visitor_area NOT IN ('local', 'same_state', 'out_of_state', 'unknown')) AS unclassified_pageviews
+      FROM events WHERE ${where} AND event = 'page_view'`,
   };
 }

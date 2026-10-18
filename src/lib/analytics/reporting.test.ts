@@ -37,6 +37,7 @@ function load(file: string, dependencies: Record<string, unknown>, globals: Reco
 function server(options: {
   memberships?: RestaurantMembership[][]; authError?: boolean; env?: Record<string, string | undefined>;
   failure?: "http" | "network" | "malformed" | "pending" | "empty"; audienceFailure?: boolean; audienceRows?: unknown;
+  geographyFailure?: boolean; geographyRows?: unknown;
   namesError?: boolean;
   names?: unknown[]; catalogThrows?: boolean; itemRows?: [string, number][];
   financialUnavailable?: boolean;
@@ -73,6 +74,13 @@ function server(options: {
       requests.push({ url, init });
       if (options.failure === "network") throw Error("PRIVATE_PROVIDER_DETAILS");
       const sql = JSON.parse(init.body as string).query.query as string;
+      if (sql.includes("AS local_pageviews")) {
+        if (options.geographyFailure) return { ok: false, status: 503 };
+        return { ok: options.failure !== "http", status: options.failure === "http" ? 403 : 200,
+          json: async () => options.failure === "malformed" ? { results: [["PRIVATE_RAW_EVENT"]] }
+            : options.failure === "pending" ? { query_status: { complete: false } }
+              : options.geographyRows ?? (options.failure === "empty" ? { results: [[0, 0, 0, 0, 0]] } : { results: [[3, 2, 1, 1, 3]] }) };
+      }
       if (sql.includes("AS unique_browsers")) {
         if (options.audienceFailure) return { ok: false, status: 503 };
         return { ok: options.failure !== "http", status: options.failure === "http" ? 403 : 200,
@@ -135,7 +143,11 @@ test("bounded queries enforce tenant/environment/scope/date and QA filters; audi
       assert.doesNotMatch(sql, /\$pageview|SELECT \*|customer|properties\.query\b/i);
     }
     for (const sql of [queries.daily, queries.items]) assert.doesNotMatch(sql, /distinct_id|\$device_id/);
-    assert.match(queries.audience, /event = 'page_view'/);
+  assert.match(queries.audience, /event = 'page_view'/);
+  assert.match(queries.geography, /properties\.visitor_area = 'local'/);
+  assert.match(queries.geography, /properties\.visitor_area IS NULL OR properties\.visitor_area NOT IN/);
+  assert.match(queries.geography, /event = 'page_view'/);
+  assert.doesNotMatch(queries.geography, /distinct_id|\$device_id|SELECT \*/);
     assert.match(queries.audience, /identity_version = 1 AND properties.identity_mode = 'persistent'/);
     assert.match(queries.audience, /uniqExactIf\(properties\.\$session_id, timestamp >=/);
     assert.match(queries.audience, /uniqExact\(properties\.\$session_id\) AS recorded_visits/);
@@ -182,6 +194,22 @@ test("audience aggregates validate distinct visit and browser counts without exp
     { results: [[1, 1, 2, 2]] }, { results: [[2, 1, 0, 2]] }, { results: [[1, 2, 0, 1]] },
     { results: [[1, 1, 0, 11]] }, { results: [["private-id", 1, 0, 1]] }]) {
     assert.throws(() => reporting.assembleAudience(response, 10));
+  }
+});
+
+test("geography aggregation classifies all pageviews, includes historical missing properties as unknown, and rejects inconsistent data", () => {
+  assert.deepEqual(reporting.assembleGeography({ results: [[3, 2, 1, 1, 3]] }, 10), {
+    status: "ready", local: 3, sameState: 2, outOfState: 1, unknown: 4,
+    classifiedPageviews: 7, unclassifiedPageviews: 3,
+  });
+  assert.deepEqual(reporting.assembleGeography({ results: [[0, 0, 0, 0, 0]] }, 0), {
+    status: "ready", local: 0, sameState: 0, outOfState: 0, unknown: 0,
+    classifiedPageviews: 0, unclassifiedPageviews: 0,
+  });
+  for (const response of [{ results: [] }, { results: [[1, 0, 0, 0, 0]], hasMore: true },
+    { results: [[1, 0, 0, 0, 0]], query_status: { complete: false } },
+    { results: [[1, 0, 0, 0, 0]] }, { results: [["raw-event", 0, 0, 0, 0]] }]) {
+    assert.throws(() => reporting.assembleGeography(response, 10));
   }
 });
 
@@ -236,11 +264,33 @@ test("audience failures leave engagement available and genuinely empty periods s
   }
 });
 
+test("geography failures remain unavailable without changing traffic totals, and empty ranges stay empty", async () => {
+  const failed = await server({ geographyFailure: true }).load("super-tacos", "7");
+  assert.equal(failed.state.status, "ready");
+  if (failed.state.status === "ready") {
+    assert.equal(failed.state.report.totals.pageviews, 10);
+    assert.deepEqual(failed.state.report.geography, { status: "unavailable" });
+    const html = renderToStaticMarkup(createElement(dashboard(), { state: failed.state }));
+    assert.match(html, /Geographic reporting is unavailable/);
+    assert.doesNotMatch(html, /Local<\/dt><dd>0/);
+  }
+  const empty = await server({ failure: "empty" }).load("super-tacos", "7");
+  assert.equal(empty.state.status, "ready");
+  if (empty.state.status === "ready") {
+    assert.deepEqual(empty.state.report.geography, {
+      status: "ready", local: 0, sameState: 0, outOfState: 0, unknown: 0,
+      classifiedPageviews: 0, unclassifiedPageviews: 0,
+    });
+    const html = renderToStaticMarkup(createElement(dashboard(), { state: empty.state }));
+    assert.match(html, /No restaurant pageviews were recorded in this date range/);
+  }
+});
+
 test("owner authorization is independent of order capabilities; unauthenticated/non-owner/other-tenant/revoked requests never query", async () => {
   const authorized = server();
   const result = await authorized.load("super-tacos", "7");
   assert.equal(result.state.status, "ready");
-  assert.equal(authorized.requests.length, 3);
+  assert.equal(authorized.requests.length, 4);
   assert.equal(authorized.reads(), 2);
   for (const memberships of [[], [{ ...owner, memberRole: "manager" as const, capabilities: ["view_orders" as const, "manage_memberships" as const] }], [{ ...owner, memberRole: "staff" as const }], [{ ...owner, restaurantSlug: "another", restaurantId: otherId }]]) {
     const denied = server({ memberships: [memberships] });
@@ -379,13 +429,15 @@ test("dashboard renders truthful counts, no-search denominator, empty/failure st
   const Component = dashboard();
   const report = reporting.assembleReport(reporting.reportingRange("7", now)!, "staging", daily, items);
   report.audience = reporting.assembleAudience(audience, report.totals.pageviews);
+  report.geography = reporting.assembleGeography({ results: [[3, 2, 1, 1, 3]] }, report.totals.pageviews);
   report.popularItems[0].label = "<script>private()</script>";
   const html = renderToStaticMarkup(createElement(Component, { state: { status: "ready", report } }));
-  for (const text of ["Website traffic", "Menu engagement", "Customer actions", "25.0%", "33.3%", "partial", "UTC", "Daily totals", "not orders", "Unique browsers", "Returning browsers", "Visits", "Coverage among received events: 7 of 10", "&lt;script&gt;"]) assert.ok(html.includes(text), text);
+  for (const text of ["Website traffic", "Estimated pageview geography", "Menu engagement", "Customer actions", "25.0%", "33.3%", "30.0%", "20.0%", "partial", "UTC", "Daily totals", "not orders", "Unique browsers", "Returning browsers", "Visits", "Coverage among received events: 7 of 10", "Classification coverage: 7 of 10 pageviews (70.0%)", "3 pageviews had no valid location classification", "&lt;script&gt;"]) assert.ok(html.includes(text), text);
   assert.doesNotMatch(html, /<script>|distinct_id|private-mock-key/);
   const empty = reporting.assembleReport(reporting.reportingRange("7", now)!, "staging", { results: [] }, { results: [] });
+  empty.geography = reporting.assembleGeography({ results: [[0, 0, 0, 0, 0]] }, 0);
   const emptyHtml = renderToStaticMarkup(createElement(Component, { state: { status: "ready", report: empty } }));
-  assert.match(emptyHtml, /No recorded website activity/); assert.match(emptyHtml, /Not available/);
+  assert.match(emptyHtml, /No recorded website activity/); assert.match(emptyHtml, /No restaurant pageviews were recorded/); assert.match(emptyHtml, /Not available/);
   for (const reason of ["configuration", "provider", "environment"] as const) {
     const failed = renderToStaticMarkup(createElement(Component, { state: { status: "unavailable", reason } }));
     assert.match(failed, /Website engagement unavailable/); assert.doesNotMatch(failed, /<dd>|<svg/);
