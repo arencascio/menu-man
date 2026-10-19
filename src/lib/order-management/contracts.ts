@@ -11,6 +11,7 @@ export const managementCapabilitySchema = z.enum([
   "manage_memberships",
   "manage_restaurant_settings",
   "manage_notifications",
+  "manage_catering",
 ]);
 
 export const managementRoleSchema = z.enum(["owner", "manager", "staff"]);
@@ -130,6 +131,7 @@ const capabilityLabels: Record<ManagementCapability, string> = {
   manage_memberships: "Manage team",
   manage_restaurant_settings: "Manage restaurant settings",
   manage_notifications: "Manage notifications",
+  manage_catering: "Manage catering inquiries and settings",
 };
 
 function stateCapabilities(state: Record<string, unknown>) {

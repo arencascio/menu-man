@@ -15,12 +15,11 @@ export default async function SettingsLayout({ children, params }: { children: R
     throw error;
   }
   const membership = memberships.find((entry) => entry.restaurantSlug === slug);
-  if (!membership || !membership.capabilities.some((capability) => capability === "manage_restaurant_settings" || capability === "manage_notifications")) redirect("/manage");
+  if (!membership || !membership.capabilities.some((capability) => capability === "manage_restaurant_settings" || capability === "manage_notifications" || capability === "manage_catering")) redirect("/manage");
   return <main className={sharedStyles.main}><div className={styles.page}>
     <ManagementNav slug={slug} active="settings" capabilities={membership.capabilities} memberRole={membership.memberRole} />
     <header className={orderStyles.pageHeader}>
       <div><p className={orderStyles.eyebrow}>{membership.restaurantName}</p><h1 className={orderStyles.title}>Settings</h1><p className={styles.intro}>Manage restaurant details and ordering operations.</p></div>
-      <div className={orderStyles.headerActions}><span className={orderStyles.identity}>{membership.displayName}</span><span className={orderStyles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={orderStyles.secondaryButton}>Sign out</button></form></div>
     </header>
     <SettingsNav slug={slug} capabilities={membership.capabilities} />
     {children}

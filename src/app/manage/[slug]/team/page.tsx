@@ -25,7 +25,6 @@ export default async function RestaurantTeamPage({ params }: { params: Promise<{
         <ManagementNav slug={slug} active="team" capabilities={membership.capabilities} memberRole={membership.memberRole} />
         <header className={orderStyles.pageHeader}>
           <div><p className={orderStyles.eyebrow}>{membership.restaurantName}</p><h1 className={orderStyles.title}>Team</h1><p className={styles.intro}>Invite staff and control exactly what each person can do.</p></div>
-          <div className={orderStyles.headerActions}><span className={orderStyles.identity}>{membership.displayName}</span><span className={orderStyles.role}>{membership.memberRole}</span><form action="/auth/sign-out" method="post"><button className={orderStyles.secondaryButton}>Sign out</button></form></div>
         </header>
         <TeamManager slug={slug} restaurantName={membership.restaurantName} actorMembershipId={membership.membershipId} actorRole={membership.memberRole} actorCapabilities={membership.capabilities} initialMembers={members} initialEvents={events} />
       </div>

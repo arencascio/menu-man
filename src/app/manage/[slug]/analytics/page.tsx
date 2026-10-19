@@ -26,7 +26,7 @@ export default async function AnalyticsPage({ params, searchParams }: {
   const { membership, state, financialState } = result;
   return <main className={sharedStyles.main}><div className={styles.page}>
     <ManagementNav slug={membership.restaurantSlug} active="analytics" capabilities={membership.capabilities} memberRole={membership.memberRole} />
-    <header className={styles.header}><div><p>{membership.restaurantName}</p><h1>Analytics</h1><p>Understand how customers use your restaurant website.</p></div><form action="/auth/sign-out" method="post"><button className={sharedStyles.buttonSecondary}>Sign out</button></form></header>
+    <header className={styles.header}><div><p>{membership.restaurantName}</p><h1>Analytics</h1><p>Understand how customers use your restaurant website.</p></div></header>
     <form action={`/manage/${membership.restaurantSlug}/analytics`} method="get" className={styles.range}>
       <label htmlFor="analytics-range">Date range</label><select id="analytics-range" name="range" defaultValue={range === undefined ? "30" : typeof range === "string" && ["7", "30", "90"].includes(range) ? range : ""}>
         {range !== undefined && (typeof range !== "string" || !["7", "30", "90"].includes(range)) ? <option value="" disabled>Choose a range</option> : null}

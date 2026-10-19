@@ -17,7 +17,11 @@
     "import-menu:staging": "node --env-file=.env.staging.local --import=tsx scripts/import-menu.ts --require-staging",
     "audit-images": "node --env-file-if-exists=.env.local --import=tsx scripts/audit-menu-images.ts",
     "import-images": "node --env-file-if-exists=.env.local --import=tsx scripts/import-images.ts",
-    "bootstrap-owner:staging": "node --env-file=.env.staging.local --import=tsx scripts/bootstrap-order-management-owner.ts"
+    "bootstrap-owner:staging": "node --env-file=.env.staging.local --import=tsx scripts/bootstrap-order-management-owner.ts",
+    "qa:auth:config-test": "node --test scripts/authenticated-qa-config.test.mjs",
+    "qa:auth": "playwright test --config=playwright.auth.config.ts",
+    "qa:auth:headed": "playwright test --config=playwright.auth.config.ts --headed",
+    "qa:auth:open": "node scripts/open-authenticated-qa.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

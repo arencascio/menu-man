@@ -1,0 +1,21 @@
+.main { max-width: var(--theme-content-width, 1200px); margin: 0 auto; padding: clamp(24px, 6vw, 72px) clamp(16px, 4vw, 48px); color: var(--theme-text); background: var(--theme-background); }
+.hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 32px; align-items: center; margin-bottom: 48px; }
+.hero h1 { font-family: var(--theme-heading-font); font-size: clamp(32px, 5vw, 60px); line-height: 1.08; overflow-wrap: anywhere; }
+.eyebrow { margin-bottom: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
+.description { white-space: pre-line; font-size: 18px; line-height: 1.6; margin: 20px 0; overflow-wrap: anywhere; }
+.image { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--theme-radius, 12px); }
+.form, .confirmation { max-width: 800px; padding: clamp(18px, 4vw, 36px); border: 1px solid color-mix(in srgb, var(--theme-text) 25%, transparent); border-radius: var(--theme-radius, 12px); background: var(--theme-surface); scroll-margin-top: 96px; }
+.form h2, .confirmation h2 { font-family: var(--theme-heading-font); font-size: 28px; margin-bottom: 12px; }
+.form p, .confirmation p { line-height: 1.6; margin-bottom: 16px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; border: 0; padding: 0; margin-top: 24px; min-width: 0; }
+.field { display: flex; flex-direction: column; gap: 8px; font-weight: 650; min-width: 0; }
+.field input, .field textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid #78716c; border-radius: 6px; font: inherit; color: #171717; background: #fff; }
+.field textarea { resize: vertical; }
+.field input:focus-visible, .field textarea:focus-visible, .button:focus-visible { outline: 3px solid var(--theme-accent); outline-offset: 3px; }
+.full { grid-column: 1 / -1; }
+.button { display: inline-flex; justify-content: center; align-items: center; min-height: 46px; padding: 12px 20px; border: 2px solid currentColor; border-radius: var(--theme-radius, 8px); background: var(--theme-text); color: var(--theme-background); font: inherit; font-weight: 750; cursor: pointer; text-decoration: none; }
+.fields:disabled { opacity: .7; }
+.error { padding: 12px; border: 2px solid #b91c1c; background: #fff; color: #991b1b; margin: 16px 0; }
+.errorText { color: #991b1b; background: #fff; font-weight: 600; font-size: 14px; }
+.srOnly, .trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 540px) { .fields { grid-template-columns: minmax(0, 1fr); } .hero { gap: 24px; } }

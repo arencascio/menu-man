@@ -181,7 +181,7 @@ test("PostHog initialization and final outbound filter preserve restaurant event
     if (id === "posthog-js") return { default: sdk };
     if (id === "./marketing") return { marketingEnvironment, sanitizeMarketingCapture };
     if (id === "./restaurant") return { restaurantEventContext, sanitizeRestaurantCapture };
-    if (id === "./eligibility") return { analyticsEligibility: { check: async () => true, isAllowed: () => true } };
+    if (id === "./eligibility") return { analyticsEligibility: { check: async () => true, isAllowed: () => true, restaurantArea: async () => "unknown" } };
     if (id === "./restaurant-identity") return { restaurantIdentity: { withIdentity: async (_env: string, _id: string, _allowed: () => boolean, deliver: (identity: unknown) => void) => deliver({ distinctId: "20000000-0000-4000-8000-000000000001", visitId: "20000000-0000-4000-8000-000000000002", mode: "persistent" }) } };
     throw Error(id);
   } });

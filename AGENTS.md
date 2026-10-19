@@ -16,6 +16,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Project-wide guardrails
 
+### Supabase environment identity
+
+- Authoritative project references: **Production** is `fullaiodvmilkdxyxnln`; **Staging** is `jjvongzvtnzlvwdfcnjk` (Menu Man Staging).
+- Never infer Supabase environment from a branch or worktree. Verify the intended project before any database operation.
+- Staging QA must fail closed unless its target is exactly `jjvongzvtnzlvwdfcnjk`.
+
 - Treat `PROJECT_STATE.md` as the current architecture/status reference. Do not assume older prototype code reflects the production architecture.
 - Prefer small, focused diffs. Do not refactor adjacent systems unless the requested change requires it.
 - Do not introduce new dependencies, frameworks, or infrastructure without a clear requirement.

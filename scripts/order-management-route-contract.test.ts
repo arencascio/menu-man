@@ -130,14 +130,28 @@ test("revoked management access clears protected data and stops polling and real
   assert.match(guard, /window\.addEventListener\("online"/);
 });
 
-test("management headers show member display name and role", () => {
+test("shared restaurant management layout shows member identity and sign out", () => {
+  const layout = source("src", "app", "manage", "[slug]", "layout.tsx");
+  assert.match(layout, /listRestaurantMemberships/);
+  assert.match(layout, /membership\.displayName/);
+  assert.match(layout, /membership\.memberRole/);
+  assert.match(layout, /action="\/auth\/sign-out"/);
+  assert.match(layout, /return children/);
+  const styles = source("src", "app", "manage", "management.module.css");
+  assert.match(styles, /\.accountBar/);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.accountBar/);
+
   for (const parts of [
     ["src", "app", "manage", "[slug]", "orders", "page.tsx"],
     ["src", "app", "manage", "[slug]", "team", "page.tsx"],
+    ["src", "app", "manage", "[slug]", "settings", "layout.tsx"],
+    ["src", "app", "manage", "[slug]", "analytics", "page.tsx"],
+    ["src", "app", "manage", "[slug]", "catering", "page.tsx"],
+    ["src", "app", "manage", "[slug]", "orders", "[orderId]", "page.tsx"],
   ]) {
     const page = source(...parts);
-    assert.match(page, /membership\.displayName/);
-    assert.match(page, /membership\.memberRole/);
+    assert.doesNotMatch(page, /membership\.displayName/);
+    assert.doesNotMatch(page, /action="\/auth\/sign-out"/);
   }
 });
 

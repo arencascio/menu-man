@@ -1,7 +1,7 @@
 import { getRestaurantNavigation } from "../restaurant-navigation-actions";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
+import { restaurantUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
 import PageViewTracker from "../PageViewTracker";
 import { getRestaurantDeliveryOptions } from "../restaurant-delivery-options";
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: LocationPageProps): Promise<M
   return {
     title,
     description,
-    robots: restaurant.is_indexable === false ? { index: false, follow: false } : undefined,
+    robots: !isProductionSite() || restaurant.is_indexable !== true ? { index: false, follow: false } : undefined,
     alternates: { canonical: url },
     openGraph: { title, description, url, type: "website", siteName: "Menu Man" },
   };

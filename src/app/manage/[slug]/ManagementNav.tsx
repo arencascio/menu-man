@@ -4,16 +4,17 @@ import sharedStyles from "../management.module.css";
 
 export default function ManagementNav({ slug, active, capabilities, memberRole }: {
   slug: string;
-  active: "orders" | "team" | "settings" | "analytics";
+  active: "orders" | "team" | "settings" | "analytics" | "catering";
   memberRole?: "owner" | "manager" | "staff";
   capabilities: ManagementCapability[];
 }) {
   return (
     <nav className={sharedStyles.managementNav} aria-label="Restaurant management">
       {memberRole === "owner" ? <Link className={active === "analytics" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/analytics`}>Analytics</Link> : null}
+      {capabilities.includes("manage_catering") ? <Link className={active === "catering" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/catering`}>Catering</Link> : null}
       {capabilities.includes("view_orders") ? <Link className={active === "orders" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/orders`}>Orders</Link> : null}
       {capabilities.includes("manage_memberships") ? <Link className={active === "team" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/team`}>Team</Link> : null}
-      {capabilities.some((capability) => capability === "manage_restaurant_settings" || capability === "manage_notifications") ? <Link className={active === "settings" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/settings`}>Settings</Link> : null}
+      {capabilities.some((capability) => capability === "manage_restaurant_settings" || capability === "manage_notifications" || capability === "manage_catering") ? <Link className={active === "settings" ? sharedStyles.managementNavActive : sharedStyles.managementNavLink} href={`/manage/${slug}/settings`}>Settings</Link> : null}
     </nav>
   );
 }

@@ -1,5 +1,20 @@
 # Menu Man Project State
 
+## Catering V1 local Staging integration
+
+`integration/staging-catering-v1` starts from `origin/staging` at `1b38fcd` and
+selectively integrates Catering V1, the shared management account bar, and
+synthetic authenticated QA. Existing Staging analytics, marketing, ordering,
+fixtures, and public browser tests are preserved. The two reviewed Catering
+migrations are included unchanged; neither was applied or repaired in this task.
+
+Local regressions pass 389/389, with typecheck and targeted lint passing.
+The normal build is blocked by dependencies outside this worktree; a Webpack
+retry also exposes an unchanged Staging CSS selector incompatibility. Live
+browser/Auth checks against this integrated source remain before promotion.
+See `docs/staging-catering-integration.md` for source scope, conflicts, validation,
+and promotion prerequisites. This local integration has not been pushed or deployed.
+
 Last reviewed: 2026-09-08
 
 ## Current Architecture

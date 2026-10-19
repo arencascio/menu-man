@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
-import { siteUrl } from "@/lib/seo/restaurant-metadata";
+import { siteUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", allow: "/" },
+    rules: isProductionSite() ? { userAgent: "*", allow: "/" } : { userAgent: "*", disallow: "/" },
     sitemap: `${siteUrl.replace(/\/$/, "")}/sitemap.xml`,
   };
 }

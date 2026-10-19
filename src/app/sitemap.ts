@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
-import { siteUrl } from "@/lib/seo/restaurant-metadata";
+import { siteUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 import { isRestaurantPublicationRestricted } from "@/lib/public-restaurant-access";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -11,25 +11,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/build-my-website",
   ].map((path) => ({ url: `${siteUrl.replace(/\/$/, "")}${path}` }));
 
-  let { data: restaurants, error } = await supabaseServer
+  // Nonproduction must not advertise staging tenants, even if a fixture is indexable.
+  if (!isProductionSite()) return marketingRoutes;
+
+  const { data: restaurants, error } = await supabaseServer
     .from("restaurants")
     .select("slug")
     .eq("is_active", true)
     .eq("is_indexable", true);
 
-  // Keep builds deployable while the forward migration is being applied. A
-  // Test Kitchen row cannot exist safely before that same migration/seed.
-  if (error?.code === "42703") {
-    const fallback = await supabaseServer
-      .from("restaurants")
-      .select("slug")
-      .eq("is_active", true);
-    restaurants = fallback.data;
-    error = fallback.error;
-  }
-
   if (error) {
-    console.error(error);
+    console.error("Sitemap restaurant lookup unavailable.");
     return marketingRoutes;
   }
 

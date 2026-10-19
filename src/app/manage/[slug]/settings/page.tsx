@@ -6,5 +6,5 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const membership = (await listRestaurantMemberships()).find((entry) => entry.restaurantSlug === slug);
   redirect(membership?.capabilities.includes("manage_restaurant_settings")
     ? `/manage/${slug}/settings/restaurant`
-    : `/manage/${slug}/settings/notifications`);
+    : membership?.capabilities.includes("manage_notifications") ? `/manage/${slug}/settings/notifications` : `/manage/${slug}/settings/catering`);
 }

@@ -3,14 +3,14 @@ import { sanitizeCampaign } from "./marketing";
 import type { AnalyticsEvent, RestaurantPageType } from "./types";
 
 const syntheticSections = ["featured", "popular", "favorites"] as const;
-const pageTypes = ["home", "menu", "location", "checkout", "payment", "confirmation"] as const;
+const pageTypes = ["home", "menu", "location", "checkout", "payment", "confirmation", "catering"] as const;
 const visitorAreas = ["local", "same_state", "out_of_state", "unknown"] as const;
 
 // Paths are used locally for matching only. Neither paths nor dynamic segments are sent.
 export function restaurantPageType(pathname: string): RestaurantPageType | undefined {
   const path = pathname.split(/[?#]/, 1)[0];
   if (/^\/r\/[^/]+$/.test(path)) return "home";
-  const standard = path.match(/^\/r\/[^/]+\/(menu|location|checkout)$/);
+  const standard = path.match(/^\/r\/[^/]+\/(menu|location|checkout|catering)$/);
   if (standard) return standard[1] as RestaurantPageType;
   const order = path.match(/^\/r\/[^/]+\/order\/[^/]+\/(payment|confirmation)$/);
   return order?.[1] as RestaurantPageType | undefined;
@@ -66,13 +66,15 @@ const base = z.object({
   identity_version: z.literal(1).optional(),
   identity_mode: z.enum(["persistent", "ephemeral"]).optional(),
   page_type: z.enum(pageTypes).optional(),
-  surface: z.enum(["home", "menu", "location", "featured", "popular", "favorites", "menu_search", "direct_link", "history", "ordering_actions", "cart", "checkout", "payment", "confirmation", "navigation", "footer", "hero", "header", "restaurant_information", "featured_gallery", "delivery_chooser", "pickup_chooser"]).optional(),
+  surface: z.enum(["home", "menu", "location", "catering", "featured", "popular", "favorites", "menu_search", "direct_link", "history", "ordering_actions", "cart", "checkout", "payment", "confirmation", "navigation", "footer", "hero", "header", "restaurant_information", "featured_gallery", "delivery_chooser", "pickup_chooser"]).optional(),
 });
 const section = base.extend({ section_id: id.refine((value) => !syntheticSections.includes(value as typeof syntheticSections[number])).optional() });
 const hasSection = (value: { section_id?: string; surface?: string }) => Boolean(value.section_id)
   || syntheticSections.includes(value.surface as typeof syntheticSections[number]);
 const schemas: Record<string, z.ZodType> = {
   page_view: base.extend({ visitor_area: z.enum(visitorAreas).optional() }),
+  catering_form_started: base,
+  catering_inquiry_accepted: base,
   category_selected: section.refine(hasSection),
   menu_search: base.extend({ query_length: count, result_count: count, zero_results: z.boolean() }),
   menu_favorite_changed: base.extend({ item_id: z.uuid(), liked: z.boolean() }),

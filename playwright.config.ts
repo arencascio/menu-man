@@ -13,6 +13,7 @@ if ((!isLocalhost && !isStaging) || parsedBaseURL.pathname !== "/" || parsedBase
 export default defineConfig({
   testDir: "./tests/browser",
   testMatch: "**/*.spec.ts",
+  testIgnore: ["**/*.authenticated.spec.ts", "**/*.auth.setup.ts"],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,

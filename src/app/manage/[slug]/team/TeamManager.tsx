@@ -16,6 +16,7 @@ const capabilityInfo: Record<ManagementCapability, { label: string; description:
   manage_memberships: { label: "Manage team", description: "Invite, edit, revoke, and reinstate non-owner team members.", sensitive: true },
   manage_restaurant_settings: { label: "Manage restaurant settings", description: "Configure the restaurant profile, ordering rules, and weekly hours.", sensitive: true },
   manage_notifications: { label: "Manage notifications", description: "Configure customer and restaurant operational emails.", sensitive: true },
+  manage_catering: { label: "Manage catering", description: "View customer catering contact details, manage leads, and configure catering.", sensitive: true },
 };
 const allCapabilities = Object.keys(capabilityInfo) as ManagementCapability[];
 // Reserved for the future reason-required, append-only correction workflow.

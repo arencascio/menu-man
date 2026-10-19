@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
+import { isProductionSite } from "@/lib/seo/site-origin";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  if (!isProductionSite()) return { robots: { index: false, follow: false } };
   const { slug } = await params;
   const { data: restaurant } = await supabaseServer
     .from("restaurants")

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { isProductionSite, resolveSiteOrigin } from "./site-origin";
 
-export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+export { isProductionSite } from "./site-origin";
+export const siteUrl = resolveSiteOrigin();
 
 export function restaurantUrl(slug: string, primaryDomain: string | null) {
-  if (primaryDomain) {
+  if (primaryDomain && isProductionSite()) {
     const base = primaryDomain.startsWith("http") ? primaryDomain : `https://${primaryDomain}`;
     return `${base.replace(/\/$/, "")}/r/${slug}`;
   }
@@ -37,7 +39,7 @@ export function createRestaurantMetadata({
   return {
     title,
     description: metaDescription,
-    robots: indexable ? undefined : { index: false, follow: false },
+    robots: indexable && isProductionSite() ? undefined : { index: false, follow: false },
     alternates: { canonical: url },
     openGraph: {
       title,

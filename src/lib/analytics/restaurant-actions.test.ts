@@ -41,7 +41,7 @@ test("action adapter retains canonical provider/source and pickup semantics, pri
   };
   const adapter = load("src/lib/analytics/posthog.ts", { "posthog-js": { default: sdk },
     "./marketing": { marketingEnvironment, sanitizeMarketingCapture }, "./restaurant": { restaurantEventContext, sanitizeRestaurantCapture },
-    "./eligibility": { analyticsEligibility: { check: async () => true, isAllowed: () => true } },
+    "./eligibility": { analyticsEligibility: { check: async () => true, isAllowed: () => true, restaurantArea: async () => "unknown" } },
     "./restaurant-identity": { restaurantIdentity: { withIdentity: async (_environment: string, _restaurantId: string,
       _allowed: () => boolean, deliver: (identity: unknown) => void) => deliver({ distinctId: base.distinct_id,
         visitId: base.$session_id, mode: "persistent" }) } } },
@@ -65,6 +65,7 @@ test("action adapter retains canonical provider/source and pickup semantics, pri
   assert.equal(captures.length, 9); // One capture per action, no extra classification event.
   assert.ok(options.every((option) => JSON.stringify(option) === '{"send_instantly":true}'));
   provider.track({ name: "page_view", restaurantId: "tenant-b" });
+  await new Promise(setImmediate);
   assert.equal(captures.at(-1)?.properties.restaurant_id, "tenant-b");
   assert.deepEqual(options.at(-1), { send_instantly: true });
   adapter.captureMarketingEvent(...["marketing_cta_clicked", { analytics_scope: "marketing", page: "/", cta_id: "build_website", placement: "hero", destination_type: "page" }] as never[]);

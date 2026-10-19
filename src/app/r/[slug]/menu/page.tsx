@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { listGuestPaymentCapabilities } from "@/lib/payments/capability-cookie";
 import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
-import { restaurantUrl } from "@/lib/seo/restaurant-metadata";
+import { restaurantUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
 import { composeMenuSections } from "@/lib/menu-engagement/sections";
 import MenuBrowser from "../MenuBrowser";
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: MenuPageProps): Promise<Metad
   return {
     title,
     description,
-    robots: restaurant.is_indexable === false ? { index: false, follow: false } : undefined,
+    robots: !isProductionSite() || restaurant.is_indexable !== true ? { index: false, follow: false } : undefined,
     alternates: { canonical: url },
     openGraph: { title, description, url, type: "website", siteName: "Menu Man" },
   };

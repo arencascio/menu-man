@@ -19,6 +19,15 @@
 .topActions { display: flex; align-items: center; gap: 12px; }
 .restaurantName { color: #57534e; font-size: 13px; }
 .main { padding: clamp(16px, 3vw, 32px); }
+.accountBar {
+  width: min(1180px, calc(100% - 32px));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 auto;
+  padding-top: 14px;
+}
 .managementNav { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid #d6d3d1; }
 .managementNavLink, .managementNavActive { padding: 9px 12px; color: #57534e; font-size: 13px; font-weight: 750; }
 .managementNavActive { margin-bottom: -1px; border-bottom: 2px solid #171717; color: #171717; }
@@ -95,4 +104,5 @@
 @media (max-width: 640px) {
   .restaurantName { display: none; }
   .authCard { padding: 22px; }
+  .accountBar { width: calc(100% - 20px); flex-wrap: wrap; justify-content: flex-start; }
 }

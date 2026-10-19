@@ -7,6 +7,7 @@ import { NextRequest } from "next/server";
 import { unstable_doesMiddlewareMatch as doesProxyMatch } from "next/experimental/testing/server";
 import { proxy, config } from "../src/proxy";
 import { isRestaurantPublicationRestricted } from "../src/lib/public-restaurant-access";
+import { isProductionSite } from "../src/lib/seo/site-origin";
 
 test("publication restriction preserves staging and other restaurant access", () => {
   for (const slug of ["armandos", "super-tacos"]) {
@@ -69,7 +70,7 @@ test("production proxy denies demo pages, child routes and APIs before rendering
   }
 });
 
-test("sitemap excludes restricted tenants in either production environment, including schema fallback", async () => {
+test("sitemap excludes nonproduction tenants and fails closed on missing publication columns", async () => {
   const previousVercel = process.env.VERCEL_ENV;
   const previousMenuMan = process.env.MENU_MAN_ENV;
   const source = readFileSync("src/app/sitemap.ts", "utf8");
@@ -80,6 +81,7 @@ test("sitemap excludes restricted tenants in either production environment, incl
     for (const fallback of [false, true]) {
       for (const [vercel, menuMan, restricted] of [
         ["production", "staging", true],
+        ["production", "production", true],
         ["preview", "production", true],
         ["preview", "staging", false],
       ] as const) {
@@ -108,18 +110,18 @@ test("sitemap excludes restricted tenants in either production environment, incl
           exports,
           require(id: string) {
             if (id === "@/lib/supabase/server") return { supabaseServer };
-            if (id === "@/lib/seo/restaurant-metadata") return { siteUrl: "https://getmenuman.com" };
+            if (id === "@/lib/seo/restaurant-metadata") return { siteUrl: "https://getmenuman.com", isProductionSite };
             if (id === "@/lib/public-restaurant-access") return { isRestaurantPublicationRestricted };
             throw new Error(`Unexpected sitemap dependency: ${id}`);
           },
         });
         const urls = new Set((await exports.default!()).map(({ url }) => url));
         for (const slug of ["armandos", "super-tacos"]) {
-          assert.equal(urls.has(`https://getmenuman.com/r/${slug}`), !restricted);
+          assert.equal(urls.has(`https://getmenuman.com/r/${slug}`), isProductionSite() && !fallback && !restricted);
         }
-        assert.ok(urls.has("https://getmenuman.com/r/other-restaurant"));
+        assert.equal(urls.has("https://getmenuman.com/r/other-restaurant"), isProductionSite() && !fallback);
         assert.ok(urls.has("https://getmenuman.com/work"));
-        assert.equal(queries, fallback ? 2 : 1);
+        assert.equal(queries, isProductionSite() ? 1 : 0);
       }
     }
   } finally {

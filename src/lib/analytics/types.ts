@@ -5,12 +5,13 @@ export type AnalyticsCartItem = {
   quantity: number;
 };
 
-export type RestaurantPageType = "home" | "menu" | "location" | "checkout" | "payment" | "confirmation";
+export type RestaurantPageType = "home" | "menu" | "location" | "checkout" | "payment" | "confirmation" | "catering";
 export type MenuInteractionSurface = "menu" | "featured" | "popular" | "favorites" | "menu_search" | "direct_link" | "history" | "cart";
 export type RestaurantActionSurface = "hero" | "header" | "footer" | "restaurant_information" | "ordering_actions" | "featured_gallery" | "delivery_chooser" | "pickup_chooser";
 export type PickupAction = "internal_selection" | "external_departure";
 export type AnalyticsEvent = { pageType?: RestaurantPageType } & (
   | { name: "page_view"; restaurantId: string }
+  | { name: "catering_form_started" | "catering_inquiry_accepted"; restaurantId: string }
   | { name: "category_selected"; restaurantId: string; sectionId: string; sectionName: string }
   | { name: "menu_search"; restaurantId: string; queryLength: number; resultCount: number }
   | { name: "menu_favorite_changed"; restaurantId: string; itemId: string; liked: boolean }

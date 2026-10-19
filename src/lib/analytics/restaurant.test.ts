@@ -143,7 +143,7 @@ test("restaurant route classification emits only supported bounded page types, n
     ["/r/tenant/order/private-order/confirmation", "confirmation"]]) {
     assert.equal(restaurantPageType(`${path}?email=private@example.com#PRIVATE`), page);
   }
-  for (const path of ["/", "/manage/tenant", "/r/tenant/catering", "/r/tenant/menu/unknown", "https://site/r/tenant/menu"]) {
+  for (const path of ["/", "/manage/tenant", "/r/tenant/catering/unknown", "/r/tenant/menu/unknown", "https://site/r/tenant/menu"]) {
     assert.equal(restaurantPageType(path), undefined);
   }
   const result = restaurantEventContext({ name: "phone_clicked", restaurantId: "tenant-a" }, "/r/tenant/location?email=private@example.com#PRIVATE");

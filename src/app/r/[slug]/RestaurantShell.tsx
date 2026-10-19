@@ -5,6 +5,7 @@ import RestaurantNavigation, { type RestaurantNavigationItem } from "./Restauran
 import styles from "./restaurant-shell.module.css";
 import RestaurantPresentationMotion from "./RestaurantPresentationMotion";
 import type { RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
+import { getPublicCateringSettings } from "@/lib/catering/server";
 
 export type RestaurantShellRestaurant = {
   deliveryOptions?: readonly RestaurantDeliveryOption[];
@@ -25,7 +26,9 @@ type RestaurantShellProps = {
   smoothScroll?: boolean;
 };
 
-export default function RestaurantShell({ children, restaurant, smoothScroll = false }: RestaurantShellProps) {
+export default async function RestaurantShell({ children, restaurant, smoothScroll = false }: RestaurantShellProps) {
+  const catering = await getPublicCateringSettings(restaurant.id);
+  const navigation = catering.enabled ? [...restaurant.navigation, { label: "Catering", href: `${restaurant.homeHref}/catering` }] : restaurant.navigation;
   const theme = resolveTheme(restaurant.themePreset, restaurant.themeOverrides);
   const themeStyle = {
     "--theme-primary": theme.colors.primary,
@@ -53,7 +56,7 @@ export default function RestaurantShell({ children, restaurant, smoothScroll = f
         <RestaurantNavigation
           restaurantId={restaurant.id}
           homeHref={restaurant.homeHref}
-          items={restaurant.navigation}
+          items={navigation}
           logoUrl={restaurant.logoUrl}
           artworkMark={restaurant.artworkMark}
           brandLockup={restaurant.brandLockup}
