@@ -20,6 +20,14 @@ function requireValue(name: string) {
 }
 
 export function requireSquareSandboxConfig(): SquareSandboxConfig {
+  return loadSandboxConfig("SQUARE_SANDBOX");
+}
+
+export function requireSquareDemoSandboxConfig(): SquareSandboxConfig {
+  return loadSandboxConfig("SQUARE_DEMO_SANDBOX");
+}
+
+function loadSandboxConfig(prefix: "SQUARE_SANDBOX" | "SQUARE_DEMO_SANDBOX"): SquareSandboxConfig {
   if (!isSquareSandboxRuntimeEnabled()) {
     throw new Error("Square Sandbox is disabled in this runtime.");
   }
@@ -27,16 +35,16 @@ export function requireSquareSandboxConfig(): SquareSandboxConfig {
   if (apiVersion !== SQUARE_API_VERSION) {
     throw new Error(`Square API version must be pinned to ${SQUARE_API_VERSION}.`);
   }
-  const webhookNotificationUrl = requireValue("SQUARE_SANDBOX_WEBHOOK_NOTIFICATION_URL");
+  const webhookNotificationUrl = requireValue(`${prefix}_WEBHOOK_NOTIFICATION_URL`);
   if (!webhookNotificationUrl.startsWith("https://")) {
     throw new Error("The Square Sandbox webhook notification URL must use HTTPS.");
   }
   return {
-    applicationId: requireValue("SQUARE_SANDBOX_APPLICATION_ID"),
-    accessToken: requireValue("SQUARE_SANDBOX_ACCESS_TOKEN"),
-    merchantId: requireValue("SQUARE_SANDBOX_MERCHANT_ID"),
-    locationId: requireValue("SQUARE_SANDBOX_LOCATION_ID"),
-    webhookSignatureKey: requireValue("SQUARE_SANDBOX_WEBHOOK_SIGNATURE_KEY"),
+    applicationId: requireValue(`${prefix}_APPLICATION_ID`),
+    accessToken: requireValue(`${prefix}_ACCESS_TOKEN`),
+    merchantId: requireValue(`${prefix}_MERCHANT_ID`),
+    locationId: requireValue(`${prefix}_LOCATION_ID`),
+    webhookSignatureKey: requireValue(`${prefix}_WEBHOOK_SIGNATURE_KEY`),
     webhookNotificationUrl,
     apiVersion: SQUARE_API_VERSION,
   };

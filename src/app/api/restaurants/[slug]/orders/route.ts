@@ -11,6 +11,8 @@ import { checkoutSource } from "@/lib/checkout/source";
 import { isCheckoutPayable, resolveCheckoutResponse } from "@/lib/checkout/replay";
 import { getOrderPaymentView, PaymentServerError, preparePaymentForOrder } from "@/lib/payments/server";
 import { getGuestPaymentCapability, setGuestPaymentCapability } from "@/lib/payments/capability-cookie";
+import { SUPER_TACOS_SLUG } from "@/lib/demo/policy";
+import { localDemoSource } from "@/lib/demo/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -142,7 +144,8 @@ export async function POST(
     const checkoutRequest = checkoutRequestSchema.parse(JSON.parse(rawBody));
     sensitiveValues = sensitiveCheckoutValues(checkoutRequest);
     const { slug } = await params;
-    const sourceHash = checkoutSource(request, slug, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const sourceHash = checkoutSource(request, slug, process.env.SUPABASE_SERVICE_ROLE_KEY)
+      || (slug === SUPER_TACOS_SLUG ? localDemoSource(request) : null);
     if (!sourceHash && ["preview", "production"].includes(process.env.VERCEL_ENV || "")) {
       console.warn("[checkout]", { stage: "source_unavailable", restaurantSlug: slug });
     }

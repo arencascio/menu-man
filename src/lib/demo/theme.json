@@ -1,0 +1,9 @@
+{
+  "primary": "#163b32",
+  "accent": "#b53f1a",
+  "background": "#fff8e8",
+  "surface": "#ffffff",
+  "text": "#17352b",
+  "mutedText": "#526257",
+  "borderRadius": "18px"
+}

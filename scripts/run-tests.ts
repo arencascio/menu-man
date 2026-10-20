@@ -1,4 +1,6 @@
 import "../src/lib/cart/cart.test";
+import "../src/lib/demo/demo.test";
+import "../src/lib/demo/server.integration.test";
 import "../src/lib/catering/catering.test";
 import "../src/lib/catering/server.test";
 import "../src/lib/catering/deletion.test";

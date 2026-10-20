@@ -2,8 +2,10 @@ import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
 import type { BusinessHour, SpecialHour } from "./BusinessHours";
+import { isDemoRestaurant } from "@/lib/demo/policy";
 
 type RestaurantLocationFields = {
+  id?: string;
   address_line1: string | null;
   city: string | null;
   state: string | null;
@@ -28,7 +30,7 @@ export function getRestaurantLocationLinks(restaurant: RestaurantLocationFields)
     : address
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
       : null;
-  return { address: address || null, directionsUrl };
+  return { address: address || null, directionsUrl: restaurant.id && isDemoRestaurant(restaurant.id) ? null : directionsUrl };
 }
 
 export async function getRestaurantHoursLocationData(

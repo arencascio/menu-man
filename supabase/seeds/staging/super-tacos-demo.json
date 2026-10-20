@@ -1,0 +1,59 @@
+{
+  "restaurant": {
+    "id": "20000000-0000-4000-8000-000000000001", "slug": "super-tacos", "name": "Super Tacos",
+    "tagline": "Small tacos. Super flavor.",
+    "description": "A fictional neighborhood taqueria with a sunny attitude. This Menu Man demonstration uses illustrative photography, sample prices, and fictional business details. Demo orders are never prepared or charged.",
+    "logo_url": "/img/super-tacos/logo.svg", "hero_image_url": "/img/super-tacos/tacos.jpg",
+    "phone": "+1-202-555-0142", "address_line1": "123 Demo Plaza (fictional — do not visit)",
+    "city": "Demo Springs", "state": "CA", "postal_code": "00000", "timezone": "America/Los_Angeles",
+    "theme_preset": "classic-red",
+    "hours": {"open":"09:00", "close":"22:00"}
+  },
+  "menuId": "20000000-0000-4000-8000-000000000002",
+  "sections": [
+    {"number":101,"name":"Street Tacos","description":"Corn tortillas, bright salsa, and big flavor. Priced per taco.","sort":0},
+    {"number":102,"name":"Burritos","description":"Wrapped warm and made your way. Add a little extra if you like.","sort":1},
+    {"number":103,"name":"Griddle Favorites","description":"Golden, melty, and made for sharing.","sort":2},
+    {"number":104,"name":"Sides & Refreshers","description":"Something crunchy. Something cool.","sort":4},
+    {"number":105,"name":"Breakfast","description":"A sunny start, served throughout demo business hours.","sort":3},
+    {"number":106,"name":"Sweet Finish","description":"Save a little room for cinnamon and sugar.","sort":5}
+  ],
+  "items": [
+    {"number":1,"section":101,"key":"carne-asada-taco","name":"Carne Asada Street Taco","description":"Grilled steak, onion, cilantro, and salsa on a warm corn tortilla.","price":375,"image":"asada","groups":[1,2,3]},
+    {"number":2,"section":101,"key":"al-pastor-taco","name":"Al Pastor Street Taco","description":"Chile-marinated pork with pineapple, onion, and cilantro.","price":375,"image":"tacos","groups":[1,2,3]},
+    {"number":3,"section":101,"key":"mushroom-taco","name":"Roasted Mushroom Taco","description":"Roasted mushrooms, cabbage, avocado salsa, and a squeeze of lime.","price":350,"image":"tacos","groups":[1,2,3]},
+    {"number":4,"section":102,"key":"california-burrito","name":"California Burrito","description":"Grilled steak, crispy fries, cheese, pico de gallo, and crema.","price":1295,"image":"burrito","groups":[1,2]},
+    {"number":5,"section":102,"key":"chicken-burrito","name":"Grilled Chicken Burrito","description":"Citrus chicken, rice, pinto beans, cheese, and roasted tomato salsa.","price":1195,"image":"burrito","groups":[1,2]},
+    {"number":6,"section":102,"key":"bean-cheese-burrito","name":"Bean & Cheese Burrito","description":"Slow-cooked pinto beans and melted cheese in a soft flour tortilla.","price":895,"image":"burrito","groups":[1,2]},
+    {"number":7,"section":103,"key":"quesabirria","name":"Quesabirria Trio","description":"Three crisp beef birria tacos with melted cheese and a side of consomme.","price":1495,"image":"tacos","groups":[1,2]},
+    {"number":8,"section":103,"key":"loaded-nachos","name":"Loaded Asada Nachos","description":"Tortilla chips with grilled steak, beans, cheese, guacamole, and pico de gallo.","price":1345,"image":"nachos","groups":[1,2]},
+    {"number":9,"section":103,"key":"cheese-quesadilla","name":"Cheese Quesadilla","description":"A golden flour tortilla filled with melted cheese, served with salsa and crema.","price":845,"image":"quesadilla","groups":[1,2]},
+    {"number":10,"section":104,"key":"chips-guacamole","name":"Chips & Guacamole","description":"Crisp tortilla chips and chunky guacamole with lime and cilantro.","price":695,"image":"guacamole","groups":[]},
+    {"number":11,"section":104,"key":"rice-beans","name":"Rice & Beans","description":"A generous side of Mexican-style rice and slow-cooked pinto beans.","price":450,"image":null,"groups":[]},
+    {"number":12,"section":104,"key":"hibiscus-agua-fresca","name":"Hibiscus Agua Fresca","description":"A chilled, lightly sweet hibiscus refresher. Regular 16 oz.","price":395,"image":null,"groups":[4]},
+    {"number":13,"section":101,"key":"carnitas-taco","name":"Citrus Carnitas Taco","description":"Slow-braised pork, onion, cilantro, and tangy salsa verde.","price":375,"image":"asada","groups":[1,2,3]},
+    {"number":14,"section":101,"key":"chicken-taco","name":"Citrus Chicken Taco","description":"Marinated grilled chicken, shredded cabbage, and fresh pico de gallo.","price":350,"image":"tacos","groups":[1,2,3]},
+    {"number":15,"section":101,"key":"shrimp-taco","name":"Chile Lime Shrimp Taco","description":"Sauteed shrimp, crunchy slaw, lime crema, and cilantro.","price":475,"image":null,"groups":[1,2,3]},
+    {"number":16,"section":101,"key":"potato-taco","name":"Crispy Potato Taco","description":"Golden potatoes, shredded lettuce, cotija cheese, and salsa roja.","price":325,"image":"tacos","groups":[1,2,3]},
+    {"number":17,"section":102,"key":"carnitas-burrito","name":"Carnitas Burrito","description":"Citrus-braised pork, rice, pinto beans, onion, and cilantro.","price":1245,"image":"burrito","groups":[1,2]},
+    {"number":18,"section":102,"key":"veggie-burrito","name":"Garden Burrito","description":"Roasted peppers, mushrooms, rice, black beans, guacamole, and pico.","price":1095,"image":"burrito","groups":[1,2]},
+    {"number":19,"section":102,"key":"shrimp-burrito","name":"Coastal Shrimp Burrito","description":"Chile lime shrimp, rice, cabbage, pico de gallo, and creamy chipotle sauce.","price":1445,"image":"burrito","groups":[1,2]},
+    {"number":20,"section":103,"key":"chicken-quesadilla","name":"Chicken Quesadilla","description":"Grilled chicken and melted cheese in a toasted flour tortilla with salsa.","price":1145,"image":"quesadilla","groups":[1,2]},
+    {"number":21,"section":105,"key":"breakfast-burrito","name":"Sunrise Breakfast Burrito","description":"Scrambled eggs, crispy potatoes, cheese, and pico de gallo.","price":1045,"image":"burrito","groups":[1,2]},
+    {"number":22,"section":105,"key":"chorizo-burrito","name":"Chorizo & Egg Burrito","description":"Spiced chorizo, scrambled eggs, potatoes, and melted cheese.","price":1145,"image":"burrito","groups":[1,2]},
+    {"number":23,"section":105,"key":"breakfast-tacos","name":"Breakfast Taco Pair","description":"Two warm tortillas with scrambled eggs, potatoes, cheese, and salsa.","price":745,"image":"tacos","groups":[1,2,3]},
+    {"number":24,"section":105,"key":"breakfast-quesadilla","name":"Breakfast Quesadilla","description":"Eggs, roasted peppers, potatoes, and cheese folded into a toasted tortilla.","price":995,"image":"quesadilla","groups":[1,2]},
+    {"number":25,"section":105,"key":"asada-breakfast-burrito","name":"Steak & Egg Burrito","description":"Grilled steak, fluffy eggs, potatoes, cheese, and salsa roja.","price":1295,"image":"burrito","groups":[1,2]},
+    {"number":26,"section":104,"key":"lime-lemonade","name":"Mint Lime Lemonade","description":"Fresh citrus lemonade with mint. Regular 16 oz.","price":395,"image":"lemonade","groups":[4]},
+    {"number":27,"section":104,"key":"chips-salsa","name":"Chips & Salsa","description":"Crisp tortilla chips with your choice of house salsa.","price":450,"image":"guacamole","groups":[1]},
+    {"number":28,"section":106,"key":"churros","name":"Cinnamon Churros","description":"Three crisp churros rolled in cinnamon sugar with chocolate dipping sauce.","price":595,"image":"churros","groups":[]},
+    {"number":29,"section":106,"key":"churro-bites","name":"Churro Bites","description":"A small bag of cinnamon-sugar churro bites, perfect for a sweet finish.","price":395,"image":"churros","groups":[]},
+    {"number":30,"section":106,"key":"churros-for-two","name":"Churros for Two","description":"Six cinnamon churros with chocolate and caramel dipping sauces.","price":995,"image":"churros","groups":[]}
+  ],
+  "modifierGroups": [
+    {"number":1,"name":"Choose your salsa","min":1,"max":1,"options":[{"number":1,"name":"Roja — medium","price":0,"default":true},{"number":2,"name":"Verde — mild","price":0},{"number":3,"name":"No salsa","price":0}]},
+    {"number":2,"name":"A little extra","min":0,"max":3,"options":[{"number":4,"name":"Guacamole","price":150},{"number":5,"name":"Extra cheese","price":75},{"number":6,"name":"Crema","price":50}]},
+    {"number":3,"name":"Choose your tortilla","min":1,"max":1,"options":[{"number":7,"name":"Corn tortilla","price":0,"default":true},{"number":8,"name":"Flour tortilla","price":25}]},
+    {"number":4,"name":"Drink size","min":1,"max":1,"options":[{"number":9,"name":"Regular — 16 oz","price":0,"default":true},{"number":10,"name":"Large — 24 oz","price":100}]}
+  ]
+}

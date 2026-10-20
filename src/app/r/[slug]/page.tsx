@@ -24,6 +24,7 @@ import RestaurantMenuIntro, { type RestaurantMenuQuicklink } from "./RestaurantM
 import RestaurantOrderingActions, { type RestaurantOrderingAction } from "./RestaurantOrderingActions";
 import RestaurantShell, { type RestaurantShellRestaurant } from "./RestaurantShell";
 import styles from "./restaurant-page.module.css";
+import { superTacosHero } from "@/lib/demo/presentation";
 
 type RestaurantPageProps = {
   params: Promise<{
@@ -58,6 +59,7 @@ type RestaurantHeroConfig = Omit<RestaurantHeroPresentation, "secondaryAction"> 
 };
 
 const restaurantHeroes: Readonly<Partial<Record<string, RestaurantHeroConfig>>> = {
+  "super-tacos": superTacosHero,
   armandos: {
     layout: "full-photo",
     headline: "You deserve it, amigo.",
@@ -81,6 +83,11 @@ type RestaurantOrderingActionsConfig = {
 };
 
 const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrderingActionsConfig>>> = {
+  "super-tacos": {
+    title: "Your cravings. Your way.",
+    description: "Choose a favorite, pick your salsa, and try a complete demo pickup order. No charge. No actual food preparation.",
+    menuAction: { label: "Explore the menu", description: "Street tacos, burritos, griddle favorites, and something sweet.", href: "/r/super-tacos/menu" },
+  },
   armandos: {
     title: "Your favorites are a few taps away.",
     description: "Browse Armando's full menu, find what sounds good, and build your order in one place.",

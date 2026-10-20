@@ -8,6 +8,8 @@ import {
   type CheckoutRequest,
 } from "./contracts";
 import type { CustomerNotificationPreferences } from "./notification-message";
+import { DEMO_CUSTOMER, SUPER_TACOS_SLUG, demoRuntimeAllowed } from "@/lib/demo/policy";
+import { verifyDemoCheckoutConfiguration } from "@/lib/demo/server";
 
 const knownErrorCodes = new Set<CheckoutErrorCode>([
   "INVALID_REQUEST",
@@ -129,7 +131,18 @@ export async function createAuthoritativeOrder(
   request: CheckoutRequest,
   sourceHash?: string | null,
 ) {
+  const demo = restaurantSlug === SUPER_TACOS_SLUG;
+  if (demo && (!demoRuntimeAllowed(process.env) || !sourceHash)) {
+    throw new CheckoutServerError("ORDERING_DISABLED", "Demo ordering is not activated or its request source could not be verified.");
+  }
+  if (demo) {
+    try { await verifyDemoCheckoutConfiguration(); }
+    catch { throw new CheckoutServerError("ORDERING_DISABLED", "Demo payment configuration is unavailable."); }
+  }
+  // A public demonstration never stores an entered real contact address.
+  if (demo) request = { ...request, customer: { ...DEMO_CUSTOMER } };
   let rpcName = sourceHash ? "create_order_with_abuse_limit_v1" : "create_order_v1";
+  if (demo) rpcName = "create_demo_order_v1";
   const rpcArgs = {
     p_restaurant_slug: restaurantSlug,
     p_idempotency_key: idempotencyKey,
@@ -137,7 +150,7 @@ export async function createAuthoritativeOrder(
     ...(sourceHash ? { p_source_hash: sourceHash } : {}),
   };
   let rpcResponse = await supabaseServer.rpc(rpcName, rpcArgs);
-  if (sourceHash && rpcResponse.error?.code === "PGRST202") {
+  if (!demo && sourceHash && rpcResponse.error?.code === "PGRST202") {
     // A code-first rollout or stale PostgREST schema cache must not stop orders.
     // This is a visible fail-open until the approved migration is available.
     console.error("[checkout-rpc]", { stage: "limiter_rpc_unavailable", code: "PGRST202" });

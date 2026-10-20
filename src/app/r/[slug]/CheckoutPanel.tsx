@@ -38,6 +38,9 @@ import {
 } from "@/lib/payments/browser-session";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
+import DemoNotice from "./DemoNotice";
+import { DEMO_CUSTOMER, isDemoRestaurant } from "@/lib/demo/policy";
+import { demoPageStyle } from "@/lib/demo/presentation";
 
 type CheckoutPanelProps = {
   restaurantId: string;
@@ -71,15 +74,16 @@ export default function CheckoutPanel({
   customerRequirements,
   notificationPreferences,
 }: CheckoutPanelProps) {
+  const demo = isDemoRestaurant(restaurantId);
   const router = useRouter();
   const cart = useRestaurantCart(restaurantId, currency);
   const [availability, setAvailability] = useState<PickupAvailability | null>(null);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [pickupMode, setPickupMode] = useState<"asap" | "scheduled">("asap");
   const [pickupAt, setPickupAt] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [customerName, setCustomerName] = useState(demo ? DEMO_CUSTOMER.name : "");
+  const [phone, setPhone] = useState(demo ? DEMO_CUSTOMER.phone : "");
+  const [email, setEmail] = useState(demo ? DEMO_CUSTOMER.email : "");
   const [tipChoice, setTipChoice] = useState<TipChoice>("none");
   const [customTipAmount, setCustomTipAmount] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
@@ -100,9 +104,11 @@ export default function CheckoutPanel({
     const draft = loadCheckoutDraft(window.sessionStorage, restaurantId);
     const hydration = window.setTimeout(() => {
       if (draft) {
-        setCustomerName(draft.customerName);
-        setPhone(draft.phone);
-        setEmail(draft.email);
+        if (!demo) {
+          setCustomerName(draft.customerName);
+          setPhone(draft.phone);
+          setEmail(draft.email);
+        }
         setPickupMode(draft.pickup.mode);
         setPickupAt(draft.pickup.mode === "scheduled" ? draft.pickup.pickupAt : "");
         setTipChoice(draft.tipChoice);
@@ -114,7 +120,7 @@ export default function CheckoutPanel({
       setDraftHydrated(true);
     }, 0);
     return () => window.clearTimeout(hydration);
-  }, [restaurantId]);
+  }, [restaurantId, demo]);
 
   useEffect(() => {
     if (!draftHydrated) return;
@@ -208,7 +214,7 @@ export default function CheckoutPanel({
   const parsedCustomTipCents = tipChoice === "custom"
     ? parseCustomTipCents(customTipAmount)
     : null;
-  const notificationMessage = checkoutNotificationMessage(notificationPreferences, email);
+  const notificationMessage = demo ? "Demo contact details are prefilled. No emails or calls will be sent." : checkoutNotificationMessage(notificationPreferences, email);
   const closedWithFuturePickup = Boolean(
     availability && !availability.currentlyOpen
       && availability.scheduled.enabled && availability.scheduled.slots.length > 0,
@@ -434,7 +440,8 @@ export default function CheckoutPanel({
   }
 
   return (
-    <main className={styles.page} aria-label="Checkout details">
+    <main className={styles.page} style={demoPageStyle(restaurantId)} aria-label="Checkout details">
+      <DemoNotice restaurantId={restaurantId} />
       <section className={styles.checkoutPanel}>
         <div className={styles.cartHeader}>
           <div><p className={styles.expandedLabel}>Checkout</p><h1>Review your order</h1></div>
@@ -468,9 +475,9 @@ export default function CheckoutPanel({
             <a className={styles.pickupEditLink} href="#pickup-details">Edit</a>
           </section>
           <div className={styles.checkoutFields}>
-            <label>Name {!customerRequirements.customerNameRequired && <small>Optional</small>}<input required={customerRequirements.customerNameRequired} maxLength={100} autoComplete="name" type="text" value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
-            <label>Phone {!customerRequirements.customerPhoneRequired && <small>Optional</small>}<input required={customerRequirements.customerPhoneRequired} maxLength={30} autoComplete="tel" inputMode="tel" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
-            <label>Email {!customerRequirements.customerEmailRequired && <small>Optional</small>}<input required={customerRequirements.customerEmailRequired} maxLength={254} autoComplete="email" inputMode="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+            <label>Name {!customerRequirements.customerNameRequired && <small>Optional</small>}<input required={customerRequirements.customerNameRequired} maxLength={100} autoComplete="name" type="text" readOnly={demo} value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
+            <label>Phone {!customerRequirements.customerPhoneRequired && <small>Optional</small>}<input required={customerRequirements.customerPhoneRequired} maxLength={30} autoComplete="tel" inputMode="tel" type="tel" readOnly={demo} value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
+            <label>Email {!customerRequirements.customerEmailRequired && <small>Optional</small>}<input required={customerRequirements.customerEmailRequired} maxLength={254} autoComplete="email" inputMode="email" type="email" readOnly={demo} value={email} onChange={(event) => setEmail(event.target.value)} /></label>
           </div>
           <fieldset className={styles.checkoutFieldset} id="pickup-details" ref={pickupDetailsRef} tabIndex={-1}>
             <legend>Pickup</legend>
@@ -529,7 +536,7 @@ export default function CheckoutPanel({
             </div>
           ) : (
             <>
-              <small className={styles.checkoutActionHint}>You&apos;ll enter payment details next. You won&apos;t be charged yet.</small>
+              <small className={styles.checkoutActionHint}>{demo ? "A preselected demo payment is next. No card details or real charge." : <>You&apos;ll enter payment details next. You won&apos;t be charged yet.</>}</small>
               <button className={styles.checkoutButton} type="submit" disabled={submitting || !canPickup || cart.lines.length === 0 || !cart.hydrated}>
                 {submitting ? "Continuing to Payment…" : "Continue to Payment"}
               </button>

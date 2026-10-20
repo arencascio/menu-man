@@ -6,6 +6,7 @@ import styles from "./restaurant-shell.module.css";
 import RestaurantPresentationMotion from "./RestaurantPresentationMotion";
 import type { RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 import { getPublicCateringSettings } from "@/lib/catering/server";
+import DemoNotice from "./DemoNotice";
 
 export type RestaurantShellRestaurant = {
   deliveryOptions?: readonly RestaurantDeliveryOption[];
@@ -62,6 +63,7 @@ export default async function RestaurantShell({ children, restaurant, smoothScro
           brandLockup={restaurant.brandLockup}
           name={restaurant.name}
         />
+        <DemoNotice restaurantId={restaurant.id} />
         {children}
       </RestaurantDeliveryChooser>
     </div>

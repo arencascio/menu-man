@@ -1,5 +1,10 @@
 # Super Tacos staging fixture — Step 0A
 
+The functional-demo successor is prepared separately in `015_super_tacos_demo.sql`
+and documented in `docs/super-tacos-demo.md`. It is not activated by the local
+implementation task. Do not rerun this legacy browse-only fixture after demo
+activation; it is not a content-update or rollback procedure.
+
 Status: prepared, not applied. This file documents a future manual operation;
 it does not authorize database writes or deployment.
 

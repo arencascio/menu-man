@@ -1,0 +1,74 @@
+[
+  {
+    "file": "tacos.jpg",
+    "source": "https://unsplash.com/photos/three-tacos-are-sitting-on-a-plate-next-to-a-glass-of-beer-5mpht0M5H0E",
+    "photographer": "We The Creators",
+    "download": "https://images.unsplash.com/photo-1683062332605-4e1209d75346?auto=format&fit=crop&w=1600&q=85",
+    "license": "https://unsplash.com/license",
+    "retrieved": "2026-10-20",
+    "sha256": "2cd1d3aadb8a21a43c1db444b4fd6b40af69cccf222b17e02f344270b2ff7e61"
+  },
+  {
+    "file": "asada.jpg",
+    "source": "https://unsplash.com/photos/two-tacos-on-a-black-plate-with-a-lime-kDdYK9Jki7M",
+    "photographer": "Andrea Lacasse",
+    "download": "https://images.unsplash.com/photo-1707603571504-86c1ea50903e?auto=format&fit=crop&w=1600&q=85",
+    "license": "https://unsplash.com/license",
+    "retrieved": "2026-10-20",
+    "sha256": "b60df2d09506b3d93bdf70f7cb0d11d9633e02b40e9e9e05c10adbee58e75014"
+  },
+  {
+    "file": "burrito.jpg",
+    "source": "https://unsplash.com/photos/a-white-plate-topped-with-a-burrito-and-rice-gBqlz19UlnI",
+    "photographer": "Gaby Aziz",
+    "download": "https://images.unsplash.com/photo-1711488735428-27c6757beb5c?auto=format&fit=crop&w=1600&q=85",
+    "license": "https://unsplash.com/license",
+    "retrieved": "2026-10-20",
+    "sha256": "7d4e7e41f266d42d07dec51111e329ad60c2dee8be60bdb61f59a951cd1108da"
+  },
+  {
+    "file": "churros.jpg",
+    "source": "https://unsplash.com/photos/churros-on-chopping-board-ewylbQ9e6go",
+    "photographer": "WantTo Create",
+    "download": "https://images.unsplash.com/photo-1505851498219-ee2449c18936?auto=format&fit=crop&w=1600&q=85",
+    "license": "https://unsplash.com/license",
+    "retrieved": "2026-10-20",
+    "sha256": "7999f2d396768a760fd347a0c17f901a7e8ff6c3e492c22e1e7fe6845cfeb605"
+  },
+  {
+    "file": "nachos.jpg",
+    "source": "https://www.pexels.com/photo/close-up-of-cheesy-nachos-12557556/",
+    "photographer": "Alejandro Aznar",
+    "download": "https://images.pexels.com/photos/12557556/pexels-photo-12557556.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-20",
+    "sha256": "66fb7a802f2d71e568bb6eacc3f0c4c5194770d19765a2f298c6eeb146962ea8"
+  },
+  {
+    "file": "quesadilla.jpg",
+    "source": "https://www.pexels.com/photo/close-up-photo-of-quesadilla-5840093/",
+    "photographer": "ROMAN ODINTSOV",
+    "download": "https://images.pexels.com/photos/5840093/pexels-photo-5840093.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-20",
+    "sha256": "2e357df593143a0e3a8334da35bda1bdb5124ba8e37056469ae25d32230765b8"
+  },
+  {
+    "file": "guacamole.jpg",
+    "source": "https://www.pexels.com/photo/a-flatlay-of-chips-beside-a-bowl-of-guacamole-7227467/",
+    "photographer": "Suzy Hazelwood",
+    "download": "https://images.pexels.com/photos/7227467/pexels-photo-7227467.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-20",
+    "sha256": "2a49995a8982719753fc2db6724c527158392e1b67a6e5dfc52c8be42b7c4879"
+  },
+  {
+    "file": "lemonade.jpg",
+    "source": "https://www.pexels.com/photo/lemonade-in-glass-on-table-25409639/",
+    "photographer": "Ebru DOĞAN",
+    "download": "https://images.pexels.com/photos/25409639/pexels-photo-25409639.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-20",
+    "sha256": "6348afe37f4e4e9c9b128a4d8dcbafaa1dd371893aeff238c9c11680647fa80d"
+  }
+]

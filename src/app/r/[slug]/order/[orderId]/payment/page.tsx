@@ -7,6 +7,8 @@ import PaymentPanel from "../../../PaymentPanel";
 import PageViewTracker from "../../../PageViewTracker";
 import OrderSnapshot from "../../../OrderSnapshot";
 import styles from "../../../menu-browser.module.css";
+import DemoNotice from "../../../DemoNotice";
+import { demoPageStyle } from "@/lib/demo/presentation";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +55,8 @@ export default async function PaymentPage({
         ? "Return to Payment"
         : "Back to Menu";
     return (
-      <main className={styles.page}>
+      <main className={styles.page} style={trackingRestaurant ? demoPageStyle(trackingRestaurant.id) : undefined}>
+        {trackingRestaurant && <DemoNotice restaurantId={trackingRestaurant.id} />}
         {trackingRestaurant && <PageViewTracker restaurantId={trackingRestaurant.id} pageType="payment" path={`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/payment`} />}
         <section className={styles.checkoutPanel} aria-labelledby="order-details-title">
           <p className={styles.expandedLabel}>Order details</p>

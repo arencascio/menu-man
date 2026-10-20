@@ -21,6 +21,8 @@ import {
 } from "./runtime";
 import { shouldExpirePaymentOnStatusRead } from "./state";
 import { orderPaymentViewSchema } from "./view-contracts";
+import { demoSquareProvider, isDemoPaymentConnection } from "@/lib/demo/server";
+import { paymentSourceForPolicy } from "@/lib/demo/policy";
 import type {
   NormalizedPaymentEvent,
   PaymentCommandResult,
@@ -119,8 +121,7 @@ export async function preparePaymentForOrder(
   }
 
   const { sessionExpiresAt, ...payment } = parsed.data;
-  const adapter = getPaymentProvider(payment.provider);
-  const browserSession = await adapter.createBrowserSession(connectionFromStatus(payment));
+  const browserSession = await browserSessionForPayment(payment);
   const publicSession = paymentSessionResponseSchema.parse({
     expiresAt: sessionExpiresAt,
     payment,
@@ -131,9 +132,16 @@ export async function preparePaymentForOrder(
 
 export async function getPaymentSession(orderId: string, checkoutToken: string) {
   const status = await getPaymentStatus(orderId, checkoutToken);
-  const adapter = getPaymentProvider(status.provider);
-  const browserSession = await adapter.createBrowserSession(connectionFromStatus(status));
+  const browserSession = await browserSessionForPayment(status);
   return { payment: status, browserSession };
+}
+
+async function browserSessionForPayment(status: PaymentStatus) {
+  let demo: boolean;
+  try { demo = await isDemoPaymentConnection(status.connectionId); }
+  catch { throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "Payment configuration could not be verified."); }
+  if (demo) return { mode: "embedded" as const, provider: "square", publicConfig: { demoPayment: true } };
+  return getPaymentProvider(status.provider).createBrowserSession(connectionFromStatus(status));
 }
 
 export async function abandonCheckout(orderId: string, checkoutToken: string) {
@@ -236,7 +244,14 @@ export async function submitPayment(
   paymentMethodToken: string,
 ) {
   const authorizedStatus = await authorizePaymentStatus(orderId, checkoutToken);
-  const adapter = getPaymentProvider(authorizedStatus.provider);
+  let demo: boolean;
+  try {
+    demo = await isDemoPaymentConnection(authorizedStatus.connectionId);
+    paymentMethodToken = paymentSourceForPolicy(demo, paymentMethodToken);
+  } catch {
+    throw new PaymentServerError("PAYMENT_NOT_ALLOWED", "Only an activated demo payment is accepted for the demo restaurant.");
+  }
+  const adapter = demo ? demoSquareProvider() : getPaymentProvider(authorizedStatus.provider);
   const { data, error } = await supabaseServer.rpc("reserve_payment_attempt_v1", {
     p_order_id: orderId,
     p_access_token_hash: tokenHash(checkoutToken),
@@ -250,7 +265,8 @@ export async function submitPayment(
     throw new PaymentServerError("PAYMENT_FAILED", "Payment attempt could not be created.");
   }
   const attempt = parsed.data;
-  if (attempt.connectionId !== authorizedStatus.connectionId || attempt.provider !== authorizedStatus.provider) {
+  if (attempt.connectionId !== authorizedStatus.connectionId || attempt.provider !== authorizedStatus.provider
+    || (demo && attempt.providerEnvironment !== "sandbox")) {
     throw new PaymentServerError("PAYMENT_FAILED", "Payment connection changed unexpectedly.");
   }
 
@@ -374,7 +390,7 @@ async function reconcilePaymentIfDue(status: PaymentStatus, checkoutToken: strin
   if (error || !data) return status;
   if (data.last_provider_sync_at && Date.now() - Date.parse(data.last_provider_sync_at) < 10_000) return status;
 
-  const adapter = getPaymentProvider(status.provider);
+  const adapter = await isDemoPaymentConnection(status.connectionId) ? demoSquareProvider() : getPaymentProvider(status.provider);
   const result = await adapter.retrievePayment({
     ...connectionFromStatus(status),
     attemptId: attempt.attemptId,
@@ -437,7 +453,7 @@ export async function executeReservedRefund(refund: ReservedRefundCommand) {
 
   let result: import("./types").RefundCommandResult;
   try {
-    const adapter = getPaymentProvider(refund.provider);
+    const adapter = await isDemoPaymentConnection(refund.connectionId) ? demoSquareProvider() : getPaymentProvider(refund.provider);
     result = await adapter.createRefund({
       connectionId: refund.connectionId,
       provider: refund.provider,
@@ -632,8 +648,9 @@ export async function resolveFakeLateSuccess(
   return authorizePaymentStatus(orderId, checkoutToken);
 }
 
-export async function acceptPaymentWebhook(providerKey: string, rawBody: string, headers: Headers) {
-  const adapter = getPaymentProvider(providerKey);
+export async function acceptPaymentWebhook(providerKey: string, rawBody: string, headers: Headers, demoOnly = false) {
+  if (demoOnly && providerKey !== "square") throw new PaymentServerError("INVALID_PAYMENT_EVENT", "Invalid demo provider.");
+  const adapter = demoOnly ? demoSquareProvider() : getPaymentProvider(providerKey);
   const verified = await adapter.verifyWebhook(rawBody, headers);
   const events = adapter.normalizeWebhook(verified);
   const payloadHash = createHash("sha256").update(rawBody, "utf8").digest("hex");
@@ -645,6 +662,9 @@ export async function acceptPaymentWebhook(providerKey: string, rawBody: string,
     if (!resolved) {
       accepted.push({ providerEventId: event.eventId, inserted: false, ignored: true });
       continue;
+    }
+    if (demoOnly && (!resolved.connectionId || !await isDemoPaymentConnection(resolved.connectionId))) {
+      throw new PaymentServerError("INVALID_PAYMENT_EVENT", "Webhook does not belong to the demo restaurant.");
     }
     const { data, error } = await supabaseServer.rpc("ingest_payment_webhook_v1", {
       p_provider_key: providerKey,
