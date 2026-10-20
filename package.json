@@ -21,7 +21,8 @@
     "qa:auth:config-test": "node --test scripts/authenticated-qa-config.test.mjs",
     "qa:auth": "playwright test --config=playwright.auth.config.ts",
     "qa:auth:headed": "playwright test --config=playwright.auth.config.ts --headed",
-    "qa:auth:open": "node scripts/open-authenticated-qa.mjs"
+    "qa:auth:open": "node scripts/open-authenticated-qa.mjs",
+    "qa:demo:db": "node --env-file=.env.demo-db.local scripts/test-super-tacos-db.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -40,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "pg": "8.23.1",
     "tsx": "^4.23.13",
     "typescript": "^5"
   }
