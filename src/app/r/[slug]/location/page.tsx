@@ -12,6 +12,7 @@ import { getRestaurantHoursLocationData, getRestaurantLocationLinks } from "../r
 import { restaurantLocationPresentations } from "../restaurant-location-presentation";
 import RestaurantMapViews from "../RestaurantMapViews";
 import RestaurantShell, { type RestaurantShellRestaurant } from "../RestaurantShell";
+import { isDemoRestaurant } from "@/lib/demo/policy";
 
 type LocationPageProps = { params: Promise<{ slug: string }> };
 
@@ -80,6 +81,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
       <RestaurantHoursLocation
         restaurantName={restaurant.name}
         restaurantId={restaurant.id}
+        unavailableLocationMessage={isDemoRestaurant(restaurant.id) ? "No public address is listed." : undefined}
         showHeading={false}
         density="compact"
         phone={phone}

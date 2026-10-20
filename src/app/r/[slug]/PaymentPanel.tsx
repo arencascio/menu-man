@@ -23,7 +23,6 @@ import OrderSnapshot from "./OrderSnapshot";
 import SquarePaymentForm from "./SquarePaymentForm";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
-import DemoNotice from "./DemoNotice";
 import { DEMO_PAYMENT_TOKEN } from "@/lib/demo/policy";
 import { demoPageStyle } from "@/lib/demo/presentation";
 
@@ -347,7 +346,6 @@ export default function PaymentPanel({
 
   return (
     <main className={styles.page} style={demoPageStyle(restaurantId)} aria-label="Order payment">
-      <DemoNotice restaurantId={restaurantId} />
       <section className={styles.checkoutPanel} aria-live="polite">
         <p className={styles.expandedLabel}>Payment</p>
         <h1>Order #{order.orderNumber}</h1>
@@ -404,10 +402,10 @@ export default function PaymentPanel({
 
         {demoPayment && payment.status === "requires_payment_method" && payment.orderStatus === "pending_payment" && (
           <fieldset className={styles.checkoutFieldset}>
-            <legend>Demo payment</legend>
-            <label><input type="radio" checked disabled name="demo-payment" /> Demo payment — no charge</label>
-            <p>This is a fictional pickup order. No card details, money, food preparation, or emails are involved.</p>
-            <button className={styles.checkoutButton} type="button" disabled={submitting} onClick={() => void submitPaymentMethodToken(DEMO_PAYMENT_TOKEN)}>{submitting ? "Placing demo order…" : "Place demo order"}</button>
+            <legend>Payment preview</legend>
+            <label><input type="radio" checked disabled name="demo-payment" /> No payment required</label>
+            <p>No real order will be placed or payment charged. No food will be prepared.</p>
+            <button className={styles.checkoutButton} type="button" disabled={submitting} onClick={() => void submitPaymentMethodToken(DEMO_PAYMENT_TOKEN)}>{submitting ? "Completing preview…" : "Complete preview"}</button>
           </fieldset>
         )}
         {showCardPayment && (

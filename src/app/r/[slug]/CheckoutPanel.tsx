@@ -38,7 +38,6 @@ import {
 } from "@/lib/payments/browser-session";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
-import DemoNotice from "./DemoNotice";
 import { DEMO_CUSTOMER, isDemoRestaurant } from "@/lib/demo/policy";
 import { demoPageStyle } from "@/lib/demo/presentation";
 
@@ -214,7 +213,7 @@ export default function CheckoutPanel({
   const parsedCustomTipCents = tipChoice === "custom"
     ? parseCustomTipCents(customTipAmount)
     : null;
-  const notificationMessage = demo ? "Demo contact details are prefilled. No emails or calls will be sent." : checkoutNotificationMessage(notificationPreferences, email);
+  const notificationMessage = demo ? "Contact details are prefilled for this preview; no emails or calls will be sent." : checkoutNotificationMessage(notificationPreferences, email);
   const closedWithFuturePickup = Boolean(
     availability && !availability.currentlyOpen
       && availability.scheduled.enabled && availability.scheduled.slots.length > 0,
@@ -441,7 +440,6 @@ export default function CheckoutPanel({
 
   return (
     <main className={styles.page} style={demoPageStyle(restaurantId)} aria-label="Checkout details">
-      <DemoNotice restaurantId={restaurantId} />
       <section className={styles.checkoutPanel}>
         <div className={styles.cartHeader}>
           <div><p className={styles.expandedLabel}>Checkout</p><h1>Review your order</h1></div>
@@ -536,7 +534,7 @@ export default function CheckoutPanel({
             </div>
           ) : (
             <>
-              <small className={styles.checkoutActionHint}>{demo ? "A preselected demo payment is next. No card details or real charge." : <>You&apos;ll enter payment details next. You won&apos;t be charged yet.</>}</small>
+              <small className={styles.checkoutActionHint}>{demo ? "Preview checkout: no real order will be placed or payment charged." : <>You&apos;ll enter payment details next. You won&apos;t be charged yet.</>}</small>
               <button className={styles.checkoutButton} type="submit" disabled={submitting || !canPickup || cart.lines.length === 0 || !cart.hydrated}>
                 {submitting ? "Continuing to Payment…" : "Continue to Payment"}
               </button>

@@ -20,5 +20,5 @@ export const superTacosHero = {
   imageAlt: "Illustrative photograph of freshly prepared tacos with colorful garnishes",
   imageUrl: "/img/super-tacos/tacos.jpg",
   imagePosition: "50% 50%",
-  primaryAction: { label: "Build a demo order", href: "/r/super-tacos/menu" },
+  primaryAction: { label: "Explore the menu", href: "/r/super-tacos/menu" },
 };

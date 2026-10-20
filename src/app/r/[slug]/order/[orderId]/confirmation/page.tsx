@@ -8,7 +8,6 @@ import ConfirmationEffects from "../../../ConfirmationEffects";
 import styles from "../../../menu-browser.module.css";
 import { supabaseServer } from "@/lib/supabase/server";
 import CustomerEmailLine from "./CustomerEmailLine";
-import DemoNotice from "../../../DemoNotice";
 import { isDemoRestaurant } from "@/lib/demo/policy";
 import { demoPageStyle } from "@/lib/demo/presentation";
 
@@ -32,19 +31,18 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ s
   if (!restaurant) notFound();
   return (
     <main className={styles.page} style={demoPageStyle(restaurant.id)}>
-      <DemoNotice restaurantId={restaurant.id} />
       <PageViewTracker restaurantId={restaurant.id} pageType="confirmation" path={`/r/${encodeURIComponent(slug)}/order/${encodeURIComponent(orderId)}/confirmation`} />
       <ConfirmationEffects restaurantId={restaurant.id} orderId={orderId} currency={view.order.currency} />
       <section className={`${styles.checkoutPanel} ${styles.confirmationPanel}`} aria-labelledby="confirmation-title">
         <header className={styles.confirmationHeader}>
           <span className={styles.successMark} aria-hidden="true">✓</span>
-          <p className={styles.expandedLabel}>Order placed</p>
+          <p className={styles.expandedLabel}>{isDemoRestaurant(restaurant.id) ? "Preview complete" : "Order placed"}</p>
           <h1 id="confirmation-title">Order #{view.order.orderNumber}</h1>
-          <p>{isDemoRestaurant(restaurant.id) ? "Your demo order is complete. No money was charged, no food will be prepared, and no email will be sent." : "Your payment is confirmed and the restaurant has received your pickup order."}</p>
+          <p>{isDemoRestaurant(restaurant.id) ? "This preview did not place a real order or charge a payment. No food will be prepared." : "Your payment is confirmed and the restaurant has received your pickup order."}</p>
           {!isDemoRestaurant(restaurant.id) && <CustomerEmailLine email={view.order.customerEmail} />}
         </header>
         <dl className={styles.confirmationStatus}>
-          <div><dt>Pickup status</dt><dd>Order placed</dd></div>
+          <div><dt>Pickup status</dt><dd>{isDemoRestaurant(restaurant.id) ? "Preview only" : "Order placed"}</dd></div>
           <div><dt>Order number</dt><dd>#{view.order.orderNumber}</dd></div>
         </dl>
         <section aria-label="Order details">

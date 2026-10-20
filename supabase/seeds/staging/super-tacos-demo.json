@@ -1,11 +1,11 @@
 {
   "restaurant": {
     "id": "20000000-0000-4000-8000-000000000001", "slug": "super-tacos", "name": "Super Tacos",
-    "tagline": "Small tacos. Super flavor.",
-    "description": "A fictional neighborhood taqueria with a sunny attitude. This Menu Man demonstration uses illustrative photography, sample prices, and fictional business details. Demo orders are never prepared or charged.",
+    "tagline": "Bright salsas. Bold taco flavor.",
+    "description": "Fresh tortillas, flame-grilled favorites, and house salsas bring a little sunshine to every bite. Find your new favorite, make it your own, and enjoy the good stuff.",
     "logo_url": "/img/super-tacos/logo.svg", "hero_image_url": "/img/super-tacos/tacos.jpg",
-    "phone": "+1-202-555-0142", "address_line1": "123 Demo Plaza (fictional — do not visit)",
-    "city": "Demo Springs", "state": "CA", "postal_code": "00000", "timezone": "America/Los_Angeles",
+    "phone": null, "address_line1": null,
+    "city": null, "state": null, "postal_code": null, "timezone": "America/Los_Angeles",
     "theme_preset": "classic-red",
     "hours": {"open":"09:00", "close":"22:00"}
   },
@@ -15,7 +15,7 @@
     {"number":102,"name":"Burritos","description":"Wrapped warm and made your way. Add a little extra if you like.","sort":1},
     {"number":103,"name":"Griddle Favorites","description":"Golden, melty, and made for sharing.","sort":2},
     {"number":104,"name":"Sides & Refreshers","description":"Something crunchy. Something cool.","sort":4},
-    {"number":105,"name":"Breakfast","description":"A sunny start, served throughout demo business hours.","sort":3},
+    {"number":105,"name":"Breakfast","description":"A sunny start to the day, made fresh and served all morning.","sort":3},
     {"number":106,"name":"Sweet Finish","description":"Save a little room for cinnamon and sugar.","sort":5}
   ],
   "items": [

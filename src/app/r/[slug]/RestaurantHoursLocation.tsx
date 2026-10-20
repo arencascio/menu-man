@@ -8,6 +8,8 @@ type RestaurantHoursLocationProps = {
   description?: string | null;
   density?: "comfortable" | "compact";
   eyebrow?: string;
+  heading?: string;
+  unavailableLocationMessage?: string;
   directionsUrl: string | null;
   hours: readonly BusinessHour[];
   phone: string | null;
@@ -30,6 +32,8 @@ export default function RestaurantHoursLocation({
   description,
   density = "comfortable",
   eyebrow,
+  heading,
+  unavailableLocationMessage = "Location details have not been published yet.",
   directionsUrl,
   hours,
   phone,
@@ -55,7 +59,7 @@ export default function RestaurantHoursLocation({
       <div className={styles.inner}>
         {showHeading ? <div className={styles.heading}>
           {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-          <h2 id="restaurant-information-title">Visit {restaurantName}</h2>
+          <h2 id="restaurant-information-title">{heading ?? `Visit ${restaurantName}`}</h2>
           {usableDescription ? <p className={styles.description}>{usableDescription}</p> : null}
         </div> : null}
 
@@ -64,7 +68,7 @@ export default function RestaurantHoursLocation({
             {hasAddress ? (
               <address className={styles.address}>{addressParts.join(", ")}</address>
             ) : (
-              <p className={styles.unavailable}>Location details have not been published yet.</p>
+              <p className={styles.unavailable}>{unavailableLocationMessage}</p>
             )}
 
             {phone ? (

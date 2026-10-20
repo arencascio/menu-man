@@ -25,6 +25,7 @@ import RestaurantOrderingActions, { type RestaurantOrderingAction } from "./Rest
 import RestaurantShell, { type RestaurantShellRestaurant } from "./RestaurantShell";
 import styles from "./restaurant-page.module.css";
 import { superTacosHero } from "@/lib/demo/presentation";
+import { isDemoRestaurant } from "@/lib/demo/policy";
 
 type RestaurantPageProps = {
   params: Promise<{
@@ -85,7 +86,7 @@ type RestaurantOrderingActionsConfig = {
 const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrderingActionsConfig>>> = {
   "super-tacos": {
     title: "Your cravings. Your way.",
-    description: "Choose a favorite, pick your salsa, and try a complete demo pickup order. No charge. No actual food preparation.",
+    description: "Choose a favorite, pick your salsa, and make it your own. Fresh flavors and a little sunshine in every bite.",
     menuAction: { label: "Explore the menu", description: "Street tacos, burritos, griddle favorites, and something sweet.", href: "/r/super-tacos/menu" },
   },
   armandos: {
@@ -500,6 +501,8 @@ if (restaurantError || !restaurant) {
             <RestaurantHoursLocation
               restaurantName={restaurant.name}
               restaurantId={restaurant.id}
+              heading={isDemoRestaurant(restaurant.id) ? "Pickup hours" : undefined}
+              unavailableLocationMessage={isDemoRestaurant(restaurant.id) ? "No public address is listed." : undefined}
               description={restaurant.description}
               phone={restaurant.phone}
               addressLine1={restaurant.address_line1}
