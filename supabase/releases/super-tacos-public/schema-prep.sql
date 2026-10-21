@@ -18,16 +18,15 @@ select set_config('menu_man.schema_approval', :'approve_public_schema', true);
 select set_config('menu_man.backup_sha', :'production_backup_sha256', true);
 do $guard$ begin
   if current_setting('menu_man.release_project') <> 'fullaiodvmilkdxyxnln'
-    or current_setting('menu_man.release_host') <> 'db.fullaiodvmilkdxyxnln.supabase.co'
-    or current_setting('menu_man.release_user') <> 'postgres'
+    or current_setting('menu_man.release_host') <> 'aws-0-us-west-2.pooler.supabase.com'
+    or current_setting('menu_man.release_user') <> 'postgres.fullaiodvmilkdxyxnln'
     or current_setting('menu_man.release_port') <> '5432'
     or current_database() <> 'postgres' or current_user <> 'postgres'
     or current_setting('menu_man.release_sslmode') <> 'verify-full'
     or btrim(current_setting('menu_man.release_rootcert')) = ''
     or replace(lower(current_setting('menu_man.release_rootcert')),chr(92),'/') <>
        replace(lower(current_setting('menu_man.release_appdata')),chr(92),'/') || '/postgresql/root.crt'
-    or not coalesce((select ssl from pg_stat_ssl where pid=pg_backend_pid()),false)
-  then raise exception 'Exact Production identity and verified TLS required'; end if;
+  then raise exception 'Exact Production pooler identity and verified client TLS required'; end if;
   if current_setting('menu_man.schema_approval') <> 'add-production-restaurant-indexability'
     or current_setting('menu_man.backup_sha') !~ '^[a-f0-9]{64}$'
   then raise exception 'Separate schema approval and verified backup SHA required'; end if;

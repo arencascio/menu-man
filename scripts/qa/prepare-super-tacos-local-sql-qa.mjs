@@ -8,7 +8,7 @@ const destination = process.argv[2];
 if (!destination) throw new Error('Specify a local temporary output directory');
 mkdirSync(destination, { recursive: true });
 const sourceDir = 'supabase/releases/super-tacos-public';
-const identity = /if current_setting\('menu_man\.release_project'\)[\s\S]*?then raise exception 'Exact Production identity and verified TLS required'; end if;/g;
+const identity = /if current_setting\('menu_man\.release_project'\)[\s\S]*?then raise exception 'Exact Production (?:identity and verified TLS|pooler identity and verified client TLS) required'; end if;/g;
 const approval = [
   /if current_setting\('menu_man\.schema_approval'\)[\s\S]*?then raise exception 'Separate schema approval and verified backup SHA required'; end if;/g,
   /if current_setting\('menu_man\.release_approval'\)[\s\S]*?then raise exception 'Separate approval, verified backup SHA and fresh baseline required'; end if;/g,
