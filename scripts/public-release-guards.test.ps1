@@ -11,6 +11,13 @@ if ($verifySql -notmatch "release_host'\) <> 'aws-0-us-west-2\.pooler\.supabase\
 if ([regex]::Matches($prepSql, '(?im)^alter\s+table\s+public\.restaurants\s+add\s+column\s+is_indexable\s+boolean\s+not\s+null\s+default\s+true;\s*$').Count -ne 1) { throw 'Migration DDL changed from the one approved column' }
 $writeStatements = [regex]::Matches($prepSql, '(?im)^\s*(create|drop|alter|update|delete|insert|grant|revoke|comment|truncate)\b')
 if ($writeStatements.Count -ne 1) { throw 'Migration must contain exactly one schema write statement' }
+$releaseDir = Join-Path (Split-Path $PSScriptRoot -Parent) 'supabase/releases/super-tacos-public'
+foreach ($name in @('content.sql','preflight.sql','verify.sql','armandos-preflight.sql')) {
+  $sql = Get-Content (Join-Path $releaseDir $name) -Raw
+  if ($sql -notmatch "release_host'\) <> 'aws-0-us-west-2\.pooler\.supabase\.com'" -or $sql -notmatch "release_user'\) <> 'postgres\.fullaiodvmilkdxyxnln'" -or $sql -match 'pg_stat_ssl') { throw "$name must pin the Production pooler identity and rely on wrapper-verified client TLS" }
+}
+$contentSql = Get-Content (Join-Path $releaseDir 'content.sql') -Raw
+if ($contentSql -notmatch "release_approval'\) <> 'publish-super-tacos-browse-only'" -or $contentSql -notmatch "baseline_at'\)::timestamptz < now\(\)-interval '30 minutes'") { throw 'Content approval, backup attestation and fresh-baseline SQL guards are required' }
 function Assert-Rejected([scriptblock]$Action) {
   $rejected = $false
   try { & $Action } catch { $rejected = $true }
@@ -48,4 +55,6 @@ try {
 } finally { $env:APPDATA = $savedAppData }
 Assert-Rejected { & $wrapper -Mode SchemaPrep -OwnerApproval '' }
 Assert-Rejected { & $wrapper -Mode SchemaPrep -OwnerApproval 'add-production-restaurant-indexability' -BackupSha256 '' }
+Assert-Rejected { & $wrapper -Mode ContentInstall -BaselinePath 'unused-baseline.json' }
+Assert-Rejected { & $wrapper -Mode ContentInstall -OwnerApproval 'publish-super-tacos-browse-only' -BackupSha256 '' -BaselinePath 'unused-baseline.json' }
 Write-Output 'PowerShell parse, artifact validation, fixed Production identity/TLS/service overrides, missing certificate, approval and backup attestation guards passed. No connection made.'

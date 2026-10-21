@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('Validate', 'SchemaVerify', 'SchemaPrep', 'Preflight', 'Verify', 'ArmandoPreflight')][string]$Mode = 'Validate',
+  [ValidateSet('Validate', 'SchemaVerify', 'SchemaPrep', 'Preflight', 'ContentInstall', 'Verify', 'ArmandoPreflight')][string]$Mode = 'Validate',
   [string]$BaselinePath,
   [string]$ProjectRef = 'fullaiodvmilkdxyxnln',
   [string]$HostName = 'aws-0-us-west-2.pooler.supabase.com',
@@ -21,6 +21,7 @@ $expectedHost = 'aws-0-us-west-2.pooler.supabase.com'
 $expectedUser = 'postgres.fullaiodvmilkdxyxnln'
 $expectedBackupSha = '407feb3604efb37c4bb0149e74cdcbe379b5589dbfba254cfe098e78b834ee02'
 $expectedApproval = 'add-production-restaurant-indexability'
+$expectedContentApproval = 'publish-super-tacos-browse-only'
 
 function Assert-RestrictedFile([string]$Path, [string]$Label) {
   $file = Get-Item -LiteralPath $Path -ErrorAction Stop
@@ -72,17 +73,23 @@ if ($LASTEXITCODE -ne 0 -or ($version -join ' ') -notmatch '^psql \(PostgreSQL\)
 foreach ($name in @('PGSERVICE', 'PGSERVICEFILE', 'PGHOSTADDR', 'PGTARGETSESSIONATTRS')) {
   if ([Environment]::GetEnvironmentVariable($name, 'Process')) { throw "Unsafe libpq override is set: $name" }
 }
-if ($Mode -eq 'SchemaPrep') {
-  if ($OwnerApproval -cne $expectedApproval) { throw 'Separate owner approval is required' }
+if ($Mode -in @('SchemaPrep', 'ContentInstall')) {
+  $requiredApproval = if ($Mode -eq 'SchemaPrep') { $expectedApproval } else { $expectedContentApproval }
+  if ($OwnerApproval -cne $requiredApproval) { throw 'Separate owner approval is required' }
   if ($BackupSha256 -cnotmatch '^[a-f0-9]{64}$' -or $BackupSha256 -cne $expectedBackupSha) { throw 'Approved Production backup SHA attestation is required' }
   $backup = Assert-RestrictedFile $BackupPath 'Verified Production public backup'
   if ((Get-FileHash -LiteralPath $backup.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expectedBackupSha) { throw 'Production backup SHA does not match the approved manifest' }
 }
 if ($Mode -notin @('ArmandoPreflight', 'SchemaVerify', 'SchemaPrep') -and !$BaselinePath) { throw 'Explicit local baseline path required' }
 $baselineFile = if ($BaselinePath) { [IO.Path]::GetFullPath($BaselinePath) } else { $null }
-if ($Mode -eq 'Verify') {
+if ($Mode -in @('Verify', 'ContentInstall')) {
   $baseline = Get-Content -LiteralPath $baselineFile -Raw | ConvertFrom-Json
   if ($baseline.project -cne $manifest.project -or $baseline.tenant -cne $manifest.tenant -or $baseline.existingSuperTacos -ne $false -or $baseline.otherContent -cnotmatch '^[a-f0-9]{64}$' -or $baseline.protectedState -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid baseline identity/fingerprints' }
+  if ($Mode -eq 'ContentInstall') {
+    $capturedAt = [DateTimeOffset]::MinValue
+    if (![DateTimeOffset]::TryParse([string]$baseline.capturedAt, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::AssumeUniversal, [ref]$capturedAt)) { throw 'Invalid baseline timestamp' }
+    $baselineCapturedAt = $capturedAt.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ', [Globalization.CultureInfo]::InvariantCulture)
+  }
 }
 if ($Mode -eq 'Preflight' -and (Test-Path -LiteralPath $baselineFile)) { throw 'Refuse to overwrite existing baseline' }
 
@@ -100,6 +107,8 @@ try {
   $arguments = @('-X', '-w', '-qAt', '--host', $expectedHost, '--port', '5432', '--username', $expectedUser, '--dbname', 'postgres', '-v', 'ON_ERROR_STOP=1', '-v', "production_project_ref=$expectedProject", '-c', '\conninfo')
   if ($Mode -eq 'SchemaPrep') {
     $arguments += @('-v', "approve_public_schema=$OwnerApproval", '-v', "production_backup_sha256=$BackupSha256", '-f', (Join-Path $release 'schema-prep.sql'))
+  } elseif ($Mode -eq 'ContentInstall') {
+    $arguments += @('-v', "approve_public_content=$OwnerApproval", '-v', "production_backup_sha256=$BackupSha256", '-v', "baseline_captured_at=$baselineCapturedAt", '-v', "baseline_content_sha=$($baseline.otherContent)", '-v', "baseline_protected_sha=$($baseline.protectedState)", '-f', (Join-Path $release 'content.sql'))
   } elseif ($Mode -eq 'SchemaVerify') {
     $arguments += @('-f', (Join-Path $release 'schema-verify.sql'))
   } elseif ($Mode -eq 'Preflight') {
@@ -112,6 +121,7 @@ try {
   $output = & $psqlFile.FullName @arguments 2>&1
   if ($LASTEXITCODE -ne 0) { throw 'Production SQL invocation failed; stop and inspect the guarded transaction result' }
   if ($Mode -eq 'SchemaPrep') { Write-Output 'Reviewed indexability migration completed through the verified Production pooler connection.' }
+  elseif ($Mode -eq 'ContentInstall') { Write-Output 'Reviewed browse-only content installation completed through the verified Production pooler connection.' }
   elseif ($Mode -eq 'SchemaVerify') { Write-Output 'Read-only Production schema and Armando verification passed.' }
   elseif ($Mode -eq 'Verify') { Write-Output 'Read-only content and isolation verification passed.' }
   elseif ($Mode -eq 'Preflight') {

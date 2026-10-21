@@ -117,12 +117,17 @@ After separate authorization to run Production preflight:
 powershell -NoProfile -File scripts/check-super-tacos-public-release.ps1 -Mode Preflight -BaselinePath <private-baseline-path>
 ```
 
-The helper pins the existing regular-file root certificate, exact host/user/port,
-`PGSSLMODE=verify-full` and `default_transaction_read_only=on`, and restores prior
+The helper pins the existing regular-file root certificate, exact Production
+Session Pooler host/user/port, `PGSSLMODE=verify-full`, and restores prior
 environment settings in finally. It validates source, SQL and asset hashes before
-connecting. It has **no Execute mode**. After a separately approved installation,
-run the same helper with `-Mode Verify` and the original baseline. Fingerprints
-must compare successfully before claiming tenant/payment isolation.
+connecting. The same `psql` invocation runs `\conninfo` and the selected SQL file,
+so the checked connection is the SQL execution connection. The wrapper rejects
+service-file overrides and requires PostgreSQL 17 tooling. Preflight and verifier
+SQL are read-only; `ContentInstall` requires a separate owner approval value, the
+verified backup archive and hash, and a fresh saved preflight baseline. The local
+QA sentinel is not Production authorization. After a separately approved
+installation, run `-Mode Verify` with the original baseline. Fingerprints must
+compare successfully before claiming tenant/payment isolation.
 `-Mode ArmandoPreflight` runs only the separate readiness report using those same
 pinned TLS and exact Production connection settings; it needs no Super Tacos baseline.
 

@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP on
--- Direct Production connection only. No pooler host is inferred or accepted.
--- Run via the read-only wrapper for preflight/verification with pinned trust.
+-- Production Session Pooler only. Run through the trusted wrapper, which verifies
+-- client TLS and validates this same psql execution connection before this file.
 \getenv release_sslmode PGSSLMODE
 \getenv release_rootcert PGSSLROOTCERT
 \getenv release_appdata APPDATA
@@ -16,15 +16,14 @@ select set_config('menu_man.release_rootcert', :'release_rootcert', true);
 select set_config('menu_man.release_appdata', :'release_appdata', true);
 do $$ begin
   if current_setting('menu_man.release_project') <> 'fullaiodvmilkdxyxnln'
-    or current_setting('menu_man.release_host') <> 'db.fullaiodvmilkdxyxnln.supabase.co'
-    or current_setting('menu_man.release_user') <> 'postgres'
+    or current_setting('menu_man.release_host') <> 'aws-0-us-west-2.pooler.supabase.com'
+    or current_setting('menu_man.release_user') <> 'postgres.fullaiodvmilkdxyxnln'
     or current_setting('menu_man.release_port') <> '5432'
     or current_database() <> 'postgres' or current_user <> 'postgres'
     or current_setting('menu_man.release_sslmode') <> 'verify-full'
     or btrim(current_setting('menu_man.release_rootcert')) = ''
     or replace(lower(current_setting('menu_man.release_rootcert')),chr(92),'/') <> replace(lower(current_setting('menu_man.release_appdata')),chr(92),'/') || '/postgresql/root.crt'
-    or not coalesce((select ssl from pg_stat_ssl where pid=pg_backend_pid()),false)
-  then raise exception 'Exact Production identity and verified TLS required'; end if;
+  then raise exception 'Exact Production pooler identity and verified client TLS required'; end if;
 end $$;
 do $$ declare t text; collision boolean; v_entry record; v_column text; begin
   for v_entry in select key,value from jsonb_each($schema${"restaurants":["id","slug","name","tagline","description","logo_url","hero_image_url","phone","address_line1","city","state","postal_code","timezone","theme_preset","currency","is_active","is_indexable","theme_overrides","primary_domain","pickup_url","doordash_url","google_maps_url","instagram_url","facebook_url","latitude","longitude"],"menus":["id","restaurant_id","name","is_published"],"menu_sections":["id","menu_id","name","description","sort_order","is_active"],"menu_items":["id","restaurant_id","name","description","price_cents","is_active","source_system","source_item_id","is_orderable","image_url","source_image_url","image_path"],"menu_section_items":["section_id","item_id","sort_order"],"modifier_groups":["id","restaurant_id","name","is_active"],"modifier_options":["id","restaurant_id","modifier_group_id","name","default_price_adjustment_cents","sort_order","is_active","is_default"],"menu_item_modifier_groups":["restaurant_id","menu_item_id","modifier_group_id","min_selections","max_selections","sort_order","is_active"],"restaurant_business_hours":["restaurant_id","day_of_week","open_time","close_time","is_closed","sort_order"],"restaurant_ordering_settings":["restaurant_id","pickup_enabled","asap_enabled","scheduled_pickup_enabled","tax_strategy","tax_rate_basis_points"]}$schema$::jsonb) loop

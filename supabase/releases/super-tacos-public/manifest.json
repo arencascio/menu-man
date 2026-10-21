@@ -43,10 +43,10 @@
     "public/img/super-tacos/approved/carnitas-tacos.webp": "611393fe879007911b0d1e1db7d92491d13e8220dc9641bdf393e746ee76e1f1"
   },
   "artifacts": {
-    "preflight.sql": "dbe2bfc1d9c23d1f3b04b4361178acc605ca7d1946b10ce52ba044f2650638b2",
-    "content.sql": "cc3f2b096bba99eb331b8495a0630d070c15f319464ba21dd2c8d6bf835d5a5b",
-    "verify.sql": "8271064cd1576cd68890b4bbe6e9052c4be7e4dddb793b02d3b38d53d2e815ea",
-    "armandos-preflight.sql": "7a9b2475e943fc28ed80ec8b43ffdde33ac095b6ec3ae5e491e00bbe0796fc10",
+    "preflight.sql": "57d9e5c0c05517450fa1b6fd3f0bbbb1f16509996cdab32682d2d4a741792783",
+    "content.sql": "636cbdceb2a0fd2c9b3a19e464cd0eef65085629e2b6e3b63016ac98d7777d62",
+    "verify.sql": "58c10190b8be5f971800710cc160b5bd592d3ef881a3cfe79f34e655edfea6f3",
+    "armandos-preflight.sql": "eb5650b1c136b8c448bdffc421b468f1e392a7bb1439b8ba6bcf3482d4e3c3c7",
     "schema-prep.sql": "0dff0715f54310137b4a4e1b4ce5a97cef02c016796cc4ec4513a6e97c081251",
     "schema-verify.sql": "b80d9972f04ebf7a5b793570368d450ee83eb1af7275667782fa3bf0dc2a8193"
   }
