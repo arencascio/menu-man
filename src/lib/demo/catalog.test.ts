@@ -188,7 +188,11 @@ test("every active fixture item has an approved photograph; historical photo rec
 
 test("prepared content sync changes only tenant catalog data and relies on existing server validation", () => {
   const sql = readFileSync("supabase/seeds/staging/016_super_tacos_content_c1.sql", "utf8");
-  for (const guard of ["jjvongzvtnzlvwdfcnjk", "pg_stat_ssl", "sync-super-tacos-sprint-c3", "content_backup", "order_status not in", "Reserved ID collision", "other_before is distinct from other_after", "Required modifier postcondition"]) assert.ok(sql.includes(guard));
+  for (const guard of ["jjvongzvtnzlvwdfcnjk", "aws-0-us-east-2.pooler.supabase.com", "pg_stat_ssl", "sync-super-tacos-sprint-c3", "content_backup", "order_status not in", "Reserved ID collision", "other_before is distinct from other_after", "Required modifier postcondition"]) assert.ok(sql.includes(guard));
+  assert.ok(sql.includes("menu_man.content_client_tls"));
+  assert.ok(sql.includes("verify-full"));
+  assert.match(sql, /current_setting\('menu_man\.content_host'\)='db\.jjvongzvtnzlvwdfcnjk\.supabase\.co'[\s\S]*exists\(select 1 from pg_stat_ssl where pid=pg_backend_pid\(\) and ssl\)/);
+  assert.match(sql, /current_setting\('menu_man\.content_host'\)='aws-0-us-east-2\.pooler\.supabase\.com'[\s\S]*current_setting\('menu_man\.content_user'\)='postgres\.jjvongzvtnzlvwdfcnjk'/);
   assert.doesNotMatch(sql, /\b(?:create|alter|drop)\s+(?:table|function|policy|trigger|schema)\b/i);
   assert.doesNotMatch(sql, /(?:delete from|update|insert into) public\.(?:orders|order_items|order_item_modifiers|payment\w*|restaurant_payment\w*|restaurant_ordering\w*|menu_item_hearts)/i);
   assert.doesNotMatch(sql, /delete from public\.menu_items/i);
@@ -199,5 +203,28 @@ test("prepared content sync changes only tenant catalog data and relies on exist
   const wrapper = readFileSync("scripts/sync-super-tacos-content.ps1", "utf8");
   assert.ok(wrapper.indexOf("if (!$Execute)") < wrapper.indexOf("Get-Command psql"));
   assert.match(wrapper, /verify-full/);
+  assert.match(wrapper, /-c '\\conninfo'/);
+  assert.match(wrapper, /SSL connection/);
+  assert.match(wrapper, /protocol:\\s\*TLS/);
+  assert.match(wrapper, /ConnectionPort -ne 5432/);
+  assert.match(wrapper, /PGSSLROOTCERT/);
+  assert.match(wrapper, /postgresql\/root\.crt/);
+  assert.match(wrapper, /aws-0-us-east-2\.pooler\.supabase\.com/);
+  assert.match(wrapper, /menu_man_client_tls_mode=verify-full/);
   assert.match(wrapper, /ExpectedSqlSha256/);
+});
+
+test("read-only content verifier uses PL/pgSQL locals distinct from database columns", () => {
+  const verifier = readFileSync("supabase/qa/super-tacos-content-verify.sql", "utf8");
+  const block = verifier.match(/do \$verify\$([\s\S]*?)\$verify\$;/)?.[1];
+  assert.ok(block, "generated verifier block is present");
+  assert.match(block, /v_item_id uuid; v_section_id uuid; v_group_id uuid;/);
+  assert.match(block, /p\.item_id=v_item_id and p\.section_id=v_section_id/);
+  assert.doesNotMatch(block, /\b(?:item_id|section_id|group_id)\s+uuid\b/);
+  assert.doesNotMatch(block, /p\.item_id=item_id|p\.section_id=section_id/);
+  assert.match(verifier, /menu_man_payment_fingerprint/);
+  assert.match(verifier, /menu_man_ordering_fingerprint/);
+  assert.match(block, /Payment or ordering configuration fingerprint changed/);
+  assert.match(block, /v_option_id uuid/);
+  assert.match(block, /Modifier option content mismatch/);
 });

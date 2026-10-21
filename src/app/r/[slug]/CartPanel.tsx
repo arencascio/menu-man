@@ -20,6 +20,7 @@ const readMobile = () => window.matchMedia(mobileQuery).matches;
 const readServerMobile = () => false;
 
 type CartPanelProps = {
+  cartPreview?: boolean;
   lines: CartLine[];
   currency: string;
   subtotalCents: number;
@@ -34,6 +35,7 @@ type CartPanelProps = {
 };
 
 export default function CartPanel({
+  cartPreview = false,
   lines,
   currency,
   subtotalCents,
@@ -113,8 +115,8 @@ export default function CartPanel({
               confirmationRef.current?.querySelector<HTMLButtonElement>("[data-clear-cancel]")?.focus({ preventScroll: true });
             }}>Clear cart</button>
             <p><span>Subtotal</span><strong>{formatPrice(subtotalCents, currency)}</strong></p>
-            <small>Displayed prices will be verified by the restaurant before checkout.</small>
-            <button className={styles.checkoutButton} type="button" onClick={onCheckout}>Continue to Checkout</button>
+            <small>{cartPreview ? "Sample cart only. Prices are illustrative; no order or payment can be submitted." : "Displayed prices will be verified by the restaurant before checkout."}</small>
+            <button className={styles.checkoutButton} type="button" disabled={cartPreview} onClick={onCheckout}>{cartPreview ? "Checkout unavailable in demo" : "Continue to Checkout"}</button>
           </div>
         </>
       )}

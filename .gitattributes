@@ -1,0 +1,24 @@
+# Raw-byte SHA256 inputs and generated release manifests must be identical
+# after checkout on Windows (core.autocrlf=true) and Linux.
+/.gitattributes text eol=lf
+/scripts/prepare-super-tacos-content-sync.mjs text eol=lf
+/scripts/prepare-super-tacos-public-release.mjs text eol=lf
+/scripts/sync-super-tacos-content.ps1 text eol=lf
+/scripts/check-super-tacos-public-release.ps1 text eol=lf
+/scripts/super-tacos-tls-preflight.test.ps1 text eol=lf
+/scripts/fixtures/super-tacos-psql18-conninfo.txt text eol=lf
+/src/lib/demo/theme.json text eol=lf
+/supabase/seeds/staging/super-tacos-demo.json text eol=lf
+/supabase/seeds/staging/016_super_tacos_content_c1.sql text eol=lf
+/supabase/qa/super-tacos-content-backup.sql text eol=lf
+/supabase/qa/super-tacos-content-verify.sql text eol=lf
+/supabase/qa/super-tacos-installed-catalog-v1.json text eol=lf
+/supabase/qa/super-tacos-content-c1-manifest.json text eol=lf
+/supabase/releases/super-tacos-public/*.sql text eol=lf
+/supabase/releases/super-tacos-public/manifest.json text eol=lf
+/public/brand/MenuManPhone.svg text eol=lf
+/public/brand/MenuManPhoneSmol.svg text eol=lf
+/public/brand/menu-man-svg-sources.json text eol=lf
+/public/brand/previews/sources.json text eol=lf
+/public/img/super-tacos/approved/supertacologo.svg text eol=lf
+/public/img/super-tacos/approved/logo-provenance.json text eol=lf

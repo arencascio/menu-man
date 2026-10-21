@@ -18,6 +18,7 @@ export default function BuildMyWebsitePage() {
           <p>Share what you have, what is not working, and where customers order today. Plain English is perfect.</p>
           <div className={styles.leadPrice}>
             <strong>{PUBLIC_PRICING.monthly}</strong>
+            <p>Plus a {PUBLIC_PRICING.startupFee} one-time startup fee</p>
           </div>
           <ul>
             <li>No enterprise sales process</li>

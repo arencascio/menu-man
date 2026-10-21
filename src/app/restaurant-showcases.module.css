@@ -1,0 +1,23 @@
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; min-width: 0; }
+.card { overflow: hidden; min-width: 0; border: 1px solid var(--warm-gray, #ded9ce); border-radius: 16px; background: #fffdf8; }
+.photo { position: relative; isolation: isolate; aspect-ratio: 16 / 10; background: #763f27; }
+.photo img { object-fit: cover; }
+.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, #000b); z-index: 1; }
+.photo span { position: absolute; z-index: 2; inset: auto 20px 18px; color: white; font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 800; line-height: 1.1; }
+.card[data-restaurant="super-tacos"] .photo { background: #163b32; }
+.card[data-restaurant="super-tacos"] .photo span { color: #fff8e8; }
+.card[data-restaurant="super-tacos"] .eyebrow { color: #a33817; }
+.body { padding: 22px; display: grid; gap: 12px; }
+.body h3 { font-size: clamp(1.3rem, 2vw, 1.7rem); line-height: 1.2; }
+.body > p:not(.eyebrow) { font-size: 1rem; line-height: 1.65; }
+.eyebrow { color: #665542; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.body small { color: #625b50; font-size: .76rem; line-height: 1.5; }
+.action, .pending { display: block; padding-block: 10px; font-size: .85rem; font-weight: 700; }
+.action { width: fit-content; text-underline-offset: 4px; }
+.action:focus-visible { outline: 3px solid #b53f1a; outline-offset: 4px; }
+.pending { color: #686157; }
+.grid[data-compact="true"] { gap: 16px; }
+.grid[data-compact="true"] .body { padding: 16px; }
+.grid[data-compact="true"] .photo { aspect-ratio: 4 / 3; }
+.grid[data-compact="true"] .photo span { font-size: 1.3rem; inset-inline: 16px; }
+@media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }

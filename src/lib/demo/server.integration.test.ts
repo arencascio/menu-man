@@ -167,6 +167,20 @@ test("real resolver denies disabled demo, seller/location mismatch and foreign d
   }
 });
 
+test("Production rejects demo sessions and direct payment submissions before provider or mutation calls", async () => {
+  for (const env of [
+    { ...enabled, VERCEL_ENV: "production" },
+    { ...enabled, MENU_MAN_ENV: "production" },
+    { ...enabled, NEXT_PUBLIC_SUPABASE_URL: "https://fullaiodvmilkdxyxnln.supabase.co" },
+  ]) {
+    const h = harness(demoRow, env);
+    await assert.rejects(h.payments.getPaymentSession("order", "capability"), { code: "PAYMENT_PROVIDER_UNAVAILABLE" });
+    await assert.rejects(h.payments.submitPayment("order", "capability", "key", policy.DEMO_PAYMENT_TOKEN), { code: "PAYMENT_NOT_ALLOWED" });
+    assert.equal(h.gatewayCalls.length, 0);
+    assert.ok(h.calls.every((call) => call.name === "authorize_payment_session_v1"));
+  }
+});
+
 for (const provider of ["square", "fake"]) {
   test(`ordinary ${provider} session and payment retain source/amount with demo disabled and unconfigured`, async () => {
     const h = harness({ ...demoRow, restaurant_id: "ordinary-tenant", provider_key: provider, environment: provider === "fake" ? "test" : "sandbox", provider_metadata: {} }, {

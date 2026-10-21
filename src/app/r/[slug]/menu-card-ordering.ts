@@ -1,14 +1,15 @@
 import { createModifierSelections, getCartLineSignature, getDefaultModifierOptionIds, getModifierValidationErrors } from "@/lib/cart/cart";
 import type { CartLine } from "@/lib/cart/types";
 import type { MenuItem, MenuSection } from "./MenuBrowser";
+import { canCustomizeMenuItem } from "@/lib/restaurant-showcases";
 
 // Read the committed cart configuration, rather than treating dispatch as success.
 export function getConfiguredCartQuantity(lines: readonly CartLine[], signature: string) {
   return lines.reduce((total, line) => total + (getCartLineSignature(line) === signature ? line.quantity : 0), 0);
 }
 
-export function canAddMenuItemDirectly(item: MenuItem) {
-  if (!item.is_orderable || item.modifierGroups.some((group) => group.minSelections > 0)) return false;
+export function canAddMenuItemDirectly(item: MenuItem, cartPreview = false) {
+  if (!canCustomizeMenuItem(item.is_orderable, cartPreview) || item.modifierGroups.some((group) => group.minSelections > 0)) return false;
   return getModifierValidationErrors(item.modifierGroups, getDefaultModifierOptionIds(item.modifierGroups)).size === 0;
 }
 
@@ -28,11 +29,11 @@ export function createMenuItemDraft(item: MenuItem, line?: CartLine | null): Men
   };
 }
 
-export function getCardAddMode(item: MenuItem): "direct" | "quick" | "full" {
-  if (canAddMenuItemDirectly(item)) return "direct";
+export function getCardAddMode(item: MenuItem, cartPreview = false): "direct" | "quick" | "full" {
+  if (canAddMenuItemDirectly(item, cartPreview)) return "direct";
   const required = item.modifierGroups.filter((group) => group.minSelections > 0);
   const optionCount = required.reduce((count, group) => count + group.options.length, 0);
-  if (item.is_orderable && required.length >= 1 && required.length <= 2 && optionCount <= 8
+  if (canCustomizeMenuItem(item.is_orderable, cartPreview) && required.length >= 1 && required.length <= 2 && optionCount <= 8
     && required.every((group) => group.minSelections === 1 && group.maxSelections === 1 && group.options.length >= 1 && group.options.length <= 6)) {
     return "quick";
   }

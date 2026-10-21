@@ -9,6 +9,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { composeMenuSections } from "@/lib/menu-engagement/sections";
 import { withDemoMenuImages } from "@/lib/demo/menu-imagery";
 import { isDemoRestaurant } from "@/lib/demo/policy";
+import { isShowcaseCartPreview } from "@/lib/restaurant-showcases";
 import MenuBrowser from "../MenuBrowser";
 import OrderingStatus from "../OrderingStatus";
 import PageViewTracker from "../PageViewTracker";
@@ -93,7 +94,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
   const menuSections = composeMenuSections(withDemoMenuImages(restaurant.id, sections), featuredUnavailable ? [] : featuredResult.data ?? [], heartCounts);
 
   let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
-  for (const capability of await listGuestPaymentCapabilities()) {
+  for (const capability of isShowcaseCartPreview(restaurant.id) ? [] : await listGuestPaymentCapabilities()) {
     try {
       const view = await getOrderPaymentView(slug, capability.orderId, capability.checkoutToken);
       const payment = await getPaymentStatus(capability.orderId, capability.checkoutToken);
@@ -135,13 +136,14 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
           <p>Explore the menu</p>
           <h1>{restaurant.name} menu</h1>
         </div>
-        <OrderingStatus
+        {isShowcaseCartPreview(restaurant.id) ? <aside className={styles.showcaseNotice} aria-label="Fictional restaurant demo"><strong>Try the menu.</strong> Customize a dish and build a sample cart. Ordering and payments are unavailable.</aside> : <OrderingStatus
           hasDelivery={deliveryOptions.length > 0}
           restaurantId={restaurant.id}
           restaurantSlug={restaurant.slug}
-        />
+        />}
       </div>
       <MenuBrowser
+        cartPreview={isShowcaseCartPreview(restaurant.id)}
         restaurantId={restaurant.id}
         restaurantSlug={restaurant.slug}
         currency={restaurant.currency}

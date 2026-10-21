@@ -1,5 +1,6 @@
-// Temporary publication restriction. Restaurant implementation and staging data stay intact.
-const restrictedRestaurantSlugs = new Set(["armandos", "super-tacos"]);
+import { restaurantShowcases } from "./restaurant-showcases";
+
+// Route readiness and marketing-link publication live in one reviewed registry.
 
 export function isRestaurantPublicationRestricted(
   slug: string,
@@ -7,5 +8,5 @@ export function isRestaurantPublicationRestricted(
   menuManEnvironment = process.env.MENU_MAN_ENV,
 ) {
   return (vercelEnvironment === "production" || menuManEnvironment === "production")
-    && restrictedRestaurantSlugs.has(slug.toLowerCase());
+    && restaurantShowcases.some((showcase) => showcase.slug === slug.toLowerCase() && !showcase.routeEnabled);
 }

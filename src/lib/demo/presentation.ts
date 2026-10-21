@@ -43,7 +43,7 @@ export const superTacosShowcase = {
   },
   location: {
     neighborhoodUrl: "https://www.google.com/maps/search/?api=1&query=Tyler+Street+%26+Magnolia+Avenue%2C+Riverside%2C+CA+92503",
-    disclosure: "Super Tacos is fictional. The address, phone, and hours are demonstration details; the map shows the general Magnolia Avenue and Tyler Street area, not a restaurant storefront.",
+    disclosure: "Super Tacos is a demonstration restaurant. Location details are illustrative.",
   },
   gallery: {
     title: "A little of what you love.",

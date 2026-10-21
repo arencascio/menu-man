@@ -1,5 +1,17 @@
 # Super Tacos Sprint C.3 local handoff
 
+## Current release status — 2026-10-21
+
+Gate 2 subsequently committed and verified the Staging content synchronization,
+as confirmed in the owner's completed Gate 2 handoff. The preparation/failed
+attempt descriptions below are historical, not current execution instructions.
+Do not rerun 015 or 016. This review performed no database operations and does
+not substitute a fresh live verification for the completed Gate 2 evidence.
+The separate Production package and release gates are reviewed in
+`v1-combined-release-readiness.md`; no Production operation is authorized.
+
+## Original preparation handoff (historical)
+
 This local work remains on `feature/super-tacos-demo`. The original 015 installer is unchanged and must not be rerun. The regenerated 016, backup export, and read-only verification are **prepared only** for Staging `jjvongzvtnzlvwdfcnjk`; none has been executed. No payment, Production, Vercel, or Supabase setting was changed.
 
 ## Active catalog
@@ -48,4 +60,8 @@ The fixture proposes 0000 Magnolia Avenue, Riverside, CA 92503 and (951) 555-014
 
 `scripts/prepare-super-tacos-content-sync.mjs` regenerates the local 016, read-only tenant backup export, read-only post-sync verification, and SHA256 manifest. The wrapper requires a separate C.3 approval token, exact Staging target, TLS, a verified fresh backup, and artifact hashes before any connection. The 016 checks the installed 30-item snapshot (six sections, four original groups, ten original options), original item identities/prices/attachments, no open orders, disabled catering notifications, current contact fields, and existing daily hours. It updates only Super Tacos catalog rows and restaurant content, preserves historical item records, and checks other-tenant content hashes before commit. Expected result: 43 retained item rows, 25 active placements/items, 18 retired identities, six sections, nine active groups, and 35 active options. Read-only verification checks every active item, section, attachment, retired placement, image, and fictional contact field.
 
-No live Staging query was made because the sprint explicitly prohibits SQL execution. The installed-v1 snapshot and strict runtime guards are the local baseline; live drift must be checked through the approved backup procedure before any future sync. Payment and ordering settings are untouched.
+The first Gate 2 attempt was read-only and stopped when the original transport guard failed. No content SQL has run. A read-only diagnostic through the verified Session Pooler confirmed database postgres, the expected project/host/login and client TLS (\conninfo: TLS 1.3, 256-bit, SSL true). pg_stat_ssl.ssl for pg_backend_pid() was false. That view reports the PostgreSQL backend leg behind PgBouncer, so it cannot attest to client-to-pooler TLS.
+
+The canonical generator now requires the exact Staging direct host plus PostgreSQL-side TLS for direct connections, or the project's exact aws-0-us-east-2.pooler.supabase.com host plus postgres.jjvongzvtnzlvwdfcnjk login for Session Pooler connections. The operator wrapper locks port 5432, resolves `%APPDATA%\postgresql\root.crt`, forces PGSSLMODE=verify-full and PGSSLROOTCERT for both psql calls, and validates the protocol/cipher line from `\conninfo` before passing the client-TLS marker into the guarded SQL. Pooler client TLS therefore remains certificate and hostname verified; direct connections retain the database-side pg_stat_ssl check. The marker is an explicit wrapper contract because PostgreSQL cannot observe the client-to-pooler leg; it must only be supplied after the verified psql preflight. The read-only backup and post-sync operator commands use the same pooler endpoint, project-scoped login, pinned root, verify-full mode, preflight and TLS marker. The artifacts were regenerated locally for review only. No backup export or content sync has succeeded, and no payment, Production, Vercel, or other-tenant setting was changed.
+
+Before any future sync, follow the pinned certificate and connection sequence in `docs/super-tacos-showcase-sprint-c1.md` for the fresh read-only backup, guarded sync, and read-only verification. Retain the backup outside Git and run the existing wrapper to validate its completeness, baseline identities, freshness, and hash before execution. Any target, TLS, backup, artifact, or runtime guard failure remains a stop condition.

@@ -2,6 +2,6 @@
     "source":  "Owner-supplied C:/menu-man/img/supertacologo.svg",
     "sourceSha256":  "51350e82b3bc00c53bc3610baed8f82a3df73e34a00a6d6da8be5d89d1940de0",
     "asset":  "/img/super-tacos/approved/supertacologo.svg",
-    "assetSha256":  "9ea45d92228954bc185bc7a60dccd2ab1dda490a159ab60f472f85b2575378b3",
+    "assetSha256":  "845bfd533ab3ad3fe601542d279292a06d7bbb4252a834f0fb88a6e1b2fa3115",
     "processing":  "Latest owner SVG. Removed the hidden embedded PNG reference layer and tightened the viewBox to the visible vector artwork with about 6–8 SVG units of padding. No scripts, event handlers, foreignObject elements, or external resource references remain."
 }

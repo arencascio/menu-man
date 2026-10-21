@@ -77,6 +77,7 @@ export default async function RestaurantShell({ children, restaurant, smoothScro
           logoUrl={restaurant.logoUrl}
           wordmarkOnly={showcase?.wordmarkOnly}
           wordmarkClassName={showcase ? superTacosBrandFont.className : undefined}
+          wordmarkFontFamily={showcase ? superTacosBrandFont.style.fontFamily : undefined}
           artworkMark={restaurant.artworkMark}
           brandLockup={restaurant.brandLockup}
           name={restaurant.name}

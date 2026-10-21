@@ -1,3 +1,5 @@
+import { isDemoRestaurant } from "@/lib/demo/policy";
+import RestaurantDemoContact from "./RestaurantDemoContact";
 import BusinessHours, { type BusinessHour, type SpecialHour } from "./BusinessHours";
 import styles from "./restaurant-hours-location.module.css";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
@@ -49,6 +51,7 @@ export default function RestaurantHoursLocation({
   timezone,
   variant,
 }: RestaurantHoursLocationProps) {
+  const illustrative = isDemoRestaurant(restaurantId);
   const addressParts = [addressLine1, city, state, postalCode].filter(isUsableValue);
   const hasAddress = addressParts.length > 0;
   const usableDescription = isUsableValue(description) ? description : null;
@@ -72,15 +75,15 @@ export default function RestaurantHoursLocation({
           <div className={styles.locationCard}>
             {variant === "editorial" ? <p className={styles.cardLabel}>{hasAddress ? "Find us" : "Location"}</p> : null}
             {hasAddress ? (
-              <address className={styles.address}>{addressParts.join(", ")}</address>
+              <address className={styles.address}>{illustrative ? <RestaurantDemoContact kind="address">{addressParts.join(", ")}</RestaurantDemoContact> : addressParts.join(", ")}</address>
             ) : (
               <p className={styles.unavailable}>{unavailableLocationMessage}</p>
             )}
 
             {phone ? (
               <div className={styles.contact}>
-                <span>{phoneIsIllustrative ? "Demo phone" : "Call us"}</span>
-                {phoneIsIllustrative ? <span>{phone}</span> : <TrackedRestaurantLink surface="restaurant_information"
+                <span>{"Call us"}</span>
+                {illustrative ? <RestaurantDemoContact kind="phone">{phone}</RestaurantDemoContact> : phoneIsIllustrative ? <span>{phone}</span> : <TrackedRestaurantLink surface="restaurant_information"
                   href={`tel:${phone}`}
                   eventName="phone_clicked"
                   restaurantId={restaurantId}
@@ -90,7 +93,7 @@ export default function RestaurantHoursLocation({
               </div>
             ) : null}
 
-            {directionsUrl ? (
+            {directionsUrl && !illustrative ? (
               <TrackedRestaurantLink surface="restaurant_information"
                 className={styles.directionsAction}
                 href={directionsUrl}

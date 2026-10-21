@@ -1,0 +1,7 @@
+.trigger { border: 0; padding: 0; background: none; color: inherit; font: inherit; text-align: inherit; cursor: pointer; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.trigger:focus-visible, .panel a:focus-visible, .close:focus-visible { outline: 3px solid #d98a50; outline-offset: 4px; }
+.panel { position: fixed; inset: auto; margin: 0; box-sizing: border-box; width: min(320px, calc(100vw - 24px)); padding: 24px; border: 1px solid #d6dfd8; border-radius: 18px; box-shadow: 0 12px 40px #17352b30; background: #fffdf7; color: #17352b; font: 400 15px/1.5 Arial, sans-serif; }
+.panel strong { display: block; padding-right: 24px; font-size: 18px; }
+.panel p { margin: 10px 0 16px; }
+.panel a { display: inline-flex; align-items: center; min-height: 44px; color: #17352b; font-weight: 700; }
+.close { position: absolute; top: 4px; right: 6px; width: 36px; height: 36px; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 24px; }

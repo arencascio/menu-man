@@ -1,3 +1,4 @@
+import { armandoQaTable } from "./fixtures/sprint-d1-armandos.mjs";
 // TEST PROCESS ONLY. Never imported by application code. Intercepts the exact
 // staging/Square origins without making network requests; rejects other remotes.
 import { readFileSync } from 'node:fs';
@@ -10,7 +11,7 @@ const tenant=catalog.restaurant.id;
 const connectionId=id(900);
 const realFetch=globalThis.fetch;
 const state=globalThis.__superTacosOfflineState ??= {orders:new Map(), payments:new Map(), attempts:new Map(),square:new Map()};
-const items=catalog.items.map(i=>({...i,id:id(200+i.number),restaurant_id:tenant,price_cents:i.price,is_orderable:true,source_image_url:i.imageUrl??null,image_path:null}));
+const items=catalog.items.map(i=>({...i,id:id(200+i.number),restaurant_id:tenant,price_cents:i.price,is_orderable:process.env.MENU_MAN_PUBLIC_SHOWCASE_QA!=='true',source_image_url:i.imageUrl??null,image_path:null}));
 const groups=catalog.modifierGroups.map(g=>({...g,id:id(500+g.number),restaurant_id:tenant,is_active:true}));
 const options=groups.flatMap(g=>g.options.map((o,n)=>({...o,id:id(600+o.number),restaurant_id:tenant,modifier_group_id:g.id,default_price_adjustment_cents:o.price,sort_order:n,is_active:true,is_default:o.default===true})));
 const attachments=items.flatMap(i=>i.groups.map((n,sort)=>{const g=groups.find(v=>v.number===n);return {restaurant_id:tenant,menu_item_id:i.id,modifier_group_id:g.id,min_selections:g.min,max_selections:g.max,sort_order:sort,is_active:true};}));
@@ -35,6 +36,7 @@ default:throw new Error(`Unhandled offline table ${name}`);
 }}
 function authorize(p){const order=state.orders.get(p.p_order_id);if(!order||order.token!==p.p_access_token_hash)throw new Error('INVALID_PAYMENT_SESSION');return order;}
 function rpc(name,p){
+ if(process.env.MENU_MAN_PUBLIC_SHOWCASE_QA==='true'&&!['get_pickup_availability_v1','get_checkout_notification_preferences_v1'].includes(name))throw new Error('Public showcase QA prohibits all state-changing RPCs');
  if(name==='get_pickup_availability_v1')return json({timezone:r.timezone,generatedAt:now(),currentlyOpen:true,asap:{enabled:true,available:true,estimatedPickupAt:new Date(Date.now()+20*60000).toISOString()},scheduled:{enabled:true,slots:Array.from({length:12},(_,n)=>({pickupAt:new Date(Date.now()+(30+n*15)*60000).toISOString()}))}});
  if(name==='get_checkout_notification_preferences_v1')return json({orderConfirmationEnabled:false,readyForPickupEnabled:false});
  if(name==='create_demo_order_v1'){
@@ -65,7 +67,8 @@ globalThis.fetch=async function(input,init){
  if(url.hostname==='jjvongzvtnzlvwdfcnjk.supabase.co'){
   try{if(url.pathname.startsWith('/rest/v1/rpc/'))return rpc(url.pathname.split('/').at(-1),await request.json());
    if(request.method!=='GET')throw new Error('Non-RPC writes prohibited in offline QA');
-   let rows=table(url.pathname.split('/').at(-1));
+   const name=url.pathname.split('/').at(-1);
+   let rows=(process.env.MENU_MAN_SPRINT_D1_QA==='true' ? armandoQaTable(name,url) : null) ?? table(name);
    for(const [key,val]of url.searchParams){if(val.startsWith('eq.'))rows=rows.filter(r=>String(r[key])===val.slice(3));}
    const accept=request.headers.get('accept')||'';return json(accept.includes('object')?(rows[0]??null):rows);
   }catch(error){return fail(error.message,'Offline test rejected request');}

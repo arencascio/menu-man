@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { FinalCta, MarketingPage, PrimaryLink } from "../MarketingComponents";
 import { ProductGallery } from "../MarketingInteractions";
+import RestaurantShowcases from "../RestaurantShowcases";
 import { CTA_LABELS } from "../marketing-content";
 import styles from "../page.module.css";
+import MarketingIcon from "../MarketingIcon";
 
 export const metadata: Metadata = {
   title: "Work",
@@ -16,24 +18,23 @@ export default function WorkPage() {
       <section className={`${styles.subpageHero} ${styles.workHero}`}>
         <div>
           <h1>A closer look at the product.</h1>
-          <p>Explore the capabilities of a managed restaurant website. This illustrated product overview uses Menu Man&apos;s own artwork.</p>
+          <p>Different restaurants, distinct personalities. Explore how thoughtful menus, photography, and clear information help customers find their next favorite.</p>
           <div className={styles.actionRow}>
             <PrimaryLink ctaId="site_like_this" placement="hero">↗ {CTA_LABELS.showcase}</PrimaryLink>
           </div>
         </div>
-        <div className={styles.workHeroVisual}><Image className={styles.brandArtwork} src="/brand/menu-man-phone.png" alt="Menu Man's phone and chef-hat illustration" width={800} height={800} priority /></div>
-      </section>
-
-      <section className={styles.caseIntro}>
-        <div><h2>A large menu made easier to use.</h2></div>
-        <p>Your restaurant keeps its own character while customers find the menu, ordering links, and visit details on desktop and mobile.</p>
+        <div className={styles.workHeroVisual}><Image className={styles.brandArtwork} src="/brand/MenuManPhone.svg" alt="Menu Man's phone and chef-hat illustration" width={469.387} height={923.785} loading="eager" /></div>
       </section>
 
       <section className={styles.gallerySection}>
-        <ProductGallery />
+        <RestaurantShowcases />
+        <div className={styles.workCapabilities}>
+          <ProductGallery />
+        </div>
       </section>
 
       <section className={styles.galleryCta}>
+        <MarketingIcon name="sparkles" size={36} />
         <p>Want this kind of clarity for your restaurant?</p>
         <PrimaryLink ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
       </section>

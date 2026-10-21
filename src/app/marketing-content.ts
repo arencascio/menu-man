@@ -8,11 +8,14 @@ export const CTA_LABELS = {
 
 export const PUBLIC_PRICING = {
   monthly: "$99/month",
+  startupFee: "$299",
   deliveryFirstPlatform: "$25/month",
   deliveryAdditionalPlatform: "+$10/month",
   pickupPerOrder: "$0.50",
   pickupMonthlyCap: "$50/month",
 } as const;
+
+export const PUBLIC_CONTACT = { email: "hello@getmenuman.com" } as const;
 
 export const DINER_RESEARCH = {
   menu: "85%",
@@ -120,12 +123,12 @@ export const faqs: readonly Faq[] = [
   },
   {
     question: "Do I keep my domain?",
-    answer: "Yes. Your restaurant should own its domain. We can help connect and manage it.",
+    answer: "Your restaurant should own and control its domain. Menu Man can help connect it to your website.",
   },
   {
     question: `What does ${PUBLIC_PRICING.monthly} include?`,
     answer:
-      "The managed website, hosting, searchable menu, routine updates, ordering connections, basic SEO and analytics, and ongoing support. It is more than hosting.",
+      `The managed website, hosting, searchable menu, routine updates, ordering connections, basic SEO and analytics, and ongoing support. The one-time startup fee is ${PUBLIC_PRICING.startupFee}.`,
   },
   {
     question: "Do I pay a fee to keep my current ordering provider?",

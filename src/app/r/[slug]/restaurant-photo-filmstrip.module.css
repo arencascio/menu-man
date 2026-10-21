@@ -1,0 +1,14 @@
+.filmstrip { min-width: 0; margin-top: 2rem; }
+.viewport { overflow: hidden; width: 100%; min-width: 0; touch-action: pan-y pinch-zoom; cursor: grab; border-radius: var(--theme-radius, 16px); user-select: none; }
+.viewport:active { cursor: grabbing; }
+.viewport:focus-visible, .controls button:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+.track, .cycle { display: flex; width: max-content; }
+.track { will-change: transform; }
+.cycle { gap: 16px; padding-right: 16px; }
+.photo { position: relative; flex: 0 0 auto; width: clamp(200px, 22vw, 300px); margin: 0; overflow: hidden; border-radius: var(--theme-radius, 16px); }
+.photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; pointer-events: none; }
+.photo figcaption { position: absolute; left: 12px; bottom: 12px; padding: 5px 10px; border-radius: 99px; color: white; background: #102d25bd; font-size: 12px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.controls span { margin-right: auto; font-size: 13px; }
+.controls button { min-width: 44px; min-height: 44px; border: 1px solid currentColor; border-radius: 99px; padding: 4px 12px; background: transparent; color: inherit; font: inherit; cursor: pointer; font-size: 13px; }
+@media (max-width: 600px) { .photo { width: 62vw; } .controls span { flex: 1 0 100%; } }

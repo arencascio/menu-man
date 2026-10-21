@@ -19,19 +19,26 @@ const otherRows = tables.map((table) => `select jsonb_build_array('${table}',to_
 const checksum = `select md5(coalesce(string_agg(row_record,E'\\n' order by row_record),'')) from (${otherRows}) all_rows`;
 const guard = `\n  if current_setting('menu_man.content_environment')<>'staging'
     or current_setting('menu_man.content_project')<>'jjvongzvtnzlvwdfcnjk'
-    or not (current_setting('menu_man.content_host')='db.jjvongzvtnzlvwdfcnjk.supabase.co'
-      or (current_setting('menu_man.content_host') ~ '^[a-z0-9-]+[.]pooler[.]supabase[.]com$'
-        and current_setting('menu_man.content_user')='postgres.jjvongzvtnzlvwdfcnjk'))
+    or current_setting('menu_man.content_client_tls')<>'verify-full'
+    or not (
+      (current_setting('menu_man.content_host')='db.jjvongzvtnzlvwdfcnjk.supabase.co'
+        and current_setting('menu_man.content_user')='postgres'
+        and exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl))
+      or (current_setting('menu_man.content_host')='aws-0-us-east-2.pooler.supabase.com'
+        and current_setting('menu_man.content_user')='postgres.jjvongzvtnzlvwdfcnjk')
+    )
     or current_database()<>'postgres'
-    or not exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl)
-  then raise exception 'Exact Staging target and TLS required; no content changed.'; end if;`;
+  then raise exception 'Exact Staging target and transport guard required; no content changed.'; end if;`;
 const settings = `select set_config('menu_man.content_environment', :'menu_man_environment', true) as ignored \\gset
 select set_config('menu_man.content_project', :'menu_man_staging_project_ref', true) as ignored \\gset
 select set_config('menu_man.content_host', :'HOST', true) as ignored \\gset
 select set_config('menu_man.content_user', :'USER', true) as ignored \\gset
+select set_config('menu_man.content_client_tls', :'menu_man_client_tls_mode', true) as ignored \\gset
 `;
 const script = `-- PREPARED ONLY. Separate approval and verified fresh content backup required.
 -- Content sync for installed 015 fixture; NEVER rerun 014/015. No schema or payment DML.
+-- The operator wrapper requires PGSSLMODE=verify-full and confirms client TLS with psql \\conninfo.
+-- Session Pooler pg_stat_ssl describes its PostgreSQL backend hop; direct Staging also requires backend TLS.
 -- Catalog SHA256: ${digest}
 \\set ON_ERROR_STOP on
 \\encoding UTF8
@@ -228,6 +235,8 @@ commit;
 `;
 writeFileSync("supabase/seeds/staging/016_super_tacos_content_c1.sql", script);
 const backup = `-- Read-only tenant-content export, for the separately approved 016 sync.
+-- Run with PGSSLMODE=verify-full; verify client TLS with psql \\conninfo before export.
+-- Session Pooler pg_stat_ssl describes its PostgreSQL backend hop; direct Staging also requires backend TLS.
 \\set ON_ERROR_STOP on
 \\encoding UTF8
 begin read only;
@@ -249,16 +258,21 @@ commit;
 `;
 writeFileSync("supabase/qa/super-tacos-content-backup.sql", backup);
 const verify = `-- Read-only verification after a separately approved successful content sync.
+-- Run with PGSSLMODE=verify-full; verify client TLS with psql \\conninfo before verification.
+-- Session Pooler pg_stat_ssl describes its PostgreSQL backend hop; direct Staging also requires backend TLS.
 \\set ON_ERROR_STOP on
 \\encoding UTF8
 begin read only;
-${settings}do $verify$
+${settings}select set_config('menu_man.content_payment_fingerprint', :'menu_man_payment_fingerprint', true) as ignored \\gset
+select set_config('menu_man.content_ordering_fingerprint', :'menu_man_ordering_fingerprint', true) as ignored \\gset
+do $verify$
 declare
   tenant constant uuid := '20000000-0000-4000-8000-000000000001';
   menu constant uuid := '20000000-0000-4000-8000-000000000002';
   revised constant jsonb := ${q(JSON.stringify(after))}::jsonb;
   item jsonb; section jsonb; retired jsonb; grp jsonb;
-  item_id uuid; section_id uuid; group_id uuid;
+  v_item_id uuid; v_section_id uuid; v_group_id uuid; v_grp jsonb;
+  v_option_id uuid; v_option jsonb; v_option_ordinal integer;
 begin${guard}
   if (select count(*) from public.menu_items where restaurant_id=tenant)<>${totalItems}
     or (select count(*) from public.menu_items where restaurant_id=tenant and is_orderable)<>${after.items.length}
@@ -271,37 +285,56 @@ begin${guard}
       and phone='(951) 555-0147' and address_line1='0000 Magnolia Avenue' and city='Riverside'
       and state='CA' and postal_code='92503' and google_maps_url is null)
   then raise exception 'C.3 content verification failed; stop for review.'; end if;
+  if md5(coalesce((select string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text) from public.restaurant_payment_connections t),'')) is distinct from current_setting('menu_man.content_payment_fingerprint')
+    or md5(coalesce((select string_agg(to_jsonb(t)::text,E'\\n' order by to_jsonb(t)::text) from public.restaurant_ordering_settings t),'')) is distinct from current_setting('menu_man.content_ordering_fingerprint')
+  then raise exception 'Payment or ordering configuration fingerprint changed; stop for review.'; end if;
   for section in select value from jsonb_array_elements(revised->'sections') loop
-    section_id:=('20000000-0000-4000-8000-'||lpad(section->>'number',12,'0'))::uuid;
-    if not exists(select 1 from public.menu_sections s where s.id=section_id and s.menu_id=menu
+    v_section_id:=('20000000-0000-4000-8000-'||lpad(section->>'number',12,'0'))::uuid;
+    if not exists(select 1 from public.menu_sections s where s.id=v_section_id and s.menu_id=menu
       and s.name=section->>'name' and s.description is not distinct from section->>'description'
       and s.sort_order=(section->>'sort')::int and s.is_active)
-    then raise exception 'Section content mismatch: %',section_id; end if;
+    then raise exception 'Section content mismatch: %',v_section_id; end if;
   end loop;
   for item in select value from jsonb_array_elements(revised->'items') loop
-    item_id:=('20000000-0000-4000-8000-'||lpad(((item->>'number')::int+200)::text,12,'0'))::uuid;
-    section_id:=('20000000-0000-4000-8000-'||lpad(item->>'section',12,'0'))::uuid;
-    if not exists(select 1 from public.menu_items i where i.id=item_id and i.restaurant_id=tenant
+    v_item_id:=('20000000-0000-4000-8000-'||lpad(((item->>'number')::int+200)::text,12,'0'))::uuid;
+    v_section_id:=('20000000-0000-4000-8000-'||lpad(item->>'section',12,'0'))::uuid;
+    if not exists(select 1 from public.menu_items i where i.id=v_item_id and i.restaurant_id=tenant
       and i.is_orderable and i.name=item->>'name' and i.description is not distinct from item->>'description'
       and i.price_cents=(item->>'price')::int and i.source_item_id=item->>'key'
       and i.source_image_url=item->>'imageUrl' and i.image_path is null)
       or not exists(select 1 from public.menu_section_items p where p.id=('20000000-0000-4000-8000-'||lpad(((item->>'number')::int+300)::text,12,'0'))::uuid
-        and p.item_id=item_id and p.section_id=section_id)
-      or (select count(*) from public.menu_item_modifier_groups a where a.restaurant_id=tenant and a.menu_item_id=item_id and a.is_active)<>jsonb_array_length(item->'groups')
-    then raise exception 'Active item content mismatch: %',item_id; end if;
+        and p.item_id=v_item_id and p.section_id=v_section_id)
+      or (select count(*) from public.menu_item_modifier_groups a where a.restaurant_id=tenant and a.menu_item_id=v_item_id and a.is_active)<>jsonb_array_length(item->'groups')
+    then raise exception 'Active item content mismatch: %',v_item_id; end if;
     for grp in select g from jsonb_array_elements(revised->'modifierGroups') g where item->'groups' @> jsonb_build_array((g->>'number')::int) loop
-      group_id:=('20000000-0000-4000-8000-'||lpad(((grp->>'number')::int+500)::text,12,'0'))::uuid;
+      v_group_id:=('20000000-0000-4000-8000-'||lpad(((grp->>'number')::int+500)::text,12,'0'))::uuid;
       if not exists(select 1 from public.menu_item_modifier_groups a where a.restaurant_id=tenant
-        and a.menu_item_id=item_id and a.modifier_group_id=group_id and a.is_active
+        and a.menu_item_id=v_item_id and a.modifier_group_id=v_group_id and a.is_active
         and a.min_selections=(grp->>'min')::int and a.max_selections=(grp->>'max')::int)
-      then raise exception 'Active modifier mismatch: %',item_id; end if;
+      then raise exception 'Active modifier mismatch: %',v_item_id; end if;
+    end loop;
+  end loop;
+  for v_grp in select value from jsonb_array_elements(revised->'modifierGroups') loop
+    v_group_id:=('20000000-0000-4000-8000-'||lpad(((v_grp->>'number')::int+500)::text,12,'0'))::uuid;
+    if not exists(select 1 from public.modifier_groups g where g.id=v_group_id and g.restaurant_id=tenant and g.name=v_grp->>'name' and g.is_active)
+      or (select count(*) from public.modifier_options o where o.restaurant_id=tenant and o.modifier_group_id=v_group_id and o.is_active)<>jsonb_array_length(v_grp->'options')
+    then raise exception 'Modifier group or option inventory mismatch: %',v_group_id; end if;
+    v_option_ordinal:=0;
+    for v_option in select value from jsonb_array_elements(v_grp->'options') loop
+      v_option_id:=('20000000-0000-4000-8000-'||lpad(((v_option->>'number')::int+600)::text,12,'0'))::uuid;
+      if not exists(select 1 from public.modifier_options o where o.id=v_option_id and o.restaurant_id=tenant
+        and o.modifier_group_id=v_group_id and o.name=v_option->>'name' and o.is_active
+        and o.default_price_adjustment_cents=(v_option->>'price')::int
+        and o.sort_order=v_option_ordinal and o.is_default=coalesce((v_option->>'default')::boolean,false))
+      then raise exception 'Modifier option content mismatch: %',v_option_id; end if;
+      v_option_ordinal:=v_option_ordinal+1;
     end loop;
   end loop;
   for retired in select value from jsonb_array_elements(revised->'retiredItems') loop
-    item_id:=('20000000-0000-4000-8000-'||lpad(((retired->>'number')::int+200)::text,12,'0'))::uuid;
-    if not exists(select 1 from public.menu_items i where i.id=item_id and i.restaurant_id=tenant and not i.is_orderable)
-      or exists(select 1 from public.menu_section_items p join public.menu_sections s on s.id=p.section_id where s.menu_id=menu and p.item_id=item_id)
-    then raise exception 'Retired item mismatch: %',item_id; end if;
+    v_item_id:=('20000000-0000-4000-8000-'||lpad(((retired->>'number')::int+200)::text,12,'0'))::uuid;
+    if not exists(select 1 from public.menu_items i where i.id=v_item_id and i.restaurant_id=tenant and not i.is_orderable)
+      or exists(select 1 from public.menu_section_items p join public.menu_sections s on s.id=p.section_id where s.menu_id=menu and p.item_id=v_item_id)
+    then raise exception 'Retired item mismatch: %',v_item_id; end if;
   end loop;
 end;
 $verify$;

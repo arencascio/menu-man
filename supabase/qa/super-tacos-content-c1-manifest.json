@@ -5,8 +5,8 @@
   "files": {
     "supabase/seeds/staging/super-tacos-demo.json": "691b55728e0d4b8377e90dfa94479312186c0391cae898ee2ed04915112bf807",
     "supabase/qa/super-tacos-installed-catalog-v1.json": "731eb9e318dbacbb9615c57836f9e03a941bc25c8d3f35a462fa06db6af2423b",
-    "supabase/seeds/staging/016_super_tacos_content_c1.sql": "c2b748b72ce4c66079e5dc8ea1149273481814c10d79d811f0d884940a53a4de",
-    "supabase/qa/super-tacos-content-backup.sql": "f7a317c2ccac387c34ff2928c09a11bb1e530f7f5f4478aec412a8347087adde",
-    "supabase/qa/super-tacos-content-verify.sql": "c12aa2809d95eb129c335dccd8dde08fd816efbde050dcc60eaafe74acd10efd"
+    "supabase/seeds/staging/016_super_tacos_content_c1.sql": "d9aa552827439f4b19cfa2a655e8ebaed3e80788bcdbe7582e5320090aeba993",
+    "supabase/qa/super-tacos-content-backup.sql": "17ead79913ffe24a5fa3b509976c2d22af133a57d9c79463af1d80394481946d",
+    "supabase/qa/super-tacos-content-verify.sql": "2855cdcdd29aa66ac366b2627d7c5fb5e6b8275229bdce36106b2dff745802b1"
   }
 }

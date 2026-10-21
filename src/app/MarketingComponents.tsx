@@ -1,20 +1,24 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CTA_LABELS } from "./marketing-content";
+import { CTA_LABELS, PUBLIC_CONTACT } from "./marketing-content";
 import { MarketingHeader, ReviewButton, ReviewModal } from "./MarketingInteractions";
 import styles from "./page.module.css";
 import { marketingCta } from "@/lib/analytics/marketing";
 import type { MarketingCta, MarketingPlacement } from "@/lib/analytics/types";
+import MarketingIcon from "./MarketingIcon";
+import MarketingReveal from "./MarketingReveal";
+import { getBusinessPageHref } from "@/lib/marketing-business-pages";
 
-export function BrandLockup({ compact = false }: { compact?: boolean }) {
+export function BrandLockup({ placement = "navigation" }: { placement?: "navigation" | "footer" }) {
+  const navigation = placement === "navigation";
   return (
     <Link className={styles.brand} href="/" aria-label="Menu Man home">
-      <span className={`${styles.logoFrame} ${compact ? styles.logoFrameCompact : ""}`}>
-        <Image src="/brand/menu-man-phone.png" alt="" width={800} height={800} priority={!compact} />
+      <span className={`${styles.logoFrame} ${navigation ? "" : styles.logoFrameLarge}`}>
+        <Image src={navigation ? "/brand/MenuManPhoneSmol.svg" : "/brand/MenuManPhone.svg"} alt="" width={469.387} height={navigation ? 530.246 : 923.785} loading={navigation ? "eager" : "lazy"} />
       </span>
       <span>
         <strong>MENU MAN</strong>
-        {!compact ? <small>Restaurant websites</small> : null}
+        {navigation ? <small>Restaurant websites</small> : null}
       </span>
     </Link>
   );
@@ -22,7 +26,7 @@ export function BrandLockup({ compact = false }: { compact?: boolean }) {
 
 export function MarketingPage({ children }: { children: React.ReactNode }) {
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-marketing-page>
       <MarketingHeader brand={<BrandLockup />} />
       <main>{children}</main>
       <MarketingFooter />
@@ -75,23 +79,29 @@ export function PrimaryLink({
 export function FinalCta() {
   return (
     <section className={styles.finalCta}>
-      <div>
-        <h2>Let&apos;s make your website feel as welcoming as your front door.</h2>
-      </div>
-      <div className={styles.finalCtaActions}>
-        <PrimaryLink light placement="final_cta" />
-        <ReviewButton placement="final_cta" className={styles.reviewButtonDark}>{CTA_LABELS.review}</ReviewButton>
-      </div>
+      <MarketingReveal className={styles.finalCtaInner}>
+        <div data-reveal-item><MarketingIcon name="heart" size={44} className={styles.lightIcon} /></div>
+        <div data-reveal-item>
+          <h2>Let&apos;s make your website feel as welcoming as your front door.</h2>
+          <p>A clear, welcoming website. A real person to keep it current.</p>
+        </div>
+        <div className={styles.finalCtaActions} data-reveal-item>
+          <PrimaryLink light placement="final_cta" />
+          <ReviewButton placement="final_cta" className={styles.reviewButtonDark}>{CTA_LABELS.review}</ReviewButton>
+        </div>
+      </MarketingReveal>
     </section>
   );
 }
 
 function MarketingFooter() {
+  const cancellationHref = getBusinessPageHref("cancellation");
+  const aboutHref = getBusinessPageHref("about");
   return (
     <footer className={styles.footer}>
       <div className={styles.footerMain}>
         <div>
-          <BrandLockup compact />
+          <BrandLockup placement="footer" />
           <p>Restaurant websites, built and kept current.</p>
         </div>
         <nav aria-label="Footer navigation">
@@ -99,10 +109,12 @@ function MarketingFooter() {
           <Link href="/services" {...marketingCta("services_pricing", "footer")}>Services &amp; Pricing</Link>
           <Link href="/work" {...marketingCta("explore_product", "footer")}>Work</Link>
           <Link href="/build-my-website" {...marketingCta("build_website", "footer")}>Build My Website</Link>
+          {aboutHref ? <Link href={aboutHref}>About Menu Man</Link> : null}
+          {cancellationHref ? <Link href={cancellationHref}>Cancellation &amp; data handoff</Link> : null}
         </nav>
         <div className={styles.footerContact}>
           <ReviewButton placement="footer" className={styles.footerReview}>Free Website Review</ReviewButton>
-          <a href="mailto:hello@getmenuman.com" data-marketing-email="general" data-marketing-placement="footer">hello@getmenuman.com</a>
+          <a href={`mailto:${PUBLIC_CONTACT.email}`} data-marketing-email="general" data-marketing-placement="footer">{PUBLIC_CONTACT.email}</a>
         </div>
       </div>
       <div className={styles.footerBottom}>

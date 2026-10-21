@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
+import { superTacosBrandFont } from "@/lib/demo/brand-font";
 import AnalyticsScripts from "./AnalyticsScripts";
 import MarketingAnalytics from "./MarketingAnalytics";
 import { RestaurantNavigationObserver } from "./r/[slug]/PageViewTracker";
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${manrope.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} ${manrope.variable} ${superTacosBrandFont.variable}`}>
       <body>
         <MarketingAnalytics />
         <RestaurantNavigationObserver />

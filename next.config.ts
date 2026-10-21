@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 
 
 const nextConfig: NextConfig = {
+  // Isolate the explicit offline browser test process from an owner's dev server.
+  distDir: process.env.MENU_MAN_OFFLINE_DEMO_QA === "true" && process.env.MENU_MAN_PUBLIC_SHOWCASE_QA === "true" ? ".next-public-showcase-qa" : ".next",
   async headers() {
     const squarePaymentCsp = [
       "default-src 'self'",

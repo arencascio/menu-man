@@ -1,0 +1,20 @@
+{
+  "approval": "Owner-finalized Menu Man SVG assets for Sprint M.1",
+  "assets": [
+    {
+      "file": "MenuManPhoneSmol.svg",
+      "source": "C:/menu-man/img/MenuManPhoneSmol.svg",
+      "use": "Marketing navigation",
+      "viewBox": "0 0 469.387 530.246",
+      "sha256": "441baed80b1777d7332c4332ede3d32a2eaaf458f52601148381c6c1e5e48ef0"
+    },
+    {
+      "file": "MenuManPhone.svg",
+      "source": "C:/menu-man/img/MenuManPhone.svg",
+      "use": "Larger marketing branding placements",
+      "viewBox": "0 0 469.387 923.785",
+      "sha256": "a74f1d9dc7023dac263666b4224253523c185dc846971b3c7fcfda893c5bd3d3"
+    }
+  ],
+  "inspection": "Unchanged vector-only source copies. No image elements, embedded raster layers, scripts, event handlers, external references or entity declarations."
+}

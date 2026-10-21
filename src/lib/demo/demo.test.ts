@@ -7,6 +7,7 @@ import * as policy from "./policy";
 import * as contracts from "../checkout/contracts";
 import * as paymentContracts from "../payments/contracts";
 import * as crypto from "node:crypto";
+import { ZodError } from "zod";
 
 const env = { MENU_MAN_ENV: "staging", VERCEL_ENV: "preview", MENU_MAN_ENABLE_PUBLIC_DEMO_PAYMENTS: "true",
   MENU_MAN_ENABLE_SQUARE_SANDBOX: "true", NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co" };
@@ -57,14 +58,42 @@ function checkoutHarness(options: { env?: Record<string,string|undefined>; error
       calls.push({name,args}); return options.error ? {error:options.error,data:null} : {error:null,data:{orderId:"20000000-0000-4000-8000-000000001001",orderNumber:"1",orderStatus:"pending_payment",paymentStatus:"unpaid",currency:"USD",subtotalCents:375,taxCents:31,tipCents:0,totalCents:406,pickup:{mode:"asap",pickupAt:"2026-10-20T20:00:00Z",timezone:"America/Los_Angeles"},items:[],replayed:false}};
     }}}};
   vm.runInNewContext(code,{exports:exported,require:(name:string)=>{if(!(name in modules))throw new Error(name);return modules[name];},process:{env:options.env??env},console:{error(){}}});
-  return { calls, create:exported.createAuthoritativeOrder };
+  return { calls, create:exported.createAuthoritativeOrder, server: exported };
 }
 const request = {menuId:"20000000-0000-4000-8000-000000000002",items:[],customer:{name:"PRIVATE",phone:"PRIVATE",email:"PRIVATE"},pickup:{mode:"asap"},tipChoice:"none"};
 test("disabled/misconfigured demo fails before creating any order", async()=>{
-  for(const options of [{env:{...env,MENU_MAN_ENABLE_PUBLIC_DEMO_PAYMENTS:"false"}},{configurationFailure:true}]) {
+  for(const options of [{env:{...env,VERCEL_ENV:"production"}}, {env:{...env,MENU_MAN_ENV:"production"}}, {env:{...env,NEXT_PUBLIC_SUPABASE_URL:"https://fullaiodvmilkdxyxnln.supabase.co"}}, {env:{...env,MENU_MAN_ENABLE_PUBLIC_DEMO_PAYMENTS:"false"}},{configurationFailure:true}]) {
     const h=checkoutHarness(options); await assert.rejects(h.create("super-tacos","key",request,"a".repeat(64)),/Demo/); assert.equal(h.calls.length,0);
   }
   const h=checkoutHarness();await assert.rejects(h.create("super-tacos","key",request,null),/source/);assert.equal(h.calls.length,0);
+});
+test("direct Production order POST rejects a valid body and verified source before all database/payment writes", async () => {
+  const productionEnv = { ...env, VERCEL_ENV: "production" };
+  const h = checkoutHarness({ env: productionEnv });
+  const route: { POST?: (request: Request, context: unknown) => Promise<Response> } = {};
+  const unexpected = () => { throw new Error("Unexpected payment or capability operation"); };
+  const modules: Record<string, unknown> = {
+    "next/server": { NextResponse: { json: Response.json } }, "zod": { ZodError },
+    "@/lib/checkout/contracts": contracts, "@/lib/checkout/server": h.server,
+    "@/lib/checkout/source": { checkoutSource: () => "a".repeat(64) },
+    "@/lib/checkout/replay": { isCheckoutPayable: unexpected, resolveCheckoutResponse: unexpected },
+    "@/lib/payments/server": { PaymentServerError: class extends Error {}, getOrderPaymentView: unexpected, preparePaymentForOrder: unexpected },
+    "@/lib/payments/capability-cookie": { getGuestPaymentCapability: unexpected, setGuestPaymentCapability: unexpected },
+    "@/lib/demo/policy": policy, "@/lib/demo/server": { localDemoSource: unexpected },
+  };
+  const code = ts.transpileModule(readFileSync("src/app/api/restaurants/[slug]/orders/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  vm.runInNewContext(code, { exports: route, process: { env: productionEnv }, Response, Headers, TextEncoder,
+    console: { info() {}, warn() {}, error() {} }, require(name: string) {
+      if (!(name in modules)) throw new Error(`Unmocked route dependency: ${name}`);
+      return modules[name];
+    } });
+  const response = await route.POST!(new Request("https://getmenuman.com/api/restaurants/super-tacos/orders", {
+    method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+    body: JSON.stringify({ ...request, customer: policy.DEMO_CUSTOMER, items: [{ menuItemId: "20000000-0000-4000-8000-000000000201", quantity: 1, modifierOptionIds: [] }] }),
+  }), { params: Promise.resolve({ slug: "super-tacos" }) });
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error.code, "ORDERING_DISABLED");
+  assert.equal(h.calls.length, 0);
 });
 test("demo uses durable limiter and replaces entered contact data",async()=>{
   const h=checkoutHarness();await h.create("super-tacos","key",request,"a".repeat(64));

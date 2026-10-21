@@ -33,6 +33,7 @@ import QuickChoicePanel from "./QuickChoicePanel";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
 import type { MenuImagePresentation } from "./menu/menu-image-presentation";
+import { canCustomizeMenuItem } from "@/lib/restaurant-showcases";
 
 export type MenuItem = {
   id: string;
@@ -54,6 +55,7 @@ export type MenuSection = {
 };
 
 type MenuBrowserProps = {
+  cartPreview?: boolean;
   restaurantId: string;
   restaurantSlug: string;
   currency: string | null;
@@ -69,6 +71,7 @@ type MenuBrowserProps = {
 };
 
 export default function MenuBrowser({
+  cartPreview = false,
   restaurantId,
   restaurantSlug,
   currency,
@@ -325,14 +328,22 @@ export default function MenuBrowser({
 
   useEffect(() => {
     let active = true;
+    if (cartPreview) {
+      const timer = window.setTimeout(() => setLikedItemsLoaded(true), 0);
+      return () => window.clearTimeout(timer);
+    }
     void fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/hearts`, { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
       .then((data: { likedItemIds?: string[] } | null) => { if (active && data?.likedItemIds) setLikedItemIds(data.likedItemIds); })
       .finally(() => { if (active) setLikedItemsLoaded(true); });
     return () => { active = false; };
-  }, [restaurantSlug]);
+  }, [cartPreview, restaurantSlug]);
 
   async function toggleHeart(itemId: string) {
+    if (cartPreview) {
+      setLikedItemIds((current) => current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]);
+      return;
+    }
     if (pendingHearts.includes(itemId)) return;
     const liked = !likedItemIds.includes(itemId);
     const previousHeartCount = heartCounts[itemId] ?? 0;
@@ -359,7 +370,7 @@ export default function MenuBrowser({
   }
 
   useEffect(() => {
-    if (!initialActivePayment || loadActiveOrderMarker(window.localStorage, restaurantId)) return;
+    if (cartPreview || !initialActivePayment || loadActiveOrderMarker(window.localStorage, restaurantId)) return;
     saveActiveOrderMarker(window.localStorage, {
       version: 1,
       restaurantId,
@@ -368,9 +379,10 @@ export default function MenuBrowser({
       orderNumber: initialActivePayment.orderNumber,
       cartFingerprint: "",
     });
-  }, [initialActivePayment, restaurantId, restaurantSlug]);
+  }, [cartPreview, initialActivePayment, restaurantId, restaurantSlug]);
 
   const refreshActivePayment = useCallback(async () => {
+    if (cartPreview) return;
     const marker = loadActiveOrderMarker(window.localStorage, restaurantId);
     if (!marker || marker.restaurantSlug !== restaurantSlug) {
       setActivePayment(null);
@@ -413,7 +425,7 @@ export default function MenuBrowser({
     } catch {
       // Keep the conservative lock until an authoritative refresh succeeds.
     }
-  }, [cart, restaurantId, restaurantSlug]);
+  }, [cart, cartPreview, restaurantId, restaurantSlug]);
 
   useEffect(() => {
     const initialRefresh = window.setTimeout(() => void refreshActivePayment(), 0);
@@ -569,8 +581,8 @@ export default function MenuBrowser({
   }
 
   function addFromCard(item: MenuItem, section: MenuSection, opener: HTMLElement) {
-    if (cartLocked || !item.is_orderable) return;
-    const mode = getCardAddMode(item);
+    if (cartLocked || !canCustomizeMenuItem(item.is_orderable, cartPreview)) return;
+    const mode = getCardAddMode(item, cartPreview);
     if (mode !== "direct") {
       openItem(item, section, mode, opener);
       return;
@@ -704,6 +716,7 @@ export default function MenuBrowser({
   }
 
   function openCheckout() {
+    if (cartPreview) return;
     if (cartLocked) {
       setIsCartOpen(false);
       if (activePayment) {
@@ -903,6 +916,7 @@ export default function MenuBrowser({
       <div ref={menuResultsRef} className={styles.menu}>
         {isCartOpen && <div ref={cartRef} className={styles.cartSlot}>
           <CartPanel
+            cartPreview={cartPreview}
             lines={cart.lines}
             currency={resolvedCurrency}
             subtotalCents={cart.subtotalCents}
@@ -945,13 +959,13 @@ export default function MenuBrowser({
                       aria-expanded={isOpen}
                     >
                       <MenuCardImage name={item.name} url={item.image_url} priority={priorityImage} presentation={item.imagePresentation} />
-                      <MenuCardText name={item.name} price={formatPrice(item.price_cents, resolvedCurrency)} description={item.description} orderable={item.is_orderable} />
+                      <MenuCardText name={item.name} price={formatPrice(item.price_cents, resolvedCurrency)} description={item.description} orderable={canCustomizeMenuItem(item.is_orderable, cartPreview)} />
                     </button>
-                    {item.is_orderable && <span className={`${styles.cardFooter} ${inCartQuantity > 0 ? styles.cardFooterActive : ""}`} aria-live="polite">{inCartQuantity > 0 ? `${inCartQuantity} in cart` : ""}</span>}
+                    {canCustomizeMenuItem(item.is_orderable, cartPreview) && <span className={`${styles.cardFooter} ${inCartQuantity > 0 ? styles.cardFooterActive : ""}`} aria-live="polite">{inCartQuantity > 0 ? `${inCartQuantity} in cart` : ""}</span>}
                     <div className={styles.cardImageActions}>
                       {inCartQuantity > 0 && <span className={styles.imageCartStatus} aria-live="polite">In cart{inCartQuantity > 1 ? ` · ${inCartQuantity}` : ""}</span>}
                       <MenuFavoriteButton name={item.name} liked={likedItemIds.includes(item.id)} count={heartCounts[item.id] ?? 0} pending={pendingHearts.includes(item.id)} onClick={() => void toggleHeart(item.id)} />
-                      {item.is_orderable && <button className={styles.cardAddButton} data-added={addFeedback?.itemId === item.id} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name={addFeedback?.itemId === item.id ? "smile" : "plus"} size={20} /></button>}
+                      {canCustomizeMenuItem(item.is_orderable, cartPreview) && <button className={styles.cardAddButton} data-added={addFeedback?.itemId === item.id} type="button" aria-label={`Add ${item.name} to cart`} disabled={cartLocked} onClick={(event) => addFromCard(item, section, event.currentTarget)}><MenuIcon name={addFeedback?.itemId === item.id ? "smile" : "plus"} size={20} /></button>}
                     </div>
                     </div>;
                   })}
@@ -1013,6 +1027,7 @@ export default function MenuBrowser({
             setItemUrl(selectedDetail.item.id, "replace");
           }}
         /> : activeDraft && <OrderItemPanel
+          cartPreview={cartPreview}
           key={`${selectedDetail.item.id}:${editingLineId || "new"}`}
           item={selectedDetail.item}
           sectionId={selectedDetail.section.id}

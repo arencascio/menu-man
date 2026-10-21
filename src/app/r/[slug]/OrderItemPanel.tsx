@@ -17,8 +17,10 @@ import MenuFavoriteButton from "./MenuFavoriteButton";
 import MenuIcon from "./MenuIcon";
 import styles from "./menu-browser.module.css";
 import { getMenuImageFrameStyle } from "./menu/menu-image-presentation";
+import { canCustomizeMenuItem } from "@/lib/restaurant-showcases";
 
 type OrderItemPanelProps = {
+  cartPreview?: boolean;
   item: MenuItem;
   sectionId: string;
   sectionName: string;
@@ -39,6 +41,7 @@ type OrderItemPanelProps = {
 };
 
 export default function OrderItemPanel({
+  cartPreview = false,
   item,
   sectionId,
   sectionName,
@@ -57,6 +60,7 @@ export default function OrderItemPanel({
   saveError,
   onSuccessComplete,
 }: OrderItemPanelProps) {
+  const customizable = canCustomizeMenuItem(item.is_orderable, cartPreview);
   const submitRef = useRef<HTMLButtonElement>(null);
   const successCallback = useRef(onSuccessComplete);
   useLayoutEffect(() => { successCallback.current = onSuccessComplete; });
@@ -84,7 +88,7 @@ export default function OrderItemPanel({
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving || !item.is_orderable || validationErrors.size > 0) return;
+    if (saving || !customizable || validationErrors.size > 0) return;
 
     onSave(createMenuCartLine(item, { id: sectionId, name: sectionName }, editingLine?.lineId || crypto.randomUUID(), draft));
   }
@@ -102,7 +106,7 @@ export default function OrderItemPanel({
       <form className={styles.orderForm} onSubmit={submit} aria-busy={saving}>
         <div className={styles.orderFormHeader}>
           <div>
-            <p className={styles.expandedLabel}>{item.is_orderable ? "Build your order" : "Menu item"}</p>
+            <p className={styles.expandedLabel}>{cartPreview ? "Customize a sample" : item.is_orderable ? "Build your order" : "Menu item"}</p>
             <h3>{item.name}</h3>
             <p className={styles.itemPanelPrice}>{formatPrice(item.price_cents, currency)}</p>
             {inCartQuantity > 0 && <p className={styles.detailCartStatus}>{inCartQuantity} in cart</p>}
@@ -112,7 +116,7 @@ export default function OrderItemPanel({
           </div>
         </div>
         {item.description && <p className={styles.expandedDescription}>{item.description}</p>}
-        {item.is_orderable ? (
+        {customizable ? (
           <fieldset disabled={saving} className={styles.detailOrderFields}>
             {item.modifierGroups.map((group) => (
               <ModifierGroupFieldset

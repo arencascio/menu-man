@@ -1,0 +1,23 @@
+Connection Information
+      Parameter       |                Value
+----------------------+-------------------------------------
+ Database             | postgres
+ Client User          | postgres.jjvongzvtnzlvwdfcnjk
+ Host                 | aws-0-us-east-2.pooler.supabase.com
+ Host Address         | 3.13.175.194
+ Server Port          | 5432
+ Options              |
+ Protocol Version     | 3.0
+ Password Used        | true
+ GSSAPI Authenticated | false
+ Backend PID          | 707133586
+ SSL Connection       | true
+ SSL Library          | OpenSSL
+ SSL Protocol         | TLSv1.3
+ SSL Key Bits         | 256
+ SSL Cipher           | TLS_AES_256_GCM_SHA384
+ SSL Compression      | false
+ ALPN                 | none
+ Superuser            | off
+ Hot Standby          | off
+(19 rows)

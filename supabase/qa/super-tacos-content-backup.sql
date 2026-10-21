@@ -1,4 +1,6 @@
 -- Read-only tenant-content export, for the separately approved 016 sync.
+-- Run with PGSSLMODE=verify-full; verify client TLS with psql \conninfo before export.
+-- Session Pooler pg_stat_ssl describes its PostgreSQL backend hop; direct Staging also requires backend TLS.
 \set ON_ERROR_STOP on
 \encoding UTF8
 begin read only;
@@ -6,16 +8,21 @@ select set_config('menu_man.content_environment', :'menu_man_environment', true)
 select set_config('menu_man.content_project', :'menu_man_staging_project_ref', true) as ignored \gset
 select set_config('menu_man.content_host', :'HOST', true) as ignored \gset
 select set_config('menu_man.content_user', :'USER', true) as ignored \gset
+select set_config('menu_man.content_client_tls', :'menu_man_client_tls_mode', true) as ignored \gset
 do $backup$
 begin
   if current_setting('menu_man.content_environment')<>'staging'
     or current_setting('menu_man.content_project')<>'jjvongzvtnzlvwdfcnjk'
-    or not (current_setting('menu_man.content_host')='db.jjvongzvtnzlvwdfcnjk.supabase.co'
-      or (current_setting('menu_man.content_host') ~ '^[a-z0-9-]+[.]pooler[.]supabase[.]com$'
-        and current_setting('menu_man.content_user')='postgres.jjvongzvtnzlvwdfcnjk'))
+    or current_setting('menu_man.content_client_tls')<>'verify-full'
+    or not (
+      (current_setting('menu_man.content_host')='db.jjvongzvtnzlvwdfcnjk.supabase.co'
+        and current_setting('menu_man.content_user')='postgres'
+        and exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl))
+      or (current_setting('menu_man.content_host')='aws-0-us-east-2.pooler.supabase.com'
+        and current_setting('menu_man.content_user')='postgres.jjvongzvtnzlvwdfcnjk')
+    )
     or current_database()<>'postgres'
-    or not exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl)
-  then raise exception 'Exact Staging target and TLS required; no content changed.'; end if;
+  then raise exception 'Exact Staging target and transport guard required; no content changed.'; end if;
 end;
 $backup$;
 select jsonb_build_object('format','super-tacos-content-backup-v1','project_ref','jjvongzvtnzlvwdfcnjk',

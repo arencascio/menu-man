@@ -13,6 +13,7 @@ import { isDemoRestaurant } from "@/lib/demo/policy";
 import { superTacosShowcase } from "@/lib/demo/presentation";
 import { withRestaurantPresentationPages } from "./restaurant-navigation-actions";
 import { superTacosBrandFont } from "@/lib/demo/brand-font";
+import RestaurantDemoContact from "./RestaurantDemoContact";
 import RestaurantWordmark from "./RestaurantWordmark";
 
 type RestaurantFooterProps = {
@@ -56,7 +57,7 @@ export default function RestaurantFooter({
       ) : !artworkMark ? (
         <span className={styles.brandMark} aria-hidden="true">{name.charAt(0)}</span>
       ) : null}
-      <RestaurantWordmark name={name} fontClassName={showcaseBrand ? superTacosBrandFont.className : undefined} />
+      <RestaurantWordmark name={name} fontClassName={showcaseBrand ? superTacosBrandFont.className : undefined} fontFamily={showcaseBrand ? superTacosBrandFont.style.fontFamily : undefined} />
       </>}
     </a>
   );
@@ -76,7 +77,7 @@ export default function RestaurantFooter({
           {brandLockup ? <RestaurantFooterReveal>{identityLink}</RestaurantFooterReveal> : showBrandReveal ? <RestaurantFooterReveal>{identityLink}</RestaurantFooterReveal> : identityLink}
 
           {address ? (
-            directionsUrl ? (
+            directionsUrl && !showcaseBrand ? (
               <TrackedRestaurantLink surface="footer"
                 className={styles.contactLink}
                 eventName="directions_clicked"
@@ -88,10 +89,10 @@ export default function RestaurantFooter({
                 <RestaurantContactIcon kind="directions" className={styles.contactIcon} />
                 <span>{address}</span>
               </TrackedRestaurantLink>
-            ) : <p className={styles.contactText}>{address}</p>
+            ) : showcaseBrand ? <div className={styles.contactText}><RestaurantDemoContact kind="address">{address}</RestaurantDemoContact></div> : <p className={styles.contactText}>{address}</p>
           ) : null}
           {phone ? (
-            showcaseBrand ? <p className={styles.contactText}>{phone}</p> : <TrackedRestaurantLink surface="footer"
+            showcaseBrand ? <div className={styles.contactText}><RestaurantDemoContact kind="phone">{phone}</RestaurantDemoContact></div> : <TrackedRestaurantLink surface="footer"
               className={styles.contactLink}
               eventName="phone_clicked"
               href={`tel:${phone}`}

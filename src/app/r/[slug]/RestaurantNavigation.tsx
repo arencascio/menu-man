@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { trackRestaurantAction } from "@/lib/analytics/restaurant-actions";
 import { useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
@@ -8,7 +9,7 @@ import RestaurantNavigationIcon, { type RestaurantNavigationIconName } from "./R
 import styles from "./restaurant-shell.module.css";
 import useExitAnimation from "./useExitAnimation";
 import { containOverlayFocus } from "./overlay-focus";
-import { lockMenuPageScroll } from "./menu-surface-scroll";
+import { getMenuPageScrollY, lockMenuPageScroll } from "./menu-surface-scroll";
 import MenuIcon from "./MenuIcon";
 import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 import RestaurantWordmark from "./RestaurantWordmark";
@@ -34,6 +35,7 @@ type RestaurantNavigationProps = {
   shrinkOnScroll?: boolean;
   wordmarkOnly?: boolean;
   wordmarkClassName?: string;
+  wordmarkFontFamily?: string;
   restaurantId: string;
   homeHref: string;
   items: readonly RestaurantNavigationItem[];
@@ -55,14 +57,16 @@ export default function RestaurantNavigation({
   shrinkOnScroll = false,
   wordmarkOnly = false,
   wordmarkClassName,
+  wordmarkFontFamily,
 }: RestaurantNavigationProps) {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [shrinkScrolled, setShrinkScrolled] = useState(false);
   useEffect(() => {
     if (variant !== "transparent" && !shrinkOnScroll) return;
     const update = () => {
-      if (variant === "transparent") setScrolled(window.scrollY > (shrinkOnScroll ? 80 : 24));
-      if (shrinkOnScroll) setShrinkScrolled(window.scrollY > 80);
+      if (variant === "transparent") setScrolled(getMenuPageScrollY() > (shrinkOnScroll ? 80 : 24));
+      if (shrinkOnScroll) setShrinkScrolled(getMenuPageScrollY() > 80);
     };
     update();
     window.addEventListener("scroll", update, { passive: true });
@@ -127,7 +131,13 @@ export default function RestaurantNavigation({
         {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
       </a>
     ) : (
-      <Link key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href} onClick={() => handleAction(item, mobile)}>
+      <Link key={item.label + ":" + item.href} className={styles.navigationLink} href={item.href} onClick={(event) => {
+        handleAction(item, mobile);
+        if (mobile && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
+          event.preventDefault();
+          afterCloseRef.current = () => router.push(item.href);
+        }
+      }}>
         {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}{item.label}
       </Link>
     )
@@ -148,7 +158,7 @@ export default function RestaurantNavigation({
                   {name.charAt(0)}
                 </span>
               )}
-              <RestaurantWordmark name={name} fontClassName={wordmarkClassName} className={styles.brandName} />
+              <RestaurantWordmark name={name} fontClassName={wordmarkClassName} fontFamily={wordmarkFontFamily} className={styles.brandName} />
             </>}
           </Link>
 
@@ -171,7 +181,8 @@ export default function RestaurantNavigation({
             onKeyDown={containOverlayFocus} onCancel={(event) => { event.preventDefault(); requestClose(); }}
             onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
             <nav ref={panelRef} className={styles.mobileNavigation} data-closing={closing} aria-label={name + " navigation"}>
-              <button className={styles.navigationClose} type="button" aria-label="Close navigation" onClick={requestClose}>Close <MenuIcon name="close" size={18} /></button>
+              <div className={styles.navigationTopRow}><Link href={homeHref} className={styles.navigationLink} onClick={(event) => { event.preventDefault(); afterCloseRef.current = () => router.push(homeHref); requestClose(); }}>Home</Link>
+              <button className={styles.navigationClose} type="button" aria-label="Close navigation" onClick={requestClose}>Close <MenuIcon name="close" size={18} /></button></div>
               {links(true)}
             </nav>
           </dialog>

@@ -354,6 +354,11 @@ export async function getPaymentStatus(orderId: string, checkoutToken: string) {
   } else if (status.provider === "square" && !isSquareSandboxRuntimeEnabled()) {
     throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "The Square Sandbox payment provider is disabled.");
   }
+  // Validate the authoritative tenant/connection before status reads can drain,
+  // reconcile or expire payments. A disabled showcase must fail before writes,
+  // including when environment flags disagree with the configured project.
+  try { await isDemoPaymentConnection(status.connectionId); }
+  catch { throw new PaymentServerError("PAYMENT_PROVIDER_UNAVAILABLE", "Payment configuration could not be verified."); }
   await processDuePaymentEvents(status.provider);
   status = await authorizePaymentStatus(orderId, checkoutToken);
   status = await reconcilePaymentIfDue(status, checkoutToken);

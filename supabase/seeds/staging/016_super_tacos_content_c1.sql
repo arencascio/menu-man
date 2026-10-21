@@ -1,5 +1,7 @@
 -- PREPARED ONLY. Separate approval and verified fresh content backup required.
 -- Content sync for installed 015 fixture; NEVER rerun 014/015. No schema or payment DML.
+-- The operator wrapper requires PGSSLMODE=verify-full and confirms client TLS with psql \conninfo.
+-- Session Pooler pg_stat_ssl describes its PostgreSQL backend hop; direct Staging also requires backend TLS.
 -- Catalog SHA256: 71793802142f636c17fd3ab01330ff52738fbfd5918be6f0ad98e867e2046cd1
 \set ON_ERROR_STOP on
 \encoding UTF8
@@ -10,6 +12,7 @@ select set_config('menu_man.content_environment', :'menu_man_environment', true)
 select set_config('menu_man.content_project', :'menu_man_staging_project_ref', true) as ignored \gset
 select set_config('menu_man.content_host', :'HOST', true) as ignored \gset
 select set_config('menu_man.content_user', :'USER', true) as ignored \gset
+select set_config('menu_man.content_client_tls', :'menu_man_client_tls_mode', true) as ignored \gset
 select set_config('menu_man.content_approval', :'approve_super_tacos_content', true) as ignored \gset
 select set_config('menu_man.content_backup', :'backup_sha256', true) as ignored \gset
 do $sync$
@@ -25,12 +28,16 @@ declare
 begin
   if current_setting('menu_man.content_environment')<>'staging'
     or current_setting('menu_man.content_project')<>'jjvongzvtnzlvwdfcnjk'
-    or not (current_setting('menu_man.content_host')='db.jjvongzvtnzlvwdfcnjk.supabase.co'
-      or (current_setting('menu_man.content_host') ~ '^[a-z0-9-]+[.]pooler[.]supabase[.]com$'
-        and current_setting('menu_man.content_user')='postgres.jjvongzvtnzlvwdfcnjk'))
+    or current_setting('menu_man.content_client_tls')<>'verify-full'
+    or not (
+      (current_setting('menu_man.content_host')='db.jjvongzvtnzlvwdfcnjk.supabase.co'
+        and current_setting('menu_man.content_user')='postgres'
+        and exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl))
+      or (current_setting('menu_man.content_host')='aws-0-us-east-2.pooler.supabase.com'
+        and current_setting('menu_man.content_user')='postgres.jjvongzvtnzlvwdfcnjk')
+    )
     or current_database()<>'postgres'
-    or not exists(select 1 from pg_stat_ssl where pid=pg_backend_pid() and ssl)
-  then raise exception 'Exact Staging target and TLS required; no content changed.'; end if;
+  then raise exception 'Exact Staging target and transport guard required; no content changed.'; end if;
   if current_setting('menu_man.content_approval')<>'sync-super-tacos-sprint-c3'
     or current_setting('menu_man.content_backup') !~ '^[a-f0-9]{64}$'
   then raise exception 'Explicit content-sync approval and verified backup SHA256 required.'; end if;

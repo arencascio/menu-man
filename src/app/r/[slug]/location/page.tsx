@@ -84,7 +84,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
       {showcase ? <div className={styles.demoIntro}>
         <p>Our Riverside setting</p>
         <h1>Find your next taco stop.</h1>
-        <span>Explore our fictional location and the neighborhood that inspired it.</span>
+        <span>Magnolia Avenue flavor, in the heart of Riverside.</span>
       </div> : null}
       <RestaurantHoursLocation
         restaurantName={restaurant.name}

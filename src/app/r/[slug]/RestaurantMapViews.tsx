@@ -36,7 +36,7 @@ export default function RestaurantMapViews({ eyebrow, mapEmbedUrl, streetViewEmb
         {neighborhoodUrl ? <div className={styles.neighborhoodCard}>
           <span className={styles.neighborhoodEyebrow}>Riverside, California</span>
           <strong>Magnolia Avenue <span aria-hidden="true">×</span> Tyler Street</strong>
-          <p>Explore the general area in Google Maps. No restaurant address or storefront is pinned.</p>
+          <p>Discover the Magnolia Avenue and Tyler Street neighborhood.</p>
           <a href={neighborhoodUrl} target="_blank" rel="noreferrer">Open neighborhood map <span aria-hidden="true">↗</span></a>
         </div> : null}
         {mapUrl ? <div className={styles.mapCard}>

@@ -136,27 +136,45 @@ Example future operator sequence, only after separate approval:
 
 ```powershell
 # Use a verified connection and normal pgpass; do not paste credentials.
-$connectionArgs = @('-h','db.jjvongzvtnzlvwdfcnjk.supabase.co','-p','5432','-U','postgres','-d','postgres')
-$targetArgs = @('-v','menu_man_environment=staging','-v','menu_man_staging_project_ref=jjvongzvtnzlvwdfcnjk')
+$connectionArgs = @('-h','aws-0-us-east-2.pooler.supabase.com','-p','5432','-U','postgres.jjvongzvtnzlvwdfcnjk','-d','postgres')
+$targetArgs = @('-v','menu_man_environment=staging','-v','menu_man_staging_project_ref=jjvongzvtnzlvwdfcnjk','-v','menu_man_client_tls_mode=verify-full')
 $backupPath = '<absolute backup path outside Git>'
-# Run with certificate-verified TLS. Preserve/restore any process SSL setting.
+# Pin and validate the installed trusted root. Preserve/restore process SSL settings.
+$appDataPath = $env:APPDATA
+if ([string]::IsNullOrWhiteSpace($appDataPath)) { throw 'APPDATA unavailable; stop.' }
+$rootCandidate = Join-Path $appDataPath 'postgresql/root.crt'
+$rootItem = Get-Item -LiteralPath $rootCandidate -ErrorAction Stop
+if ($rootItem -isnot [System.IO.FileInfo] -or $rootItem.PSIsContainer) { throw 'Trusted root must be a regular file; stop.' }
+$trustedRoot = (Resolve-Path -LiteralPath $rootCandidate -ErrorAction Stop).Path
 $previousSslMode = $env:PGSSLMODE
+$previousSslRootCert = $env:PGSSLROOTCERT
 try {
   $env:PGSSLMODE = 'verify-full'
+  $env:PGSSLROOTCERT = $trustedRoot
+  # Confirm the actual psql \conninfo TLS format before each separate database operation.
+  $preflight = (& psql -X -w @connectionArgs -c '\conninfo' 2>&1 | Out-String)
+  $sslLines = @($preflight -split "\r?\n" | Where-Object { $_ -match '^\s*SSL connection\b' })
+  $tlsLines = @($sslLines | Where-Object { $_ -match '^\s*SSL connection\s*\(\s*protocol:\s*TLS[^,\r\n]*,\s*cipher:\s*[^,\r\n]+(?:,|\))' })
+  if ($LASTEXITCODE -ne 0 -or $sslLines.Count -ne 1 -or $tlsLines.Count -ne 1) { throw 'Verified TLS preflight failed; stop.' }
   if (Test-Path -LiteralPath $backupPath) { throw 'Choose a new backup filename; do not overwrite an existing backup.' }
   # psql writes UTF-8 directly, avoiding Windows pipeline encoding conversion.
   & psql -X -w -qAt @connectionArgs @targetArgs -o $backupPath -f supabase/qa/super-tacos-content-backup.sql
   if ($LASTEXITCODE -ne 0) { throw 'Backup failed; stop.' }
+  $reviewedSqlSha = '<exact reviewed 016 SHA256 from the manifest>'
+  ./scripts/sync-super-tacos-content.ps1 -BackupFile $backupPath -ExpectedSqlSha256 $reviewedSqlSha
+  # The preceding command is a local preview only; review its output.
+  # Only with separate explicit approval:
+  ./scripts/sync-super-tacos-content.ps1 -BackupFile $backupPath -ExpectedSqlSha256 $reviewedSqlSha -Execute -Approval 'sync-super-tacos-sprint-c3'
+  $preflight = (& psql -X -w @connectionArgs -c '\conninfo' 2>&1 | Out-String)
+  $sslLines = @($preflight -split "\r?\n" | Where-Object { $_ -match '^\s*SSL connection\b' })
+  $tlsLines = @($sslLines | Where-Object { $_ -match '^\s*SSL connection\s*\(\s*protocol:\s*TLS[^,\r\n]*,\s*cipher:\s*[^,\r\n]+(?:,|\))' })
+  if ($LASTEXITCODE -ne 0 -or $sslLines.Count -ne 1 -or $tlsLines.Count -ne 1) { throw 'Verified TLS preflight failed; stop.' }
+  & psql -X -w -qAt @connectionArgs @targetArgs -f supabase/qa/super-tacos-content-verify.sql
+  if ($LASTEXITCODE -ne 0) { throw 'Read-only verification failed; stop.' }
 } finally {
   if ($null -eq $previousSslMode) { Remove-Item Env:PGSSLMODE -ErrorAction SilentlyContinue } else { $env:PGSSLMODE = $previousSslMode }
+  if ($null -eq $previousSslRootCert) { Remove-Item Env:PGSSLROOTCERT -ErrorAction SilentlyContinue } else { $env:PGSSLROOTCERT = $previousSslRootCert }
 }
-$reviewedSqlSha = '<exact reviewed 016 SHA256 from the manifest>'
-./scripts/sync-super-tacos-content.ps1 -BackupFile $backupPath -ExpectedSqlSha256 $reviewedSqlSha
-# The preceding command is a local preview only; review its output.
-# Only with separate explicit approval:
-./scripts/sync-super-tacos-content.ps1 -BackupFile $backupPath -ExpectedSqlSha256 $reviewedSqlSha -Execute -Approval 'sync-super-tacos-sprint-c2'
-# Then run the read-only verification with the same verified TLS connection:
-# psql -X -w -qAt @connectionArgs @targetArgs -f supabase/qa/super-tacos-content-verify.sql
 ```
 
 Do not run `015` or the prepared guarded `016` during this sprint. The generated `016` file is for review only. If any prerequisite or guard fails, stop. Do not clear orders, change credentials/configuration, disable protections or modify another tenant to make a guard pass. Any old persisted cart must be reconfigured through the existing menu UI; there is no automatic choice inference or favorites migration.

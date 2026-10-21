@@ -8,16 +8,22 @@ import {
   SectionHeading,
 } from "./MarketingComponents";
 import { ReviewButton } from "./MarketingInteractions";
+import RestaurantShowcases from "./RestaurantShowcases";
 import {
   CTA_LABELS,
   DINER_RESEARCH,
   faqs,
   guestQuestions,
   processSteps,
-  productFeatures,
 } from "./marketing-content";
 import styles from "./page.module.css";
 import { marketingCta } from "@/lib/analytics/marketing";
+import MarketingIcon, { type MarketingIconName } from "./MarketingIcon";
+import MarketingReveal from "./MarketingReveal";
+import MarketingCapabilities from "./MarketingCapabilities";
+
+const questionIcons: MarketingIconName[] = ["utensils", "dollar", "moon", "map", "cart"];
+const processIcons: MarketingIconName[] = ["message", "globe", "history"];
 
 export const metadata: Metadata = {
   title: "Restaurant Websites That Help You Get Chosen | Menu Man",
@@ -41,7 +47,7 @@ export default function Home() {
           <p className={styles.heroNote}>No website dashboard to learn. No new system for your staff to run.</p>
         </div>
         <div className={styles.heroVisual}>
-          <Image className={styles.brandArtwork} src="/brand/menu-man-phone.png" alt="Menu Man's phone and chef-hat illustration" width={800} height={800} priority />
+          <Image className={styles.brandArtwork} src="/brand/MenuManPhone.svg" alt="Menu Man's phone and chef-hat illustration" width={469.387} height={923.785} loading="eager" />
           <span className={`${styles.productCallout} ${styles.calloutMenu}`}>Searchable menu</span>
           <span className={`${styles.productCallout} ${styles.calloutOrder}`}>Clear ordering path</span>
           <span className={`${styles.productCallout} ${styles.calloutDetails}`}>Hours &amp; location</span>
@@ -53,10 +59,10 @@ export default function Home() {
           <h2>Your next customer is looking you up.</h2>
           <p>A strong restaurant can still lose the decision when its menu, hours, or website is hard to use.</p>
         </div>
-        <div className={styles.stats}>
-          <div><strong>{DINER_RESEARCH.menu}</strong><span>look at the menu online before choosing a new restaurant.</span></div>
-          <div><strong>{DINER_RESEARCH.website}</strong><span>look at the restaurant&apos;s website.</span></div>
-        </div>
+        <MarketingReveal className={styles.stats}>
+          <div data-reveal-item><span className={styles.statNumber}>01</span><strong>{DINER_RESEARCH.menu}</strong><span>look at the menu online before choosing a new restaurant.</span></div>
+          <div data-reveal-item><span className={styles.statNumber}>02</span><strong>{DINER_RESEARCH.website}</strong><span>look at the restaurant&apos;s website.</span></div>
+        </MarketingReveal>
         <a className={styles.sourceLink} href={DINER_RESEARCH.sourceUrl} target="_blank" rel="noreferrer">
           Source: {DINER_RESEARCH.sourceLabel} <span aria-hidden="true">↗</span>
         </a>
@@ -68,12 +74,13 @@ export default function Home() {
           copy="Your website should answer them before someone taps back to search."
         />
         <div className={styles.questionBoard}>
-          <ol>
+          <MarketingReveal as="ol">
             {guestQuestions.map((question, index) => (
-              <li key={question}><span>{String(index + 1).padStart(2, "0")}</span><strong>{question}</strong></li>
+              <li key={question} data-reveal-item><span>{String(index + 1).padStart(2, "0")}</span><MarketingIcon name={questionIcons[index]} size={24} /><strong>{question}</strong></li>
             ))}
-          </ol>
+          </MarketingReveal>
           <div className={styles.questionVisual}>
+            <MarketingIcon name="smile" size={34} />
             <p>If those answers are hard to find, the next restaurant is one tap away.</p>
           </div>
         </div>
@@ -81,15 +88,15 @@ export default function Home() {
 
       <section className={styles.processSection} id="how-it-works">
         <SectionHeading title="You run the restaurant. We'll handle the website." />
-        <ol className={styles.processGrid}>
+        <MarketingReveal as="ol" className={styles.processGrid}>
           {processSteps.map((step, index) => (
             <li key={step.title}>
-              <span>{index + 1}</span>
+              <div className={styles.processTop}><span>{String(index + 1).padStart(2, "0")}</span><span data-reveal-item><MarketingIcon name={processIcons[index]} size={36} /></span></div>
               <h3>{step.title}</h3>
               <p>{step.copy}</p>
             </li>
           ))}
-        </ol>
+        </MarketingReveal>
         <Link className={styles.inlineLink} href="/services" {...marketingCta("services_pricing", "section")}>See exactly what is included <span aria-hidden="true">&rarr;</span></Link>
       </section>
 
@@ -98,23 +105,14 @@ export default function Home() {
           <p className={styles.eyebrow}>Working product</p>
           <h2>A restaurant website built around your customers.</h2>
           <p>A large menu becomes fast to search, easy to browse, and ready for a clear ordering path on any screen.</p>
-          <p>Explore the capabilities in our product overview.</p>
-          <ul>
-            <li>Searchable menu</li>
-            <li>Mobile-first browsing</li>
-            <li>Ordering made obvious</li>
-            <li>Hours and location close at hand</li>
-          </ul>
+          <p>Two restaurant personalities. One clear, welcoming experience for your customers.</p>
           <div className={styles.actionRow}>
             <PrimaryLink ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
             <Link className={styles.secondaryLink} href="/work" {...marketingCta("explore_product", "section")}>Explore the product</Link>
           </div>
         </div>
-        <div className={styles.productHighlights}>
-          {productFeatures.slice(0, 3).map((feature) => (
-            <article key={feature.id}><h3>{feature.title}</h3><p>{feature.copy}</p></article>
-          ))}
-        </div>
+        <MarketingCapabilities />
+        <RestaurantShowcases compact />
       </section>
 
       <section className={styles.reviewSection}>
@@ -130,7 +128,7 @@ export default function Home() {
         <div className={styles.faqList}>
           {faqs.map((faq, index) => (
             <details key={faq.question}>
-              <summary><span>{String(index + 1).padStart(2, "0")}</span>{faq.question}<b aria-hidden="true">+</b></summary>
+              <summary><span>{String(index + 1).padStart(2, "0")}</span>{faq.question}<MarketingIcon name="chevron" size={22} className={styles.disclosureChevron} /></summary>
               <p>{faq.answer}</p>
             </details>
           ))}

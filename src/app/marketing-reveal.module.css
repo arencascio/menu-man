@@ -1,0 +1,10 @@
+.group [data-reveal-item] { transition: opacity 420ms ease, transform 420ms cubic-bezier(.2,.7,.2,1); transition-delay: var(--reveal-delay, 0ms); }
+.group[data-reveal-state="armed"] [data-reveal-item] { opacity: 0; transform: translateY(10px); }
+.group[data-reveal-state="visible"] [data-reveal-item] { opacity: 1; transform: none; }
+.group > [data-reveal-item]:nth-child(2) { --reveal-delay: 80ms; }
+.group > [data-reveal-item]:nth-child(3) { --reveal-delay: 160ms; }
+.group > [data-reveal-item]:nth-child(4) { --reveal-delay: 240ms; }
+.group > [data-reveal-item]:nth-child(5) { --reveal-delay: 320ms; }
+@media (prefers-reduced-motion: reduce) {
+  .group [data-reveal-item], .group[data-reveal-state="armed"] [data-reveal-item] { opacity: 1; transform: none; transition: none; }
+}

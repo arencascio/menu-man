@@ -361,3 +361,5 @@
   .siteHeader[data-shrink-on-scroll] .brandMark,
   .siteHeader[data-shrink-on-scroll] .brandName { transition: none; }
 }
+
+.navigationTopRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--theme-border, #ddd); padding-bottom: 8px; }

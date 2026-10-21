@@ -15,9 +15,11 @@
 /.playwright/
 /playwright-report/
 /test-results/
+/.activation-backups/
 
 # next.js
 /.next/
+/.next-public-showcase-qa/
 /out/
 
 # production

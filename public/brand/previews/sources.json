@@ -1,0 +1,7 @@
+{
+  "file": "super-tacos-mobile.png",
+  "source": ".playwright/sprint-d1/home-top-412.png",
+  "provenance": "Previously passing Sprint D.1 local Chrome screenshot of the approved Super Tacos presentation and owner-approved photography. Illustrative demo; no live destination or order capability.",
+  "sha256": "edadd1cd1f8dcf0206ec881d95b006db35400b57e1aa9bc54a3c47413d6b4ba6",
+  "display": "CSS crops the lower screenshot edge; source pixels are unchanged."
+}
