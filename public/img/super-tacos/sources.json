@@ -6,7 +6,9 @@
     "download": "https://images.unsplash.com/photo-1683062332605-4e1209d75346?auto=format&fit=crop&w=1600&q=85",
     "license": "https://unsplash.com/license",
     "retrieved": "2026-10-20",
-    "sha256": "2cd1d3aadb8a21a43c1db444b4fd6b40af69cccf222b17e02f344270b2ff7e61"
+    "sha256": "2cd1d3aadb8a21a43c1db444b4fd6b40af69cccf222b17e02f344270b2ff7e61",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "asada.jpg",
@@ -15,7 +17,9 @@
     "download": "https://images.unsplash.com/photo-1707603571504-86c1ea50903e?auto=format&fit=crop&w=1600&q=85",
     "license": "https://unsplash.com/license",
     "retrieved": "2026-10-20",
-    "sha256": "b60df2d09506b3d93bdf70f7cb0d11d9633e02b40e9e9e05c10adbee58e75014"
+    "sha256": "b60df2d09506b3d93bdf70f7cb0d11d9633e02b40e9e9e05c10adbee58e75014",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "burrito.jpg",
@@ -24,7 +28,9 @@
     "download": "https://images.unsplash.com/photo-1711488735428-27c6757beb5c?auto=format&fit=crop&w=1600&q=85",
     "license": "https://unsplash.com/license",
     "retrieved": "2026-10-20",
-    "sha256": "7d4e7e41f266d42d07dec51111e329ad60c2dee8be60bdb61f59a951cd1108da"
+    "sha256": "7d4e7e41f266d42d07dec51111e329ad60c2dee8be60bdb61f59a951cd1108da",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "churros.jpg",
@@ -33,7 +39,9 @@
     "download": "https://images.unsplash.com/photo-1505851498219-ee2449c18936?auto=format&fit=crop&w=1600&q=85",
     "license": "https://unsplash.com/license",
     "retrieved": "2026-10-20",
-    "sha256": "7999f2d396768a760fd347a0c17f901a7e8ff6c3e492c22e1e7fe6845cfeb605"
+    "sha256": "7999f2d396768a760fd347a0c17f901a7e8ff6c3e492c22e1e7fe6845cfeb605",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "nachos.jpg",
@@ -42,7 +50,9 @@
     "download": "https://images.pexels.com/photos/12557556/pexels-photo-12557556.jpeg?auto=compress&cs=tinysrgb&w=1200",
     "license": "https://www.pexels.com/license/",
     "retrieved": "2026-10-20",
-    "sha256": "66fb7a802f2d71e568bb6eacc3f0c4c5194770d19765a2f298c6eeb146962ea8"
+    "sha256": "66fb7a802f2d71e568bb6eacc3f0c4c5194770d19765a2f298c6eeb146962ea8",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "quesadilla.jpg",
@@ -51,7 +61,9 @@
     "download": "https://images.pexels.com/photos/5840093/pexels-photo-5840093.jpeg?auto=compress&cs=tinysrgb&w=1200",
     "license": "https://www.pexels.com/license/",
     "retrieved": "2026-10-20",
-    "sha256": "2e357df593143a0e3a8334da35bda1bdb5124ba8e37056469ae25d32230765b8"
+    "sha256": "2e357df593143a0e3a8334da35bda1bdb5124ba8e37056469ae25d32230765b8",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "guacamole.jpg",
@@ -60,7 +72,9 @@
     "download": "https://images.pexels.com/photos/7227467/pexels-photo-7227467.jpeg?auto=compress&cs=tinysrgb&w=1200",
     "license": "https://www.pexels.com/license/",
     "retrieved": "2026-10-20",
-    "sha256": "2a49995a8982719753fc2db6724c527158392e1b67a6e5dfc52c8be42b7c4879"
+    "sha256": "2a49995a8982719753fc2db6724c527158392e1b67a6e5dfc52c8be42b7c4879",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   },
   {
     "file": "lemonade.jpg",
@@ -69,6 +83,8 @@
     "download": "https://images.pexels.com/photos/25409639/pexels-photo-25409639.jpeg?auto=compress&cs=tinysrgb&w=1200",
     "license": "https://www.pexels.com/license/",
     "retrieved": "2026-10-20",
-    "sha256": "6348afe37f4e4e9c9b128a4d8dcbafaa1dd371893aeff238c9c11680647fa80d"
+    "sha256": "6348afe37f4e4e9c9b128a4d8dcbafaa1dd371893aeff238c9c11680647fa80d",
+    "status": "Retired from current presentation; retained on disk pending approved Staging content sync",
+    "retentionReason": "The immutable 014/015 install history and the installed Staging catalog still reference these files. Do not delete until references are verified removed after the separately approved sync."
   }
 ]

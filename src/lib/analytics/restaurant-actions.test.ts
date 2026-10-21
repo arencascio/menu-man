@@ -112,7 +112,7 @@ test("configured providers are tenant scoped, chooser emits only on departure an
   assert.match(loader, /providerId: provider.id/);
   const chooser = component("RestaurantDeliveryChooser");
   assert.match(chooser, /chooser.open\(returnFocusRef\?\.current \?\? trigger, surface\)/);
-  assert.match(chooser, /if \(!dialog \|\| options.length === 0\) return;[\s\S]*setPlacement\(surface\)/);
+  assert.match(chooser, /if \(!dialog \|\| \(options.length === 0 && illustrativeOptions.length === 0\)\) return;[\s\S]*setPlacement\(surface\)/);
   assert.match(chooser, /eventName="delivery_clicked"\s*providerId=\{option.providerId\}\s*surface="delivery_chooser"\s*placement=\{placement\}/);
   assert.equal((chooser.match(/eventName="delivery_clicked"/g) ?? []).length, 1);
   assert.doesNotMatch(chooser, /trackEvent|trackRestaurantAction/); // Rendering/opening is not a departure.

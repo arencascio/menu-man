@@ -12,6 +12,11 @@ payment adapter, authentication scheme, or alternate order/pricing engine.
 
 ## Prepared restaurant content
 
+**Current local refinement:** see [Sprint C.1](super-tacos-showcase-sprint-c1.md).
+The catalog JSON now describes the proposed 21-item local fixture. The installed
+30-item Staging baseline and frozen `014`/`015` activation history below remain
+unchanged. A separate guarded `016` content sync is prepared and has not run.
+
 - 30 priced/orderable items, six categories, four reusable modifier groups.
   Salsa/tortilla/drink size enforce required selections; extras have bounded choices.
   Existing 12 item IDs and menu/tenant IDs are preserved. No existing orders are

@@ -83,11 +83,12 @@ test("ordinary tenant checkout retains its original RPC and payload",async()=>{
 });
 test("catalog is internally complete, uses preserved item identities and local real-photo assets",()=>{
   const data=JSON.parse(readFileSync("supabase/seeds/staging/super-tacos-demo.json","utf8"));
-  assert.equal(data.restaurant.id,policy.SUPER_TACOS_ID);assert.equal(data.items.length,30);
-  assert.equal(new Set(data.items.map((i:{number:number})=>i.number)).size,30);
+  assert.equal(data.restaurant.id,policy.SUPER_TACOS_ID);assert.equal(data.items.length,25);
+  assert.equal(new Set(data.items.map((i:{number:number})=>i.number)).size,25);
   assert.equal(data.sections.length,6);
-  for(const i of data.items){assert.ok(Number.isSafeInteger(i.price)&&i.price>0);assert.ok(data.sections.some((s:{number:number})=>s.number===i.section));for(const g of i.groups)assert.ok(data.modifierGroups.some((v:{number:number})=>v.number===g));if(i.image)assert.ok(existsSync(`public/img/super-tacos/${i.image}.jpg`));}
-  assert.deepEqual(data.items.slice(0,3).map((i:{key:string})=>i.key),["carne-asada-taco","al-pastor-taco","mushroom-taco"]);
+  for(const i of data.items){assert.ok(Number.isSafeInteger(i.price)&&i.price>0);assert.ok(data.sections.some((s:{number:number})=>s.number===i.section));for(const g of i.groups)assert.ok(data.modifierGroups.some((v:{number:number})=>v.number===g));if(i.imageUrl){assert.match(i.imageUrl,/^\/img\/super-tacos\/approved\/[a-z-]+\.webp$/);assert.ok(existsSync(`public${i.imageUrl}`));}}
+  assert.deepEqual(data.items.slice(0,3).map((i:{number:number})=>i.number),[1,4,5]);
+  assert.equal(data.retiredItems.length,18);
   const photos=JSON.parse(readFileSync("public/img/super-tacos/sources.json","utf8"));assert.equal(photos.length,8);
   for(const photo of photos){assert.match(photo.license,/pexels.com\/license|unsplash.com\/license/);assert.match(photo.sha256,/^[0-9a-f]{64}$/);}
 });

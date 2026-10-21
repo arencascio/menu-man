@@ -1,5 +1,7 @@
 import "../src/lib/cart/cart.test";
 import "../src/lib/demo/demo.test";
+import "../src/lib/demo/menu-imagery.test";
+import "../src/lib/demo/catalog.test";
 import "../src/lib/demo/server.integration.test";
 import "../src/lib/catering/catering.test";
 import "../src/lib/catering/server.test";
@@ -32,6 +34,8 @@ import "../src/lib/menu-engagement/featured-picker.test";
 import "../src/lib/menu-engagement/heart-security.test";
 import "../src/lib/menu-engagement/heart-mutation.test";
 import "../src/app/r/[slug]/menu-card-ordering.test";
+import "../src/app/r/[slug]/menu-card-image.test";
+import "../src/app/r/[slug]/menu/menu-image-presentation.test";
 import "../src/app/r/[slug]/menu-card-text.test";
 import "../src/app/r/[slug]/cart-swipe.test";
 import "../src/app/r/[slug]/menu-surface-scroll.test";

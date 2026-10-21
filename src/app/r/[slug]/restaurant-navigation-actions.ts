@@ -1,4 +1,10 @@
+import type { RestaurantNavigationIconName } from "./RestaurantNavigationIcon";
 import type { RestaurantNavigationItem } from "./RestaurantNavigation";
+
+export function withRestaurantPresentationPages(items: readonly RestaurantNavigationItem[], homeHref: string, pages: readonly { label: string; path: string; icon?: RestaurantNavigationIconName }[] = []): readonly RestaurantNavigationItem[] {
+  return [...items, ...pages.filter((page) => !items.some((item) => item.kind !== "delivery" && item.href === `${homeHref}/${page.path}`))
+    .map((page) => ({ label: page.label, icon: page.icon, href: `${homeHref}/${page.path}` }))];
+}
 
 export function getRestaurantNavigation({ homeHref, hasDelivery, directionsUrl, phone }: {
   homeHref: string;

@@ -1,0 +1,7 @@
+.strip { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+.profile { display: flex; align-items: center; gap: .85rem; padding: .9rem 1.25rem; min-height: 44px; flex: 1 1 12rem; max-width: 22rem; border: 1px solid color-mix(in srgb, var(--theme-primary) 25%, transparent); border-radius: .5rem; color: var(--theme-primary); background: var(--theme-surface); text-decoration: none; font-size: .9rem; font-weight: 800; }
+.profile > span[aria-hidden] { margin-left: auto; }
+.profile > img { width: 24px; height: 24px; flex-shrink: 0; object-fit: contain; }
+.profile small { display: block; margin-top: .2rem; font-size: .68rem; font-weight: 400; color: var(--theme-muted-text); }
+a.profile:hover { border-color: var(--theme-accent); }
+a.profile:focus-visible { outline: 3px solid var(--theme-accent); outline-offset: 3px; }

@@ -15,6 +15,8 @@ import type { RestaurantActionSurface } from "@/lib/analytics/types";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
 import RestaurantDeliveryProviderIcon from "./RestaurantDeliveryProviderIcon";
 import styles from "./restaurant-delivery-chooser.module.css";
+import { lockMenuPageScroll } from "./menu-surface-scroll";
+import { containOverlayFocus } from "./overlay-focus";
 
 export type RestaurantDeliveryOption = {
   providerId?: string;
@@ -24,6 +26,9 @@ export type RestaurantDeliveryOption = {
   providerKey?: string;
   supportingLabel?: string;
 };
+
+// Deliberately has no destination: a presentation preview cannot become a link.
+export type IllustrativeDeliveryOption = Pick<RestaurantDeliveryOption, "displayName" | "providerKey" | "imageUrl">;
 
 type DeliveryChooserContextValue = {
   open: (trigger: HTMLElement, surface: RestaurantActionSurface) => void;
@@ -67,61 +72,29 @@ export function RestaurantDeliveryTrigger({
 export default function RestaurantDeliveryChooser({
   children,
   options,
+  illustrativeOptions = [],
   restaurantId,
 }: {
   children: ReactNode;
   options: readonly RestaurantDeliveryOption[];
+  illustrativeOptions?: readonly IllustrativeDeliveryOption[];
   restaurantId: string;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [placement, setPlacement] = useState<RestaurantActionSurface>("ordering_actions");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const scrollLockRef = useRef<{
-    body: Pick<CSSStyleDeclaration, "left" | "overflow" | "position" | "right" | "top" | "width">;
-    documentElement: Pick<CSSStyleDeclaration, "overflow" | "overscrollBehavior">;
-    scrollY: number;
-  } | null>(null);
+  const scrollLockRef = useRef<(() => void) | null>(null);
 
   const lockPageScroll = useCallback(() => {
     if (scrollLockRef.current) return;
 
-    const { body, documentElement } = document;
-    const scrollY = window.scrollY;
-    scrollLockRef.current = {
-      body: {
-        left: body.style.left,
-        overflow: body.style.overflow,
-        position: body.style.position,
-        right: body.style.right,
-        top: body.style.top,
-        width: body.style.width,
-      },
-      documentElement: {
-        overflow: documentElement.style.overflow,
-        overscrollBehavior: documentElement.style.overscrollBehavior,
-      },
-      scrollY,
-    };
-    documentElement.style.overflow = "hidden";
-    documentElement.style.overscrollBehavior = "none";
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.right = "0";
-    body.style.left = "0";
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
+    scrollLockRef.current = lockMenuPageScroll();
   }, []);
 
   const unlockPageScroll = useCallback(() => {
-    const lock = scrollLockRef.current;
-    if (!lock) return;
-
-    const { body, documentElement } = document;
-    Object.assign(body.style, lock.body);
-    Object.assign(documentElement.style, lock.documentElement);
+    scrollLockRef.current?.();
     scrollLockRef.current = null;
-    window.scrollTo({ top: lock.scrollY, behavior: "instant" });
   }, []);
 
   useEffect(() => () => unlockPageScroll(), [unlockPageScroll]);
@@ -132,14 +105,14 @@ export default function RestaurantDeliveryChooser({
 
   const open = useCallback((trigger: HTMLElement, surface: RestaurantActionSurface) => {
     const dialog = dialogRef.current;
-    if (!dialog || options.length === 0) return;
+    if (!dialog || (options.length === 0 && illustrativeOptions.length === 0)) return;
 
     returnFocusRef.current = trigger;
     setPlacement(surface);
     lockPageScroll();
     dialog.showModal();
     closeButtonRef.current?.focus();
-  }, [lockPageScroll, options.length]);
+  }, [lockPageScroll, options.length, illustrativeOptions.length]);
 
   const handleDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
     if (event.target === event.currentTarget) close();
@@ -154,18 +127,20 @@ export default function RestaurantDeliveryChooser({
   return (
     <DeliveryChooserContext.Provider value={{ open }}>
       {children}
-      {options.length > 0 ? (
+      {options.length > 0 || illustrativeOptions.length > 0 ? (
         <dialog
           aria-labelledby="restaurant-delivery-title"
           className={styles.dialog}
           onClick={handleDialogClick}
           onClose={handleClose}
+          onKeyDown={containOverlayFocus}
+          aria-describedby={illustrativeOptions.length > 0 ? "restaurant-delivery-preview-note" : undefined}
           ref={dialogRef}
         >
           <div className={styles.panel}>
             <div className={styles.header}>
               <div>
-                <p className={styles.eyebrow}>Choose a provider</p>
+                <p className={styles.eyebrow}>{illustrativeOptions.length > 0 ? "Delivery options" : "Choose a provider"}</p>
                 <h2 id="restaurant-delivery-title">Order delivery</h2>
               </div>
               <button
@@ -180,6 +155,12 @@ export default function RestaurantDeliveryChooser({
             </div>
 
             <div className={styles.options}>
+              {illustrativeOptions.map((option) => (
+                <div className={`${styles.option} ${styles.illustrativeOption}`} key={option.displayName}>
+                  <RestaurantDeliveryProviderIcon displayName={option.displayName} imageUrl={option.imageUrl} providerKey={option.providerKey} fallbackClassName={styles.optionImage} />
+                  <span className={styles.optionCopy}><strong>{option.displayName}</strong></span>
+                </div>
+              ))}
               {options.map((option) => (
                 <TrackedRestaurantLink
                   className={styles.option}
@@ -207,6 +188,7 @@ export default function RestaurantDeliveryChooser({
                 </TrackedRestaurantLink>
               ))}
             </div>
+            {illustrativeOptions.length > 0 ? <p className={styles.previewNote} id="restaurant-delivery-preview-note">These delivery options are illustrative. Providers are not connected, and no delivery order can be placed here.</p> : null}
           </div>
         </dialog>
       ) : null}

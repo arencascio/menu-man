@@ -1,0 +1,124 @@
+{
+  "collection": "Owner-supplied illustrative stock portraits",
+  "sourceDirectory": "_testimonial profile pictures",
+  "usage": "Decorative stock portraits. People pictured did not provide the fictional testimonials. Source filenames are provenance, not identities.",
+  "rights": "Owner supplied; individual license documents were not provided.",
+  "processing": "Sharp attention crops were attempted and visually inspected. Several missed faces; final explicit focal crops were visually checked in circular masks. Originals preserved. WebP quality 90.",
+  "images": [
+    {
+      "source": "pexels-alexandru-cojanu-828538450-20592281.jpg",
+      "originalSha256": "ed6f592cd9769125db90382cb8ee13b36dd60226c65b481d1165dc1f9246f578",
+      "originalDimensions": {
+        "width": 5462,
+        "height": 4097
+      },
+      "asset": "/img/super-tacos/approved/avatars/sample-1.webp",
+      "sha256": "c798115ad8c8b6aff94cf1c793045fbff7f5040da848accb5d63cfbe70ba1eb2",
+      "bytes": 14606,
+      "width": 240,
+      "height": 240,
+      "focalPoint": {
+        "x": 0.36,
+        "y": 0.4
+      },
+      "crop": {
+        "left": 635,
+        "top": 307,
+        "width": 2663,
+        "height": 2663
+      }
+    },
+    {
+      "source": "pexels-divinetechygirl-1181686.jpg",
+      "originalSha256": "2e440851ca35b74929820f919505730c695ee488fb74155b95764e2a10424f82",
+      "originalDimensions": {
+        "width": 3840,
+        "height": 5760
+      },
+      "asset": "/img/super-tacos/approved/avatars/sample-2.webp",
+      "sha256": "00382520a02b95dc4c1eb522d38258960d366e5f1bf142ab8497bb87ca0138fb",
+      "bytes": 11158,
+      "width": 240,
+      "height": 240,
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.32
+      },
+      "crop": {
+        "left": 480,
+        "top": 403,
+        "width": 2880,
+        "height": 2880
+      }
+    },
+    {
+      "source": "pexels-enver-gulmez-507867534-16155640.jpg",
+      "originalSha256": "45d8d9f0b89f91879768be4f0c6f124786a10aacba2c75a972a3910058a9275e",
+      "originalDimensions": {
+        "width": 6200,
+        "height": 9300
+      },
+      "asset": "/img/super-tacos/approved/avatars/sample-3.webp",
+      "sha256": "a3f555aeb77f43d96d6b6bedea23ab0ee423cafc843825a95f2f226863ffb589",
+      "bytes": 19192,
+      "width": 240,
+      "height": 240,
+      "focalPoint": {
+        "x": 0.6,
+        "y": 0.47
+      },
+      "crop": {
+        "left": 1395,
+        "top": 2046,
+        "width": 4650,
+        "height": 4650
+      }
+    },
+    {
+      "source": "pexels-mwaqson-622-3400503-16427475.jpg",
+      "originalSha256": "b77dc5e8a46906866d2404797374db15cb81f704cef9c5893e734753d219e485",
+      "originalDimensions": {
+        "width": 3264,
+        "height": 4928
+      },
+      "asset": "/img/super-tacos/approved/avatars/sample-4.webp",
+      "sha256": "07e79fac2ba7287b54dcd497366fd9852b9989a0bf3eeeae1625212bca7d4594",
+      "bytes": 7234,
+      "width": 240,
+      "height": 240,
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.3
+      },
+      "crop": {
+        "left": 457,
+        "top": 303,
+        "width": 2350,
+        "height": 2350
+      }
+    },
+    {
+      "source": "pexels-sbam-29978151.jpg",
+      "originalSha256": "6cfc7600bc4f6e8c49f70d09327c1642636fb79f2123fef10cfaec35a2c2428e",
+      "originalDimensions": {
+        "width": 2852,
+        "height": 4282
+      },
+      "asset": "/img/super-tacos/approved/avatars/sample-5.webp",
+      "sha256": "6e6fd539c8ba7101a6a3b54fe62cbccf62193cf64c4ee00cc05a0efdaa19f923",
+      "bytes": 13154,
+      "width": 240,
+      "height": 240,
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.37
+      },
+      "crop": {
+        "left": 214,
+        "top": 372,
+        "width": 2424,
+        "height": 2424
+      }
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import { containOverlayFocus } from "./overlay-focus";
 import { lockMenuPageScroll } from "./menu-surface-scroll";
 import MenuIcon from "./MenuIcon";
 import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
+import RestaurantWordmark from "./RestaurantWordmark";
 
 type RestaurantNavigationDestination = {
   kind?: "link";
@@ -29,6 +30,10 @@ type RestaurantNavigationDelivery = {
 export type RestaurantNavigationItem = RestaurantNavigationDestination | RestaurantNavigationDelivery;
 
 type RestaurantNavigationProps = {
+  variant?: "solid" | "transparent";
+  shrinkOnScroll?: boolean;
+  wordmarkOnly?: boolean;
+  wordmarkClassName?: string;
   restaurantId: string;
   homeHref: string;
   items: readonly RestaurantNavigationItem[];
@@ -46,7 +51,23 @@ export default function RestaurantNavigation({
   artworkMark,
   brandLockup,
   name,
+  variant,
+  shrinkOnScroll = false,
+  wordmarkOnly = false,
+  wordmarkClassName,
 }: RestaurantNavigationProps) {
+  const [scrolled, setScrolled] = useState(false);
+  const [shrinkScrolled, setShrinkScrolled] = useState(false);
+  useEffect(() => {
+    if (variant !== "transparent" && !shrinkOnScroll) return;
+    const update = () => {
+      if (variant === "transparent") setScrolled(window.scrollY > (shrinkOnScroll ? 80 : 24));
+      if (shrinkOnScroll) setShrinkScrolled(window.scrollY > 80);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [variant, shrinkOnScroll]);
   const [isOpen, setIsOpen] = useState(false);
   const navigationId = useId();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -113,46 +134,49 @@ export default function RestaurantNavigation({
   ));
 
   return (
-    <header className={styles.siteHeader} data-restaurant-header>
-      <div className={styles.navigationInner}>
-        <Link className={styles.brand} href={homeHref} aria-label={`${name} home`} onClick={() => { afterCloseRef.current = null; setIsOpen(false); }}>
-          {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} /> : <>
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className={`${styles.brandMark} ${artworkMark ? styles.artworkMark : ""}`} src={logoUrl} alt="" />
-          ) : (
-            <span className={`${styles.brandMark} ${styles.brandPlaceholder}`} aria-hidden="true">
-              {name.charAt(0)}
-            </span>
-          )}
-          <span className={styles.brandName}>{name}</span>
-          </>}
-        </Link>
+    <div className={styles.navigationSlot} data-variant={variant} data-shrink-on-scroll={shrinkOnScroll || undefined}>
+      <header className={styles.siteHeader} data-restaurant-header data-variant={variant} data-scrolled={scrolled}
+        data-shrink-on-scroll={shrinkOnScroll || undefined} data-shrink-scrolled={shrinkScrolled}>
+        <div className={styles.navigationInner}>
+          <Link className={styles.brand} href={homeHref} aria-label={`${name} home`} onClick={() => { afterCloseRef.current = null; setIsOpen(false); }}>
+            {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} /> : <>
+              {wordmarkOnly ? null : logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={`${styles.brandMark} ${artworkMark ? styles.artworkMark : ""}`} src={logoUrl} alt="" />
+              ) : (
+                <span className={`${styles.brandMark} ${styles.brandPlaceholder}`} aria-hidden="true">
+                  {name.charAt(0)}
+                </span>
+              )}
+              <RestaurantWordmark name={name} fontClassName={wordmarkClassName} className={styles.brandName} />
+            </>}
+          </Link>
 
-        <button
-          ref={menuButtonRef}
-          className={styles.menuButton}
-          type="button"
-          aria-controls={navigationId}
-          aria-expanded={isOpen}
-          aria-label={isOpen ? "Close navigation" : "Open navigation"}
-          onClick={() => { reset(); setIsOpen(true); }}
-        >
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-        </button>
+          <button
+            ref={menuButtonRef}
+            className={styles.menuButton}
+            type="button"
+            aria-controls={navigationId}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? "Close navigation" : "Open navigation"}
+            onClick={() => { reset(); setIsOpen(true); }}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </button>
 
-        <nav className={styles.navigationLinks} aria-label={name + " navigation"}>{links(false)}</nav>
-        <dialog ref={dialogRef} id={navigationId} className={styles.navigationDialog} data-closing={closing} aria-label={name + " navigation"}
-          onKeyDown={containOverlayFocus} onCancel={(event) => { event.preventDefault(); requestClose(); }}
-          onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
-          <nav ref={panelRef} className={styles.mobileNavigation} data-closing={closing} aria-label={name + " navigation"}>
-            <button className={styles.navigationClose} type="button" aria-label="Close navigation" onClick={requestClose}>Close <MenuIcon name="close" size={18} /></button>
-            {links(true)}
-          </nav>
-        </dialog>
-      </div>
-    </header>
+          <nav className={styles.navigationLinks} aria-label={name + " navigation"}>{links(false)}</nav>
+          <dialog ref={dialogRef} id={navigationId} className={styles.navigationDialog} data-closing={closing} aria-label={name + " navigation"}
+            onKeyDown={containOverlayFocus} onCancel={(event) => { event.preventDefault(); requestClose(); }}
+            onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
+            <nav ref={panelRef} className={styles.mobileNavigation} data-closing={closing} aria-label={name + " navigation"}>
+              <button className={styles.navigationClose} type="button" aria-label="Close navigation" onClick={requestClose}>Close <MenuIcon name="close" size={18} /></button>
+              {links(true)}
+            </nav>
+          </dialog>
+        </div>
+      </header>
+    </div>
   );
 }

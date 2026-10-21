@@ -8,6 +8,8 @@ import { formatPickupDateTime } from "@/lib/checkout/pickup-presentation";
 import type { PickupSelection } from "@/lib/checkout/pickup-selection";
 import { groupPickupSlots, initialChooserSelection, isChooserSelectionAvailable, type PickupChooserMode } from "./pickup-time-chooser";
 import styles from "./pickup-time-chooser.module.css";
+import { lockMenuPageScroll } from "./menu-surface-scroll";
+import { containOverlayFocus } from "./overlay-focus";
 
 async function loadAvailability(restaurantSlug: string, signal: AbortSignal): Promise<PickupAvailability> {
   const response = await fetch(`/api/restaurants/${encodeURIComponent(restaurantSlug)}/pickup-availability`, {
@@ -37,11 +39,7 @@ export default function RestaurantPickupTimeChooser({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const confirmedRef = useRef(false);
-  const scrollLockRef = useRef<{
-    body: Pick<CSSStyleDeclaration, "left" | "overflow" | "position" | "right" | "top" | "width">;
-    documentElement: Pick<CSSStyleDeclaration, "overflow" | "overscrollBehavior">;
-    scrollY: number;
-  } | null>(null);
+  const scrollLockRef = useRef<(() => void) | null>(null);
   const [availability, setAvailability] = useState<PickupAvailability | null>(null);
   const [selection, setSelection] = useState<PickupSelection | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,31 +47,12 @@ export default function RestaurantPickupTimeChooser({
 
   const lockPageScroll = useCallback(() => {
     if (scrollLockRef.current) return;
-    const { body, documentElement } = document;
-    const scrollY = window.scrollY;
-    scrollLockRef.current = {
-      body: { left: body.style.left, overflow: body.style.overflow, position: body.style.position, right: body.style.right, top: body.style.top, width: body.style.width },
-      documentElement: { overflow: documentElement.style.overflow, overscrollBehavior: documentElement.style.overscrollBehavior },
-      scrollY,
-    };
-    documentElement.style.overflow = "hidden";
-    documentElement.style.overscrollBehavior = "none";
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.right = "0";
-    body.style.left = "0";
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
+    scrollLockRef.current = lockMenuPageScroll();
   }, []);
 
   const unlockPageScroll = useCallback(() => {
-    const lock = scrollLockRef.current;
-    if (!lock) return;
-    const { body, documentElement } = document;
-    Object.assign(body.style, lock.body);
-    Object.assign(documentElement.style, lock.documentElement);
+    scrollLockRef.current?.();
     scrollLockRef.current = null;
-    window.scrollTo({ top: lock.scrollY, behavior: "instant" });
   }, []);
 
   useEffect(() => {
@@ -142,6 +121,7 @@ export default function RestaurantPickupTimeChooser({
       ref={dialogRef}
       className={styles.dialog}
       aria-labelledby="pickup-time-chooser-title"
+      onKeyDown={containOverlayFocus}
       onClick={(event) => { if (event.target === event.currentTarget) close(); }}
       onClose={() => {
         requestRef.current?.abort();

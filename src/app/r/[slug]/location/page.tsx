@@ -13,6 +13,8 @@ import { restaurantLocationPresentations } from "../restaurant-location-presenta
 import RestaurantMapViews from "../RestaurantMapViews";
 import RestaurantShell, { type RestaurantShellRestaurant } from "../RestaurantShell";
 import { isDemoRestaurant } from "@/lib/demo/policy";
+import { superTacosShowcase } from "@/lib/demo/presentation";
+import styles from "../restaurant-location-page.module.css";
 
 type LocationPageProps = { params: Promise<{ slug: string }> };
 
@@ -60,6 +62,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
   ]);
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
   const presentation = restaurantLocationPresentations[slug];
+  const showcase = isDemoRestaurant(restaurant.id) ? superTacosShowcase : undefined;
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
   const identity = restaurantIdentities[slug];
   const homeHref = `/r/${slug}`;
@@ -71,13 +74,18 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
     brandLockup: identity?.brandLockup,
     homeHref,
     deliveryOptions,
-    navigation: getRestaurantNavigation({ homeHref, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone }),
+    navigation: getRestaurantNavigation({ homeHref, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone: showcase ? null : phone }),
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
 
   return <RestaurantShell restaurant={shellRestaurant} smoothScroll>
     <main>
+      {showcase ? <div className={styles.demoIntro}>
+        <p>Our Riverside setting</p>
+        <h1>Find your next taco stop.</h1>
+        <span>Explore our fictional location and the neighborhood that inspired it.</span>
+      </div> : null}
       <RestaurantHoursLocation
         restaurantName={restaurant.name}
         restaurantId={restaurant.id}
@@ -85,6 +93,7 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
         showHeading={false}
         density="compact"
         phone={phone}
+        phoneIsIllustrative={Boolean(showcase)}
         addressLine1={restaurant.address_line1}
         city={restaurant.city}
         state={restaurant.state}
@@ -98,6 +107,8 @@ export default async function RestaurantLocationPage({ params }: LocationPagePro
         restaurantName={restaurant.name}
         mapEmbedUrl={presentation?.mapEmbedUrl}
         streetViewEmbedUrl={presentation?.streetViewEmbedUrl}
+        neighborhoodUrl={showcase?.location.neighborhoodUrl}
+        disclosure={showcase?.location.disclosure}
       />
     </main>
     <RestaurantFooter

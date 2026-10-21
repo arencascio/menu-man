@@ -10,7 +10,7 @@ const tenant=catalog.restaurant.id;
 const connectionId=id(900);
 const realFetch=globalThis.fetch;
 const state=globalThis.__superTacosOfflineState ??= {orders:new Map(), payments:new Map(), attempts:new Map(),square:new Map()};
-const items=catalog.items.map(i=>({...i,id:id(200+i.number),restaurant_id:tenant,price_cents:i.price,is_orderable:true,source_image_url:i.image?`/img/super-tacos/${i.image}.jpg`:null,image_path:null}));
+const items=catalog.items.map(i=>({...i,id:id(200+i.number),restaurant_id:tenant,price_cents:i.price,is_orderable:true,source_image_url:i.imageUrl??null,image_path:null}));
 const groups=catalog.modifierGroups.map(g=>({...g,id:id(500+g.number),restaurant_id:tenant,is_active:true}));
 const options=groups.flatMap(g=>g.options.map((o,n)=>({...o,id:id(600+o.number),restaurant_id:tenant,modifier_group_id:g.id,default_price_adjustment_cents:o.price,sort_order:n,is_active:true,is_default:o.default===true})));
 const attachments=items.flatMap(i=>i.groups.map((n,sort)=>{const g=groups.find(v=>v.number===n);return {restaurant_id:tenant,menu_item_id:i.id,modifier_group_id:g.id,min_selections:g.min,max_selections:g.max,sort_order:sort,is_active:true};}));

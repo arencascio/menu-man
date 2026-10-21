@@ -4,6 +4,8 @@ type RestaurantMapViewsProps = {
   eyebrow?: string;
   mapEmbedUrl?: string;
   streetViewEmbedUrl?: string;
+  neighborhoodUrl?: string;
+  disclosure?: string;
   restaurantName: string;
 };
 
@@ -18,18 +20,25 @@ function validEmbedUrl(value: string | undefined) {
   }
 }
 
-export default function RestaurantMapViews({ eyebrow, mapEmbedUrl, streetViewEmbedUrl, restaurantName }: RestaurantMapViewsProps) {
+export default function RestaurantMapViews({ eyebrow, mapEmbedUrl, streetViewEmbedUrl, neighborhoodUrl, disclosure, restaurantName }: RestaurantMapViewsProps) {
   const mapUrl = validEmbedUrl(mapEmbedUrl);
   const streetViewUrl = validEmbedUrl(streetViewEmbedUrl);
-  if (!mapUrl && !streetViewUrl) return null;
+  if (!mapUrl && !streetViewUrl && !neighborhoodUrl) return null;
 
   return <section className={styles.mapSection} aria-labelledby="restaurant-map-title">
     <div className={styles.mapInner}>
       <div className={styles.mapHeading}>
         {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-        <h2 id="restaurant-map-title">{mapUrl && streetViewUrl ? "Map & storefront" : mapUrl ? "Map" : "Storefront view"}</h2>
+        <h2 id="restaurant-map-title">{neighborhoodUrl ? "Explore the neighborhood" : mapUrl && streetViewUrl ? "Map & storefront" : mapUrl ? "Map" : "Storefront view"}</h2>
+        {disclosure ? <p className={styles.mapDisclosure}>{disclosure}</p> : null}
       </div>
       <div className={styles.mapGrid}>
+        {neighborhoodUrl ? <div className={styles.neighborhoodCard}>
+          <span className={styles.neighborhoodEyebrow}>Riverside, California</span>
+          <strong>Magnolia Avenue <span aria-hidden="true">×</span> Tyler Street</strong>
+          <p>Explore the general area in Google Maps. No restaurant address or storefront is pinned.</p>
+          <a href={neighborhoodUrl} target="_blank" rel="noreferrer">Open neighborhood map <span aria-hidden="true">↗</span></a>
+        </div> : null}
         {mapUrl ? <div className={styles.mapCard}>
           <h3>Map</h3>
           <iframe

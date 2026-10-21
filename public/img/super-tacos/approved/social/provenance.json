@@ -1,0 +1,31 @@
+{
+  "collection": "Owner-supplied social brand icons",
+  "sourceDirectory": "C:/menu-man/img/icons",
+  "rights": "Brand marks retain their respective ownership. Supplied artwork used without claiming endorsement.",
+  "images": [
+    {
+      "platform": "instagram",
+      "sourceFile": "instagram.svg",
+      "originalSvgSha256": "8d40e5a4971b27c910848a5a6b277ba978044709d32f118bddc8fe65558b0d22",
+      "asset": "/img/super-tacos/approved/social/instagram.png",
+      "sha256": "f405aea13b0a68986868f74974cce9dc6c889008906404f2746ebdcc79f8b095",
+      "processing": "Owner-supplied SVG rasterized at 96px, preserving colors and proportions; original source file unchanged."
+    },
+    {
+      "platform": "tiktok",
+      "sourceFile": "tiktok.svg",
+      "originalSvgSha256": "c184d9bd804112daee1e5dae576175222050b1e090a484aebf4b9f04909e0923",
+      "asset": "/img/super-tacos/approved/social/tiktok.png",
+      "sha256": "f90147e1a857f5960880104bf60f7078670ddc6ea1fac1c50def0dac3708b99b",
+      "processing": "Owner-supplied SVG rasterized at 96px, preserving colors and proportions; original source file unchanged."
+    },
+    {
+      "platform": "facebook",
+      "sourceFile": "facebook.svg",
+      "originalSvgSha256": "cd0eb4ec2a394ab45e5dc2772a0f589207e06a14691649fd07ab68f980a7539c",
+      "asset": "/img/super-tacos/approved/social/facebook.png",
+      "sha256": "feb756ea6235bfe267480f3c6a6d2b647a5e9355c3d54a2209d109b453e82102",
+      "processing": "Owner-supplied SVG rasterized at 96px, preserving colors and proportions; original source file unchanged."
+    }
+  ]
+}

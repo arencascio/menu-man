@@ -24,8 +24,12 @@ import RestaurantMenuIntro, { type RestaurantMenuQuicklink } from "./RestaurantM
 import RestaurantOrderingActions, { type RestaurantOrderingAction } from "./RestaurantOrderingActions";
 import RestaurantShell, { type RestaurantShellRestaurant } from "./RestaurantShell";
 import styles from "./restaurant-page.module.css";
-import { superTacosHero } from "@/lib/demo/presentation";
+import { withDemoMenuImages } from "@/lib/demo/menu-imagery";
+import { superTacosHero, superTacosShowcase } from "@/lib/demo/presentation";
 import { isDemoRestaurant } from "@/lib/demo/policy";
+import RestaurantReviews from "./RestaurantReviews";
+import RestaurantSocialSection from "./RestaurantSocialSection";
+import RestaurantStorySection from "./RestaurantStorySection";
 
 type RestaurantPageProps = {
   params: Promise<{
@@ -84,11 +88,6 @@ type RestaurantOrderingActionsConfig = {
 };
 
 const restaurantOrderingActions: Readonly<Partial<Record<string, RestaurantOrderingActionsConfig>>> = {
-  "super-tacos": {
-    title: "Your cravings. Your way.",
-    description: "Choose a favorite, pick your salsa, and make it your own. Fresh flavors and a little sunshine in every bite.",
-    menuAction: { label: "Explore the menu", description: "Street tacos, burritos, griddle favorites, and something sweet.", href: "/r/super-tacos/menu" },
-  },
   armandos: {
     title: "Your favorites are a few taps away.",
     description: "Browse Armando's full menu, find what sounds good, and build your order in one place.",
@@ -106,6 +105,7 @@ type RestaurantFeaturedGalleryConfig = {
   showHeading?: boolean;
   slides: readonly {
     menuItemName: string;
+    menuItemId?: string;
     imageAlt: string;
     primaryAction?: RestaurantFeaturedGalleryAction;
     secondaryAction?: RestaurantFeaturedGalleryAction;
@@ -113,6 +113,13 @@ type RestaurantFeaturedGalleryConfig = {
 };
 
 const restaurantFeaturedGalleries: Readonly<Partial<Record<string, RestaurantFeaturedGalleryConfig>>> = {
+  "super-tacos": {
+    ...superTacosShowcase.gallery,
+    slides: superTacosShowcase.gallery.slides.map((slide) => ({
+      ...slide,
+      primaryAction: { label: "Order Pickup", href: "/r/super-tacos/menu" },
+    })),
+  },
   armandos: {
     title: "Made to satisfy.",
     showHeading: false,
@@ -189,6 +196,7 @@ const restaurantHomepageSections: Readonly<Partial<Record<string, {
   hoursLocation: boolean;
   menuIntro: boolean;
 }>>> = {
+  "super-tacos": { orderingActions: false, hoursLocation: true, menuIntro: false },
   armandos: { orderingActions: false, hoursLocation: false, menuIntro: true },
 };
 
@@ -196,7 +204,7 @@ export async function generateMetadata({ params }: RestaurantPageProps): Promise
   const { slug } = await params;
   let { data: restaurant, error } = await supabaseServer
     .from("restaurants")
-    .select("name, slug, tagline, description, logo_url, hero_image_url, primary_domain, is_indexable")
+    .select("id, name, slug, tagline, description, logo_url, hero_image_url, primary_domain, is_indexable")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -204,7 +212,7 @@ export async function generateMetadata({ params }: RestaurantPageProps): Promise
   if (error?.code === "42703") {
     const fallback = await supabaseServer
       .from("restaurants")
-      .select("name, slug, tagline, description, logo_url, hero_image_url, primary_domain")
+      .select("id, name, slug, tagline, description, logo_url, hero_image_url, primary_domain")
       .eq("slug", slug)
       .eq("is_active", true)
       .maybeSingle();
@@ -221,8 +229,8 @@ export async function generateMetadata({ params }: RestaurantPageProps): Promise
     slug: restaurant.slug,
     tagline: restaurant.tagline,
     description: restaurant.description,
-    heroImageUrl: restaurant.hero_image_url,
-    logoUrl: restaurant.logo_url,
+    heroImageUrl: isDemoRestaurant(restaurant.id) ? superTacosHero.imageUrl : restaurant.hero_image_url,
+    logoUrl: isDemoRestaurant(restaurant.id) ? null : restaurant.logo_url,
     primaryDomain: restaurant.primary_domain,
     indexable: restaurant.is_indexable,
   });
@@ -342,7 +350,8 @@ if (restaurantError || !restaurant) {
     );
   }
 
-  const menuSections = await getRestaurantMenuSections(restaurant.id, menu.id);
+  const loadedSections = await getRestaurantMenuSections(restaurant.id, menu.id);
+  const menuSections = loadedSections ? withDemoMenuImages(restaurant.id, loadedSections) : null;
   if (!menuSections) {
     return (
       <main style={{ padding: "2rem" }}>
@@ -357,6 +366,7 @@ if (restaurantError || !restaurant) {
     getRestaurantDeliveryOptions(restaurant.id),
   ]);
   const { address, directionsUrl } = getRestaurantLocationLinks(restaurant);
+  const showcase = isDemoRestaurant(restaurant.id) ? superTacosShowcase : undefined;
   const menuHref = `/r/${restaurant.slug}/menu`;
   const identity = restaurantIdentities[restaurant.slug];
   const phone = restaurant.phone && !restaurant.phone.includes("PLACEHOLDER") ? restaurant.phone : null;
@@ -369,7 +379,7 @@ if (restaurantError || !restaurant) {
     brandLockup: identity?.brandLockup,
     homeHref: `/r/${restaurant.slug}`,
     deliveryOptions,
-    navigation: getRestaurantNavigation({ homeHref: `/r/${restaurant.slug}`, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone }),
+    navigation: getRestaurantNavigation({ homeHref: `/r/${restaurant.slug}`, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone: showcase ? null : phone }),
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };
@@ -384,6 +394,9 @@ if (restaurantError || !restaurant) {
     : null;
   const heroPresentation: RestaurantHeroPresentation = {
     layout: configuredHero?.layout ?? "photo-split",
+    treatment: configuredHero?.treatment,
+    showLogo: configuredHero?.showLogo,
+    menuLink: configuredHero?.menuLink,
     imagePosition: configuredHero?.imagePosition,
     mobileImagePosition: configuredHero?.mobileImagePosition,
     eyebrow: configuredHero?.eyebrow,
@@ -394,7 +407,7 @@ if (restaurantError || !restaurant) {
       label: "Explore the menu",
       href: menuHref,
     },
-    secondaryAction: deliveryOptions.length > 0
+    secondaryAction: deliveryOptions.length > 0 || showcase
       ? { kind: "delivery", label: "Order Delivery" }
       : restaurant.pickup_url
         ? {
@@ -432,7 +445,7 @@ if (restaurantError || !restaurant) {
     ? featuredGalleryConfig.slides.flatMap((configuredSlide) => {
         const menuItem = menuSections
           .flatMap((section) => section.items)
-          .find((item) => item.name === configuredSlide.menuItemName);
+          .find((item) => configuredSlide.menuItemId ? item.id === configuredSlide.menuItemId : item.name === configuredSlide.menuItemName);
         if (!menuItem?.image_url) return [];
 
         return [{
@@ -462,7 +475,7 @@ if (restaurantError || !restaurant) {
   const homepageSections = restaurantHomepageSections[restaurant.slug];
 
   return (
-    <RestaurantShell restaurant={restaurantPresentation} smoothScroll>
+    <RestaurantShell restaurant={restaurantPresentation} smoothScroll navigationVariant={showcase ? "transparent" : undefined}>
       <RestaurantHero
         restaurantId={restaurant.id}
         name={restaurant.name}
@@ -495,16 +508,22 @@ if (restaurantError || !restaurant) {
           title={orderingActionsConfig.title}
         />
       ) : null}
+      {showcase ? <>
+        <RestaurantStorySection content={showcase.story} actionHref={`/r/${restaurant.slug}/about`} />
+        <RestaurantReviews {...showcase.reviews} />
+      </> : null}
       {homepageSections?.hoursLocation !== false || homepageSections?.menuIntro !== false ? (
         <div className={styles.content}>
           {homepageSections?.hoursLocation !== false ? (
             <RestaurantHoursLocation
               restaurantName={restaurant.name}
               restaurantId={restaurant.id}
-              heading={isDemoRestaurant(restaurant.id) ? "Pickup hours" : undefined}
-              unavailableLocationMessage={isDemoRestaurant(restaurant.id) ? "No public address is listed." : undefined}
-              description={restaurant.description}
-              phone={restaurant.phone}
+              variant={showcase ? "editorial" : undefined}
+              heading={showcase?.hours.heading}
+              unavailableLocationMessage={showcase?.hours.unavailableLocationMessage}
+              description={showcase?.hours.description ?? restaurant.description}
+              phone={phone}
+              phoneIsIllustrative={Boolean(showcase)}
               addressLine1={restaurant.address_line1}
               city={restaurant.city}
               state={restaurant.state}
@@ -527,6 +546,7 @@ if (restaurantError || !restaurant) {
           ) : null}
         </div>
       ) : null}
+      {showcase ? <RestaurantSocialSection {...showcase.social} /> : null}
       <RestaurantFooter
         navigation={restaurantPresentation.navigation}
         address={address}
@@ -539,7 +559,7 @@ if (restaurantError || !restaurant) {
         phone={phone}
         restaurantId={restaurant.id}
       />
-      <RestaurantJsonLd
+      {!showcase ? <RestaurantJsonLd
         name={restaurant.name}
         slug={restaurant.slug}
         primaryDomain={restaurant.primary_domain}
@@ -554,7 +574,7 @@ if (restaurantError || !restaurant) {
         latitude={restaurant.latitude}
         longitude={restaurant.longitude}
         hours={hours}
-      />
+      /> : null}
       <PageViewTracker restaurantId={restaurant.id} pageType="home" path={`/r/${encodeURIComponent(slug)}`} />
     </RestaurantShell>
   );

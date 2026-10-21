@@ -3,8 +3,9 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { isProductionSite } from "@/lib/seo/site-origin";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  if (!isProductionSite()) return { robots: { index: false, follow: false } };
   const { slug } = await params;
+  const icons = slug === "super-tacos" ? { icon: "/img/super-tacos/approved/supertacologo.svg" } : undefined;
+  if (!isProductionSite()) return { robots: { index: false, follow: false }, icons };
   const { data: restaurant } = await supabaseServer
     .from("restaurants")
     .select("is_indexable")
@@ -12,8 +13,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .eq("is_active", true)
     .maybeSingle();
   return restaurant?.is_indexable === false
-    ? { robots: { index: false, follow: false } }
-    : {};
+    ? { robots: { index: false, follow: false }, icons }
+    : { icons };
 }
 
 export default function RestaurantRouteLayout({ children }: { children: React.ReactNode }) {

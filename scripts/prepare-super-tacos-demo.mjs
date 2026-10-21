@@ -1,6 +1,7 @@
 // Generates a reviewable staging-only SQL file. Does not connect to a database.
 import { readFileSync, writeFileSync } from 'node:fs';
 const data = JSON.parse(readFileSync('supabase/seeds/staging/super-tacos-demo.json', 'utf8'));
+if (data.contentVersion) throw new Error('The one-time 015 installer is frozen. Use the separately reviewed content-sync script for Sprint C.1.');
 data.restaurant.theme_overrides = JSON.parse(readFileSync('src/lib/demo/theme.json', 'utf8'));
 const id = n => `20000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const q = value => value == null ? 'null' : "'" + String(value).replaceAll("'", "''") + "'";

@@ -1,59 +1,635 @@
 {
   "restaurant": {
-    "id": "20000000-0000-4000-8000-000000000001", "slug": "super-tacos", "name": "Super Tacos",
+    "id": "20000000-0000-4000-8000-000000000001",
+    "slug": "super-tacos",
+    "name": "Super Tacos",
     "tagline": "Bright salsas. Bold taco flavor.",
     "description": "Fresh tortillas, flame-grilled favorites, and house salsas bring a little sunshine to every bite. Find your new favorite, make it your own, and enjoy the good stuff.",
-    "logo_url": "/img/super-tacos/logo.svg", "hero_image_url": "/img/super-tacos/tacos.jpg",
-    "phone": null, "address_line1": null,
-    "city": null, "state": null, "postal_code": null, "timezone": "America/Los_Angeles",
+    "logo_url": "/img/super-tacos/approved/supertacologo.svg",
+    "hero_image_url": "/img/super-tacos/approved/carnitas-tacos.webp",
+    "phone": "(951) 555-0147",
+    "address_line1": "0000 Magnolia Avenue",
+    "city": "Riverside",
+    "state": "CA",
+    "postal_code": "92503",
+    "timezone": "America/Los_Angeles",
     "theme_preset": "classic-red",
-    "hours": {"open":"09:00", "close":"22:00"}
+    "hours": {
+      "open": "09:00",
+      "close": "22:00"
+    }
   },
   "menuId": "20000000-0000-4000-8000-000000000002",
   "sections": [
-    {"number":101,"name":"Street Tacos","description":"Corn tortillas, bright salsa, and big flavor. Priced per taco.","sort":0},
-    {"number":102,"name":"Burritos","description":"Wrapped warm and made your way. Add a little extra if you like.","sort":1},
-    {"number":103,"name":"Griddle Favorites","description":"Golden, melty, and made for sharing.","sort":2},
-    {"number":104,"name":"Sides & Refreshers","description":"Something crunchy. Something cool.","sort":4},
-    {"number":105,"name":"Breakfast","description":"A sunny start to the day, made fresh and served all morning.","sort":3},
-    {"number":106,"name":"Sweet Finish","description":"Save a little room for cinnamon and sugar.","sort":5}
+    {
+      "number": 101,
+      "name": "Street Tacos",
+      "description": "Corn tortillas, bright salsa, and big flavor. Priced per taco.",
+      "sort": 0
+    },
+    {
+      "number": 102,
+      "name": "Burritos",
+      "description": "Wrapped warm and made your way. Add a little extra if you like.",
+      "sort": 1
+    },
+    {
+      "number": 103,
+      "name": "Clásicos Mexicanos",
+      "description": "Comforting classics, bright salsas, and generous plates.",
+      "sort": 2
+    },
+    {
+      "number": 104,
+      "name": "Sides & Refreshers",
+      "description": "Something crunchy. Something cool.",
+      "sort": 4
+    },
+    {
+      "number": 105,
+      "name": "Breakfast",
+      "description": "A sunny start to the day, made fresh and served all morning.",
+      "sort": 3
+    },
+    {
+      "number": 106,
+      "name": "Sweet Finish",
+      "description": "Save a little room for cinnamon and sugar.",
+      "sort": 5
+    }
   ],
   "items": [
-    {"number":1,"section":101,"key":"carne-asada-taco","name":"Carne Asada Street Taco","description":"Grilled steak, onion, cilantro, and salsa on a warm corn tortilla.","price":375,"image":"asada","groups":[1,2,3]},
-    {"number":2,"section":101,"key":"al-pastor-taco","name":"Al Pastor Street Taco","description":"Chile-marinated pork with pineapple, onion, and cilantro.","price":375,"image":"tacos","groups":[1,2,3]},
-    {"number":3,"section":101,"key":"mushroom-taco","name":"Roasted Mushroom Taco","description":"Roasted mushrooms, cabbage, avocado salsa, and a squeeze of lime.","price":350,"image":"tacos","groups":[1,2,3]},
-    {"number":4,"section":102,"key":"california-burrito","name":"California Burrito","description":"Grilled steak, crispy fries, cheese, pico de gallo, and crema.","price":1295,"image":"burrito","groups":[1,2]},
-    {"number":5,"section":102,"key":"chicken-burrito","name":"Grilled Chicken Burrito","description":"Citrus chicken, rice, pinto beans, cheese, and roasted tomato salsa.","price":1195,"image":"burrito","groups":[1,2]},
-    {"number":6,"section":102,"key":"bean-cheese-burrito","name":"Bean & Cheese Burrito","description":"Slow-cooked pinto beans and melted cheese in a soft flour tortilla.","price":895,"image":"burrito","groups":[1,2]},
-    {"number":7,"section":103,"key":"quesabirria","name":"Quesabirria Trio","description":"Three crisp beef birria tacos with melted cheese and a side of consomme.","price":1495,"image":"tacos","groups":[1,2]},
-    {"number":8,"section":103,"key":"loaded-nachos","name":"Loaded Asada Nachos","description":"Tortilla chips with grilled steak, beans, cheese, guacamole, and pico de gallo.","price":1345,"image":"nachos","groups":[1,2]},
-    {"number":9,"section":103,"key":"cheese-quesadilla","name":"Cheese Quesadilla","description":"A golden flour tortilla filled with melted cheese, served with salsa and crema.","price":845,"image":"quesadilla","groups":[1,2]},
-    {"number":10,"section":104,"key":"chips-guacamole","name":"Chips & Guacamole","description":"Crisp tortilla chips and chunky guacamole with lime and cilantro.","price":695,"image":"guacamole","groups":[]},
-    {"number":11,"section":104,"key":"rice-beans","name":"Rice & Beans","description":"A generous side of Mexican-style rice and slow-cooked pinto beans.","price":450,"image":null,"groups":[]},
-    {"number":12,"section":104,"key":"hibiscus-agua-fresca","name":"Hibiscus Agua Fresca","description":"A chilled, lightly sweet hibiscus refresher. Regular 16 oz.","price":395,"image":null,"groups":[4]},
-    {"number":13,"section":101,"key":"carnitas-taco","name":"Citrus Carnitas Taco","description":"Slow-braised pork, onion, cilantro, and tangy salsa verde.","price":375,"image":"asada","groups":[1,2,3]},
-    {"number":14,"section":101,"key":"chicken-taco","name":"Citrus Chicken Taco","description":"Marinated grilled chicken, shredded cabbage, and fresh pico de gallo.","price":350,"image":"tacos","groups":[1,2,3]},
-    {"number":15,"section":101,"key":"shrimp-taco","name":"Chile Lime Shrimp Taco","description":"Sauteed shrimp, crunchy slaw, lime crema, and cilantro.","price":475,"image":null,"groups":[1,2,3]},
-    {"number":16,"section":101,"key":"potato-taco","name":"Crispy Potato Taco","description":"Golden potatoes, shredded lettuce, cotija cheese, and salsa roja.","price":325,"image":"tacos","groups":[1,2,3]},
-    {"number":17,"section":102,"key":"carnitas-burrito","name":"Carnitas Burrito","description":"Citrus-braised pork, rice, pinto beans, onion, and cilantro.","price":1245,"image":"burrito","groups":[1,2]},
-    {"number":18,"section":102,"key":"veggie-burrito","name":"Garden Burrito","description":"Roasted peppers, mushrooms, rice, black beans, guacamole, and pico.","price":1095,"image":"burrito","groups":[1,2]},
-    {"number":19,"section":102,"key":"shrimp-burrito","name":"Coastal Shrimp Burrito","description":"Chile lime shrimp, rice, cabbage, pico de gallo, and creamy chipotle sauce.","price":1445,"image":"burrito","groups":[1,2]},
-    {"number":20,"section":103,"key":"chicken-quesadilla","name":"Chicken Quesadilla","description":"Grilled chicken and melted cheese in a toasted flour tortilla with salsa.","price":1145,"image":"quesadilla","groups":[1,2]},
-    {"number":21,"section":105,"key":"breakfast-burrito","name":"Sunrise Breakfast Burrito","description":"Scrambled eggs, crispy potatoes, cheese, and pico de gallo.","price":1045,"image":"burrito","groups":[1,2]},
-    {"number":22,"section":105,"key":"chorizo-burrito","name":"Chorizo & Egg Burrito","description":"Spiced chorizo, scrambled eggs, potatoes, and melted cheese.","price":1145,"image":"burrito","groups":[1,2]},
-    {"number":23,"section":105,"key":"breakfast-tacos","name":"Breakfast Taco Pair","description":"Two warm tortillas with scrambled eggs, potatoes, cheese, and salsa.","price":745,"image":"tacos","groups":[1,2,3]},
-    {"number":24,"section":105,"key":"breakfast-quesadilla","name":"Breakfast Quesadilla","description":"Eggs, roasted peppers, potatoes, and cheese folded into a toasted tortilla.","price":995,"image":"quesadilla","groups":[1,2]},
-    {"number":25,"section":105,"key":"asada-breakfast-burrito","name":"Steak & Egg Burrito","description":"Grilled steak, fluffy eggs, potatoes, cheese, and salsa roja.","price":1295,"image":"burrito","groups":[1,2]},
-    {"number":26,"section":104,"key":"lime-lemonade","name":"Mint Lime Lemonade","description":"Fresh citrus lemonade with mint. Regular 16 oz.","price":395,"image":"lemonade","groups":[4]},
-    {"number":27,"section":104,"key":"chips-salsa","name":"Chips & Salsa","description":"Crisp tortilla chips with your choice of house salsa.","price":450,"image":"guacamole","groups":[1]},
-    {"number":28,"section":106,"key":"churros","name":"Cinnamon Churros","description":"Three crisp churros rolled in cinnamon sugar with chocolate dipping sauce.","price":595,"image":"churros","groups":[]},
-    {"number":29,"section":106,"key":"churro-bites","name":"Churro Bites","description":"A small bag of cinnamon-sugar churro bites, perfect for a sweet finish.","price":395,"image":"churros","groups":[]},
-    {"number":30,"section":106,"key":"churros-for-two","name":"Churros for Two","description":"Six cinnamon churros with chocolate and caramel dipping sauces.","price":995,"image":"churros","groups":[]}
+    {
+      "number": 1,
+      "section": 101,
+      "key": "carne-asada-taco",
+      "name": "Street Taco",
+      "description": "One warm taco with your choice of filling, onion, cilantro and salsa.",
+      "price": 350,
+      "groups": [
+        5,
+        1,
+        3,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/carne-asada-tacos.webp"
+    },
+    {
+      "number": 4,
+      "section": 102,
+      "key": "california-burrito",
+      "name": "Super Burrito",
+      "description": "Grilled steak, rice, cheese, pico de gallo, and crema wrapped in a warm flour tortilla.",
+      "price": 1295,
+      "groups": [
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/burrito.webp"
+    },
+    {
+      "number": 5,
+      "section": 102,
+      "key": "chicken-burrito",
+      "name": "Burrito",
+      "description": "Your choice of filling with rice, beans, cheese and roasted tomato salsa.",
+      "price": 1095,
+      "groups": [
+        6,
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/chicken-burrito.webp"
+    },
+    {
+      "number": 6,
+      "section": 102,
+      "key": "bean-cheese-burrito",
+      "name": "Black Bean Burrito",
+      "description": "Slow-cooked black beans and melted cheese in a soft flour tortilla.",
+      "price": 895,
+      "groups": [
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/black-bean-burrito.webp"
+    },
+    {
+      "number": 8,
+      "section": 103,
+      "key": "loaded-nachos",
+      "name": "Loaded Nachos",
+      "description": "Tortilla chips with beans, cheese, guacamole, pico and your choice of topping.",
+      "price": 945,
+      "groups": [
+        7,
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/loaded-nachos.webp"
+    },
+    {
+      "number": 9,
+      "section": 103,
+      "key": "cheese-quesadilla",
+      "name": "Quesadilla",
+      "description": "A toasted flour tortilla with melted cheese and your choice of filling. Salsa and crema on the side.",
+      "price": 845,
+      "groups": [
+        7,
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/quesadilla.webp"
+    },
+    {
+      "number": 10,
+      "section": 104,
+      "key": "chips-guacamole",
+      "name": "House Salsa Sampler",
+      "description": "A trio of fresh house salsas served with warm tortilla chips.",
+      "price": 695,
+      "groups": [],
+      "imageUrl": "/img/super-tacos/approved/salsas.webp"
+    },
+    {
+      "number": 21,
+      "section": 105,
+      "key": "breakfast-burrito",
+      "name": "Breakfast Burrito",
+      "description": "Scrambled eggs, potatoes, cheese and pico with your choice of breakfast filling.",
+      "price": 1045,
+      "groups": [
+        8,
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/breakfast-burrito.webp"
+    },
+    {
+      "number": 24,
+      "section": 105,
+      "key": "breakfast-quesadilla",
+      "name": "Breakfast Quesadilla",
+      "description": "Eggs, roasted peppers, potatoes, and cheese folded into a toasted tortilla.",
+      "price": 995,
+      "groups": [
+        1,
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/breakfast-quesadilla.webp"
+    },
+    {
+      "number": 27,
+      "section": 104,
+      "key": "chips-salsa",
+      "name": "Chips & Salsa",
+      "description": "Crisp tortilla chips with your choice of house salsa.",
+      "price": 450,
+      "groups": [
+        1
+      ],
+      "imageUrl": "/img/super-tacos/approved/chips-and-salsa.webp"
+    },
+    {
+      "number": 28,
+      "section": 106,
+      "key": "churros",
+      "name": "Cinnamon Churros",
+      "description": "Cinnamon-sugar churros with chocolate dipping sauce. Choose a portion to share.",
+      "price": 595,
+      "groups": [
+        9
+      ],
+      "imageUrl": "/img/super-tacos/approved/churros.webp"
+    },
+    {
+      "number": 29,
+      "section": 106,
+      "key": "churro-bites",
+      "name": "Two Cinnamon Churros",
+      "description": "Two cinnamon-sugar churros served warm with chocolate dipping sauce.",
+      "price": 395,
+      "groups": [],
+      "imageUrl": "/img/super-tacos/approved/churros.webp"
+    },
+    {
+      "number": 31,
+      "section": 104,
+      "key": "horchata",
+      "name": "Horchata",
+      "description": "Chilled rice and cinnamon drink. Regular 16 oz.",
+      "price": 395,
+      "groups": [
+        4
+      ],
+      "imageUrl": "/img/super-tacos/approved/horchata.webp"
+    },
+    {
+      "number": 32,
+      "section": 105,
+      "key": "chilaquiles-divorciados",
+      "name": "Chilaquiles Divorciados",
+      "description": "Tortilla chips with red and green salsa, eggs, crema and cotija.",
+      "price": 1295,
+      "groups": [
+        2
+      ],
+      "imageUrl": "/img/super-tacos/approved/chilaquiles.webp"
+    },
+    {
+      "number": 33,
+      "section": 103,
+      "key": "loaded-rolled-tacos",
+      "name": "Loaded Rolled Tacos",
+      "description": "Three crisp chicken rolled tacos topped with lettuce, crema, guacamole and cotija.",
+      "price": 995,
+      "groups": [
+        1
+      ],
+      "imageUrl": "/img/super-tacos/approved/loaded-taquitos.webp"
+    },
+    {
+      "number": 34,
+      "section": 103,
+      "key": "chorizo-queso-fundido",
+      "name": "Chorizo Queso Fundido",
+      "description": "Warm melted cheese and chorizo, served with tortillas for sharing.",
+      "price": 1095,
+      "groups": [],
+      "imageUrl": "/img/super-tacos/approved/queso-fundido.webp"
+    },
+    { "number": 35, "section": 103, "key": "sopes", "name": "Sopes", "description": "Two thick corn masa rounds topped with beans, lettuce, crema, cotija, and fresh salsa.", "price": 1095, "groups": [1, 2], "imageUrl": "/img/super-tacos/approved/sopes.webp" },
+    { "number": 36, "section": 105, "key": "huevos-divorciados", "name": "Huevos Divorciados", "description": "Two eggs with red and green salsas, beans, and warm tortillas.", "price": 1195, "groups": [], "imageUrl": "/img/super-tacos/approved/huevos-divorciados.webp" },
+    { "number": 37, "section": 103, "key": "ranchero-plate", "name": "Ranchero Plate", "description": "Ranchero-style grilled steak with rice, beans, and warm tortillas.", "price": 1295, "groups": [], "imageUrl": "/img/super-tacos/approved/ranchero-plate.webp" },
+    { "number": 38, "section": 101, "key": "fish-taco", "name": "Fish Taco", "description": "Seasoned fish in your choice of tortilla with crunchy slaw, crema, and lime.", "price": 525, "groups": [3, 1], "imageUrl": "/img/super-tacos/approved/fish-taco.webp" },
+    { "number": 39, "section": 103, "key": "menudo", "name": "Menudo", "description": "A warming bowl of traditional hominy and tripe soup with lime, onion, and oregano.", "price": 1395, "groups": [], "imageUrl": "/img/super-tacos/approved/menudo.webp" },
+    { "number": 40, "section": 104, "key": "mexican-coke", "name": "Mexican Coke", "description": "A chilled half-liter glass bottle of Mexican Coca-Cola.", "price": 425, "groups": [], "imageUrl": "/img/super-tacos/approved/mexican-coke.webp" },
+    { "number": 41, "section": 103, "key": "shrimp-cocktail", "name": "Shrimp Cocktail", "description": "Chilled shrimp in a bright tomato-citrus sauce with avocado and crisp vegetables.", "price": 1495, "groups": [], "imageUrl": "/img/super-tacos/approved/shrimp-cocktail.webp" },
+    { "number": 42, "section": 104, "key": "tortillas", "name": "Tortillas", "description": "A warm side of tortillas. Choose corn or flour.", "price": 295, "groups": [3], "imageUrl": "/img/super-tacos/approved/tortillas.webp" },
+    { "number": 43, "section": 101, "key": "super-taco", "name": "Super Taco", "description": "Two loaded crisp tacos with your choice of filling, beans, lettuce, pico, guacamole, cheese, and salsa.", "price": 795, "groups": [5, 1], "imageUrl": "/img/super-tacos/approved/super-taco.webp" }
   ],
   "modifierGroups": [
-    {"number":1,"name":"Choose your salsa","min":1,"max":1,"options":[{"number":1,"name":"Roja — medium","price":0,"default":true},{"number":2,"name":"Verde — mild","price":0},{"number":3,"name":"No salsa","price":0}]},
-    {"number":2,"name":"A little extra","min":0,"max":3,"options":[{"number":4,"name":"Guacamole","price":150},{"number":5,"name":"Extra cheese","price":75},{"number":6,"name":"Crema","price":50}]},
-    {"number":3,"name":"Choose your tortilla","min":1,"max":1,"options":[{"number":7,"name":"Corn tortilla","price":0,"default":true},{"number":8,"name":"Flour tortilla","price":25}]},
-    {"number":4,"name":"Drink size","min":1,"max":1,"options":[{"number":9,"name":"Regular — 16 oz","price":0,"default":true},{"number":10,"name":"Large — 24 oz","price":100}]}
+    {
+      "number": 1,
+      "name": "Choose your salsa",
+      "min": 0,
+      "max": 1,
+      "options": [
+        {
+          "number": 1,
+          "name": "Roja — medium",
+          "price": 0,
+          "default": true
+        },
+        {
+          "number": 2,
+          "name": "Verde — mild",
+          "price": 0
+        },
+        {
+          "number": 3,
+          "name": "No salsa",
+          "price": 0
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "name": "A little extra",
+      "min": 0,
+      "max": 3,
+      "options": [
+        {
+          "number": 4,
+          "name": "Guacamole",
+          "price": 150
+        },
+        {
+          "number": 5,
+          "name": "Extra cheese",
+          "price": 75
+        },
+        {
+          "number": 6,
+          "name": "Crema",
+          "price": 50
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Choose your tortilla",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 7,
+          "name": "Corn tortilla",
+          "price": 0,
+          "default": true
+        },
+        {
+          "number": 8,
+          "name": "Flour tortilla",
+          "price": 25
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "name": "Drink size",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 9,
+          "name": "Regular — 16 oz",
+          "price": 0,
+          "default": true
+        },
+        {
+          "number": 10,
+          "name": "Large — 24 oz",
+          "price": 100
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "name": "Taco filling",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 11,
+          "name": "Carne asada",
+          "price": 25
+        },
+        {
+          "number": 12,
+          "name": "Carnitas",
+          "price": 25
+        },
+        {
+          "number": 13,
+          "name": "Al pastor",
+          "price": 25
+        },
+        {
+          "number": 14,
+          "name": "Grilled chicken",
+          "price": 0
+        },
+        {
+          "number": 15,
+          "name": "Roasted mushrooms",
+          "price": 0
+        },
+        {
+          "number": 16,
+          "name": "Crispy potato",
+          "price": 0
+        },
+        {
+          "number": 17,
+          "name": "Grilled shrimp",
+          "price": 125
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "name": "Burrito filling",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 18,
+          "name": "Carne asada",
+          "price": 200
+        },
+        {
+          "number": 19,
+          "name": "Grilled chicken",
+          "price": 100
+        },
+        {
+          "number": 20,
+          "name": "Carnitas",
+          "price": 150
+        },
+        {
+          "number": 21,
+          "name": "Al pastor",
+          "price": 100
+        },
+        {
+          "number": 23,
+          "name": "Black bean & vegetables",
+          "price": 0
+        },
+        {
+          "number": 24,
+          "name": "Grilled shrimp",
+          "price": 350
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "name": "Choose your topping",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 25,
+          "name": "Cheese only",
+          "price": 0
+        },
+        {
+          "number": 26,
+          "name": "Grilled chicken",
+          "price": 300
+        },
+        {
+          "number": 27,
+          "name": "Carne asada",
+          "price": 400
+        },
+        {
+          "number": 28,
+          "name": "Carnitas",
+          "price": 350
+        },
+        {
+          "number": 29,
+          "name": "Roasted vegetables",
+          "price": 250
+        },
+        {
+          "number": 30,
+          "name": "Grilled shrimp",
+          "price": 500
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "name": "Breakfast filling",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 31,
+          "name": "Eggs & potatoes",
+          "price": 0
+        },
+        {
+          "number": 32,
+          "name": "Chorizo & eggs",
+          "price": 100
+        },
+        {
+          "number": 33,
+          "name": "Steak & eggs",
+          "price": 250
+        },
+        {
+          "number": 34,
+          "name": "Roasted vegetables & eggs",
+          "price": 0
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "name": "Churro portion",
+      "min": 1,
+      "max": 1,
+      "options": [
+        {
+          "number": 35,
+          "name": "Three churros",
+          "price": 0
+        },
+        {
+          "number": 36,
+          "name": "Six churros",
+          "price": 400
+        }
+      ]
+    }
+  ],
+  "contentVersion": "sprint-c3",
+  "retiredItems": [
+    {
+      "number": 2,
+      "replacement": 1,
+      "option": 13,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 3,
+      "replacement": 1,
+      "option": 15,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 13,
+      "replacement": 1,
+      "option": 12,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 14,
+      "replacement": 1,
+      "option": 14,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 15,
+      "replacement": 1,
+      "option": 17,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 16,
+      "replacement": 1,
+      "option": 16,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 17,
+      "replacement": 5,
+      "option": 20,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 18,
+      "replacement": 5,
+      "option": 23,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 19,
+      "replacement": 5,
+      "option": 24,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 20,
+      "replacement": 9,
+      "option": 26,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 22,
+      "replacement": 21,
+      "option": 32,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 25,
+      "replacement": 21,
+      "option": 33,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 30,
+      "replacement": 28,
+      "option": 36,
+      "reason": "Consolidated filling or portion variant; retain original row and engagement records."
+    },
+    {
+      "number": 7,
+      "replacement": null,
+      "option": null,
+      "reason": "No approved photograph accurately represents quesabirria; retain historical row and order references."
+    },
+    {
+      "number": 11,
+      "replacement": null,
+      "option": null,
+      "reason": "No approved photograph accurately represents rice and beans; retain historical row and order references."
+    },
+    {
+      "number": 12,
+      "replacement": null,
+      "option": null,
+      "reason": "No approved photograph accurately represents hibiscus agua fresca; retain historical row and order references."
+    },
+    {
+      "number": 23,
+      "replacement": null,
+      "option": null,
+      "reason": "No approved photograph accurately represents breakfast tacos; retain historical row and order references."
+    },
+    {
+      "number": 26,
+      "replacement": null,
+      "option": null,
+      "reason": "No approved photograph accurately represents mint lime lemonade; retain historical row and order references."
+    }
   ]
 }

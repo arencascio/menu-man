@@ -1,0 +1,22 @@
+.section { color: var(--theme-surface); background: var(--theme-primary); }
+.inner { max-width: var(--theme-content-width); margin: auto; padding: clamp(3.5rem, 7vw, 7rem) clamp(1.25rem, 4vw, 4rem) 3rem; }
+.heading { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 3rem; align-items: end; }
+.eyebrow { margin: 0 0 1rem; font-size: .75rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.heading h2 { max-width: 14ch; font: 900 clamp(2.5rem, 4.8vw, 4.5rem)/1.04 var(--theme-heading-font); letter-spacing: -.045em; text-wrap: balance; }
+.copy > p { max-width: 34ch; font-size: 1rem; line-height: 1.7; }
+.copy .preview { display: flex; align-items: center; gap: .7rem; margin-top: 1rem; font-size: .85rem; font-weight: 700; }
+.profiles { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; }
+.profiles a { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; border-bottom: 1px solid currentColor; text-decoration: none; font-weight: 700; }
+.strip { display: flex; gap: clamp(.75rem, 1.5vw, 1.5rem); overflow-x: auto; padding: 2.5rem .25rem 1rem; scroll-snap-type: x proximity; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--theme-surface) 40%, transparent) transparent; }
+.photo { flex: 1 0 0; min-width: 0; padding: .5rem .5rem .75rem; color: var(--theme-primary); background: var(--theme-background); scroll-snap-align: start; }
+.photo:nth-child(even) { margin-top: 1.5rem; }
+.photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; }
+.photo figcaption { padding-top: .65rem; font-size: .55rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.note { margin-top: 1rem; font-size: .75rem; line-height: 1.5; opacity: .75; }
+.strip:focus-visible, .profiles a:focus-visible { outline: 3px solid var(--theme-surface); outline-offset: 4px; }
+@media (max-width: 760px) {
+  .heading { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+  .strip { padding-top: 1.5rem; }
+  .photo { flex: 0 0 62%; }
+  .photo figcaption { font-size: .6rem; }
+}

@@ -1,3 +1,4 @@
+import RestaurantNavigationIcon, { type RestaurantNavigationIconName } from "./RestaurantNavigationIcon";
 import styles from "./restaurant-page.module.css";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
@@ -22,9 +23,13 @@ export type RestaurantHeroAction = RestaurantHeroLinkAction | RestaurantHeroDeli
 
 export type RestaurantHeroPresentation = {
   layout: "photo-split" | "full-photo";
+  treatment?: "showcase";
+  showLogo?: boolean;
+  menuLink?: { label: string; href: string };
   imagePosition?: string;
   mobileImagePosition?: string;
   eyebrow?: string;
+  eyebrowIcon?: RestaurantNavigationIconName;
   headline: string;
   supportingText?: string;
   imageAlt: string;
@@ -48,7 +53,7 @@ function HeroAction({ action, className, restaurantId }: {
   if (action.kind === "delivery") {
     return (
       <RestaurantDeliveryTrigger surface="hero" className={className}>
-        {action.label}
+        <RestaurantNavigationIcon icon="truck" /> {action.label}
       </RestaurantDeliveryTrigger>
     );
   }
@@ -91,6 +96,7 @@ export default function RestaurantHero({
     <section
       className={styles.hero}
       data-layout={presentation.layout}
+      data-treatment={presentation.treatment}
       style={{
         "--hero-image-position": presentation.imagePosition ?? "center",
         "--hero-mobile-image-position": presentation.mobileImagePosition ?? presentation.imagePosition ?? "center",
@@ -98,12 +104,12 @@ export default function RestaurantHero({
       aria-labelledby="restaurant-page-title"
     >
       <div className={styles.heroContent}>
-        {logoUrl ? (
+        {logoUrl && presentation.showLogo !== false ? (
           // Restaurant logos may be hosted by each restaurant's configured asset provider.
           // eslint-disable-next-line @next/next/no-img-element
           <img className={styles.heroLogo} src={logoUrl} alt={`${name} logo`} />
         ) : null}
-        {presentation.eyebrow ? <p className={styles.eyebrow}>{presentation.eyebrow}</p> : null}
+        {presentation.eyebrow ? <p className={styles.eyebrow}>{presentation.eyebrowIcon ? <RestaurantNavigationIcon icon={presentation.eyebrowIcon} /> : null} {presentation.eyebrow}</p> : null}
         <h1 id="restaurant-page-title">{presentation.headline}</h1>
         {presentation.supportingText ? (
           <p className={styles.tagline}>{presentation.supportingText}</p>
@@ -122,6 +128,7 @@ export default function RestaurantHero({
             />
           ) : null}
         </div>
+        {presentation.menuLink ? <a className={styles.menuLink} href={presentation.menuLink.href}>{presentation.menuLink.label} <span aria-hidden="true">&rarr;</span></a> : null}
       </div>
 
       <div className={styles.heroMedia}>

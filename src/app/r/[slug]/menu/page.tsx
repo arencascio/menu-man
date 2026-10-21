@@ -7,6 +7,8 @@ import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/
 import { restaurantUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
 import { composeMenuSections } from "@/lib/menu-engagement/sections";
+import { withDemoMenuImages } from "@/lib/demo/menu-imagery";
+import { isDemoRestaurant } from "@/lib/demo/policy";
 import MenuBrowser from "../MenuBrowser";
 import OrderingStatus from "../OrderingStatus";
 import PageViewTracker from "../PageViewTracker";
@@ -88,7 +90,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     }
   }
   const heartCounts = heartsUnavailable ? [] : heartsResult.data ?? [];
-  const menuSections = composeMenuSections(sections, featuredUnavailable ? [] : featuredResult.data ?? [], heartCounts);
+  const menuSections = composeMenuSections(withDemoMenuImages(restaurant.id, sections), featuredUnavailable ? [] : featuredResult.data ?? [], heartCounts);
 
   let initialActivePayment: { orderId: string; orderNumber: string; statusLabel: string; locksCart: true } | null = null;
   for (const capability of await listGuestPaymentCapabilities()) {
@@ -121,7 +123,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     brandLockup: identity?.brandLockup,
     homeHref,
     deliveryOptions,
-    navigation: getRestaurantNavigation({ homeHref, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone }),
+    navigation: getRestaurantNavigation({ homeHref, hasDelivery: deliveryOptions.length > 0, directionsUrl, phone: isDemoRestaurant(restaurant.id) ? null : phone }),
     themePreset: restaurant.theme_preset,
     themeOverrides: restaurant.theme_overrides,
   };

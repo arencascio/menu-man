@@ -32,6 +32,7 @@ import OrderItemPanel from "./OrderItemPanel";
 import QuickChoicePanel from "./QuickChoicePanel";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./menu-browser.module.css";
+import type { MenuImagePresentation } from "./menu/menu-image-presentation";
 
 export type MenuItem = {
   id: string;
@@ -39,6 +40,7 @@ export type MenuItem = {
   description: string | null;
   price_cents: number;
   image_url: string | null;
+  imagePresentation?: MenuImagePresentation;
   is_orderable: boolean;
   modifierGroups: MenuModifierGroup[];
 };
@@ -942,7 +944,7 @@ export default function MenuBrowser({
                       aria-haspopup="dialog"
                       aria-expanded={isOpen}
                     >
-                      <MenuCardImage name={item.name} url={item.image_url} priority={priorityImage} />
+                      <MenuCardImage name={item.name} url={item.image_url} priority={priorityImage} presentation={item.imagePresentation} />
                       <MenuCardText name={item.name} price={formatPrice(item.price_cents, resolvedCurrency)} description={item.description} orderable={item.is_orderable} />
                     </button>
                     {item.is_orderable && <span className={`${styles.cardFooter} ${inCartQuantity > 0 ? styles.cardFooterActive : ""}`} aria-live="polite">{inCartQuantity > 0 ? `${inCartQuantity} in cart` : ""}</span>}

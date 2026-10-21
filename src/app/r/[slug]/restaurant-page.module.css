@@ -76,6 +76,9 @@
 }
 
 .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
   margin: 0 0 1rem;
   color: color-mix(in srgb, var(--theme-surface) 82%, var(--theme-accent));
   font-size: .78rem;
@@ -113,6 +116,7 @@
 .primaryAction,
 .secondaryAction {
   display: inline-flex;
+  gap: .6rem;
   align-items: center;
   justify-content: center;
   min-height: 3rem;
@@ -239,4 +243,28 @@
   .hero[data-layout="full-photo"] .heroMedia::after {
     background: linear-gradient(0deg, rgb(0 0 0 / .8), rgb(0 0 0 / .25) 55%, transparent 85%);
   }
+}
+
+/* Full-photo showcase treatment, composed from the existing hero. */
+.hero[data-treatment="showcase"] { height: auto; min-height: clamp(40rem, 92svh, 56rem); color: #fff8e8; }
+.hero[data-treatment="showcase"] .heroContent { padding: 9rem clamp(1.25rem, 4vw, 4rem) 4rem; }
+.hero[data-treatment="showcase"] h1 { max-width: 9ch; font-size: clamp(4rem, 7.5vw, 7.75rem); font-weight: 900; line-height: .94; letter-spacing: -.065em; }
+.hero[data-treatment="showcase"] .heroMedia::after {
+  background: linear-gradient(180deg, rgb(0 0 0 / .5), transparent 30%), linear-gradient(90deg, rgb(8 28 22 / .88), rgb(8 28 22 / .3) 60%, rgb(0 0 0 / .08));
+}
+.hero[data-treatment="showcase"] .tagline { max-width: 31rem; margin-top: 1.5rem; color: #fff8e8; font-size: clamp(1rem, 1.45vw, 1.2rem); line-height: 1.65; }
+.hero[data-treatment="showcase"] .heroActions { margin-top: 1.75rem; gap: .75rem; }
+.hero[data-treatment="showcase"] .primaryAction,
+.hero[data-treatment="showcase"] .secondaryAction { min-height: 3.5rem; padding: .9rem 1.5rem; border-radius: .5rem; font-weight: 800; }
+.hero[data-treatment="showcase"] .primaryAction { color: #fff; background: var(--theme-accent); }
+.hero[data-treatment="showcase"] .primaryAction:hover { color: var(--theme-primary); background: #fff8e8; }
+.menuLink { display: inline-flex; align-items: center; gap: .8rem; min-height: 2.75rem; margin-top: .8rem; color: inherit; font-size: .9rem; text-decoration: underline; text-underline-offset: .3rem; }
+.menuLink:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+@media (max-width: 700px) {
+  .hero[data-treatment="showcase"] { min-height: min(50rem, max(41rem, 92svh)); }
+  .hero[data-treatment="showcase"] .heroContent { padding: 8rem 1.25rem 2.5rem; }
+  .hero[data-treatment="showcase"] h1 { max-width: 11ch; font-size: clamp(2.9rem, 13vw, 5rem); }
+  .hero[data-treatment="showcase"] .heroMedia::after { background: linear-gradient(180deg, rgb(0 0 0 / .6), transparent 30%), linear-gradient(0deg, rgb(8 28 22 / .95), rgb(8 28 22 / .5) 65%, rgb(0 0 0 / .1)); }
+  .hero[data-treatment="showcase"] .heroActions { flex-direction: column; }
+  .hero[data-treatment="showcase"] .primaryAction, .hero[data-treatment="showcase"] .secondaryAction { flex: auto; width: 100%; }
 }

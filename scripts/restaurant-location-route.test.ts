@@ -41,5 +41,16 @@ test("Armando's map and storefront embeds are configured outside the shared pres
   assert.doesNotMatch(about, /Armando/);
   assert.match(map, /loading="lazy"/);
   assert.match(map, /referrerPolicy="strict-origin-when-cross-origin"/);
-  assert.match(map, /if \(!mapUrl && !streetViewUrl\) return null/);
+  assert.match(map, /if \(!mapUrl && !streetViewUrl && !neighborhoodUrl\) return null/);
+});
+
+test("Super Tacos shows fictional contact and general neighborhood without live contact actions", () => {
+  const route = source("src", "app", "r", "[slug]", "location", "page.tsx");
+  const home = source("src", "app", "r", "[slug]", "page.tsx");
+  const presentation = source("src", "lib", "demo", "presentation.ts");
+  assert.match(route, /phoneIsIllustrative=\{Boolean\(showcase\)\}/);
+  assert.match(home, /phoneIsIllustrative=\{Boolean\(showcase\)\}/);
+  assert.match(presentation, /Tyler\+Street\+%26\+Magnolia\+Avenue/);
+  assert.match(presentation, /not a restaurant storefront/);
+  assert.match(home, /!showcase \? <RestaurantJsonLd/);
 });

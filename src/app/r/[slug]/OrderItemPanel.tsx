@@ -16,6 +16,7 @@ import QuantityControl from "./QuantityControl";
 import MenuFavoriteButton from "./MenuFavoriteButton";
 import MenuIcon from "./MenuIcon";
 import styles from "./menu-browser.module.css";
+import { getMenuImageFrameStyle } from "./menu/menu-image-presentation";
 
 type OrderItemPanelProps = {
   item: MenuItem;
@@ -93,7 +94,7 @@ export default function OrderItemPanel({
       <div className={styles.expandedMedia}>
         {item.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image_url} alt={item.name} />
+          <img src={item.image_url} alt={item.name} style={getMenuImageFrameStyle(item.imagePresentation?.detail)} />
         ) : (
           <span className={styles.expandedPlaceholder}>{item.name.charAt(0)}</span>
         )}

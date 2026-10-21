@@ -75,6 +75,7 @@
 }
 
 .logo { object-fit: contain; background: var(--theme-surface); }
+.logo[src$="supertacologo.svg"] { border-radius: 0; background: transparent; }
 
 .brandMark {
   display: grid;
@@ -198,3 +199,4 @@
 .brandReveal { display: block; max-width: 100%; opacity: 0; transform: translateY(-40px) rotate(-1deg); }
 .brandRevealVisible { opacity: 1; transform: none; transition: opacity 700ms ease-out, transform 700ms cubic-bezier(.22, .61, .36, 1); }
 @media (prefers-reduced-motion: reduce) { .brandReveal { opacity: 1; transform: none; transition: none; } }
+.brand [data-wordmark-font="custom"] { font-synthesis: none; font-weight: 400; letter-spacing: 0; }

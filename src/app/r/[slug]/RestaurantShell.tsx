@@ -7,6 +7,10 @@ import RestaurantPresentationMotion from "./RestaurantPresentationMotion";
 import type { RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 import { getPublicCateringSettings } from "@/lib/catering/server";
 import DemoNotice from "./DemoNotice";
+import { isDemoRestaurant } from "@/lib/demo/policy";
+import { superTacosShowcase } from "@/lib/demo/presentation";
+import { withRestaurantPresentationPages } from "./restaurant-navigation-actions";
+import { superTacosBrandFont } from "@/lib/demo/brand-font";
 
 export type RestaurantShellRestaurant = {
   deliveryOptions?: readonly RestaurantDeliveryOption[];
@@ -25,11 +29,20 @@ type RestaurantShellProps = {
   children: ReactNode;
   restaurant: RestaurantShellRestaurant;
   smoothScroll?: boolean;
+  navigationVariant?: "solid" | "transparent";
 };
 
-export default async function RestaurantShell({ children, restaurant, smoothScroll = false }: RestaurantShellProps) {
+export default async function RestaurantShell({ children, restaurant, smoothScroll = false, navigationVariant }: RestaurantShellProps) {
+  const showcase = isDemoRestaurant(restaurant.id) ? superTacosShowcase : undefined;
+  const headerVariant = navigationVariant ?? (showcase ? "solid" : undefined);
   const catering = await getPublicCateringSettings(restaurant.id);
-  const navigation = catering.enabled ? [...restaurant.navigation, { label: "Catering", href: `${restaurant.homeHref}/catering` }] : restaurant.navigation;
+  const baseNavigation = showcase && !restaurant.navigation.some((item) => item.kind === "delivery")
+    ? [...restaurant.navigation, { kind: "delivery" as const, label: "Order Delivery", icon: "truck" as const }]
+    : restaurant.navigation;
+  const presentationNavigation = withRestaurantPresentationPages(baseNavigation, restaurant.homeHref, showcase?.pages);
+  const navigation = catering.enabled
+    ? withRestaurantPresentationPages(presentationNavigation, restaurant.homeHref, [{ label: "Catering", path: "catering" }])
+    : presentationNavigation;
   const theme = resolveTheme(restaurant.themePreset, restaurant.themeOverrides);
   const themeStyle = {
     "--theme-primary": theme.colors.primary,
@@ -52,13 +65,18 @@ export default async function RestaurantShell({ children, restaurant, smoothScro
       {smoothScroll ? <RestaurantPresentationMotion /> : null}
       <RestaurantDeliveryChooser
         options={restaurant.deliveryOptions ?? []}
+        illustrativeOptions={showcase && !restaurant.deliveryOptions?.length ? showcase.deliveryOptions : undefined}
         restaurantId={restaurant.id}
       >
         <RestaurantNavigation
+          variant={headerVariant}
+          shrinkOnScroll={showcase?.shrinkNavigationOnScroll}
           restaurantId={restaurant.id}
           homeHref={restaurant.homeHref}
           items={navigation}
           logoUrl={restaurant.logoUrl}
+          wordmarkOnly={showcase?.wordmarkOnly}
+          wordmarkClassName={showcase ? superTacosBrandFont.className : undefined}
           artworkMark={restaurant.artworkMark}
           brandLockup={restaurant.brandLockup}
           name={restaurant.name}

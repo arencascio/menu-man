@@ -139,6 +139,7 @@
 .cartSlot { display: contents; }
 
 .itemDialog { box-sizing: border-box; width: min(960px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: var(--card-bg); box-shadow: 0 24px 80px #0005; font-family: var(--theme-body-font, Arial, Helvetica, sans-serif); }
+.itemDialog:has(.expandedItem) { display: grid; grid-template-rows: auto minmax(0, 1fr); height: min(760px, calc(100dvh - 32px)); overflow: hidden; }
 .itemDialog::backdrop { background: #0004; }
 .itemDialogQuick { width: min(360px, calc(100vw - 24px)); max-height: min(520px, calc(100dvh - 24px)); border-radius: 12px; box-shadow: 0 14px 38px #0005; }
 .itemDialogQuick::backdrop { background: #0005; }
@@ -156,7 +157,7 @@
 .quickClose { width: 34px; min-width: 34px; min-height: 34px; padding: 0; border: 0; border-radius: 50%; }
 .quickClose { gap: 0; }
 
-.expandedItem { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(320px, 1.25fr); min-width: 0; background: var(--card-bg); }
+.expandedItem { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(320px, 1.25fr); min-width: 0; min-height: 0; height: 100%; background: var(--card-bg); }
 .quickChoicePanel { display: grid; gap: 8px; box-sizing: border-box; padding: 0 14px 14px; }
 .quickChoicePanel h3 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: 18px; line-height: 1.15; }
 .quickChoicePanel .expandedLabel { margin-bottom: 0; font-size: 10px; }
@@ -172,10 +173,10 @@
 .quickChoicePanel .addToCartButton { position: static; padding: 10px 12px; box-shadow: 0 2px 8px #0002; font-size: 13px; }
 .quickCustomize { min-height: 30px; border: 0; border-radius: 6px; color: var(--accent); background: transparent; cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
 .quickCustomize:hover { background: color-mix(in srgb, var(--accent) 6%, var(--card-bg)); }
-.expandedMedia { display: grid; min-height: 100%; overflow: hidden; border-right: 1px solid var(--line); background: var(--theme-primary, #5b0000); }
-.expandedMedia img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.expandedMedia { display: grid; min-width: 0; min-height: 0; height: 100%; overflow: hidden; align-content: center; border-right: 1px solid var(--line); background: var(--theme-primary, #5b0000); }
+.expandedMedia img { display: block; width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .expandedPlaceholder { color: var(--theme-surface, #fff); font-size: 5rem; }
-.orderForm { display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; }
+.orderForm { display: flex; min-height: 0; max-height: 100%; flex-direction: column; gap: 14px; padding: 22px 24px; overflow-y: auto; overscroll-behavior: contain; }
 .orderFormHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .orderFormHeader h3 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: clamp(23px, 2.5vw, 30px); letter-spacing: -.025em; line-height: 1.08; }
 .expandedLabel { margin: 0 0 6px; color: var(--theme-accent, var(--accent)); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
@@ -340,6 +341,9 @@
 .cartThumbnail { width: 72px; height: 72px; overflow: hidden; border-radius: 6px; }
 .cartThumbnail .image { width: 100%; height: 100%; aspect-ratio: 1; }
 @media (max-width: 760px) {
+  .itemDialog:has(.expandedItem) { display: block; height: 100dvh; overflow-x: hidden; overflow-y: auto; }
+  .expandedItem { height: auto; }
+  .orderForm { max-height: none; overflow: visible; }
   .page { width: min(calc(100% - 24px), var(--theme-content-width, 1280px)); padding-top: 0; }
   .categories { flex-wrap: nowrap; gap: 4px; padding-bottom: 0; }
   .category, .categoryActive { flex: 0 0 auto; min-height: 36px; padding: 6px 8px; font-size: 12px; }

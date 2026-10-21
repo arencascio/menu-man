@@ -17,6 +17,11 @@
   font-family: var(--theme-body-font);
 }
 
+/* Keep the viewport-fixed header aligned with the locked body's preserved width. */
+:global(html:has([data-restaurant-header])) { scrollbar-gutter: stable; }
+.navigationSlot { display: contents; }
+.siteHeader[data-variant] .brandName[data-wordmark-font="custom"] { font-synthesis: none; font-weight: 400; letter-spacing: 0; }
+
 .siteHeader {
   position: sticky;
   z-index: 40;
@@ -248,3 +253,111 @@
 @keyframes navigation-backdrop-in { from { opacity: 0; } }
 @keyframes navigation-backdrop-out { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .navigationDialog::backdrop, .navigationDialog[data-closing="true"]::backdrop { animation: none; } }
+
+/* Opt-in header variants; existing restaurant headers retain their styling. */
+.siteHeader[data-variant] {
+  color: var(--theme-text);
+  background: var(--theme-background);
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+.siteHeader[data-variant] .navigationInner { min-height: 5.5rem; padding: .75rem clamp(1.25rem, 4vw, 4rem); }
+.siteHeader[data-variant] .brand { gap: .85rem; }
+.siteHeader[data-variant] .brandMark { width: 3.25rem; height: 3.25rem; border-radius: 50%; }
+.siteHeader[data-variant] .brandMark[src$="supertacologo.svg"] { border-radius: 0; background: transparent; }
+.siteHeader[data-variant] .brandName { font-size: 1.25rem; font-weight: 900; letter-spacing: -.04em; }
+.siteHeader[data-variant] .navigationLinks { gap: .7rem; }
+.siteHeader[data-variant] .navigationLink { color: inherit; font-size: .9rem; border-radius: .4rem; }
+.navigationSlot[data-shrink-on-scroll],
+.navigationSlot[data-variant="transparent"] {
+  --restaurant-navigation-full-height: 5.5rem;
+  display: block;
+  height: var(--restaurant-navigation-full-height);
+}
+.navigationSlot[data-variant="transparent"] { margin-bottom: calc(0px - var(--restaurant-navigation-full-height)); }
+.siteHeader[data-shrink-on-scroll],
+.siteHeader[data-variant="transparent"] {
+  position: fixed;
+  inset: 0 0 auto;
+  width: 100%;
+}
+.siteHeader[data-variant="transparent"][data-scrolled="false"] {
+  color: #fff8e8; border-color: transparent; background: transparent;
+}
+.siteHeader[data-variant="transparent"][data-scrolled="false"] .menuButton {
+  color: inherit; background: transparent; border-color: rgb(255 255 255 / .5);
+}
+.siteHeader[data-variant="transparent"][data-scrolled="false"] .navigationLinks .navigationLink:hover { background: rgb(255 255 255 / .15); }
+.siteHeader[data-variant="transparent"][data-scrolled="false"] .navigationLinks .navigationLink:focus-visible,
+.siteHeader[data-variant="transparent"][data-scrolled="false"] .brand:focus-visible,
+.siteHeader[data-variant="transparent"][data-scrolled="false"] .menuButton:focus-visible { outline-color: #fff8e8; }
+.siteHeader[data-variant="transparent"][data-scrolled="true"] { box-shadow: 0 4px 24px #0001; }
+.siteHeader[data-variant] .mobileNavigation .navigationLink { color: var(--theme-text); }
+@media (max-width: 1100px) {
+  .siteHeader[data-variant] .navigationInner { min-height: 4.75rem; padding: .6rem 1.25rem; }
+  .navigationSlot[data-shrink-on-scroll],
+  .navigationSlot[data-variant="transparent"] { --restaurant-navigation-full-height: 4.75rem; }
+  .siteHeader[data-variant] .brandMark { width: 2.75rem; height: 2.75rem; }
+  .siteHeader[data-variant] .brandName { font-size: 1.1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .siteHeader[data-variant] { transition: none; } }
+
+/* Opted-in navigation is fixed to the viewport; its slot preserves the original
+   flow height while the visible bar compacts above content without shifting it. */
+.siteHeader[data-shrink-on-scroll] {
+  background: var(--theme-background);
+  --restaurant-header-expanded-height: 5.5rem;
+  --restaurant-header-compact-height: 4.15rem;
+  --restaurant-logo-vertical-gap: 12px;
+}
+.siteHeader[data-shrink-on-scroll] .navigationInner {
+  min-height: 5.5rem;
+  padding-block: .375rem;
+  transition: min-height 220ms ease, padding 220ms ease;
+}
+.siteHeader[data-shrink-on-scroll] .brandMark {
+  transition: width 220ms ease, height 220ms ease;
+}
+.siteHeader[data-shrink-on-scroll] .brandMark[src$="supertacologo.svg"] {
+  width: auto;
+  height: calc(var(--restaurant-header-expanded-height) - var(--restaurant-logo-vertical-gap));
+  max-width: min(8rem, 30vw);
+  object-fit: contain;
+}
+.siteHeader[data-shrink-on-scroll] .brandName {
+  transition: font-size 220ms ease;
+}
+.siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] {
+  background: var(--theme-surface);
+  box-shadow: 0 4px 24px #0002;
+}
+.siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .navigationInner {
+  min-height: 4.15rem;
+  padding-block: .35rem;
+}
+.siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .brandMark {
+  width: 2.45rem;
+  height: 2.45rem;
+}
+.siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .brandMark[src$="supertacologo.svg"] {
+  width: auto;
+  height: calc(var(--restaurant-header-compact-height) - var(--restaurant-logo-vertical-gap));
+}
+.siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .brandName {
+  font-size: 1.05rem;
+}
+@media (max-width: 1100px) {
+  .siteHeader[data-shrink-on-scroll] {
+    --restaurant-header-expanded-height: 4.75rem;
+    --restaurant-header-compact-height: 3.85rem;
+  }
+  .siteHeader[data-shrink-on-scroll] .navigationInner { min-height: 4.75rem; padding: .375rem 1.25rem; }
+  .siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .navigationInner { min-height: 3.85rem; padding-block: .25rem; }
+  .siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .brandMark { width: 2.15rem; height: 2.15rem; }
+  .siteHeader[data-shrink-on-scroll] .brandMark[src$="supertacologo.svg"] { max-width: min(30vw, 6rem); }
+  .siteHeader[data-shrink-on-scroll][data-shrink-scrolled="true"] .brandName { font-size: .95rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .siteHeader[data-shrink-on-scroll] .navigationInner,
+  .siteHeader[data-shrink-on-scroll] .brandMark,
+  .siteHeader[data-shrink-on-scroll] .brandName { transition: none; }
+}

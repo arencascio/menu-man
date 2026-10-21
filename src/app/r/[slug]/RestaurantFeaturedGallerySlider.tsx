@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import RestaurantNavigationIcon from "./RestaurantNavigationIcon";
 import styles from "./restaurant-featured-gallery-slider.module.css";
 import { RestaurantDeliveryTrigger } from "./RestaurantDeliveryChooser";
 import TrackedRestaurantLink from "./TrackedRestaurantLink";
@@ -271,7 +272,7 @@ export default function RestaurantFeaturedGallerySlider({
                         <GalleryAction action={slide.secondaryAction} className={styles.secondaryAction}
                           restaurantId={restaurantId} tabIndex={isActive ? 0 : -1} />
                       ) : (
-                        <RestaurantDeliveryTrigger surface="featured_gallery" className={styles.secondaryAction}>Order Delivery</RestaurantDeliveryTrigger>
+                        <RestaurantDeliveryTrigger surface="featured_gallery" className={styles.secondaryAction}><RestaurantNavigationIcon icon="truck" /> Order Delivery</RestaurantDeliveryTrigger>
                       )}
                     </div>
                   </div>

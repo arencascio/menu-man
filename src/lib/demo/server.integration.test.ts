@@ -74,7 +74,7 @@ function harness(row: Row | null = demoRow, env: Record<string, string> = enable
     paymentId: "20000000-0000-4000-8000-000000001001", orderId: "20000000-0000-4000-8000-000000001002",
     connectionId, provider, providerEnvironment: provider === "fake" ? "test" : "sandbox",
     status: "requires_payment_method", orderStatus: "pending_payment", paymentStatus: "unpaid", captureMode: "automatic",
-    amountCents: 595, currency: "USD", paymentDueAt: "2026-10-20T20:00:00Z", paidAt: null, latestAttempt: null,
+    amountCents: 595, currency: "USD", paymentDueAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), paidAt: null, latestAttempt: null,
   };
   const db = {
     from(table: string) {

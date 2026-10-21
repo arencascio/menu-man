@@ -13,6 +13,7 @@ type RestaurantHoursLocationProps = {
   directionsUrl: string | null;
   hours: readonly BusinessHour[];
   phone: string | null;
+  phoneIsIllustrative?: boolean;
   postalCode: string | null;
   restaurantId: string;
   restaurantName: string;
@@ -20,6 +21,7 @@ type RestaurantHoursLocationProps = {
   specialHours: readonly SpecialHour[];
   state: string | null;
   timezone: string | null;
+  variant?: "editorial";
 };
 
 function isUsableValue(value: string | null | undefined) {
@@ -37,6 +39,7 @@ export default function RestaurantHoursLocation({
   directionsUrl,
   hours,
   phone,
+  phoneIsIllustrative = false,
   postalCode,
   restaurantId,
   restaurantName,
@@ -44,6 +47,7 @@ export default function RestaurantHoursLocation({
   specialHours,
   state,
   timezone,
+  variant,
 }: RestaurantHoursLocationProps) {
   const addressParts = [addressLine1, city, state, postalCode].filter(isUsableValue);
   const hasAddress = addressParts.length > 0;
@@ -53,6 +57,7 @@ export default function RestaurantHoursLocation({
     <section
       id="restaurant-information"
       className={`${styles.section} ${density === "compact" ? styles.compact : ""}`}
+      data-variant={variant}
       aria-labelledby={showHeading ? "restaurant-information-title" : undefined}
       aria-label={showHeading ? undefined : "Hours and location"}
     >
@@ -65,6 +70,7 @@ export default function RestaurantHoursLocation({
 
         <div className={styles.grid}>
           <div className={styles.locationCard}>
+            {variant === "editorial" ? <p className={styles.cardLabel}>{hasAddress ? "Find us" : "Location"}</p> : null}
             {hasAddress ? (
               <address className={styles.address}>{addressParts.join(", ")}</address>
             ) : (
@@ -73,14 +79,14 @@ export default function RestaurantHoursLocation({
 
             {phone ? (
               <div className={styles.contact}>
-                <span>Call us</span>
-                <TrackedRestaurantLink surface="restaurant_information"
+                <span>{phoneIsIllustrative ? "Demo phone" : "Call us"}</span>
+                {phoneIsIllustrative ? <span>{phone}</span> : <TrackedRestaurantLink surface="restaurant_information"
                   href={`tel:${phone}`}
                   eventName="phone_clicked"
                   restaurantId={restaurantId}
                 >
                   {phone}
-                </TrackedRestaurantLink>
+                </TrackedRestaurantLink>}
               </div>
             ) : null}
 

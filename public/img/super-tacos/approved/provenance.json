@@ -1,0 +1,417 @@
+{
+  "collection": "Owner-supplied approved Super Tacos stock/menu photographs",
+  "sourceDirectory": "super tacos",
+  "sourceArchive": "super tacos.zip",
+  "archiveSha256": "65d1e21fe357a60b6c34b4f08fe12a1c8be81a624bd405474a03146fbf0a2e99",
+  "rights": "Approved by the owner for this showcase. Individual author/license records were not included; no additional license claims are made.",
+  "processing": "EXIF orientation normalized; uncropped proportional resize; WebP quality 90. Originals preserved in the supplied folder/archive. Earlier sources.json is retained as historical provenance.",
+  "sharpVersion": "0.35.5",
+  "images": [
+    {
+      "source": "stock/carnitas tacos.jpg",
+      "originalSha256": "e6a0ba3c9cbaf4f3233ec4167477f5b0233155d5bbf18cb6c47f0a2ddd2dc555",
+      "originalBytes": 4842678,
+      "originalDimensions": {
+        "width": 5968,
+        "height": 3875
+      },
+      "asset": "/img/super-tacos/approved/carnitas-tacos.webp",
+      "sha256": "611393fe879007911b0d1e1db7d92491d13e8220dc9641bdf393e746ee76e1f1",
+      "bytes": 772890,
+      "width": 2560,
+      "height": 1662
+    },
+    {
+      "source": "stock/foodiesfeed.com_preparing-mexican-burritos.jpg",
+      "originalSha256": "da6c64ff1b0347d9aa82e62b6e277bac5041513c33d7c8a4890e6a6b770d9812",
+      "originalBytes": 5300210,
+      "originalDimensions": {
+        "width": 5008,
+        "height": 3339
+      },
+      "asset": "/img/super-tacos/approved/burrito-preparation.webp",
+      "sha256": "e30d128d9cadd5bdb1cb32af90e0f5bb754dbc675e08aa80c9cd8850e198df86",
+      "bytes": 628398,
+      "width": 1920,
+      "height": 1280
+    },
+    {
+      "source": "stock/foodiesfeed.com_tortilla-chips-with-salsa.jpg",
+      "originalSha256": "04f912fc9938b8070359e31c8d33478ee7c6066d3b7e56a4a7c4adde1adafa61",
+      "originalBytes": 4206069,
+      "originalDimensions": {
+        "width": 5663,
+        "height": 3775
+      },
+      "asset": "/img/super-tacos/approved/chips-and-salsa.webp",
+      "sha256": "37ff0a911ea708bde89cacfcdc15c23a42fb0a946ac889b4fc0a6d1ed39b5b6e",
+      "bytes": 324912,
+      "width": 1920,
+      "height": 1280
+    },
+    {
+      "source": "stock/salsas.jpg",
+      "originalSha256": "4198d025f933bd68f1f1645b793c2f2f3944bf82f69d2d0af7abbe8b6af979c9",
+      "originalBytes": 3924940,
+      "originalDimensions": {
+        "width": 6592,
+        "height": 4395
+      },
+      "asset": "/img/super-tacos/approved/salsas.webp",
+      "sha256": "ef0fd8f266ed28b81be71b666981b6c1b13125bab7122e22651b7f14530c98f7",
+      "bytes": 341352,
+      "width": 1920,
+      "height": 1280
+    },
+    {
+      "source": "stock/StockSnap_UPG7YS3LGW.jpg",
+      "originalSha256": "c2e0b0eecc53b9ed912bd37da93495cb98464b28756a2846353f7b9108473c6d",
+      "originalBytes": 3689787,
+      "originalDimensions": {
+        "width": 2000,
+        "height": 3008
+      },
+      "asset": "/img/super-tacos/approved/taco-table.webp",
+      "sha256": "44fc8be6fb35e55090bbb526e195d4e3a4249c86e202f1a100fb78ca801f4c01",
+      "bytes": 212880,
+      "width": 1600,
+      "height": 2406
+    },
+    {
+      "source": "menu items/carne asada tacos.jpg",
+      "originalSha256": "aee5e78fd4c865af9f0eb3b1d83d4a36b4d22a177219cfd6a20b741c31110f60",
+      "originalBytes": 4035382,
+      "originalDimensions": {
+        "width": 6016,
+        "height": 4016
+      },
+      "asset": "/img/super-tacos/approved/carne-asada-tacos.webp",
+      "sha256": "15b112869e93532d86d852a4632007c12d2ff202a94cc726dc47afd6dbdfb9ba",
+      "bytes": 388636,
+      "width": 1600,
+      "height": 1068
+    },
+    {
+      "source": "menu items/street tacos.jpg",
+      "originalSha256": "28bbe4276e6fbf324b2bbe10068d59b1aed43153857b72ad45171e07a15a1eb5",
+      "originalBytes": 1294351,
+      "originalDimensions": {
+        "width": 5184,
+        "height": 3456
+      },
+      "asset": "/img/super-tacos/approved/street-tacos.webp",
+      "sha256": "bd8fee3c3837b4a1dc37afa345f16ddfefe2e79bcfbe794c0d5901b6a2fbf736",
+      "bytes": 163842,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/burrito.jpg",
+      "originalSha256": "1716f5888b5cd676e9f4c391452018a6503d4284f2d1c07866b378dbb7064a32",
+      "originalBytes": 488695,
+      "originalDimensions": {
+        "width": 1920,
+        "height": 1280
+      },
+      "asset": "/img/super-tacos/approved/burrito.webp",
+      "sha256": "020a0da6e6fa135dbe7d1561bc1fd0e5d3c79f802f7092721be54b0e91adb89a",
+      "bytes": 204132,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/chicken burrito.jpg",
+      "originalSha256": "cde6e7c5f74e1bb682b197ed51a77b1ca5e1e235a8d24d1ae745d60a6e71811d",
+      "originalBytes": 1007727,
+      "originalDimensions": {
+        "width": 3595,
+        "height": 2400
+      },
+      "asset": "/img/super-tacos/approved/chicken-burrito.webp",
+      "sha256": "38fb6c7b84ec2f33bb81a131c690ad144583a8eaab78607225459cd846d40409",
+      "bytes": 186946,
+      "width": 1600,
+      "height": 1068
+    },
+    {
+      "source": "menu items/black bean burrito.jpg",
+      "originalSha256": "af2550b958ea0c5957e67a502b26323ab17aed076c942b1ad0b01fc2d1f316d2",
+      "originalBytes": 3489836,
+      "originalDimensions": {
+        "width": 6720,
+        "height": 4480
+      },
+      "asset": "/img/super-tacos/approved/black-bean-burrito.webp",
+      "sha256": "f699842430d8736967504cea2fc4814de4cca80e05d78afbac21074c92c72bdc",
+      "bytes": 302428,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/breakfast burrito.jpg",
+      "originalSha256": "b69f3e35b58b68fc0b7836785c5049e5103ef2c497c8aaaca3bf2015eef6b9e6",
+      "originalBytes": 4109750,
+      "originalDimensions": {
+        "width": 4000,
+        "height": 6000
+      },
+      "asset": "/img/super-tacos/approved/breakfast-burrito.webp",
+      "sha256": "f7f9ef392a2df1eaa06ca1ee42a9cd457360b7696f3293fdbb3210e8a3ca4429",
+      "bytes": 363080,
+      "width": 1600,
+      "height": 2400
+    },
+    {
+      "source": "menu items/breakfast quesadilla.jpg",
+      "originalSha256": "f55693d0c3007890700e7a33c13b6771202b545fb534f60a24f3b1c55a08c592",
+      "originalBytes": 3129000,
+      "originalDimensions": {
+        "width": 5184,
+        "height": 3456
+      },
+      "asset": "/img/super-tacos/approved/breakfast-quesadilla.webp",
+      "sha256": "ae43af36d426e238801a17e1a5ba56579c3fe5bf6d44a39b4338698f9ac23b44",
+      "bytes": 136334,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/churros.jpg",
+      "originalSha256": "953bea5991f9e688c5ab8efc00c2fda290dfa4718fd37c5e09118f94910854a6",
+      "originalBytes": 7556458,
+      "originalDimensions": {
+        "width": 5760,
+        "height": 3840
+      },
+      "asset": "/img/super-tacos/approved/churros.webp",
+      "sha256": "8229478074974fcf6f92ba83566fddb03c43068617457731a147711e5c8e109e",
+      "bytes": 489632,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/loaded nachos.jpg",
+      "originalSha256": "d701ec6ed16c98ac93c2349c5a5690499f9c5a23cf7cda2e5f62d46a90b65c84",
+      "originalBytes": 750358,
+      "originalDimensions": {
+        "width": 3904,
+        "height": 2624
+      },
+      "asset": "/img/super-tacos/approved/loaded-nachos.webp",
+      "sha256": "55489c0e24b1225d74b28f8ac71df54036ae6309bfc199d7ba98fd9a569e2985",
+      "bytes": 179770,
+      "width": 1600,
+      "height": 1075
+    },
+    {
+      "source": "menu items/quesadilla.jpg",
+      "originalSha256": "2d0e7d14d0e925ba895048af2048953b6769b0f6c0a9cb4c3172fc06f7afc357",
+      "originalBytes": 2900717,
+      "originalDimensions": {
+        "width": 4608,
+        "height": 3456
+      },
+      "asset": "/img/super-tacos/approved/quesadilla.webp",
+      "sha256": "6cd0bd4ec5c6de002723fd8bf919d14ead80641cce79fea02d3cd38897f05936",
+      "bytes": 310716,
+      "width": 1600,
+      "height": 1200
+    },
+    {
+      "source": "menu items/shrimp tacos.jpg",
+      "originalSha256": "f9eb5b06df5ed089764a3e35a9aafcbf497070fdbbe7e3044728c4909ff5f8ae",
+      "originalBytes": 1361160,
+      "originalDimensions": {
+        "width": 2500,
+        "height": 3750
+      },
+      "asset": "/img/super-tacos/approved/shrimp-tacos.webp",
+      "sha256": "5ba3580dd928b8d97cf7d97b6de31d7f12d4c9199b0751450ce3fb92673faa29",
+      "bytes": 542540,
+      "width": 1600,
+      "height": 2400
+    },
+    {
+      "source": "menu items/horchata.jpg",
+      "originalSha256": "5639245e788cdaa8b1a11dcfcdc56ed74b9abe6087e847d86df705ba0a7b4a8a",
+      "originalBytes": 2560442,
+      "originalDimensions": {
+        "width": 3823,
+        "height": 3823
+      },
+      "asset": "/img/super-tacos/approved/horchata.webp",
+      "sha256": "b5aa1a170a5bcacb01da3e0dab64f90c125e07e8590de0647dbe5a53e3364a3c",
+      "bytes": 532020,
+      "width": 1600,
+      "height": 1600
+    },
+    {
+      "source": "menu items/loaded taquitos.jpg",
+      "originalSha256": "a0d04bec82f30957a58a74b26f01a4bc9e2fc5ebd6be90bbc3696067dbb65a60",
+      "originalBytes": 5477525,
+      "originalDimensions": {
+        "width": 4016,
+        "height": 6016
+      },
+      "asset": "/img/super-tacos/approved/loaded-taquitos.webp",
+      "sha256": "b3975d802b49b9a9a7e5823d9a90b5468a7f39c193a52afc26dfb5d6a123e8ea",
+      "bytes": 664970,
+      "width": 1600,
+      "height": 2397
+    },
+    {
+      "source": "menu items/Chilaquiles Divorciados.jpg",
+      "originalSha256": "e1e2426000cb684965cdf5aabc2f5313843032553e4003aac2279a49c4dc3a4f",
+      "originalBytes": 6002321,
+      "originalDimensions": {
+        "width": 6000,
+        "height": 4000
+      },
+      "asset": "/img/super-tacos/approved/chilaquiles.webp",
+      "sha256": "314ee1823c227b6ba6baf58edde87fe104b36daccab29d95157820824d752e44",
+      "bytes": 336054,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/Chorizo Queso Fundido.jpg",
+      "originalSha256": "4213c17e020a5c40e62bf3cabcc8e44151598eef2713d3cb27e0dce29cf3c12d",
+      "originalBytes": 6086635,
+      "originalDimensions": {
+        "width": 6000,
+        "height": 4000
+      },
+      "asset": "/img/super-tacos/approved/queso-fundido.webp",
+      "sha256": "d20bf8269459222a9190f6c8a040dc75b2a21b3820dd250db11d9eb8b35c9dbc",
+      "bytes": 371046,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/sopes.jpg",
+      "originalSha256": "487a691f4edc18abb7d0d4b091d4a46265e287a822099235e90fd1f7b8d96029",
+      "originalBytes": 3580829,
+      "originalDimensions": {
+        "width": 4672,
+        "height": 7008
+      },
+      "asset": "/img/super-tacos/approved/sopes.webp",
+      "sha256": "53a390b15e6ff4fd10ab5836eff0b4bf9b8e989e3bd929fdc6a9a60bcf0d2ac9",
+      "bytes": 533016,
+      "width": 1600,
+      "height": 2400
+    },
+    {
+      "source": "menu items/Huevos Divorciados.jpg",
+      "originalSha256": "e5f0438026f9fc4801cd296f578f538eafeb2818f0a287489e6c88b2f02f8487",
+      "originalBytes": 4218473,
+      "originalDimensions": {
+        "width": 4000,
+        "height": 6000
+      },
+      "asset": "/img/super-tacos/approved/huevos-divorciados.webp",
+      "sha256": "bd1f1a072745683597713c72e0394b2eadc4db7853c3b3996d0f56ecc17f5091",
+      "bytes": 571170,
+      "width": 1600,
+      "height": 2400
+    },
+    {
+      "source": "menu items/ranchero plate.jpg",
+      "originalSha256": "905271f2442300c01572482887b67bfdc68a8b5687a8a0d113b6030e4246d016",
+      "originalBytes": 2278804,
+      "originalDimensions": {
+        "width": 5731,
+        "height": 3783
+      },
+      "asset": "/img/super-tacos/approved/ranchero-plate.webp",
+      "sha256": "f2dbd110cf0d6c8a1daed9d64e14a2d8e60e2a75280098bc57cf9fb825d8831e",
+      "bytes": 143974,
+      "width": 1600,
+      "height": 1056
+    },
+    {
+      "source": "menu items/fish_taco.jpg",
+      "originalSha256": "4de112ee23649079b37da65abd0436a7331428df85c95a428a6df9e7bb366636",
+      "originalBytes": 1861151,
+      "originalDimensions": {
+        "width": 4320,
+        "height": 3240
+      },
+      "asset": "/img/super-tacos/approved/fish-taco.webp",
+      "sha256": "a327916745abec7f6aa79e4ec273262057ee87d0a1b43cd5f22b4c07e6d6da30",
+      "bytes": 367018,
+      "width": 1600,
+      "height": 1200
+    },
+    {
+      "source": "menu items/menudo.jpg",
+      "originalSha256": "7b80f5c13f0182ed0c49c7bf39a9509c98be886ef9ddddd0bff9085bba7ee765",
+      "originalBytes": 629492,
+      "originalDimensions": {
+        "width": 4928,
+        "height": 3264
+      },
+      "asset": "/img/super-tacos/approved/menudo.webp",
+      "sha256": "b4c8ef130d4235c52143f60f926ff8439d8387ea39bb7d55b350098d6352c229",
+      "bytes": 132880,
+      "width": 1600,
+      "height": 1060
+    },
+    {
+      "source": "menu items/mexican coke half liter.jpg",
+      "originalSha256": "da3978812bec527bbdb3338f46062d0863a63d9bc4e5529bb68e75105a614f3d",
+      "originalBytes": 5065977,
+      "originalDimensions": {
+        "width": 8256,
+        "height": 5504
+      },
+      "asset": "/img/super-tacos/approved/mexican-coke.webp",
+      "sha256": "61cb3a39adbdf7a0b1bfe4d057108ba4d5f8f666b0f2623d25538bf4dac6c2da",
+      "bytes": 101586,
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "source": "menu items/shrimp cocktail.jpg",
+      "originalSha256": "06ef5760a0b9a07bcebee1cdd847062cd5e6822f4193304ab50eeb2db0a8b0cb",
+      "originalBytes": 1908572,
+      "originalDimensions": {
+        "width": 3327,
+        "height": 5913
+      },
+      "asset": "/img/super-tacos/approved/shrimp-cocktail.webp",
+      "sha256": "bc453df9cbb4de30103425b3eca955187181043051fb7e1cb9a875d549a53b64",
+      "bytes": 405918,
+      "width": 1600,
+      "height": 2844
+    },
+    {
+      "source": "menu items/tortillas.jpg",
+      "originalSha256": "265eec0093a80ed7341b3d8b4daee51f74f304cf55cbf7d88b207087f88299c4",
+      "originalBytes": 4917368,
+      "originalDimensions": {
+        "width": 4772,
+        "height": 7158
+      },
+      "asset": "/img/super-tacos/approved/tortillas.webp",
+      "sha256": "b88db43baa295933f2b629bf571d8ae6870c81f6e4cdbb820c28e3dba6a64697",
+      "bytes": 929368,
+      "width": 1600,
+      "height": 2400
+    },
+    {
+      "source": "menu items/super taco.jpg",
+      "originalSha256": "c0d255319a4dec983a10fda9b2b18b70fa77cb5fac08e338bc04cecc5cf16ceb",
+      "originalBytes": 4414873,
+      "originalDimensions": {
+        "width": 5472,
+        "height": 3648
+      },
+      "asset": "/img/super-tacos/approved/super-taco.webp",
+      "sha256": "a4ce8e6d648c1de99cfc45c16ddb90244b751cbb5fc011c4d6728f08e7cd8df5",
+      "bytes": 156760,
+      "width": 1600,
+      "height": 1067
+    }
+  ]
+}

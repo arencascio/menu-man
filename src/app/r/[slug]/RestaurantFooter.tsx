@@ -9,6 +9,11 @@ import RestaurantNavigationIcon from "./RestaurantNavigationIcon";
 import RestaurantPatternSeparator from "./RestaurantPatternSeparator";
 import RestaurantBrandLockup, { type RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
 import RestaurantAnalyticsChoice from "./RestaurantAnalyticsChoice";
+import { isDemoRestaurant } from "@/lib/demo/policy";
+import { superTacosShowcase } from "@/lib/demo/presentation";
+import { withRestaurantPresentationPages } from "./restaurant-navigation-actions";
+import { superTacosBrandFont } from "@/lib/demo/brand-font";
+import RestaurantWordmark from "./RestaurantWordmark";
 
 type RestaurantFooterProps = {
   className?: string;
@@ -37,31 +42,38 @@ export default function RestaurantFooter({
   restaurantId,
   navigation,
 }: RestaurantFooterProps) {
+  const showcaseBrand = isDemoRestaurant(restaurantId);
+  const wordmarkOnly = showcaseBrand && superTacosShowcase.wordmarkOnly;
   const currentYear = new Date().getFullYear();
+  const footerNavigation = withRestaurantPresentationPages(navigation, homeHref, isDemoRestaurant(restaurantId) ? superTacosShowcase.pages : undefined);
+  const showBrandReveal = !brandLockup && isDemoRestaurant(restaurantId) && superTacosShowcase.footerReveal;
+  const identityLink = (
+    <a className={styles.brand} href={homeHref} aria-label={`${name} home`}>
+      {brandLockup ? <RestaurantBrandLockup presentation={brandLockup} size="footer" /> : <>
+      {wordmarkOnly ? null : !artworkMark && logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={styles.logo} src={logoUrl} alt="" />
+      ) : !artworkMark ? (
+        <span className={styles.brandMark} aria-hidden="true">{name.charAt(0)}</span>
+      ) : null}
+      <RestaurantWordmark name={name} fontClassName={showcaseBrand ? superTacosBrandFont.className : undefined} />
+      </>}
+    </a>
+  );
 
   return (
     <>
     <RestaurantPatternSeparator />
     <footer id="restaurant-footer" className={[styles.footer, brandLockup ? styles.withLockup : null, className].filter(Boolean).join(" ")}>
       <div className={styles.inner}>
-        {!brandLockup && artworkMark && logoUrl ? (
+        {!wordmarkOnly && !brandLockup && artworkMark && logoUrl ? (
           <div className={styles.artworkArea} aria-hidden="true">
             <RestaurantFooterArtwork src={logoUrl} />
           </div>
         ) : null}
 
         <div className={styles.identity}>
-          <a className={styles.brand} href={homeHref} aria-label={`${name} home`}>
-            {brandLockup ? <RestaurantFooterReveal><RestaurantBrandLockup presentation={brandLockup} size="footer" /></RestaurantFooterReveal> : <>
-            {!artworkMark && logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className={styles.logo} src={logoUrl} alt="" />
-            ) : !artworkMark ? (
-              <span className={styles.brandMark} aria-hidden="true">{name.charAt(0)}</span>
-            ) : null}
-            <span>{name}</span>
-            </>}
-          </a>
+          {brandLockup ? <RestaurantFooterReveal>{identityLink}</RestaurantFooterReveal> : showBrandReveal ? <RestaurantFooterReveal>{identityLink}</RestaurantFooterReveal> : identityLink}
 
           {address ? (
             directionsUrl ? (
@@ -79,7 +91,7 @@ export default function RestaurantFooter({
             ) : <p className={styles.contactText}>{address}</p>
           ) : null}
           {phone ? (
-            <TrackedRestaurantLink surface="footer"
+            showcaseBrand ? <p className={styles.contactText}>{phone}</p> : <TrackedRestaurantLink surface="footer"
               className={styles.contactLink}
               eventName="phone_clicked"
               href={`tel:${phone}`}
@@ -92,7 +104,7 @@ export default function RestaurantFooter({
         </div>
 
         <nav className={styles.actions} aria-label={`${name} footer navigation`}>
-          {navigation.map((item) => (
+          {footerNavigation.map((item) => (
             item.kind === "delivery" ? (
               <RestaurantDeliveryTrigger surface="footer" className={styles.action} key={`${item.label}:delivery`}>
                 {item.icon ? <RestaurantNavigationIcon icon={item.icon} /> : null}
