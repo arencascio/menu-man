@@ -35,7 +35,7 @@ test("browse-only items retain local cart interaction only with the explicit pre
   assert.equal(getCardAddMode(item), "full");
   assert.equal(getCardAddMode(item, true), "direct");
   assert.equal(createDirectCartLine(item, { id: "sample", name: "Samples", description: null, sort_order: 0, items: [item] }, "local-line").basePriceCents, 350);
-  assert.ok(restaurantShowcases.every((showcase) => !showcase.published && !showcase.routeEnabled));
+  assert.ok(restaurantShowcases.every((showcase) => !showcase.published && getShowcaseHref(showcase) === null));
   for (const routeEnabled of [false, true]) {
     for (const published of [false, true]) {
       assert.equal(getShowcaseHref({ slug: "super-tacos", routeEnabled, published }), routeEnabled && published ? "/r/super-tacos" : null);

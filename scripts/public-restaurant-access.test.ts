@@ -9,6 +9,7 @@ import { proxy, config } from "../src/proxy";
 import { isRestaurantPublicationRestricted } from "../src/lib/public-restaurant-access";
 import { isManagementOnlyPath, isProductionManagementDisabled } from "../src/lib/production-management-gate";
 import { isProductionSite } from "../src/lib/seo/site-origin";
+import { getShowcaseHref, restaurantShowcases } from "../src/lib/restaurant-showcases";
 
 test("Production management paths fail closed before authentication; Staging remains reachable", async () => {
   const previousVercel = process.env.VERCEL_ENV;
@@ -112,9 +113,9 @@ test("notification worker endpoint cannot invoke missing Production RPC", async 
 
 test("publication restriction preserves staging and other restaurant access", () => {
   for (const slug of ["armandos", "super-tacos"]) {
-    assert.equal(isRestaurantPublicationRestricted(slug, "production", "staging"), true);
-    assert.equal(isRestaurantPublicationRestricted(slug, "preview", "production"), true);
-    assert.equal(isRestaurantPublicationRestricted(slug.toUpperCase(), "production", "production"), true);
+    assert.equal(isRestaurantPublicationRestricted(slug, "production", "staging"), slug === "armandos");
+    assert.equal(isRestaurantPublicationRestricted(slug, "preview", "production"), slug === "armandos");
+    assert.equal(isRestaurantPublicationRestricted(slug.toUpperCase(), "production", "production"), slug === "armandos");
     assert.equal(isRestaurantPublicationRestricted(slug, "preview", "staging"), false);
     assert.equal(isRestaurantPublicationRestricted(slug, "development", "development"), false);
     assert.equal(isRestaurantPublicationRestricted(slug, "", "staging"), false);
@@ -124,19 +125,22 @@ test("publication restriction preserves staging and other restaurant access", ()
   }
 });
 
-test("production proxy denies demo pages, child routes and APIs before rendering", async () => {
+test("Production opens Super Tacos independently of marketing, Armando's and management", async () => {
   const previousVercel = process.env.VERCEL_ENV;
   const previousMenuMan = process.env.MENU_MAN_ENV;
   process.env.VERCEL_ENV = "production";
   process.env.MENU_MAN_ENV = "staging";
   try {
-    const paths = ["armandos", "super-tacos"].flatMap((slug) => [
+    assert.equal(restaurantShowcases[0].routeEnabled, true);
+    assert.equal(restaurantShowcases[0].published, false);
+    assert.equal(getShowcaseHref(restaurantShowcases[0]), null);
+    const paths = ["armandos"].flatMap((slug) => [
       `/r/${slug}`, `/r/${slug}/menu`, `/r/${slug}/location`,
       `/r/${slug}/checkout`, `/r/${slug}/order/demo/payment`,
       `/r/${slug}/order/demo/confirmation`, `/r/${slug.toUpperCase()}/menu`,
       `/api/restaurants/${slug}/pickup-availability`, `/api/restaurants/${slug}/orders`,
       `/api/restaurants/${slug}/hearts`,
-    ]).concat("/r/%61rmandos/menu", "/api/restaurants/%73uper-tacos/orders");
+    ]).concat("/r/%61rmandos/menu");
     for (const path of paths) {
       assert.equal(doesProxyMatch({ config, nextConfig: {}, url: path }), true, path);
       for (const headers of [{}, { RSC: "1", "Next-Router-Prefetch": "1" }] as Record<string, string>[]) {
@@ -147,7 +151,10 @@ test("production proxy denies demo pages, child routes and APIs before rendering
         assert.equal(response.headers.get("X-Robots-Tag"), "noindex, nofollow");
       }
     }
-    for (const path of ["/r/other-restaurant/menu", "/api/restaurants/other-restaurant/orders"]) {
+    for (const path of ["/r/other-restaurant/menu", "/api/restaurants/other-restaurant/orders",
+      "/r/super-tacos", "/r/super-tacos/menu", "/r/super-tacos/about", "/r/super-tacos/catering",
+      "/r/super-tacos/location", "/r/super-tacos/checkout", "/api/restaurants/super-tacos/orders",
+      "/api/restaurants/%73uper-tacos/orders"]) {
       const other = await proxy(new NextRequest(`https://getmenuman.com${path}`));
       assert.equal(other.headers.get("x-middleware-next"), "1");
     }
@@ -180,7 +187,7 @@ test("sitemap excludes nonproduction tenants and fails closed on missing publica
   const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
   try {
     for (const fallback of [false, true]) {
-      for (const [vercel, menuMan, restricted] of [
+      for (const [vercel, menuMan] of [
         ["production", "staging", true],
         ["production", "production", true],
         ["preview", "production", true],
@@ -201,7 +208,9 @@ test("sitemap excludes nonproduction tenants and fails closed on missing publica
                 assert.deepEqual(filters, fallback && queryNumber === 2 ? ["is_active"] : ["is_active", "is_indexable"]);
                 return Promise.resolve(resolve(fallback && queryNumber === 1
                   ? { data: null, error: { code: "42703" } }
-                  : { data: ["armandos", "super-tacos", "other-restaurant"].map((slug) => ({ slug })), error: null }));
+                  // The database filter excludes Super Tacos because is_indexable=false,
+                  // independently of its public route and marketing switches.
+                  : { data: ["armandos", "other-restaurant"].map((slug) => ({ slug })), error: null }));
               },
             };
           },
@@ -218,7 +227,7 @@ test("sitemap excludes nonproduction tenants and fails closed on missing publica
         });
         const urls = new Set((await exports.default!()).map(({ url }) => url));
         for (const slug of ["armandos", "super-tacos"]) {
-          assert.equal(urls.has(`https://getmenuman.com/r/${slug}`), isProductionSite() && !fallback && !restricted);
+          assert.equal(urls.has(`https://getmenuman.com/r/${slug}`), false);
         }
         assert.equal(urls.has("https://getmenuman.com/r/other-restaurant"), isProductionSite() && !fallback);
         assert.ok(urls.has("https://getmenuman.com/work"));
