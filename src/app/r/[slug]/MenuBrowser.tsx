@@ -716,7 +716,11 @@ export default function MenuBrowser({
   }
 
   function openCheckout() {
-    if (cartPreview) return;
+    if (cartPreview) {
+      setIsCartOpen(false);
+      router.push(`/r/${encodeURIComponent(restaurantSlug)}/checkout`);
+      return;
+    }
     if (cartLocked) {
       setIsCartOpen(false);
       if (activePayment) {

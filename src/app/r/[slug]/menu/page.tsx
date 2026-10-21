@@ -131,7 +131,7 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
           <p>Explore the menu</p>
           <h1>{restaurant.name} menu</h1>
         </div>
-        {isShowcaseCartPreview(restaurant.id) ? <aside className={styles.showcaseNotice} aria-label="Fictional restaurant demo"><strong>Try the menu.</strong> Customize a dish and build a sample cart. Ordering and payments are unavailable.</aside> : <OrderingStatus
+        {isShowcaseCartPreview(restaurant.id) ? <aside className={styles.showcaseNotice} aria-label="Fictional restaurant demo"><strong>Try a sample order.</strong> Customize a dish, review your cart, and see a simulated payment step. No real order is sent or payment taken.</aside> : <OrderingStatus
           hasDelivery={deliveryOptions.length > 0}
           restaurantId={restaurant.id}
           restaurantSlug={restaurant.slug}

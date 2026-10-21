@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { SUPER_TACOS_SLUG } from "@/lib/demo/policy";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib/payments/server";
@@ -8,17 +7,14 @@ import { paymentLocksCart } from "@/lib/payments/state";
 import { getCustomerNotificationPreferences } from "@/lib/checkout/server";
 import CheckoutPanel from "../CheckoutPanel";
 import PageViewTracker from "../PageViewTracker";
+import SuperTacosDemoCheckout from "../SuperTacosDemoCheckout";
 
 export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (slug === SUPER_TACOS_SLUG) {
-    return <main style={{ maxWidth: "40rem", margin: "4rem auto", padding: "1.5rem" }}>
-      <h1>Checkout is unavailable in this demo.</h1>
-      <p>Super Tacos is a fictional restaurant. Your sample cart stays in your browser; no order or payment can be submitted.</p>
-      <Link href="/r/super-tacos/menu">Back to the menu</Link>
-    </main>;
+    return <SuperTacosDemoCheckout />;
   }
   const { data: restaurant } = await supabaseServer
     .from("restaurants")

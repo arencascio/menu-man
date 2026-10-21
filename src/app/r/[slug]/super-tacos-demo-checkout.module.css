@@ -1,0 +1,66 @@
+.page{min-height:70vh;padding:clamp(1.25rem,5vw,4rem) max(1.25rem,calc((100vw - 72rem)/2));background:radial-gradient(ellipse at 10% 0%,#fff1d8 0,transparent 36rem),#fbf8f2;color:#28231f}
+
+.checkout{display:grid;grid-template-columns:minmax(0,1fr) minmax(17rem,22rem);gap:clamp(2rem,6vw,5rem);max-width:72rem;margin:0 auto}
+
+.order{min-width:0}
+.eyebrow{margin:1.7rem 0 .65rem;color:#a74420;font-size:.72rem;font-weight:850;letter-spacing:.16em;text-transform:uppercase}
+.order h1,.receipt h1,.empty h1{max-width:14ch;margin:0;font-family:var(--theme-heading-font,Georgia,serif);font-size:clamp(2.25rem,5vw,4rem);line-height:1.04;letter-spacing:-.035em}
+.lede{max-width:39rem;color:#655e57;line-height:1.6}
+.textLink{display:inline-block;color:#704022;font-size:.92rem;font-weight:700;text-decoration-thickness:1px;text-underline-offset:3px}
+.lines{margin-top:2rem;border-top:1px solid #e8dfd3}
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem 1rem;padding:1.25rem 0;border-bottom:1px solid #e8dfd3}
+.line h2{margin:0;font-size:1.06rem}
+.line p{margin:.3rem 0;color:#71685f;font-size:.88rem}
+.line ul{margin:.5rem 0;padding-left:1.1rem;color:#60584f;font-size:.87rem}
+.line>strong{white-space:nowrap}
+.note{font-style:italic}
+.quantity{grid-column:1/-1;display:flex;align-items:center;gap:.6rem;margin-top:.4rem}
+.quantity button{min-width:2.25rem;min-height:2.25rem;border:1px solid #d8ccbc;border-radius:50%;background:#fff;color:#362a22;font-size:1.1rem;cursor:pointer}
+.quantity .remove{margin-left:.5rem;padding:0 .7rem;border:0;background:transparent;color:#765341;font-size:.82rem;text-decoration:underline}
+.summary{align-self:start;position:sticky;top:1.5rem;padding:1.4rem;border:1px solid #eadfd0;border-radius:1.2rem;background:#fffdf9;box-shadow:0 16px 50px #63341112}
+.summary .eyebrow{margin:.1rem 0 1.2rem}
+.summaryRow,.summaryTotal{display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;color:#5d554d}
+.summaryTotal{margin-top:.4rem;border-top:1px solid #e8dfd3;color:#302820;font-weight:800}
+.summaryTotal strong{font-size:1.25rem}
+.estimate{color:#776c60;font-size:.78rem;line-height:1.5}
+.primaryButton,.secondaryButton{display:flex;width:100%;min-height:3.2rem;align-items:center;justify-content:center;margin-top:1rem;padding:.8rem 1rem;border:0;border-radius:.7rem;background:#a83e1d;color:white;font:inherit;font-weight:800;text-align:center;text-decoration:none;cursor:pointer;transition:transform .18s ease,background .18s ease}
+.primaryButton:hover{transform:translateY(-1px);background:#8d3218}
+.secondaryButton{border:1px solid #e5d9cb;background:#fff;color:#46362c}
+.safeNote{margin:.9rem 0 0;color:#776c60;font-size:.75rem;line-height:1.5}
+.paymentCard{max-width:30rem;margin:2rem 0;padding:1.4rem 1.6rem;border-radius:1rem;background:linear-gradient(135deg,#322b27,#594132 62%,#9a4a2a);color:#fff;box-shadow:0 16px 34px #4f2b1d25}
+.cardTop,.cardBottom{display:flex;justify-content:space-between;gap:1rem;font-size:.7rem;font-weight:800;letter-spacing:.13em}
+.cardTop span:last-child{font-size:1.4rem;color:#f3c17c}
+.chip{display:grid;width:2.5rem;height:1.9rem;grid-template-columns:1fr 1fr;gap:2px;margin-top:1.4rem;border:1px solid #e2c181;border-radius:.3rem;background:#d8b875;overflow:hidden}
+.chip i{border:1px solid #a88a50}
+.cardNumber{margin:1.25rem 0;font-size:1.05rem;letter-spacing:.08em}
+.cardBottom{color:#f0d7b5;font-size:.6rem}
+.cardDisclosure{margin:1.3rem 0 0;color:#f4e6d5;font-size:.8rem;line-height:1.5}
+.receipt,.empty{max-width:39rem;margin:2rem auto;padding:clamp(1.4rem,5vw,3rem);border:1px solid #eadfd0;border-radius:1.3rem;background:#fffdf9;box-shadow:0 18px 60px #63341112}
+.receiptMark{display:grid;width:3.5rem;height:3.5rem;place-items:center;border-radius:50%;background:#e7f1df;color:#386331;font-size:1.8rem}
+.receipt .eyebrow,.empty .eyebrow{margin-top:1.4rem}
+.receiptNotice{display:grid;gap:.35rem;margin:1.5rem 0;padding:1rem;border-left:4px solid #4d7b42;border-radius:.45rem;background:#edf5e9;color:#284321}
+.receiptNotice span{font-size:.86rem}
+.receiptMeta{display:flex;justify-content:space-between;margin:1.5rem 0 .6rem;color:#60584f}
+.receiptLines{margin:0;padding:0;list-style:none;border-top:1px solid #e8dfd3}
+.receiptLines li{display:flex;justify-content:space-between;gap:1rem;padding:.85rem 0;border-bottom:1px solid #e8dfd3}
+.receiptLines li span{display:grid;gap:.25rem}
+.receiptLines small{color:#70675d}
+.receiptLines strong{white-space:nowrap}
+.total{display:flex;justify-content:space-between;margin-top:1.2rem;font-weight:800}
+.total strong{font-size:1.35rem}
+.receipt>.textLink{display:block;margin:1rem auto 0;text-align:center}
+.loading{max-width:72rem;margin:0 auto;padding:3rem 0;color:#655e57}
+
+@media(max-width:760px){.page{padding:1rem 1rem 2rem}
+.checkout{grid-template-columns:1fr;gap:1.5rem}
+.summary{position:static;order:-1;padding:1.1rem}
+.summary .eyebrow{margin-bottom:.5rem}
+.order h1,.receipt h1,.empty h1{font-size:clamp(2.2rem,11vw,3.1rem)}
+.receipt,.empty{margin:.5rem auto;padding:1.3rem}
+.paymentCard{padding:1.2rem}
+.primaryButton,.secondaryButton{min-height:3.4rem}
+}
+
+@media(prefers-reduced-motion:reduce){.primaryButton,.secondaryButton{transition:none}
+.primaryButton:hover{transform:none}
+}
