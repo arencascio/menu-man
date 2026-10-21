@@ -57,6 +57,24 @@ test("fictional restaurant metadata stays noindex in Production without trusting
   assert.equal(metadata.robots.follow, false);
 });
 
+test("direct demo favorites API stays browser-local without a database query", async () => {
+  const output: { GET?: (request: Request, context: unknown) => Promise<unknown>; POST?: (request: Request, context: unknown) => Promise<unknown> } = {};
+  runInNewContext(transpileModule(readFileSync("src/app/api/restaurants/[slug]/hearts/route.ts", "utf8"), { compilerOptions: { module: ModuleKind.CommonJS } }).outputText, {
+    exports: output,
+    require(name: string) {
+      if (name === "next/server") return { NextResponse: { json: (body: unknown, options?: { status?: number }) => ({ body, status: options?.status ?? 200 }) } };
+      if (name === "zod") return { z: { object: () => ({}), uuid: () => ({}), boolean: () => ({}) } };
+      if (name === "@/lib/demo/policy") return { SUPER_TACOS_SLUG: "super-tacos" };
+      if (name === "@/lib/supabase/server") return { supabaseServer: { from() { throw new Error("Demo favorites must not query Production"); } } };
+      if (name.startsWith("@/lib/menu-engagement/")) return {};
+      throw new Error(`Unexpected favorites dependency: ${name}`);
+    },
+  });
+  const context = { params: Promise.resolve({ slug: "super-tacos" }) };
+  assert.equal(JSON.stringify(await output.GET!(new Request("https://example.test/api/restaurants/super-tacos/hearts"), context)), JSON.stringify({ body: { likedItemIds: [] }, status: 200 }));
+  assert.equal(JSON.stringify(await output.POST!(new Request("https://example.test/api/restaurants/super-tacos/hearts", { method: "POST" }), context)), JSON.stringify({ body: { error: "Demo favorites stay in this browser." }, status: 403 }));
+});
+
 test("separate Production package is hashed, new-tenant-only, nonorderable and has no operational imports", () => {
   const folder = "supabase/releases/super-tacos-public/";
   const manifest = JSON.parse(readFileSync(folder + "manifest.json", "utf8"));
@@ -69,23 +87,31 @@ test("separate Production package is hashed, new-tenant-only, nonorderable and h
   }
   const content = readFileSync(folder + "content.sql", "utf8");
   assert.doesNotMatch(content, /\bon conflict\b|\bdelete from\b|\balter table\b|\binsert into public\.(?:orders|payments|restaurant_payment_connections|payment_provider_references|restaurant_memberships|restaurant_catering_settings)\b/i);
+  assert.doesNotMatch(content, /public\.(?:restaurant_payment_connections|payment_provider_references|payments|payment_attempts|refunds|restaurant_notification_settings|restaurant_catering_settings|restaurant_delivery_providers)\b/i);
   assert.match(content, /Existing restaurant: stop/);
   assert.match(content, /Reserved identity collision/);
   assert.match(content, /Production identity and verified TLS required/);
-  assert.match(content, /Other-tenant content or payment\/order fingerprint changed/);
+  assert.match(content, /Other-tenant content or operational fingerprint changed/);
+  assert.match(content, /Production composite menu placement key missing/);
   const match = content.match(/expected jsonb := \$catalog\$([\s\S]*?)\$catalog\$::jsonb/);
   assert.ok(match);
   const expected = JSON.parse(match[1]);
   assert.equal(expected.menu_items.length, 25);
+  assert.ok(expected.menu_items.every((item: { is_active: boolean }) => item.is_active));
   assert.ok(expected.menu_items.every((item: { is_orderable: boolean; source_image_url: string }) => !item.is_orderable && item.source_image_url.startsWith("/img/super-tacos/approved/")));
+  assert.ok(expected.menu_section_items.every((placement: Record<string, unknown>) => !Object.hasOwn(placement, "id")));
   assert.equal(expected.restaurants[0].is_indexable, false);
   assert.equal(expected.restaurant_ordering_settings[0].pickup_enabled, false);
   assert.equal(expected.modifier_groups.length, 9);
   assert.equal(expected.modifier_options.length, 35);
-  for (const file of ["preflight.sql", "verify.sql", "armandos-preflight.sql"]) {
+  for (const file of ["schema-verify.sql", "preflight.sql", "verify.sql", "armandos-preflight.sql"]) {
     const sql = readFileSync(folder + file, "utf8");
     assert.match(sql, /serializable read only/);
     assert.doesNotMatch(sql, /\b(?:insert into|update public|delete from|alter table)\b/i);
     assert.match(sql, /rollback;/);
   }
+  const schema = readFileSync(folder + "schema-prep.sql", "utf8");
+  assert.match(schema, /add column is_indexable boolean not null default true/);
+  assert.match(schema, /lock_timeout='2s'/);
+  assert.doesNotMatch(schema, /\b(?:create table|drop table|create function|delete from|update public)\b/i);
 });

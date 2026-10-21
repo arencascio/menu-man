@@ -7,7 +7,108 @@ import { NextRequest } from "next/server";
 import { unstable_doesMiddlewareMatch as doesProxyMatch } from "next/experimental/testing/server";
 import { proxy, config } from "../src/proxy";
 import { isRestaurantPublicationRestricted } from "../src/lib/public-restaurant-access";
+import { isManagementOnlyPath, isProductionManagementDisabled } from "../src/lib/production-management-gate";
 import { isProductionSite } from "../src/lib/seo/site-origin";
+
+test("Production management paths fail closed before authentication; Staging remains reachable", async () => {
+  const previousVercel = process.env.VERCEL_ENV;
+  const previousMenuMan = process.env.MENU_MAN_ENV;
+  const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const paths = [
+    "/manage", "/manage/login", "/manage/armandos/orders", "/manage/armandos/settings",
+    "/api/manage/memberships", "/api/manage/restaurants/armandos/orders",
+    "/api/manage/restaurants/armandos/team", "/auth/callback", "/auth/sign-out",
+  ];
+  try {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    for (const path of paths) {
+      assert.equal(isManagementOnlyPath(path), true, path);
+      assert.equal(doesProxyMatch({ config, nextConfig: {}, url: path }), true, path);
+    }
+    for (const path of ["/management", "/api/management", "/api/restaurants/other-restaurant/orders", "/work"]) {
+      assert.equal(isManagementOnlyPath(path), false, path);
+    }
+    for (const [vercel, menuMan] of [["production", "staging"], ["preview", "production"]]) {
+      process.env.VERCEL_ENV = vercel;
+      process.env.MENU_MAN_ENV = menuMan;
+      assert.equal(isProductionManagementDisabled(), true);
+      for (const path of paths) {
+        for (const method of ["GET", "POST"]) {
+          const response = await proxy(new NextRequest(`https://getmenuman.com${path}`, { method }));
+          assert.equal(response.status, 404, `${method} ${path}`);
+          assert.equal(await response.text(), "Not found");
+          assert.match(response.headers.get("Cache-Control")!, /no-store/);
+          assert.equal(response.headers.get("X-Robots-Tag"), "noindex, nofollow");
+          assert.equal(response.headers.get("set-cookie"), null);
+        }
+      }
+    }
+    process.env.VERCEL_ENV = "preview";
+    process.env.MENU_MAN_ENV = "staging";
+    assert.equal(isProductionManagementDisabled(), false);
+    for (const path of paths) {
+      const response = await proxy(new NextRequest(`https://preview.example.test${path}`));
+      assert.equal(response.headers.get("x-middleware-next"), "1", path);
+    }
+  } finally {
+    if (previousVercel === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = previousVercel;
+    if (previousMenuMan === undefined) delete process.env.MENU_MAN_ENV; else process.env.MENU_MAN_ENV = previousMenuMan;
+    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
+    if (previousKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY; else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = previousKey;
+  }
+});
+
+test("notification worker endpoint cannot invoke missing Production RPC", async () => {
+  const source = readFileSync("src/app/api/internal/notifications/deliver/route.ts", "utf8");
+  const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
+  const previousVercel = process.env.VERCEL_ENV;
+  const previousMenuMan = process.env.MENU_MAN_ENV;
+  const previousSecret = process.env.CRON_SECRET;
+  let deliveries = 0;
+  let workerLoads = 0;
+  const exports: { GET?: (request: Request) => Promise<Response> } = {};
+  runInNewContext(compiled, {
+    exports, Response, Request, process, console,
+    require(id: string) {
+      if (id === "@/lib/notifications/worker") {
+        workerLoads++;
+        return { deliverDueNotifications: async () => { deliveries++; return { delivered: 0 }; } };
+      }
+      if (id === "@/lib/production-management-gate") return { isProductionManagementDisabled };
+      throw new Error(`Unexpected worker dependency: ${id}`);
+    },
+  });
+  try {
+    process.env.CRON_SECRET = "local-test-only";
+    for (const [vercel, menuMan] of [["production", "staging"], ["preview", "production"]]) {
+      process.env.VERCEL_ENV = vercel;
+      process.env.MENU_MAN_ENV = menuMan;
+      const response = await exports.GET!(new Request("https://getmenuman.com/api/internal/notifications/deliver", {
+        headers: { authorization: "Bearer local-test-only" },
+      }));
+      assert.equal(response.status, 404);
+      assert.equal(deliveries, 0);
+      assert.equal(workerLoads, 0);
+      assert.match(response.headers.get("Cache-Control")!, /no-store/);
+    }
+    process.env.VERCEL_ENV = "preview";
+    process.env.MENU_MAN_ENV = "staging";
+    assert.equal((await exports.GET!(new Request("https://preview.example.test/api/internal/notifications/deliver"))).status, 401);
+    assert.equal(workerLoads, 0);
+    const staging = await exports.GET!(new Request("https://preview.example.test/api/internal/notifications/deliver", {
+      headers: { authorization: "Bearer local-test-only" },
+    }));
+    assert.equal(staging.status, 200);
+    assert.equal(deliveries, 1);
+    assert.equal(workerLoads, 1);
+  } finally {
+    if (previousVercel === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = previousVercel;
+    if (previousMenuMan === undefined) delete process.env.MENU_MAN_ENV; else process.env.MENU_MAN_ENV = previousMenuMan;
+    if (previousSecret === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = previousSecret;
+  }
+});
 
 test("publication restriction preserves staging and other restaurant access", () => {
   for (const slug of ["armandos", "super-tacos"]) {

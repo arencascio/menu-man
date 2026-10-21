@@ -1,4 +1,5 @@
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; min-width: 0; }
+.grid[data-single="true"] { grid-template-columns: minmax(0, 1fr); max-width: 980px; margin-inline: auto; }
 .card { overflow: hidden; min-width: 0; border: 1px solid var(--warm-gray, #ded9ce); border-radius: 16px; background: #fffdf8; }
 .photo { position: relative; isolation: isolate; aspect-ratio: 16 / 10; background: #763f27; }
 .photo img { object-fit: cover; }

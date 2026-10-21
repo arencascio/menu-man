@@ -1,9 +1,13 @@
 # Public restaurant showcase handoff — Gate 3 preparation
 
+Gate A.1 supersedes this document's Production schema assumptions and SQL hashes.
+Use `docs/super-tacos-production-gate-a1.md` and the current manifest for review.
+This historical handoff is not an execution runbook.
+
 Status: local preparation only. Nothing in this package authorizes Production SQL,
 publication, a deployment, Vercel changes, or payment activation.
 
-Prepared `content.sql` SHA256:
+Historical, superseded `content.sql` SHA256 (do not execute this version):
 `aebea1a939d9b3c4fbb4b4f8b4c72c28cce5b039f5b6bdf3bbc19d1c3806b1f1`.
 
 ## Hosting and release boundary

@@ -52,11 +52,11 @@ try {
     const noOverflow=async()=>expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     for(const path of ['/work','/']) {
       await page.goto(base+path);
-      const showcases=page.getByRole('region',{name:'Restaurant showcases',exact:true});
-      await expect(showcases.getByRole('heading')).toHaveCount(2);
+      const showcases=page.getByRole('region',{name:'Restaurant website showcase',exact:true});
+      await expect(showcases.getByRole('heading')).toHaveCount(1);
       await expect(showcases.getByRole('link',{name:/Explore Live Demo/})).toHaveCount(0);
-      await expect(showcases.getByText('Live demo coming soon')).toHaveCount(2);
-      await expect(showcases.locator('img')).toHaveCount(2);
+      await expect(showcases.getByText('Live demo coming soon')).toHaveCount(1);
+      await expect(showcases.locator('img')).toHaveCount(1);
       await showcases.scrollIntoViewIfNeeded();
       await expect.poll(()=>showcases.locator('img').evaluateAll(imgs=>imgs.every(img=>img.complete&&img.naturalWidth>0))).toBe(true);
       await noOverflow();

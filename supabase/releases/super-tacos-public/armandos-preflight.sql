@@ -32,7 +32,6 @@ select jsonb_build_object('slug',r.slug,'id',r.id,'active',r.is_active,'indexabl
   'activeSections',(select count(*) from public.menu_sections s join public.menus m on m.id=s.menu_id where m.restaurant_id=r.id and m.is_published and s.is_active),
   'items',(select count(*) from public.menu_items where restaurant_id=r.id),
   'orderableItems',(select count(*) from public.menu_items where restaurant_id=r.id and is_orderable),
-  'pickupEnabled',(select pickup_enabled from public.restaurant_ordering_settings where restaurant_id=r.id),
-  'hasActivePaymentRoute',exists(select 1 from public.restaurant_payment_connections where restaurant_id=r.id and is_payment_route and connection_status='active'))
+  'pickupEnabled',(select pickup_enabled from public.restaurant_ordering_settings where restaurant_id=r.id))
 from public.restaurants r where r.slug='armandos';
 rollback;

@@ -1,95 +1,39 @@
-# Proposed v1 file scope
+# Proposed v1 release file scope
 
-Reviewed 2026-10-21 on `feature/super-tacos-demo`, HEAD `2ee7312412142ad5ad3de6f860c02061e0dd76e1`. No file is staged or committed by this review. This is an allowlist for a future authorized commit review, not a staging command. Recheck status/diff before use.
+Reviewed 2026-10-21 on `feature/super-tacos-demo`, base `f1086732a4608413088b478dfea972f7de00f683`. HEAD is unchanged from that base; this ledger scopes current uncommitted intended release work for owner review and one future local commit. No file is staged or committed. Recheck diffs/status before staging.
 
-There are **98 files** in this candidate. Add new components, assets, tests and reports with their callers. Keep each generator, its manifests and generated artifacts together.
+The current candidate contains **42 intended files**, including this updated ledger. This list is a manual release ledger, not an instruction to stage the full worktree. Preserve and exclude the unrelated `AGENTS.md` modification and any unrelated worktree changes.
 
-Scoped `.gitattributes` rules and Windows/Linux checkout hashes have been reviewed. The Super Tacos logo raw hash changed solely because its CRLF line endings were normalized; its provenance and Production manifest match the new LF bytes. SQL hashes remain unchanged. The SVG LF bytes equal its existing Git blob, so the SVG itself has no content change to commit.
-
-## Application, branding, local QA and sprint handoffs (78)
-
-- `.gitattributes`
-- `.gitignore`
-- `docs/marketing-sprint-m1.md`
-- `docs/marketing-sprint-m2.md`
-- `docs/super-tacos-sprint-d1.md`
-- `docs/v1-combined-release-readiness.md`
-- `docs/v1-release-file-scope.md`
-- `img/icons/chef-hat.svg`
-- `img/icons/hand-platter.svg`
-- `img/icons/rotate-cw-clock.svg`
-- `next.config.ts`
-- `public/brand/MenuManPhone.svg`
-- `public/brand/MenuManPhoneSmol.svg`
-- `public/brand/menu-man-svg-sources.json`
-- `public/brand/previews/sources.json`
-- `public/brand/previews/super-tacos-mobile.png`
-- `scripts/fixtures/sprint-d1-armandos.mjs`
-- `scripts/marketing-m1.browser-qa.mjs`
-- `scripts/marketing-m1.test.ts`
-- `scripts/marketing-m2.browser-qa.mjs`
-- `scripts/marketing-m2.test.ts`
-- `scripts/public-showcase.browser-qa.mjs`
-- `scripts/public-showcase.test.ts`
-- `scripts/super-tacos-demo-offline-backend.mjs`
-- `scripts/super-tacos-sprint-d1.browser-qa.mjs`
-- `scripts/super-tacos-sprint-d1.test.ts`
-- `src/app/MarketingCapabilities.tsx`
-- `src/app/MarketingComponents.tsx`
-- `src/app/MarketingIcon.tsx`
-- `src/app/MarketingInteractions.tsx`
-- `src/app/MarketingReveal.tsx`
-- `src/app/RestaurantShowcases.tsx`
-- `src/app/about/page.tsx`
-- `src/app/build-my-website/page.tsx`
-- `src/app/business-information.module.css`
-- `src/app/business-review-content.ts`
-- `src/app/cancellation/page.tsx`
-- `src/app/layout.tsx`
-- `src/app/marketing-content.ts`
-- `src/app/marketing-reveal.module.css`
-- `src/app/page.module.css`
-- `src/app/page.tsx`
-- `src/app/r/[slug]/CartPanel.tsx`
-- `src/app/r/[slug]/DemoNotice.tsx`
-- `src/app/r/[slug]/MenuBrowser.tsx`
-- `src/app/r/[slug]/OrderItemPanel.tsx`
-- `src/app/r/[slug]/RestaurantDemoContact.tsx`
-- `src/app/r/[slug]/RestaurantFooter.tsx`
-- `src/app/r/[slug]/RestaurantHoursLocation.tsx`
-- `src/app/r/[slug]/RestaurantMapViews.tsx`
-- `src/app/r/[slug]/RestaurantNavigation.tsx`
-- `src/app/r/[slug]/RestaurantPhotoFilmstrip.tsx`
-- `src/app/r/[slug]/RestaurantShell.tsx`
-- `src/app/r/[slug]/RestaurantSocialSection.tsx`
-- `src/app/r/[slug]/RestaurantWordmark.tsx`
-- `src/app/r/[slug]/checkout/page.tsx`
-- `src/app/r/[slug]/demo-notice.module.css`
-- `src/app/r/[slug]/filmstrip-motion.ts`
-- `src/app/r/[slug]/layout.tsx`
-- `src/app/r/[slug]/location/page.tsx`
-- `src/app/r/[slug]/menu-card-ordering.ts`
-- `src/app/r/[slug]/menu/page.tsx`
-- `src/app/r/[slug]/menu/restaurant-menu-page.module.css`
-- `src/app/r/[slug]/restaurant-demo-contact.module.css`
-- `src/app/r/[slug]/restaurant-photo-filmstrip.module.css`
-- `src/app/r/[slug]/restaurant-shell.module.css`
-- `src/app/restaurant-showcases.module.css`
-- `src/app/services/page.tsx`
-- `src/app/work/page.tsx`
-- `src/lib/demo/brand-font.ts`
-- `src/lib/demo/catalog.test.ts`
-- `src/lib/demo/demo.test.ts`
-- `src/lib/demo/presentation.ts`
-- `src/lib/demo/server.integration.test.ts`
-- `src/lib/marketing-business-pages.ts`
-- `src/lib/payments/server.ts`
-- `src/lib/public-restaurant-access.ts`
-- `src/lib/restaurant-showcases.ts`
-
-## Prepared Production package and read-only tooling (9)
+## Application, publication gates, compatibility and metadata (25)
 
 - `docs/super-tacos-public-showcase-release.md`
+- `docs/v1-scope-correction.md`
+- `scripts/marketing-m1.browser-qa.mjs`
+- `scripts/marketing-m1.test.ts`
+- `scripts/public-restaurant-access.test.ts`
+- `scripts/public-showcase.browser-qa.mjs`
+- `scripts/public-showcase.test.ts`
+- `src/app/RestaurantShowcases.tsx`
+- `src/app/api/internal/notifications/deliver/route.ts`
+- `src/app/api/restaurants/[slug]/hearts/route.ts`
+- `src/app/layout.tsx`
+- `src/app/page.tsx`
+- `src/app/r/[slug]/menu/page.tsx`
+- `src/app/r/[slug]/restaurant-delivery-options.ts`
+- `src/app/r/[slug]/restaurant-location-data.ts`
+- `src/app/restaurant-showcases.module.css`
+- `src/app/work/page.tsx`
+- `src/lib/catering/server.test.ts`
+- `src/lib/catering/server.ts`
+- `src/lib/public-restaurant-access.ts`
+- `src/lib/restaurant-showcases.ts`
+- `src/lib/production-management-gate.ts`
+- `src/lib/supabase/optional-relation.test.ts`
+- `src/lib/supabase/optional-relation.ts`
+- `src/proxy.ts`
+
+## Production SQL release, integrity and local QA (12)
+
 - `scripts/check-super-tacos-public-release.ps1`
 - `scripts/prepare-super-tacos-public-release.mjs`
 - `scripts/public-release-guards.test.ps1`
@@ -97,27 +41,32 @@ Scoped `.gitattributes` rules and Windows/Linux checkout hashes have been review
 - `supabase/releases/super-tacos-public/content.sql`
 - `supabase/releases/super-tacos-public/manifest.json`
 - `supabase/releases/super-tacos-public/preflight.sql`
+- `supabase/releases/super-tacos-public/schema-prep.sql`
+- `supabase/releases/super-tacos-public/schema-verify.sql`
 - `supabase/releases/super-tacos-public/verify.sql`
+- `scripts/qa/prepare-super-tacos-local-sql-qa.mjs`
+- `scripts/qa/run-super-tacos-local-sql-qa.ps1`
 
-## Completed Gate 2 operational corrections and historical handoff (11)
+The two QA scripts are explicitly local-only harness/source substitutions; their derived SQL was kept outside the release directory and is not included. The Production artifacts retain their exact Production identity, approval, backup SHA, baseline fingerprint and transaction guards.
 
-- `docs/super-tacos-showcase-sprint-c1.md`
-- `docs/super-tacos-showcase-sprint-c3.md`
-- `public/img/super-tacos/approved/logo-provenance.json`
-- `scripts/fixtures/super-tacos-psql18-conninfo.txt`
-- `scripts/prepare-super-tacos-content-sync.mjs`
-- `scripts/super-tacos-tls-preflight.test.ps1`
-- `scripts/sync-super-tacos-content.ps1`
-- `supabase/qa/super-tacos-content-backup.sql`
-- `supabase/qa/super-tacos-content-c1-manifest.json`
-- `supabase/qa/super-tacos-content-verify.sql`
-- `supabase/seeds/staging/016_super_tacos_content_c1.sql`
+## Gate A evidence (4)
 
-## Preserved / excluded
+- `docs/super-tacos-production-gate-a1.md`
+- `docs/super-tacos-production-gate-a4.md`
+- `docs/super-tacos-production-gate-a5.md`
+- `scripts/qa/super-tacos-production-shaped.sql`
 
-- `AGENTS.md`: the existing heading change is preserved and excluded.
-- `.activation-backups/`: explicitly ignored; contents were not inspected or inventoried.
-- `.env*`, `.vercel/`, `.playwright/`, `.next/`, `.next-public-showcase-qa/`, test/build output, dependency directories and local logs are excluded.
-- Owner source directories were not copied wholesale; packaged runtime assets and provenance records are included where needed.
+The Gate A.5 report records the verified restore hash and PostgreSQL 17.11 rehearsal. No backup data or customer records are included.
 
-The psql output fixture contains connection identity/TLS fields only, not credentials. Production SQL files are preparation artifacts; committing them does not authorize execution. The executed Staging 016 must never be rerun. See `v1-combined-release-readiness.md` for checks, limitations and approval gates.
+## Release ledger (1)
+
+- `docs/v1-release-file-scope.md`
+
+The scoped `.gitattributes` rules are already present at the base commit and unchanged in this delta. They remain limited to known hash-sensitive/generated text inputs and reviewed brand records; there is no repository-wide newline rule and no binary asset rule. Production SQL and manifest use LF. The Staging seed migration `supabase/seeds/staging/016_super_tacos_content_c1.sql` is unchanged from base and excluded from this delta.
+## Exclusions and release prerequisites
+
+- `AGENTS.md`: unrelated pre-existing modification; preserved and excluded.
+- Production backup archives, backup manifests, credentials, certificates, PostgreSQL cluster files, temporary derived SQL, test output, browser captures, build output, and other local artifacts are excluded.
+- Any other modified/untracked worktree paths outside this allowlist are unrelated and must remain unstaged.
+- Current release SQL and source hashes are in `supabase/releases/super-tacos-public/manifest.json`; validate with `scripts/check-super-tacos-public-release.ps1 -Mode Validate`. Do not regenerate SQL unless its source changes intentionally.
+- No database write, Production/Staging operation, deployment, commit, push, merge, payment activation or publication is authorized by this ledger. Remaining Production approval gates are covered in `docs/super-tacos-public-showcase-release.md` and the Gate A reports.

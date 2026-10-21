@@ -34,9 +34,14 @@ test("finalized logos match the owner source hashes and contain no executable, r
   assert.equal(createHash("sha256").update(readFileSync(`public/brand/previews/${preview.file}`)).digest("hex"), preview.sha256);
 });
 
-test("showcase destinations and cancellation stay gated until their own release work", () => {
-  assert.equal(restaurantShowcases.length, 2);
+test("only Super Tacos appears in marketing and all showcase/cancellation destinations stay gated", () => {
+  assert.equal(restaurantShowcases.length, 1);
+  assert.equal(restaurantShowcases[0].slug, "super-tacos");
   for (const showcase of restaurantShowcases) assert.equal(getShowcaseHref(showcase), null);
+  for (const file of ["src/app/page.tsx", "src/app/work/page.tsx", "src/app/RestaurantShowcases.tsx", "src/lib/restaurant-showcases.ts"]) {
+    const source = readFileSync(file, "utf8");
+    assert.doesNotMatch(source, /armandos|armando's|two restaurant personalities|different restaurants, distinct personalities/i);
+  }
   const services = readFileSync("src/app/services/page.tsx", "utf8");
   assert.match(services, /<button type="button" disabled aria-describedby="cancellation-pending">What happens if I cancel\?/);
   assert.ok(!services.includes('href="/cancellation"'));

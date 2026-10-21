@@ -73,9 +73,9 @@ export async function runMarketingM1(browser, base, output, results) {
       await page.keyboard.press('Space'); await expect(capabilities.first()).not.toHaveAttribute('open','');
       await summary.click(); await expect(capabilities.first()).toHaveAttribute('open','');
       await page.screenshot({path:`${output}/capabilities-${width}.png`});
-      const showcase=page.getByRole('region',{name:'Restaurant showcases',exact:true});
-      await expect(showcase.locator('article')).toHaveCount(2);
-      await expect(showcase.getByText('Live demo coming soon')).toHaveCount(2);
+      const showcase=page.getByRole('region',{name:'Restaurant website showcase',exact:true});
+      await expect(showcase.locator('article')).toHaveCount(1);
+      await expect(showcase.getByText('Live demo coming soon')).toHaveCount(1);
       await expect(showcase.getByRole('link')).toHaveCount(0);
       const faq=page.locator('section').filter({has:page.getByRole('heading',{name:'The practical details.',exact:true})});
       const faqSummary=faq.locator('summary').first();
@@ -109,7 +109,7 @@ export async function runMarketingM1(browser, base, output, results) {
 
       await page.goto(base+'/work'); await settle();
       await expect(page.getByRole('heading',{name:'A large menu made easier to use.',exact:true})).toHaveCount(0);
-      await expect(page.getByRole('region',{name:'Restaurant showcases',exact:true}).locator('article')).toHaveCount(2);
+      await expect(page.getByRole('region',{name:'Restaurant website showcase',exact:true}).locator('article')).toHaveCount(1);
       const tabs=page.getByRole('tablist',{name:'Restaurant website features'});
       const mobile=tabs.getByRole('tab',{name:/Built for the phone/});
       await mobile.scrollIntoViewIfNeeded(); await mobile.focus(); await page.keyboard.press('ArrowRight');

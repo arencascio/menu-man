@@ -1,6 +1,7 @@
 import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
+import { isMissingOptionalRelation } from "@/lib/supabase/optional-relation";
 import type { RestaurantDeliveryOption } from "./RestaurantDeliveryChooser";
 
 function isValidDeliveryUrl(value: unknown): value is string {
@@ -21,7 +22,10 @@ export async function getRestaurantDeliveryOptions(restaurantId: string): Promis
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
     .order("id", { ascending: true });
-  if (error) console.error(error);
+  if (error) {
+    if (isMissingOptionalRelation(error, "restaurant_delivery_providers")) return [];
+    throw error;
+  }
 
   return (data ?? []).flatMap((provider) => isValidDeliveryUrl(provider.destination_url) ? [{
     providerId: provider.id,

@@ -3,6 +3,7 @@ import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { BusinessHour, SpecialHour } from "./BusinessHours";
 import { isDemoRestaurant } from "@/lib/demo/policy";
+import { isMissingOptionalRelation } from "@/lib/supabase/optional-relation";
 
 type RestaurantLocationFields = {
   id?: string;
@@ -61,8 +62,8 @@ export async function getRestaurantHoursLocationData(
   ]);
 
   if (hoursResult.error) console.error(hoursResult.error);
-  if (specialHoursResult.error && !["42P01", "PGRST205"].includes(specialHoursResult.error.code)) {
-    console.error(specialHoursResult.error);
+  if (specialHoursResult.error && !isMissingOptionalRelation(specialHoursResult.error, "restaurant_special_hours")) {
+    throw specialHoursResult.error;
   }
 
   return {

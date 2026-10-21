@@ -1,9 +1,15 @@
-import { deliverDueNotifications } from "@/lib/notifications/worker";
+import { isProductionManagementDisabled } from "@/lib/production-management-gate";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
+  if (isProductionManagementDisabled()) {
+    return new Response("Not found", {
+      status: 404,
+      headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" },
+    });
+  }
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
     return Response.json({ error: "Not authorized." }, {
@@ -12,6 +18,7 @@ export async function GET(request: Request) {
     });
   }
   try {
+    const { deliverDueNotifications } = await import("@/lib/notifications/worker");
     const result = await deliverDueNotifications();
     return Response.json(result, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {

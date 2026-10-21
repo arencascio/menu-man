@@ -18,7 +18,7 @@ export default function WorkPage() {
       <section className={`${styles.subpageHero} ${styles.workHero}`}>
         <div>
           <h1>A closer look at the product.</h1>
-          <p>Different restaurants, distinct personalities. Explore how thoughtful menus, photography, and clear information help customers find their next favorite.</p>
+          <p>Explore Super Tacos, a fictional restaurant demonstration of bold branding, thoughtful menu browsing, and clear restaurant information.</p>
           <div className={styles.actionRow}>
             <PrimaryLink ctaId="site_like_this" placement="hero">↗ {CTA_LABELS.showcase}</PrimaryLink>
           </div>

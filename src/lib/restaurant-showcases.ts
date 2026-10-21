@@ -4,18 +4,11 @@ import { SUPER_TACOS_ID } from "./demo/policy";
 // unauthenticated hosted QA. Neither switch grants commerce permissions.
 export const restaurantShowcases = [
   {
-    slug: "armandos", name: "Armando's Mexican Food", routeEnabled: false, published: false,
-    eyebrow: "Familiar favorites, easy to find",
-    description: "A practical restaurant website that makes a large menu searchable and keeps hours and location close at hand.",
-    image: "/img/carnitas-tacos-bg.jpg", imageAlt: "Carnitas tacos with onion and cilantro",
-    disclosure: "Restaurant website showcase",
-  },
-  {
     slug: "super-tacos", name: "Super Tacos", routeEnabled: false, published: false,
     eyebrow: "Bold food. A brand to match.",
     description: "A photo-led experience with menu customization, distinctive branding, and a thoughtful catering presentation.",
     image: "/img/super-tacos/approved/loaded-nachos.webp", imageAlt: "Loaded nachos from the approved Super Tacos photo collection",
-    disclosure: "Fictional restaurant demo · ordering unavailable",
+    disclosure: "Fictional restaurant demo",
   },
 ] as const;
 

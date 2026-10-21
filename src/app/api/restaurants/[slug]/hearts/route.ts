@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { heartCookieFrom, heartOriginAllowed, heartSource, heartTargetStatus, heartVisitor, heartWindowMs } from "@/lib/menu-engagement/heart-security";
 import { mutateHeart, type HeartStore } from "@/lib/menu-engagement/heart-mutation";
+import { SUPER_TACOS_SLUG } from "@/lib/demo/policy";
 
 export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
@@ -67,6 +68,7 @@ const heartStore: HeartStore = {
 
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (slug === SUPER_TACOS_SLUG) return NextResponse.json({ likedItemIds: [] }, { headers: noStore });
   const visit = visitor(request);
   const restaurant = await contextFor(slug);
   if (!restaurant) return respond({ error: "Restaurant not found." }, visit, 404);
@@ -76,12 +78,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  if (slug === SUPER_TACOS_SLUG) return respond({ error: "Demo favorites stay in this browser." }, null, 403);
   if (!heartOriginAllowed(request)) return respond({ error: "Invalid origin." }, null, 403);
   const visit = visitor(request);
   if (visit.fresh) return respond({ error: "Visitor identity refreshed." }, visit, 428, true);
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return respond({ error: "Invalid heart request." }, visit, 400);
-  const { slug } = await params;
   const restaurant = await contextFor(slug);
   if (!restaurant) return respond({ error: "Restaurant not found." }, visit, 404);
   const target = await heartTargetStatus(restaurant.id, parsed.data.itemId,

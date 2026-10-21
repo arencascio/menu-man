@@ -105,7 +105,7 @@ export default function Home() {
           <p className={styles.eyebrow}>Working product</p>
           <h2>A restaurant website built around your customers.</h2>
           <p>A large menu becomes fast to search, easy to browse, and ready for a clear ordering path on any screen.</p>
-          <p>Two restaurant personalities. One clear, welcoming experience for your customers.</p>
+          <p>Explore a fictional, photo-led restaurant demonstration with a searchable menu and interactive customization.</p>
           <div className={styles.actionRow}>
             <PrimaryLink ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
             <Link className={styles.secondaryLink} href="/work" {...marketingCta("explore_product", "section")}>Explore the product</Link>

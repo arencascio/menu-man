@@ -6,7 +6,7 @@ import AnalyticsScripts from "./AnalyticsScripts";
 import MarketingAnalytics from "./MarketingAnalytics";
 import { RestaurantNavigationObserver } from "./r/[slug]/PageViewTracker";
 import "./globals.css";
-import { isProductionSite } from "@/lib/seo/site-origin";
+import { isProductionSite, resolveSiteOrigin } from "@/lib/seo/site-origin";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +31,7 @@ const manrope = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(resolveSiteOrigin()),
   robots: isProductionSite() ? undefined : { index: false, follow: false },
   title: {
     default: "Menu Man | Restaurant Websites Built & Managed for You",

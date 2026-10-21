@@ -4,7 +4,7 @@ import { getShowcaseHref, restaurantShowcases } from "@/lib/restaurant-showcases
 import styles from "./restaurant-showcases.module.css";
 
 export default function RestaurantShowcases({ compact = false }: { compact?: boolean }) {
-  return <div className={styles.grid} data-compact={compact} role="region" aria-label="Restaurant showcases">
+  return <div className={styles.grid} data-compact={compact} data-single={restaurantShowcases.length === 1} role="region" aria-label="Restaurant website showcase">
     {restaurantShowcases.map((showcase) => <article className={styles.card} key={showcase.slug} data-restaurant={showcase.slug}>
       <div className={styles.photo}>
         <Image src={showcase.image} alt={showcase.imageAlt} fill sizes={compact ? "(max-width: 900px) 100vw, 28vw" : "(max-width: 700px) 100vw, 50vw"} />

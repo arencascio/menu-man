@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
+import { isMissingOptionalRelation } from "@/lib/supabase/optional-relation";
 import { authenticatedClient, ManagementError } from "@/lib/order-management/server";
 import { isRestaurantPublicationRestricted } from "@/lib/public-restaurant-access";
 import { sendResendEmail } from "@/lib/notifications/resend";
@@ -10,12 +11,14 @@ import { CateringError, cateringSource } from "./handler";
 
 // Missing migration/configuration disables the public feature; no fixture writes.
 export const getPublicCateringSettings = cache(async (restaurantId: string): Promise<CateringSettings> => {
-  try {
-    const { data, error } = await supabaseServer.from("restaurant_catering_settings").select("settings").eq("restaurant_id", restaurantId).abortSignal(AbortSignal.timeout(2000)).maybeSingle();
-    if (error || !data) return defaultCateringSettings;
-    const result = cateringSettingsSchema.safeParse(data.settings);
-    return result.success ? result.data : defaultCateringSettings;
-  } catch { return defaultCateringSettings; }
+  const { data, error } = await supabaseServer.from("restaurant_catering_settings").select("settings").eq("restaurant_id", restaurantId).abortSignal(AbortSignal.timeout(2000)).maybeSingle();
+  if (error) {
+    if (isMissingOptionalRelation(error, "restaurant_catering_settings")) return defaultCateringSettings;
+    throw error;
+  }
+  if (!data) return defaultCateringSettings;
+  const result = cateringSettingsSchema.safeParse(data.settings);
+  return result.success ? result.data : defaultCateringSettings;
 });
 
 export async function submitCateringInquiry(slug: string, input: InquiryInput, request: Request) {

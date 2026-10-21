@@ -1,9 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isRestaurantPublicationRestricted } from "./lib/public-restaurant-access";
+import { isManagementOnlyPath, isProductionManagementDisabled } from "./lib/production-management-gate";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  if (isProductionManagementDisabled() && isManagementOnlyPath(pathname)) {
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" },
+    });
+  }
   const restaurantPath = pathname.match(/^\/(?:r|api\/restaurants)\/([^/]+)(?:\/|$)/);
   if (restaurantPath) {
     let slug = restaurantPath[1];

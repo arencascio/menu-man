@@ -13,6 +13,7 @@ $savedAppData = $env:APPDATA
 try {
   $env:APPDATA = ''
   Assert-Rejected { & $wrapper -Mode Preflight -BaselinePath 'unused-baseline.json' }
+  Assert-Rejected { & $wrapper -Mode SchemaVerify }
   $env:APPDATA = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
   Assert-Rejected { & $wrapper -Mode Verify -BaselinePath 'unused-baseline.json' }
   Assert-Rejected { & $wrapper -Mode Execute }

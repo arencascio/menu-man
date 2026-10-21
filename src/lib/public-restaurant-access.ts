@@ -1,6 +1,8 @@
 import { restaurantShowcases } from "./restaurant-showcases";
 
-// Route readiness and marketing-link publication live in one reviewed registry.
+// Super Tacos route readiness and marketing publication share one reviewed registry.
+// Armando's route restriction is retained separately because it is not a v1 showcase.
+const internallyRestrictedRestaurantSlugs = new Set(["armandos"]);
 
 export function isRestaurantPublicationRestricted(
   slug: string,
@@ -8,5 +10,6 @@ export function isRestaurantPublicationRestricted(
   menuManEnvironment = process.env.MENU_MAN_ENV,
 ) {
   return (vercelEnvironment === "production" || menuManEnvironment === "production")
-    && restaurantShowcases.some((showcase) => showcase.slug === slug.toLowerCase() && !showcase.routeEnabled);
+    && (internallyRestrictedRestaurantSlugs.has(slug.toLowerCase())
+      || restaurantShowcases.some((showcase) => showcase.slug === slug.toLowerCase() && !showcase.routeEnabled));
 }

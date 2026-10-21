@@ -6,11 +6,12 @@ import ts from "typescript";
 import * as zod from "zod";
 import * as contracts from "./contracts";
 import * as handler from "./handler";
+import { isMissingOptionalRelation } from "../supabase/optional-relation";
 
 type Server = typeof import("./server");
 class AccessError extends Error { constructor(public code: string, message: string) { super(message); } }
 const tenantId = "a1b2c3d4-1111-4111-8111-123456789012";
-function load(options: { authenticated?: boolean; rpcError?: string; replayed?: boolean; recipient?: string; emailConfigured?: boolean; send?: boolean; providerId?: string; restricted?: boolean; publicSettings?: unknown; publicError?: boolean; completionThrows?: boolean } = {}) {
+function load(options: { authenticated?: boolean; rpcError?: string; replayed?: boolean; recipient?: string; emailConfigured?: boolean; send?: boolean; providerId?: string; restricted?: boolean; publicSettings?: unknown; publicError?: boolean; publicRelationError?: { code: string; message: string }; completionThrows?: boolean } = {}) {
   const calls: { identity: string; name: string; args: Record<string, unknown> }[] = [];
   const deadlines: number[] = [];
   let emailCount = 0;
@@ -29,13 +30,14 @@ function load(options: { authenticated?: boolean; rpcError?: string; replayed?: 
     "@/lib/supabase/server": { supabaseServer: { rpc: rpc("service-role"), from: () => ({ select: () => ({ eq: () => ({ abortSignal: (signal: AbortSignal) => ({ maybeSingle: async () => {
       assert.ok(signal instanceof AbortSignal);
       if (options.publicError) throw new Error("PRIVATE_CONFIG_TIMEOUT");
-      return { data: options.publicSettings === undefined ? null : { settings: options.publicSettings }, error: null };
+      return { data: options.publicSettings === undefined ? null : { settings: options.publicSettings }, error: options.publicRelationError ?? null };
     } }) }) }) }) } },
     "@/lib/order-management/server": { ManagementError: AccessError, authenticatedClient: async () => {
       if (options.authenticated === false) throw new AccessError("UNAUTHENTICATED", "Sign in");
       return { rpc: rpc("authenticated-user") };
     } },
     "@/lib/public-restaurant-access": { isRestaurantPublicationRestricted: () => options.restricted === true },
+    "@/lib/supabase/optional-relation": { isMissingOptionalRelation },
     "@/lib/notifications/resend": { sendResendEmail: async (_key: string, email: Record<string, unknown>) => {
       emailCount++; assert.doesNotMatch(JSON.stringify(email), /PRIVATE_CUSTOMER/);
       return { succeeded: options.send !== false, providerMessageId: options.providerId ?? "offline-provider-id" };
@@ -106,6 +108,8 @@ test("missing and malformed public configuration hides catering; explicit valid 
     assert.equal((await load({ publicSettings: settings }).api.getPublicCateringSettings(tenantId)).enabled, false);
   }
   assert.equal((await load({ publicSettings: { enabled: true } }).api.getPublicCateringSettings(tenantId)).enabled, true);
+  assert.equal((await load({ publicRelationError: { code: "PGRST205", message: "Could not find the table 'public.restaurant_catering_settings' in the schema cache" } }).api.getPublicCateringSettings(tenantId)).enabled, false);
+  await assert.rejects(load({ publicRelationError: { code: "42501", message: "permission denied" } }).api.getPublicCateringSettings(tenantId), (error: unknown) => (error as { code?: string }).code === "42501");
 });
 test("notification recipient accepted by the existing SQL email check cannot invalidate an already stored lead", async () => {
   // The existing SQL regex accepts this address; Zod/Resend validation rejects it.
@@ -119,9 +123,9 @@ test("post-commit notification completion failure preserves successful storage r
   assert.equal((await local.api.submitCateringInquiry("tenant-a", input, request())).replayed, false);
   assert.deepEqual(local.deadlines, [8000, 2000]);
 });
-test("configuration and management RPCs have explicit deadlines; config failures hide the feature", async () => {
+test("configuration and management RPCs have explicit deadlines; unexpected config failures surface", async () => {
   const local = load({ publicError: true });
-  assert.equal((await local.api.getPublicCateringSettings(tenantId)).enabled, false);
+  await assert.rejects(local.api.getPublicCateringSettings(tenantId), /PRIVATE_CONFIG_TIMEOUT/);
   await local.api.listCateringInquiries("tenant-a");
   assert.deepEqual(local.deadlines, [2000, 8000]);
 });

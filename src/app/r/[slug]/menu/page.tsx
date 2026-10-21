@@ -6,6 +6,7 @@ import { getOrderPaymentView, getPaymentStatus, PaymentServerError } from "@/lib
 import { getCustomerPaymentStatusLabel, paymentLocksCart } from "@/lib/payments/state";
 import { restaurantUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 import { supabaseServer } from "@/lib/supabase/server";
+import { isMissingOptionalRelation } from "@/lib/supabase/optional-relation";
 import { composeMenuSections } from "@/lib/menu-engagement/sections";
 import { withDemoMenuImages } from "@/lib/demo/menu-imagery";
 import { isDemoRestaurant } from "@/lib/demo/policy";
@@ -22,10 +23,6 @@ import RestaurantShell, { type RestaurantShellRestaurant } from "../RestaurantSh
 import styles from "./restaurant-menu-page.module.css";
 
 type MenuPageProps = { params: Promise<{ slug: string }> };
-
-function isMissingHighlightRelation(error: { code?: string; message: string } | null, relation: string) {
-  return error?.code === "PGRST205" && error.message.includes(`'public.${relation}'`);
-}
 
 export async function generateMetadata({ params }: MenuPageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -79,16 +76,14 @@ export default async function RestaurantMenuPage({ params }: MenuPageProps) {
     supabaseServer.from("restaurant_featured_menu_items").select("item_id, sort_order").eq("menu_id", menu.id),
     supabaseServer.from("menu_item_heart_counts").select("item_id, heart_count").eq("restaurant_id", restaurant.id),
   ]);
-  const featuredUnavailable = isMissingHighlightRelation(featuredResult.error, "restaurant_featured_menu_items");
-  const heartsUnavailable = isMissingHighlightRelation(heartsResult.error, "menu_item_heart_counts");
-  if (featuredResult.error || heartsResult.error) {
+  const featuredUnavailable = isMissingOptionalRelation(featuredResult.error, "restaurant_featured_menu_items");
+  const heartsUnavailable = isMissingOptionalRelation(heartsResult.error, "menu_item_heart_counts");
+  if ((featuredResult.error && !featuredUnavailable) || (heartsResult.error && !heartsUnavailable)) {
     console.error("There was a problem loading menu highlights.", {
       featured: featuredResult.error,
       hearts: heartsResult.error,
     });
-    if ((featuredResult.error && !featuredUnavailable) || (heartsResult.error && !heartsUnavailable)) {
-      throw new Error("There was a problem loading menu highlights.");
-    }
+    throw new Error("There was a problem loading menu highlights.");
   }
   const heartCounts = heartsUnavailable ? [] : heartsResult.data ?? [];
   const menuSections = composeMenuSections(withDemoMenuImages(restaurant.id, sections), featuredUnavailable ? [] : featuredResult.data ?? [], heartCounts);
