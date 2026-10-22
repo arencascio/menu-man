@@ -8,8 +8,8 @@ import { cancellationTopics } from "../src/app/business-review-content";
 import { PUBLIC_CONTACT, PUBLIC_PRICING, faqs, includedServices } from "../src/app/marketing-content";
 import "./marketing-m1.test";
 
-test("business review routes and links open only in local development while unpublished", () => {
-  for (const page of ["cancellation", "about"] as const) {
+test("about stays unpublished while cancellation is available in production", () => {
+  for (const page of ["about"] as const) {
     assert.equal(marketingBusinessPages[page].published, false);
     assert.equal(isBusinessPageAvailable(page, { NODE_ENV: "development" }), true);
     assert.equal(getBusinessPageHref(page, { NODE_ENV: "development", MENU_MAN_ENV: "staging" }), marketingBusinessPages[page].href);
@@ -44,28 +44,34 @@ test("both pages fail before rendering when a business page is unavailable", () 
     runInNewContext(compiled,runtime);
     assert.throws(()=> (exports.default as ()=>unknown)(), /GATED_404/);
     assert.equal(rendered,0);
-    assert.match(source,/robots: \{ index: false, follow: false \}/);
+    if (path === "about") assert.match(source,/robots: \{ index: false, follow: false \}/);
   }
 });
 
-test("owner-approved working policy is concise without inventing deletion or suspension terms", () => {
+test("published cancellation terms preserve the approved three-section policy", () => {
+  assert.equal(cancellationTopics.length, 3);
   const topics=Object.fromEntries(cancellationTopics.map(topic=>[topic.id,topic]));
-  assert.match(topics.export.copy,/within two weeks after cancellation/);
-  assert.match(topics.export.copy,/standard export.*no additional fee/);
-  assert.match(topics.cancellation.copy,/at any time, without a cancellation penalty/);
-  assert.match(topics.domain.copy,/keep control of your restaurant-owned domain/);
-  assert.match(topics.retention.copy,/does not set a deletion deadline for stored data or backups/);
-  const page=readFileSync("src/app/cancellation/page.tsx","utf8");
-  assert.match(page,/Custom migration work is separate from the standard export/);
-  assert.match(page,/proprietary source code, hosted system and templates stay with Menu Man/);
-  assert.match(page,/Working policy approved/);
-  assert.doesNotMatch(JSON.stringify(cancellationTopics)+page,/nonpayment|suspension/i);
+  assert.match(topics.cancel.copy,/cancel anytime without a cancellation penalty/);
+  assert.match(topics.cancel.copy,/immediate website shutdown.*paid-through date/);
+  assert.match(topics["ownership-and-data"].copy,/restaurant-owned domain stays/);
+  assert.match(topics["ownership-and-data"].copy,/request a standard export.*within 90 days after cancellation/);
+  assert.match(topics["ownership-and-data"].copy,/may be retained longer.*restoration is not guaranteed/);
+  assert.match(topics.billing.copy,/nonrefundable, except where required by law/);
+  assert.match(topics.billing.copy,/no prorated refunds for unused subscription time, except where required by law/);
+  assert.match(topics.billing.copy,/\$300.*project start/);
+  assert.match(topics.billing.copy,/no monthly charges while we build/);
+  assert.match(topics.billing.copy,/\$99\/month.*completed website launches.*launch-date anniversary/);
+  assert.equal(marketingBusinessPages.cancellation.published,true);
+  for(const env of [{NODE_ENV:"production"},{NODE_ENV:"test"},{NODE_ENV:"development",VERCEL_ENV:"preview"}]) {
+    assert.equal(getBusinessPageHref("cancellation",env),"/cancellation");
+  }
+  assert.doesNotMatch(JSON.stringify(cancellationTopics),/automatic|indefinite|source.code ownership|free reactivation/i);
 });
 
 test("pricing/contact language stays consistent without fictional founder or phone details", () => {
   assert.equal(PUBLIC_CONTACT.email,"hello@getmenuman.com");
   assert.equal(PUBLIC_PRICING.monthly,"$99/month");
-  assert.equal(PUBLIC_PRICING.startupFee,"$299");
+  assert.equal(PUBLIC_PRICING.startupFee,"$300");
   assert.ok(!includedServices.some(service=>/Menu Man pickup ordering/.test(service)));
   assert.match(String(faqs.find(faq=>faq.question==="Do I keep my domain?")?.answer),/should own and control/);
   for(const route of ["cancellation","about"]) {
@@ -76,7 +82,7 @@ test("pricing/contact language stays consistent without fictional founder or pho
   assert.match(readFileSync("src/app/about/page.tsx","utf8"),/Founder name and introduction awaiting owner confirmation/);
 });
 
-test("draft business pages are absent from the sitemap and main navigation", () => {
+test("unapproved About page remains absent from discovery and cancellation links share their registry", () => {
   for(const path of ["src/app/sitemap.ts","src/app/MarketingInteractions.tsx"]) {
     assert.ok(!/href=["']\/(?:about|cancellation)["']/.test(readFileSync(path,"utf8")));
   }

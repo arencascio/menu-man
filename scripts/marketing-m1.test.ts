@@ -9,7 +9,7 @@ import "../src/lib/marketing-leads/leads.test";
 
 test("M.1 preserves monthly/add-on prices and separately publishes the approved startup fee", () => {
   assert.equal(PUBLIC_PRICING.monthly, "$99/month");
-  assert.equal(PUBLIC_PRICING.startupFee, "$299");
+  assert.equal(PUBLIC_PRICING.startupFee, "$300");
   assert.equal(PUBLIC_PRICING.deliveryFirstPlatform, "$25/month");
   assert.equal(PUBLIC_PRICING.pickupPerOrder, "$0.50");
   assert.equal(includedServices.length, 10);
@@ -34,15 +34,14 @@ test("finalized logos match the owner source hashes and contain no executable, r
   assert.equal(createHash("sha256").update(readFileSync(`public/brand/previews/${preview.file}`)).digest("hex"), preview.sha256);
 });
 
-test("only Super Tacos appears in marketing and all showcase/cancellation destinations stay gated", () => {
+test("only the approved Super Tacos showcase appears in marketing and cancellation has a working link", () => {
   assert.equal(restaurantShowcases.length, 1);
   assert.equal(restaurantShowcases[0].slug, "super-tacos");
-  for (const showcase of restaurantShowcases) assert.equal(getShowcaseHref(showcase), null);
+  for (const showcase of restaurantShowcases) assert.equal(getShowcaseHref(showcase), "/r/super-tacos");
   for (const file of ["src/app/page.tsx", "src/app/work/page.tsx", "src/app/RestaurantShowcases.tsx", "src/lib/restaurant-showcases.ts"]) {
     const source = readFileSync(file, "utf8");
     assert.doesNotMatch(source, /armandos|armando's|two restaurant personalities|different restaurants, distinct personalities/i);
   }
   const services = readFileSync("src/app/services/page.tsx", "utf8");
-  assert.match(services, /<button type="button" disabled aria-describedby="cancellation-pending">What happens if I cancel\?/);
-  assert.ok(!services.includes('href="/cancellation"'));
+  assert.match(services, /<Link href=\{cancellationHref \?\? "\/cancellation"\}>What happens if I cancel\?/);
 });

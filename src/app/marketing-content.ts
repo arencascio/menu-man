@@ -8,7 +8,7 @@ export const CTA_LABELS = {
 
 export const PUBLIC_PRICING = {
   monthly: "$99/month",
-  startupFee: "$299",
+  startupFee: "$300",
   deliveryFirstPlatform: "$25/month",
   deliveryAdditionalPlatform: "+$10/month",
   pickupPerOrder: "$0.50",
@@ -128,7 +128,7 @@ export const faqs: readonly Faq[] = [
   {
     question: `What does ${PUBLIC_PRICING.monthly} include?`,
     answer:
-      `The managed website, hosting, searchable menu, routine updates, ordering connections, basic SEO and analytics, and ongoing support. The one-time startup fee is ${PUBLIC_PRICING.startupFee}.`,
+      `The managed website, hosting, searchable menu, routine updates, ordering connections, basic SEO and analytics, and ongoing support. The one-time setup payment is ${PUBLIC_PRICING.startupFee}.`,
   },
   {
     question: "Do I pay a fee to keep my current ordering provider?",

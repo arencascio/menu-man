@@ -69,4 +69,4 @@ Other files:
 - `public/img/icons/face-slightly-smiling.svg` (served copy)
 - `docs/menu-ui-polish-report.md` (this report)
 
-The three supplied originals under `img/icons/` were already untracked when work began and remain unmodified.
+The supplied originals are now served unchanged from `public/img/icons/`.

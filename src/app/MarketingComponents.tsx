@@ -8,10 +8,9 @@ import type { MarketingCta, MarketingPlacement } from "@/lib/analytics/types";
 import MarketingIcon from "./MarketingIcon";
 import MarketingReveal from "./MarketingReveal";
 import { getBusinessPageHref } from "@/lib/marketing-business-pages";
-import squarePlay from "../../img/icons/square-play.svg";
 
 export function DemoIcon() {
-  return <Image src={squarePlay} alt="" aria-hidden="true" width={22} height={22} className={styles.demoIcon} />;
+  return <Image src="/img/icons/square-play.svg" alt="" aria-hidden="true" width={22} height={22} className={styles.demoIcon} />;
 }
 
 export function WorkingProductIntro() {

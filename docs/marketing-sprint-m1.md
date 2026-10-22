@@ -103,7 +103,7 @@ Assets:
 - `public/brand/MenuManPhoneSmol.svg`, `MenuManPhone.svg`,
   `menu-man-svg-sources.json`
 - `public/brand/previews/super-tacos-mobile.png`, `sources.json`
-- `img/icons/hand-platter.svg`, `chef-hat.svg`, `rotate-cw-clock.svg`
+- `public/img/icons/hand-platter.svg`, `chef-hat.svg`, `rotate-cw-clock.svg`
 
 Validation/report:
 

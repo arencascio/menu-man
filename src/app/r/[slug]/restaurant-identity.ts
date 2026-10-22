@@ -1,6 +1,4 @@
 import type { RestaurantBrandLockupPresentation } from "./RestaurantBrandLockup";
-import armandosLogo from "../../../../img/armandosLogo_shadow.png";
-
 export const restaurantIdentities: Readonly<Partial<Record<string, {
   markUrl: string;
   artworkMark?: true;
@@ -10,7 +8,9 @@ export const restaurantIdentities: Readonly<Partial<Record<string, {
     markUrl: "/img/pepper.svg",
     artworkMark: true,
     brandLockup: {
-      image: armandosLogo,
+      image: "/img/armandos/armandosLogo_shadow.png",
+      width: 1920,
+      height: 326,
     },
   },
   "super-tacos": {

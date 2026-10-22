@@ -22,3 +22,9 @@
 /public/brand/previews/sources.json text eol=lf
 /public/img/super-tacos/approved/supertacologo.svg text eol=lf
 /public/img/super-tacos/approved/logo-provenance.json text eol=lf
+
+# Preserve supplied DoorDash SVG originals, including whitespace-only blank lines.
+/public/img/providers/DoorDash_idcbr0jK8U_0.svg whitespace=-blank-at-eol
+/public/img/providers/DoorDash_idkbRlvChI_0-fullmark-red.svg whitespace=-blank-at-eol
+/public/img/providers/DoorDash_ido-BYMLha_0-fullmark-white.svg whitespace=-blank-at-eol
+/public/img/providers/DoorDash_ido3qrTJUG_0.svg whitespace=-blank-at-eol

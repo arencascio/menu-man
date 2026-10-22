@@ -12,7 +12,7 @@ type RestaurantSectionEdgePreset = {
   flipY: boolean;
 };
 
-// Source assets live in img/edges; public/img/edges contains served copies.
+// Section edge assets are served from public/img/edges.
 // Silhouettes have their straight side at the top and irregular side at the bottom.
 export const restaurantSectionEdges = {
   "torn-edge-top-01": {

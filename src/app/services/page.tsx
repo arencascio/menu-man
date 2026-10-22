@@ -10,13 +10,14 @@ import {
 import { includedServices, optionalServices, PUBLIC_PRICING, quotedServices } from "../marketing-content";
 import styles from "../page.module.css";
 import MarketingIcon, { type MarketingIconName } from "../MarketingIcon";
+import ProviderLogoStrip from "../ProviderLogoStrip";
 
 const serviceIcons: MarketingIconName[] = ["phone", "globe", "store", "menu", "list", "calendar", "cart", "message", "chart", "smile"];
 
 export const metadata: Metadata = {
   title: "Services & Pricing",
   description:
-    `Managed restaurant websites for ${PUBLIC_PRICING.monthly} plus a ${PUBLIC_PRICING.startupFee} one-time startup fee. Includes searchable menus, routine updates, and existing ordering links.`,
+    `Managed restaurant websites for ${PUBLIC_PRICING.monthly} plus a ${PUBLIC_PRICING.startupFee} one-time setup payment. Includes searchable menus, routine updates, and existing ordering links.`,
 };
 
 export default function ServicesPage() {
@@ -32,7 +33,8 @@ export default function ServicesPage() {
         <div className={styles.priceCard}>
           <h2>Managed Restaurant Website</h2>
           <strong>{PUBLIC_PRICING.monthly}</strong>
-          <p className={styles.startupFee}>{PUBLIC_PRICING.startupFee} one-time startup fee</p>
+          <p className={styles.startupFee}>{PUBLIC_PRICING.startupFee} one-time setup payment, charged at project start</p>
+          <p className={styles.billingTiming}>No monthly charges while we build. {PUBLIC_PRICING.monthly} begins at completed website launch and renews each month on the launch-date anniversary.</p>
           <PrimaryLink placement="hero" />
         </div>
       </section>
@@ -53,10 +55,10 @@ export default function ServicesPage() {
       <section className={styles.orderingSection} data-ordering-ecosystem>
         <div>
           <h2>Your ordering setup does not have to change.</h2>
-          <p>Keep Square and the other tools you already use. Menu Man becomes the customer-facing website while your current ordering workflow stays in place.</p>
+          <p>Already using Square, Toast, Clover, or delivery apps? Keep them. We&apos;ll give customers a better website and a clear path to order through the services you already use.</p>
         </div>
         <ul className={styles.providerStrip} tabIndex={0} aria-label="Examples of existing restaurant ordering providers">
-          {["Square", "Clover", "Toast", "DoorDash", "Uber Eats", "Grubhub"].map((provider) => <li key={provider} data-featured={provider === "Square"}>{provider}</li>)}
+          <ProviderLogoStrip />
         </ul>
       </section>
 
@@ -86,8 +88,8 @@ export default function ServicesPage() {
 
       <section className={styles.cancellationEntry} aria-labelledby="cancellation-title">
         <h2 id="cancellation-title">Know what comes next.</h2>
-        {cancellationHref ? <Link href={cancellationHref} aria-describedby="cancellation-pending">What happens if I cancel?</Link> : <button type="button" disabled aria-describedby="cancellation-pending">What happens if I cancel?</button>}
-        <p id="cancellation-pending">Cancellation and data handoff information is awaiting publication approval.</p>
+        <Link href={cancellationHref ?? "/cancellation"}>What happens if I cancel?</Link>
+        <p>See how cancellation, billing, and a handoff work.</p>
       </section>
 
       <FinalCta />

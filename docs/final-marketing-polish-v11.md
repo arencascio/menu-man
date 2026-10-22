@@ -18,8 +18,7 @@ Removed the old supporting sentence and “Explore the product” link. The exis
 Work hero/final “I WANT A SITE LIKE THIS” actions also lead to the intake page.
 Analytics attributes remain attached to the corresponding actions.
 
-The existing `square-play.svg` was found in `C:/menu-man/img/icons/` and copied
-unchanged into this worktree. Red section and green card demo actions use this
+The existing `square-play.svg` is served from `public/img/icons/` unchanged. Red section and green card demo actions use this
 single decorative icon, with no arrow glyph or second icon. Unrelated primary
 CTAs retain their arrows. Icons are 22px, cream/white against the colored buttons,
 and hidden from assistive technology.
@@ -156,7 +155,7 @@ local tooling. No new media or owner assets are required for this review.
 - `src/app/build-my-website/page.tsx`
 - `src/app/services/page.tsx`
 - `src/app/page.module.css`
-- `img/icons/square-play.svg` (existing owner asset copied unchanged)
+- `public/img/icons/square-play.svg` (existing owner asset)
 - `scripts/qa-final-marketing-polish.mjs` (new focused checks)
 - `scripts/inspect-showcase-image.mjs`, `scripts/qa-marketing-refinement.mjs`
   (photo selectors distinguish the new decorative icon)

@@ -1,0 +1,206 @@
+Marketing V1.2 scoped Git inventory
+Baseline: b45b9bde402a2adbdc9ad3652ccb355a61174f87
+Rename detection enabled. SVG line endings follow Git normalization.
+
+M	.gitattributes
+A	docs/cancellation-export-procedure.md
+M	docs/final-marketing-polish-v11.md
+M	docs/marketing-sprint-m1.md
+A	docs/marketing-v1.2-assets.json
+A	docs/marketing-v1.2-inventory.txt
+A	docs/marketing-v1.2-release.md
+M	docs/menu-ui-polish-report.md
+M	docs/super-tacos-showcase-sprint-c1.md
+D	img/edges/tornEdgeDown-02.svg
+D	img/icons/caviar.png
+D	img/icons/check.svg
+D	img/icons/chevron-right.svg
+D	img/icons/doordash-com-logo.png
+D	img/icons/face-slightly-frowning.svg
+D	img/icons/face-slightly-smiling.svg
+D	img/icons/flag.svg
+D	img/icons/grubhub-com-logo-dark.png
+D	img/icons/heart-crack.svg
+D	img/icons/hourglass.svg
+D	img/icons/map-pin.svg
+D	img/icons/menu-all-sections-button.svg
+D	img/icons/minus.svg
+D	img/icons/moon.svg
+D	img/icons/plus.svg
+D	img/icons/postmates-com-logo.png
+D	img/icons/seamless.png
+D	img/icons/search.svg
+D	img/icons/share-2.svg
+D	img/icons/shopping-cart.svg
+D	img/icons/sparkles.svg
+D	img/icons/square-pen.svg
+D	img/icons/trash.svg
+D	img/icons/truck.svg
+D	img/icons/ubereats-com-logo.png
+D	img/icons/utensils.svg
+D	img/icons/x.svg
+D	img/patterns/brick-wall.svg
+D	img/patterns/lips.svg
+D	img/patterns/texture.svg
+D	img/pepper.svg
+R100	img/armandosLogo.png	public/img/armandos/armandosLogo.png
+R100	img/armandosLogo_shadow.png	public/img/armandos/armandosLogo_shadow.png
+R100	img/carnitas tacos bg.jpg	public/img/armandos/carnitas tacos bg.jpg
+R100	img/edges/easywave.svg	public/img/edges/easywave.svg
+R100	img/edges/tornEdgeDown-01.svg	public/img/edges/source-originals/tornEdgeDown-01.svg
+R100	img/icons/ban.svg	public/img/icons/ban.svg
+R100	img/icons/bell.svg	public/img/icons/bell.svg
+R100	img/icons/calendar-check.svg	public/img/icons/calendar-check.svg
+R100	img/icons/chart-pie.svg	public/img/icons/chart-pie.svg
+R100	img/icons/chef-hat.svg	public/img/icons/chef-hat.svg
+R100	img/icons/chevron-down.svg	public/img/icons/chevron-down.svg
+R100	img/icons/circle-user-round.svg	public/img/icons/circle-user-round.svg
+R100	img/icons/circle-x.svg	public/img/icons/circle-x.svg
+R100	img/icons/credit-card-reader.svg	public/img/icons/credit-card-reader.svg
+R100	img/icons/dollar-sign.svg	public/img/icons/dollar-sign.svg
+R100	img/icons/egg-fried.svg	public/img/icons/egg-fried.svg
+R100	img/icons/gift.svg	public/img/icons/gift.svg
+R100	img/icons/globe-code.svg	public/img/icons/globe-code.svg
+R100	img/icons/hand-platter.svg	public/img/icons/hand-platter.svg
+R100	img/icons/heart-handshake.svg	public/img/icons/heart-handshake.svg
+R100	img/icons/heart-plus.svg	public/img/icons/heart-plus.svg
+R100	img/icons/heart.svg	public/img/icons/heart.svg
+R100	img/icons/house.svg	public/img/icons/house.svg
+R100	img/icons/link-2.svg	public/img/icons/link-2.svg
+R100	img/icons/list-restart.svg	public/img/icons/list-restart.svg
+R100	img/icons/map-pinned.svg	public/img/icons/map-pinned.svg
+R100	img/icons/menu.svg	public/img/icons/menu.svg
+R100	img/icons/message-circle-question-mark.svg	public/img/icons/message-circle-question-mark.svg
+R100	img/icons/pencil.svg	public/img/icons/pencil.svg
+R100	img/icons/phone-call.svg	public/img/icons/phone-call.svg
+R100	img/icons/play.svg	public/img/icons/play.svg
+R100	img/icons/rotate-cw-clock.svg	public/img/icons/rotate-cw-clock.svg
+R100	img/icons/smartphone.svg	public/img/icons/smartphone.svg
+R100	img/icons/square-menu.svg	public/img/icons/square-menu.svg
+R100	img/icons/square-play.svg	public/img/icons/square-play.svg
+R100	img/icons/store.svg	public/img/icons/store.svg
+R100	img/icons/user.svg	public/img/icons/user.svg
+R100	img/icons/wrench.svg	public/img/icons/wrench.svg
+R100	img/patterns/4-point-stars.svg	public/img/patterns/4-point-stars.svg
+R100	img/patterns/anchors-away.svg	public/img/patterns/anchors-away.svg
+R100	img/patterns/architect.svg	public/img/patterns/architect.svg
+R100	img/patterns/autumn.svg	public/img/patterns/autumn.svg
+R100	img/patterns/aztec.svg	public/img/patterns/aztec.svg
+R100	img/patterns/bamboo.svg	public/img/patterns/bamboo.svg
+R100	img/patterns/bank-note.svg	public/img/patterns/bank-note.svg
+R100	img/patterns/bathroom-floor.svg	public/img/patterns/bathroom-floor.svg
+R100	img/patterns/bevel-circle.svg	public/img/patterns/bevel-circle.svg
+R100	img/patterns/boxes.svg	public/img/patterns/boxes.svg
+R100	img/patterns/bubbles.svg	public/img/patterns/bubbles.svg
+R100	img/patterns/cage.svg	public/img/patterns/cage.svg
+R100	img/patterns/charlie-brown.svg	public/img/patterns/charlie-brown.svg
+R100	img/patterns/church-on-sunday.svg	public/img/patterns/church-on-sunday.svg
+R100	img/patterns/circles-and-squares.svg	public/img/patterns/circles-and-squares.svg
+R100	img/patterns/circuit-board.svg	public/img/patterns/circuit-board.svg
+R100	img/patterns/connections.svg	public/img/patterns/connections.svg
+R100	img/patterns/cork-screw.svg	public/img/patterns/cork-screw.svg
+R100	img/patterns/current.svg	public/img/patterns/current.svg
+R100	img/patterns/curtain.svg	public/img/patterns/curtain.svg
+R100	img/patterns/cutout.svg	public/img/patterns/cutout.svg
+R100	img/patterns/death-star.svg	public/img/patterns/death-star.svg
+R100	img/patterns/diagonal-lines.svg	public/img/patterns/diagonal-lines.svg
+R100	img/patterns/diagonal-stripes.svg	public/img/patterns/diagonal-stripes.svg
+R100	img/patterns/dominos.svg	public/img/patterns/dominos.svg
+R100	img/patterns/endless-clouds.svg	public/img/patterns/endless-clouds.svg
+R100	img/patterns/eyes.svg	public/img/patterns/eyes.svg
+R100	img/patterns/falling-triangles.svg	public/img/patterns/falling-triangles.svg
+R100	img/patterns/fancy-rectangles.svg	public/img/patterns/fancy-rectangles.svg
+R100	img/patterns/flipped-diamonds.svg	public/img/patterns/flipped-diamonds.svg
+R100	img/patterns/floating-cogs.svg	public/img/patterns/floating-cogs.svg
+R100	img/patterns/floor-tile.svg	public/img/patterns/floor-tile.svg
+R100	img/patterns/formal-invitation.svg	public/img/patterns/formal-invitation.svg
+R100	img/patterns/glamorous.svg	public/img/patterns/glamorous.svg
+R100	img/patterns/graph-paper.svg	public/img/patterns/graph-paper.svg
+R100	img/patterns/groovy.svg	public/img/patterns/groovy.svg
+R100	img/patterns/happy-intersection.svg	public/img/patterns/happy-intersection.svg
+R100	img/patterns/heavy-rain.svg	public/img/patterns/heavy-rain.svg
+R100	img/patterns/hexagons.svg	public/img/patterns/hexagons.svg
+R100	img/patterns/hideout.svg	public/img/patterns/hideout.svg
+R100	img/patterns/houndstooth.svg	public/img/patterns/houndstooth.svg
+R100	img/patterns/i-like-food.svg	public/img/patterns/i-like-food.svg
+R100	img/patterns/intersecting-circles.svg	public/img/patterns/intersecting-circles.svg
+R100	img/patterns/jigsaw.svg	public/img/patterns/jigsaw.svg
+R100	img/patterns/jupiter.svg	public/img/patterns/jupiter.svg
+R100	img/patterns/kiwi.svg	public/img/patterns/kiwi.svg
+R100	img/patterns/leaf.svg	public/img/patterns/leaf.svg
+R100	img/patterns/line-in-motion.svg	public/img/patterns/line-in-motion.svg
+R100	img/patterns/lisbon.svg	public/img/patterns/lisbon.svg
+R100	img/patterns/melt.svg	public/img/patterns/melt.svg
+R100	img/patterns/moroccan.svg	public/img/patterns/moroccan.svg
+R100	img/patterns/morphing-diamonds.svg	public/img/patterns/morphing-diamonds.svg
+R100	img/patterns/overcast.svg	public/img/patterns/overcast.svg
+R100	img/patterns/overlapping-circles.svg	public/img/patterns/overlapping-circles.svg
+R100	img/patterns/overlapping-diamonds.svg	public/img/patterns/overlapping-diamonds.svg
+R100	img/patterns/overlapping-hexagons.svg	public/img/patterns/overlapping-hexagons.svg
+R100	img/patterns/parkay-floor.svg	public/img/patterns/parkay-floor.svg
+R100	img/patterns/piano-man.svg	public/img/patterns/piano-man.svg
+R100	img/patterns/pie-factory.svg	public/img/patterns/pie-factory.svg
+R100	img/patterns/pixel-dots.svg	public/img/patterns/pixel-dots.svg
+R100	img/patterns/plus.svg	public/img/patterns/plus.svg
+R100	img/patterns/polka-dots.svg	public/img/patterns/polka-dots.svg
+R100	img/patterns/rails.svg	public/img/patterns/rails.svg
+R100	img/patterns/rain.svg	public/img/patterns/rain.svg
+R100	img/patterns/random-shapes.svg	public/img/patterns/random-shapes.svg
+R100	img/patterns/rounded-plus-connected.svg	public/img/patterns/rounded-plus-connected.svg
+R100	img/patterns/signal.svg	public/img/patterns/signal.svg
+R100	img/patterns/skulls.svg	public/img/patterns/skulls.svg
+R100	img/patterns/slanted-stars.svg	public/img/patterns/slanted-stars.svg
+R100	img/patterns/squares-in-squares.svg	public/img/patterns/squares-in-squares.svg
+R100	img/patterns/squares.svg	public/img/patterns/squares.svg
+R100	img/patterns/stamp-collection.svg	public/img/patterns/stamp-collection.svg
+R100	img/patterns/steel-beams.svg	public/img/patterns/steel-beams.svg
+R100	img/patterns/stripes.svg	public/img/patterns/stripes.svg
+R100	img/patterns/temple.svg	public/img/patterns/temple.svg
+R100	img/patterns/tic-tac-toe.svg	public/img/patterns/tic-tac-toe.svg
+R100	img/patterns/tiny-checkers.svg	public/img/patterns/tiny-checkers.svg
+R100	img/patterns/topography.svg	public/img/patterns/topography.svg
+R100	img/patterns/volcano-lamp.svg	public/img/patterns/volcano-lamp.svg
+R100	img/patterns/wallpaper.svg	public/img/patterns/wallpaper.svg
+R100	img/patterns/wiggle.svg	public/img/patterns/wiggle.svg
+R100	img/patterns/x-equals.svg	public/img/patterns/x-equals.svg
+R100	img/patterns/yyy.svg	public/img/patterns/yyy.svg
+R100	img/patterns/zig-zag.svg	public/img/patterns/zig-zag.svg
+A	public/img/providers/Clover_ideTbBPrxt_0-icon.svg
+A	public/img/providers/Clover_idscfTrYLO_0-fullmark.svg
+A	public/img/providers/DoorDash_idcbr0jK8U_0.svg
+A	public/img/providers/DoorDash_idkbRlvChI_0-fullmark-red.svg
+A	public/img/providers/DoorDash_ido-BYMLha_0-fullmark-white.svg
+A	public/img/providers/DoorDash_ido3qrTJUG_0.svg
+A	public/img/providers/Grubhub_idAwNcLQdh_2-fullmark.svg
+A	public/img/providers/Grubhub_idV67dEb89_0-fullmark-white.svg
+A	public/img/providers/Square_Logo_2025_Black-fullmark.svg
+A	public/img/providers/Square_Logo_2025_White-fullmark.svg
+A	public/img/providers/Uber_Eats_Logo_2.svg
+A	public/img/providers/Uber_Eats_Symbol_4.svg
+A	public/img/providers/Uber_Eats_fullmark-dualcolor_1.svg
+A	public/img/providers/Uber_Eats_fullmark_black_Logo_6.svg
+A	public/img/providers/Uber_Eats_fullmark_white_Logo_8.svg
+A	public/img/providers/Uber_Eats_squaremark_black_Logo_10.svg
+A	public/img/providers/toast-fullmark-logo_color.svg
+A	public/img/providers/toast-fullmark-logo_white.svg
+A	public/img/providers/toast-slice-icon_color.svg
+M	public/img/super-tacos/approved/social/provenance.json
+M	scripts/marketing-m1.test.ts
+M	scripts/marketing-m2.test.ts
+A	scripts/marketing-v12.test.ts
+A	scripts/qa-marketing-v12.mjs
+M	src/app/MarketingComponents.tsx
+M	src/app/MarketingIcon.tsx
+M	src/app/MarketingInteractions.tsx
+A	src/app/ProviderLogoStrip.tsx
+M	src/app/build-my-website/page.tsx
+M	src/app/business-review-content.ts
+M	src/app/cancellation/page.tsx
+M	src/app/marketing-content.ts
+M	src/app/page.module.css
+M	src/app/r/[slug]/RestaurantBrandLockup.tsx
+M	src/app/r/[slug]/restaurant-identity.ts
+M	src/app/services/page.tsx
+M	src/lib/marketing-business-pages.ts
+M	src/lib/restaurant-presentation/patterns.ts
+M	src/lib/restaurant-presentation/section-edges.ts

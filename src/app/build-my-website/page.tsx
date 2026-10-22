@@ -18,7 +18,7 @@ export default function BuildMyWebsitePage() {
           <p>Share what you have, what is not working, and where customers order today.</p>
           <div className={styles.leadPrice}>
             <strong>{PUBLIC_PRICING.monthly}</strong>
-            <p>Plus a {PUBLIC_PRICING.startupFee} one-time startup fee</p>
+            <p>{PUBLIC_PRICING.startupFee} setup payment at project start. No monthly charges while we build; {PUBLIC_PRICING.monthly} starts at launch.</p>
           </div>
           <ul>
             <li>No enterprise sales process</li>

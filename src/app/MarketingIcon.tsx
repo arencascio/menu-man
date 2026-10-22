@@ -1,28 +1,29 @@
 import Image from "next/image";
-import utensils from "../../img/icons/utensils.svg";
-import dollar from "../../img/icons/dollar-sign.svg";
-import moon from "../../img/icons/moon.svg";
-import map from "../../img/icons/map-pinned.svg";
-import cart from "../../img/icons/shopping-cart.svg";
-import smile from "../../img/icons/face-slightly-smiling.svg";
-import message from "../../img/icons/message-circle-question-mark.svg";
-import globe from "../../img/icons/globe-code.svg";
-import history from "../../img/icons/rotate-cw-clock.svg";
-import phone from "../../img/icons/smartphone.svg";
-import menu from "../../img/icons/square-menu.svg";
-import sparkles from "../../img/icons/sparkles.svg";
-import heart from "../../img/icons/heart-handshake.svg";
-import platter from "../../img/icons/hand-platter.svg";
-import store from "../../img/icons/store.svg";
-import list from "../../img/icons/list-restart.svg";
-import calendar from "../../img/icons/calendar-check.svg";
-import chart from "../../img/icons/chart-pie.svg";
-import truck from "../../img/icons/truck.svg";
-import chef from "../../img/icons/chef-hat.svg";
-import check from "../../img/icons/check.svg";
-import chevron from "../../img/icons/chevron-down.svg";
 
-const icons = { utensils, dollar, moon, map, cart, smile, message, globe, history, phone, menu, sparkles, heart, platter, store, list, calendar, chart, truck, chef, check, chevron };
+const icons = {
+  utensils: "/img/icons/utensils.svg",
+  dollar: "/img/icons/dollar-sign.svg",
+  moon: "/img/icons/moon.svg",
+  map: "/img/icons/map-pinned.svg",
+  cart: "/img/icons/shopping-cart.svg",
+  smile: "/img/icons/face-slightly-smiling.svg",
+  message: "/img/icons/message-circle-question-mark.svg",
+  globe: "/img/icons/globe-code.svg",
+  history: "/img/icons/rotate-cw-clock.svg",
+  phone: "/img/icons/smartphone.svg",
+  menu: "/img/icons/square-menu.svg",
+  sparkles: "/img/icons/sparkles.svg",
+  heart: "/img/icons/heart-handshake.svg",
+  platter: "/img/icons/hand-platter.svg",
+  store: "/img/icons/store.svg",
+  list: "/img/icons/list-restart.svg",
+  calendar: "/img/icons/calendar-check.svg",
+  chart: "/img/icons/chart-pie.svg",
+  truck: "/img/icons/truck.svg",
+  chef: "/img/icons/chef-hat.svg",
+  check: "/img/icons/check.svg",
+  chevron: "/img/icons/chevron-down.svg",
+} as const;
 export type MarketingIconName = keyof typeof icons;
 
 export default function MarketingIcon({ name, size = 28, className }: { name: MarketingIconName; size?: number; className?: string }) {

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState } from "react";
-import menuIcon from "../../img/icons/menu.svg";
 import { CTA_LABELS, PUBLIC_PRICING } from "./marketing-content";
 import MarketingFeaturettes from "./MarketingFeaturettes";
 import styles from "./page.module.css";
@@ -98,7 +97,7 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
         aria-controls="marketing-navigation"
         onClick={() => { if (open) close(); else { setClosing(false); setOpen(true); } }}
       >
-        {open ? <span>Close</span> : <Image src={menuIcon} alt="" width={24} height={24} />}
+        {open ? <span>Close</span> : <Image src="/img/icons/menu.svg" alt="" width={24} height={24} />}
       </button>
       {rendered && <button type="button" className={styles.menuBackdrop} data-closing={!open} tabIndex={-1} aria-label="Close navigation backdrop" onClick={close} />}
       <nav
@@ -335,7 +334,7 @@ export function BuildWebsiteForm() {
       <label>Anything else we should know?<textarea name="notes" maxLength={2000} rows={4} /></label>
       <div className={styles.formPrice}>
         <strong>{PUBLIC_PRICING.monthly}</strong>
-        <p>Plus a {PUBLIC_PRICING.startupFee} one-time startup fee</p>
+        <p>{PUBLIC_PRICING.startupFee} setup payment at project start. No monthly charges while we build; {PUBLIC_PRICING.monthly} starts at launch.</p>
       </div>
       <button className={styles.formSubmit} type="submit">{lead.state.pending ? "Sending..." : CTA_LABELS.primary} <span aria-hidden="true">&rarr;</span></button>
       </fieldset>

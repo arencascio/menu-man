@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-// Source assets live in img/patterns; public/img/patterns contains served copies.
+// Restaurant pattern assets are served from public/img/patterns.
 export const restaurantPatterns = {
   texture: {
     name: "Texture",

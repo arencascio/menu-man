@@ -1,0 +1,854 @@
+{
+  "baseline": "b45b9bde402a2adbdc9ad3652ccb355a61174f87",
+  "hashing": "SHA-256; SVG CRLF line endings normalized to LF; binary assets compared byte-for-byte",
+  "migrated": [
+    {
+      "legacy": "img/armandosLogo.png",
+      "destination": "public/img/armandos/armandosLogo.png",
+      "sha256": "4ab92527331c2445869042bf1ca493a1f6a1ac40e35de57b51699673befdf13c"
+    },
+    {
+      "legacy": "img/armandosLogo_shadow.png",
+      "destination": "public/img/armandos/armandosLogo_shadow.png",
+      "sha256": "7edb6cf43098d677586d87545ef6d7f4b409c05c7741e727001b23398a03d84e"
+    },
+    {
+      "legacy": "img/carnitas tacos bg.jpg",
+      "destination": "public/img/armandos/carnitas tacos bg.jpg",
+      "sha256": "424868a441a0ba0c98f5053edfcbb84f3b84679eb63ade344188aec4a489df3c"
+    },
+    {
+      "legacy": "img/edges/easywave.svg",
+      "destination": "public/img/edges/easywave.svg",
+      "sha256": "f383251eb985c55de7769e12b3d2957f83f0b7ce3650049522494190a827f1c0"
+    },
+    {
+      "legacy": "img/edges/tornEdgeDown-01.svg",
+      "destination": "public/img/edges/source-originals/tornEdgeDown-01.svg",
+      "sha256": "008e156bf1f2c1d8a57f2ba86b63ae37c83a79f8732e67d6da71e894355f1f29"
+    },
+    {
+      "legacy": "img/edges/tornEdgeDown-02.svg",
+      "destination": "public/img/edges/tornEdgeDown-02.svg",
+      "sha256": "2176b035400bd7e9a8e022358c8e57deb4e6db86b20dc0647adb712d71a87b5b"
+    },
+    {
+      "legacy": "img/icons/ban.svg",
+      "destination": "public/img/icons/ban.svg",
+      "sha256": "8963ef370c95f76a46b581cbd82bc6afbeec175f80444efeb24e0c9b6cbbc751"
+    },
+    {
+      "legacy": "img/icons/bell.svg",
+      "destination": "public/img/icons/bell.svg",
+      "sha256": "0aaa064d978286981793c5ac2c153d99a2b60492a5590034a50417d08251446e"
+    },
+    {
+      "legacy": "img/icons/calendar-check.svg",
+      "destination": "public/img/icons/calendar-check.svg",
+      "sha256": "0aad62e4117742c117276ad88d7368e6b5986c71dc150e20c44fc9092cafc9e3"
+    },
+    {
+      "legacy": "img/icons/caviar.png",
+      "destination": "public/img/icons/caviar.png",
+      "sha256": "c2c03a0ef6d29935983ae2879525a64dc1480f2f81a8cbebe0fb3210268834e3"
+    },
+    {
+      "legacy": "img/icons/chart-pie.svg",
+      "destination": "public/img/icons/chart-pie.svg",
+      "sha256": "8b05a4a64f6278e931580b5d8da18d88d1fd648f534b038506c1475db19d42e0"
+    },
+    {
+      "legacy": "img/icons/check.svg",
+      "destination": "public/img/icons/check.svg",
+      "sha256": "0e6e2c257a888d6012474ba7028b66edfa6745ed6106cdbd162c8ab2a7084a62"
+    },
+    {
+      "legacy": "img/icons/chef-hat.svg",
+      "destination": "public/img/icons/chef-hat.svg",
+      "sha256": "19ab69330f9443910b267c7dfb8fe3cab9a1a17bd9ee35da7a68ef4094f26dbb"
+    },
+    {
+      "legacy": "img/icons/chevron-down.svg",
+      "destination": "public/img/icons/chevron-down.svg",
+      "sha256": "d4b4761abff43d70ce7c39e40d3b5b3b71f19a49fcce514fd71d49761f5f6f0e"
+    },
+    {
+      "legacy": "img/icons/chevron-right.svg",
+      "destination": "public/img/icons/chevron-right.svg",
+      "sha256": "7c299a7ed3e172ff68d421a2f6aa610762bb6688e200839a5c2aed1979e226d7"
+    },
+    {
+      "legacy": "img/icons/circle-user-round.svg",
+      "destination": "public/img/icons/circle-user-round.svg",
+      "sha256": "3e44de977e3ba7b791ea3552ea017f95557747baf23a240cddb155fbdf2de8b8"
+    },
+    {
+      "legacy": "img/icons/circle-x.svg",
+      "destination": "public/img/icons/circle-x.svg",
+      "sha256": "96f3a68a23e131b2eefa60e8101bae16a7a80f614d689be57c350cc2968ee195"
+    },
+    {
+      "legacy": "img/icons/credit-card-reader.svg",
+      "destination": "public/img/icons/credit-card-reader.svg",
+      "sha256": "fdd50bc8465a408c5f1b14de4c577f1ffd0f31b0f539569f930d8796dbc0b84d"
+    },
+    {
+      "legacy": "img/icons/dollar-sign.svg",
+      "destination": "public/img/icons/dollar-sign.svg",
+      "sha256": "836803ac924d13fb047cbbacd34682e3cd7568f1619cf9e2fb9e1b2742c25708"
+    },
+    {
+      "legacy": "img/icons/doordash-com-logo.png",
+      "destination": "public/img/icons/doordash-com-logo.png",
+      "sha256": "2f260ff528f761d4f20072acaef9d5e7340f49d05ade0ffdaace55fdc357600e"
+    },
+    {
+      "legacy": "img/icons/egg-fried.svg",
+      "destination": "public/img/icons/egg-fried.svg",
+      "sha256": "7d7f6afbec5319bf716d28526c02f06af60a2724009095f1eb1cbe8c2b357cea"
+    },
+    {
+      "legacy": "img/icons/face-slightly-frowning.svg",
+      "destination": "public/img/icons/face-slightly-frowning.svg",
+      "sha256": "27c65dc8da162253a31d1c5e73c4189a76f46fdd90649865b84fd55a13507f90"
+    },
+    {
+      "legacy": "img/icons/face-slightly-smiling.svg",
+      "destination": "public/img/icons/face-slightly-smiling.svg",
+      "sha256": "0491ad8c168d221745e8dbb947c9ce0cd2a2822414391b59a0db0178c3d8e7e9"
+    },
+    {
+      "legacy": "img/icons/flag.svg",
+      "destination": "public/img/icons/flag.svg",
+      "sha256": "5333d9bcf14edecc3df59e66f04a87e371ef7bf88653915030afd7cb75016eb4"
+    },
+    {
+      "legacy": "img/icons/gift.svg",
+      "destination": "public/img/icons/gift.svg",
+      "sha256": "71ebf506b6abcb2432de25b5eac64bdffa5dc6538f5ac676d1c987bf57a10c9d"
+    },
+    {
+      "legacy": "img/icons/globe-code.svg",
+      "destination": "public/img/icons/globe-code.svg",
+      "sha256": "f3be1157a556e348ea62c68f355bdb1bcfebb6702d28a5addfe80d08e5b8f020"
+    },
+    {
+      "legacy": "img/icons/grubhub-com-logo-dark.png",
+      "destination": "public/img/icons/grubhub-com-logo-dark.png",
+      "sha256": "ced4a6c948690e9fd1bbe1439dadf3dc1018a0c321f506a8f96c74da6c79c1ed"
+    },
+    {
+      "legacy": "img/icons/hand-platter.svg",
+      "destination": "public/img/icons/hand-platter.svg",
+      "sha256": "5a642f82bcc4422932c20570047d9858ee86823fc2e5a7cda10b8e209662377b"
+    },
+    {
+      "legacy": "img/icons/heart-crack.svg",
+      "destination": "public/img/icons/heart-crack.svg",
+      "sha256": "12c75e956d8b93ba63f269a6e8aecdb05d35b33c3d919e2d9ebf994dff9af034"
+    },
+    {
+      "legacy": "img/icons/heart-handshake.svg",
+      "destination": "public/img/icons/heart-handshake.svg",
+      "sha256": "0cee7e3d60583bd344d7a1cde69b33426eb7d767bb2eff2ebac701e7d3bc4379"
+    },
+    {
+      "legacy": "img/icons/heart-plus.svg",
+      "destination": "public/img/icons/heart-plus.svg",
+      "sha256": "c25f61533dc815e592ed3adc68efa470e9eae9d5700095918a561cd160822579"
+    },
+    {
+      "legacy": "img/icons/heart.svg",
+      "destination": "public/img/icons/heart.svg",
+      "sha256": "a9d744eb9d6fa737aac7fceb80bc41ecc423d97fded5417c1a916d12d5b3e961"
+    },
+    {
+      "legacy": "img/icons/hourglass.svg",
+      "destination": "public/img/icons/hourglass.svg",
+      "sha256": "0ec2ca58370df4af4d9c54e4f0f00c90d526103acf8b03b2269e162becf1ab4c"
+    },
+    {
+      "legacy": "img/icons/house.svg",
+      "destination": "public/img/icons/house.svg",
+      "sha256": "aef48f8e1764a40ddd6b7a194e9e37b5f1608e400fb2418b943878b879eef9e9"
+    },
+    {
+      "legacy": "img/icons/link-2.svg",
+      "destination": "public/img/icons/link-2.svg",
+      "sha256": "387b103d40005171319ee54864936d67da934560474e5d9519f5ec56b6d4eabd"
+    },
+    {
+      "legacy": "img/icons/list-restart.svg",
+      "destination": "public/img/icons/list-restart.svg",
+      "sha256": "df6e9bc61e20b6efd1f793f3b535455fa751fd9ecbd75f02c79ec6bddd6b8294"
+    },
+    {
+      "legacy": "img/icons/map-pin.svg",
+      "destination": "public/img/icons/map-pin.svg",
+      "sha256": "d3d17e52b04d290108efff0ec3948d31a8f9c9505ea7bf0f1dba64abac79c21d"
+    },
+    {
+      "legacy": "img/icons/map-pinned.svg",
+      "destination": "public/img/icons/map-pinned.svg",
+      "sha256": "dae7b9f66812f5730139c08ce09a737a7b9e2dfd02f5af8320e66e947d8d7949"
+    },
+    {
+      "legacy": "img/icons/menu-all-sections-button.svg",
+      "destination": "public/img/icons/menu-all-sections-button.svg",
+      "sha256": "4d05c5fee2f902a1d4ae95ed5a3f92638dd63c952a4b020e4e280d391597612b"
+    },
+    {
+      "legacy": "img/icons/menu.svg",
+      "destination": "public/img/icons/menu.svg",
+      "sha256": "a85efefd08f961a5de8ceb3b25bef8ded5c157ae68ab8bda7ee2a8ca745af316"
+    },
+    {
+      "legacy": "img/icons/message-circle-question-mark.svg",
+      "destination": "public/img/icons/message-circle-question-mark.svg",
+      "sha256": "16faa9998009609f0c6604e29d761e857dc780e617b65daffaadf582ff234e7f"
+    },
+    {
+      "legacy": "img/icons/minus.svg",
+      "destination": "public/img/icons/minus.svg",
+      "sha256": "002708e02555d2d0494869dca6f079cf7b846d1537fd2cc03917f2a68a26400a"
+    },
+    {
+      "legacy": "img/icons/moon.svg",
+      "destination": "public/img/icons/moon.svg",
+      "sha256": "bd984bceadfb0b86ee28960dbd93159e9012c02f988460d641ae81d67f65537a"
+    },
+    {
+      "legacy": "img/icons/pencil.svg",
+      "destination": "public/img/icons/pencil.svg",
+      "sha256": "af082dabedd5e5b81787877e4eed159fdc103010bab924da1a5318cbfd1220cb"
+    },
+    {
+      "legacy": "img/icons/phone-call.svg",
+      "destination": "public/img/icons/phone-call.svg",
+      "sha256": "c40e756d4e0daa46dfe0f9c833d73e4da5512b12d656576c8ff75a914ab38e22"
+    },
+    {
+      "legacy": "img/icons/play.svg",
+      "destination": "public/img/icons/play.svg",
+      "sha256": "8b2e19d16b6644a9b7fbe68886f7f831ecd8db35a7c365602ac78f65eb73b650"
+    },
+    {
+      "legacy": "img/icons/plus.svg",
+      "destination": "public/img/icons/plus.svg",
+      "sha256": "7bf30b256c7a1663196a7159a6eef9014ed0841257ac0da5a20a324e520be670"
+    },
+    {
+      "legacy": "img/icons/postmates-com-logo.png",
+      "destination": "public/img/icons/postmates-com-logo.png",
+      "sha256": "63746c86f3e608961a0bf0ccfe367492aabab2c6c44302f46b50e7cc74be6301"
+    },
+    {
+      "legacy": "img/icons/rotate-cw-clock.svg",
+      "destination": "public/img/icons/rotate-cw-clock.svg",
+      "sha256": "db89225977f80b66911ffb763f39f4588de1f12d2bcfaafb5132d71115e26082"
+    },
+    {
+      "legacy": "img/icons/seamless.png",
+      "destination": "public/img/icons/seamless.png",
+      "sha256": "8dce81d778e5c242fd7426ce0f8a1393ebca5b251a67daf2bc2275823eb44142"
+    },
+    {
+      "legacy": "img/icons/search.svg",
+      "destination": "public/img/icons/search.svg",
+      "sha256": "a025250e6e90ef9f702964f50858b395a9bf3a7c635f7f7d3732cf88f3de0e63"
+    },
+    {
+      "legacy": "img/icons/share-2.svg",
+      "destination": "public/img/icons/share-2.svg",
+      "sha256": "719055a176f532b5a82bb60c28f298f95266977a1a076dec79d20a3415c4c38e"
+    },
+    {
+      "legacy": "img/icons/shopping-cart.svg",
+      "destination": "public/img/icons/shopping-cart.svg",
+      "sha256": "3b4f4b51ae29d77fffce49a4ba880a4daaed9fb02ec638ffe1bdeb7c4410cc6b"
+    },
+    {
+      "legacy": "img/icons/smartphone.svg",
+      "destination": "public/img/icons/smartphone.svg",
+      "sha256": "1aa5d332ce5e53c57e969f1ce74d35e2a45914a70ad2b536c6b242e2ba20ac86"
+    },
+    {
+      "legacy": "img/icons/sparkles.svg",
+      "destination": "public/img/icons/sparkles.svg",
+      "sha256": "df560e8955d1f02b4d64265aafcee4a350223aaed4bbd6377b741a8be7772eaa"
+    },
+    {
+      "legacy": "img/icons/square-menu.svg",
+      "destination": "public/img/icons/square-menu.svg",
+      "sha256": "e65761f9224928e9088dfade6d3472678079472e192c8fd65966c13643835d7f"
+    },
+    {
+      "legacy": "img/icons/square-pen.svg",
+      "destination": "public/img/icons/square-pen.svg",
+      "sha256": "a27f593ddf9cd1ac3672628147cd9da8c62322533febfbad357c190319006e4f"
+    },
+    {
+      "legacy": "img/icons/square-play.svg",
+      "destination": "public/img/icons/square-play.svg",
+      "sha256": "1d73b8adc9f778f351c914c77dc3c3a609609be46d7bc2e7ecf43733bcbb8968"
+    },
+    {
+      "legacy": "img/icons/store.svg",
+      "destination": "public/img/icons/store.svg",
+      "sha256": "4782b9c324564a578cebd70a1d617bf333f9439d5f32650a6797882f082c529a"
+    },
+    {
+      "legacy": "img/icons/trash.svg",
+      "destination": "public/img/icons/trash.svg",
+      "sha256": "8bf93b384242404d1d9487f6a051a15f9b278e26eed6449048226339949fa696"
+    },
+    {
+      "legacy": "img/icons/truck.svg",
+      "destination": "public/img/icons/truck.svg",
+      "sha256": "ca9eddc533c38ffcdfad719fcc54337ed88e5db0b0e71418124166089f92b5c3"
+    },
+    {
+      "legacy": "img/icons/ubereats-com-logo.png",
+      "destination": "public/img/icons/ubereats-com-logo.png",
+      "sha256": "60d7fb504f65e61acfaf8cc742a9f57fefbeb038999514b68964a8be27bf6a08"
+    },
+    {
+      "legacy": "img/icons/user.svg",
+      "destination": "public/img/icons/user.svg",
+      "sha256": "496437d14fbf3806477b3bfb57bea23af8519c674233c71ccab82f10aee77eee"
+    },
+    {
+      "legacy": "img/icons/utensils.svg",
+      "destination": "public/img/icons/utensils.svg",
+      "sha256": "ad948e3b4251890fc5e63cf394a10dad0c17c5f1dc81484c03457d60cc6fd32e"
+    },
+    {
+      "legacy": "img/icons/wrench.svg",
+      "destination": "public/img/icons/wrench.svg",
+      "sha256": "6648e40f30989de4d01be4cad0c1d8a293f686e60c4a3f241029630967649c92"
+    },
+    {
+      "legacy": "img/icons/x.svg",
+      "destination": "public/img/icons/x.svg",
+      "sha256": "d27a7f870429fbbb3aa14deaf6279d61a05610f9e26734beb1258853d5bb4801"
+    },
+    {
+      "legacy": "img/patterns/4-point-stars.svg",
+      "destination": "public/img/patterns/4-point-stars.svg",
+      "sha256": "8afb7fe4a9447d4e6abe1d8beb3a5e507802e0d0849a596aa7aad302f4a7d893"
+    },
+    {
+      "legacy": "img/patterns/anchors-away.svg",
+      "destination": "public/img/patterns/anchors-away.svg",
+      "sha256": "ca1793d10e5e3e92fe1102b72e125ba405cbcdbe85e50c6369387ea5bce30cbe"
+    },
+    {
+      "legacy": "img/patterns/architect.svg",
+      "destination": "public/img/patterns/architect.svg",
+      "sha256": "dcb3e0fe53a2a04e8ffb39d8b8ea81c34951e84b5a6944567a9db55b5b764761"
+    },
+    {
+      "legacy": "img/patterns/autumn.svg",
+      "destination": "public/img/patterns/autumn.svg",
+      "sha256": "660beb120ec85306010f4dd2e4f99150546057ec9bc577643cca6e986b166677"
+    },
+    {
+      "legacy": "img/patterns/aztec.svg",
+      "destination": "public/img/patterns/aztec.svg",
+      "sha256": "73d7f9db5587f986a5789459f495f92439dfcb6a222cbafc7f57e602ef972f07"
+    },
+    {
+      "legacy": "img/patterns/bamboo.svg",
+      "destination": "public/img/patterns/bamboo.svg",
+      "sha256": "273115920e73113772248d5b9cc61173c4c65238848784e0fa96500855a26cd3"
+    },
+    {
+      "legacy": "img/patterns/bank-note.svg",
+      "destination": "public/img/patterns/bank-note.svg",
+      "sha256": "fac2f8fb11ff42f8383497a9b58ad2f5962d4d21d31b6f9b04c07079b6076fd0"
+    },
+    {
+      "legacy": "img/patterns/bathroom-floor.svg",
+      "destination": "public/img/patterns/bathroom-floor.svg",
+      "sha256": "a03b52de698864684d212a408cdce087f570b554fe99066a8688301741b799e9"
+    },
+    {
+      "legacy": "img/patterns/bevel-circle.svg",
+      "destination": "public/img/patterns/bevel-circle.svg",
+      "sha256": "b4bcff8f63ab214b2760109157f3289fb2c9d620491e1f76d7fc9c9453d190bf"
+    },
+    {
+      "legacy": "img/patterns/boxes.svg",
+      "destination": "public/img/patterns/boxes.svg",
+      "sha256": "52684b0226084042752cffd1f64f1e726fb5e329dd918b00999a5e3be1ec2ee0"
+    },
+    {
+      "legacy": "img/patterns/brick-wall.svg",
+      "destination": "public/img/patterns/brick-wall.svg",
+      "sha256": "ffb3a8c57e6e49c155e985ebd5f7429affbfadada60b413f815c626edb8fa169"
+    },
+    {
+      "legacy": "img/patterns/bubbles.svg",
+      "destination": "public/img/patterns/bubbles.svg",
+      "sha256": "9ad480a0d8f9d94208f048623ba220f426a7d0340e52b7c9f22326d63bb8a4d3"
+    },
+    {
+      "legacy": "img/patterns/cage.svg",
+      "destination": "public/img/patterns/cage.svg",
+      "sha256": "939c7facb4938458cc23f92e01c4012604aa7e233a674d24d17f4cacd6d058d8"
+    },
+    {
+      "legacy": "img/patterns/charlie-brown.svg",
+      "destination": "public/img/patterns/charlie-brown.svg",
+      "sha256": "2a8a425ab437edc4d2c24c5277ef2f5b24f7521b8bd02010d729937f8c154cee"
+    },
+    {
+      "legacy": "img/patterns/church-on-sunday.svg",
+      "destination": "public/img/patterns/church-on-sunday.svg",
+      "sha256": "4b70cc47dc45b7a2fa0cd216a8ca62b6c6c9f47d2f13b121cf76611b179b54c0"
+    },
+    {
+      "legacy": "img/patterns/circles-and-squares.svg",
+      "destination": "public/img/patterns/circles-and-squares.svg",
+      "sha256": "9531f9bc183110cb445afa55a95ef8e6f58b9ff49c9ba0d4716a4309960c0d20"
+    },
+    {
+      "legacy": "img/patterns/circuit-board.svg",
+      "destination": "public/img/patterns/circuit-board.svg",
+      "sha256": "2aa6330f95fd559d3a2db5d71ba29916fafe47b746b74461ad2d8142a8caa1ba"
+    },
+    {
+      "legacy": "img/patterns/connections.svg",
+      "destination": "public/img/patterns/connections.svg",
+      "sha256": "fa7e33731dcbb237384356bd719089f0892646aef5fae892ff5122aead5c190c"
+    },
+    {
+      "legacy": "img/patterns/cork-screw.svg",
+      "destination": "public/img/patterns/cork-screw.svg",
+      "sha256": "2b23337665df5914c59e460653c77b4ccfa830455198652f37eb519399ecde6b"
+    },
+    {
+      "legacy": "img/patterns/current.svg",
+      "destination": "public/img/patterns/current.svg",
+      "sha256": "d2d477d8c6c6cc4edbf6ee353220ea5729b1b0cfd71bf61a3981b9d33fbcd63b"
+    },
+    {
+      "legacy": "img/patterns/curtain.svg",
+      "destination": "public/img/patterns/curtain.svg",
+      "sha256": "780eb5f3297a1866dd4660de78255b502d9805bf1221e5f72c812facd79f6128"
+    },
+    {
+      "legacy": "img/patterns/cutout.svg",
+      "destination": "public/img/patterns/cutout.svg",
+      "sha256": "8e398f9c89b843cede838f17dce50f575f7b841d07c52e90b1c21391938415ee"
+    },
+    {
+      "legacy": "img/patterns/death-star.svg",
+      "destination": "public/img/patterns/death-star.svg",
+      "sha256": "82a3a99775854c7c6624a965ada56043abd26020c0044bab413dd0f3da3185da"
+    },
+    {
+      "legacy": "img/patterns/diagonal-lines.svg",
+      "destination": "public/img/patterns/diagonal-lines.svg",
+      "sha256": "abcf617f2a2fad2281fefac41882d940a277bddcb075ff14a3ceade35307ada1"
+    },
+    {
+      "legacy": "img/patterns/diagonal-stripes.svg",
+      "destination": "public/img/patterns/diagonal-stripes.svg",
+      "sha256": "2898a73d5fd94f873ea53503ab6c7779d6113e1f63eab6499a84058a666c33e3"
+    },
+    {
+      "legacy": "img/patterns/dominos.svg",
+      "destination": "public/img/patterns/dominos.svg",
+      "sha256": "67c04b8b82d2e5c10da0a2614deecdf1eef704138ca6008c567ad9c5424f303b"
+    },
+    {
+      "legacy": "img/patterns/endless-clouds.svg",
+      "destination": "public/img/patterns/endless-clouds.svg",
+      "sha256": "fb9c92bfd78178b742ac0b28d1804269f26e198af968cdcf21b07829f99b049b"
+    },
+    {
+      "legacy": "img/patterns/eyes.svg",
+      "destination": "public/img/patterns/eyes.svg",
+      "sha256": "32faa7fcad5f1e784488d806c6526e0d767764a7b688145431c29874c2659d69"
+    },
+    {
+      "legacy": "img/patterns/falling-triangles.svg",
+      "destination": "public/img/patterns/falling-triangles.svg",
+      "sha256": "658b70f2b5b702ff761bdde6d74f0d8067a1955d42b178067ece889bb9f70eca"
+    },
+    {
+      "legacy": "img/patterns/fancy-rectangles.svg",
+      "destination": "public/img/patterns/fancy-rectangles.svg",
+      "sha256": "ba7daf342054982adb32abd64be332cbfc13fa851bb1b5a8307dda675ab50514"
+    },
+    {
+      "legacy": "img/patterns/flipped-diamonds.svg",
+      "destination": "public/img/patterns/flipped-diamonds.svg",
+      "sha256": "bb7e27600b3119343c2d71ace8d87a9360554bbc048decb08559b9e3d39d4f93"
+    },
+    {
+      "legacy": "img/patterns/floating-cogs.svg",
+      "destination": "public/img/patterns/floating-cogs.svg",
+      "sha256": "f7f383f4c701c3b302f7c2b6bafc6d146a332b89d483de34a4f0a1f774f31e49"
+    },
+    {
+      "legacy": "img/patterns/floor-tile.svg",
+      "destination": "public/img/patterns/floor-tile.svg",
+      "sha256": "c287f311a8a3fcdc8edb10affb0bf716f27d8987c3385e2c4f351aaa4fa64819"
+    },
+    {
+      "legacy": "img/patterns/formal-invitation.svg",
+      "destination": "public/img/patterns/formal-invitation.svg",
+      "sha256": "c097c62489556d828c319233775a8929ca0bd226c747c754cb6511cbcf81ce5c"
+    },
+    {
+      "legacy": "img/patterns/glamorous.svg",
+      "destination": "public/img/patterns/glamorous.svg",
+      "sha256": "3075250acef611f37cb79ec4786c217445a662d72acbd72848fa52abab0565e7"
+    },
+    {
+      "legacy": "img/patterns/graph-paper.svg",
+      "destination": "public/img/patterns/graph-paper.svg",
+      "sha256": "53f2da15897435eb64e3381d147730954a3b3d4417e04ce444054f35cc92da7b"
+    },
+    {
+      "legacy": "img/patterns/groovy.svg",
+      "destination": "public/img/patterns/groovy.svg",
+      "sha256": "d0cd6d3682f94d3b97756cf5944940ffe67fe5b77bf2a3196e8e833e7f47ffe9"
+    },
+    {
+      "legacy": "img/patterns/happy-intersection.svg",
+      "destination": "public/img/patterns/happy-intersection.svg",
+      "sha256": "5504b7bb2c93222b6537e13f7edd2101f216f8927289b4c6bb1e4d20d3d770fa"
+    },
+    {
+      "legacy": "img/patterns/heavy-rain.svg",
+      "destination": "public/img/patterns/heavy-rain.svg",
+      "sha256": "5cac426f92211fcf0af455aaa11e630a08475a244f77cd73097a4d2f8b62591e"
+    },
+    {
+      "legacy": "img/patterns/hexagons.svg",
+      "destination": "public/img/patterns/hexagons.svg",
+      "sha256": "5c3f5b92802ea742878bd2a83cb8e18bdac006b70baa82e59fafac371a0f97da"
+    },
+    {
+      "legacy": "img/patterns/hideout.svg",
+      "destination": "public/img/patterns/hideout.svg",
+      "sha256": "78903d4b448cb3bd7994bd7a525ef4c09b69e490a2bb6e567e5f0485e778c887"
+    },
+    {
+      "legacy": "img/patterns/houndstooth.svg",
+      "destination": "public/img/patterns/houndstooth.svg",
+      "sha256": "56e509c3461e64e07b7b0b034b503c8aac515858923be663f45ef433d5fd6ced"
+    },
+    {
+      "legacy": "img/patterns/i-like-food.svg",
+      "destination": "public/img/patterns/i-like-food.svg",
+      "sha256": "b59891ccc238775c6c07e99abb877a96fd1104652b364d4bc93f4e27eb2ff306"
+    },
+    {
+      "legacy": "img/patterns/intersecting-circles.svg",
+      "destination": "public/img/patterns/intersecting-circles.svg",
+      "sha256": "a67885c365e9499094adc76ad899d6574fd421462e3d48cf79e200ea0c7b8d58"
+    },
+    {
+      "legacy": "img/patterns/jigsaw.svg",
+      "destination": "public/img/patterns/jigsaw.svg",
+      "sha256": "c698a76be586fdea2c299c2f5175451acf2f30e073d835eb79be97ff65b7243e"
+    },
+    {
+      "legacy": "img/patterns/jupiter.svg",
+      "destination": "public/img/patterns/jupiter.svg",
+      "sha256": "016ae5777a9162e693b435dd0bd25dcdd1cebf4db943dcabc72506c765952c70"
+    },
+    {
+      "legacy": "img/patterns/kiwi.svg",
+      "destination": "public/img/patterns/kiwi.svg",
+      "sha256": "b2c956ac4b599c45eadb2d731a4a91495ca4cfa9cead2b161df933943c4b5c4d"
+    },
+    {
+      "legacy": "img/patterns/leaf.svg",
+      "destination": "public/img/patterns/leaf.svg",
+      "sha256": "294844ecb0e7ddbf1ee1f55c0019b86cc581a42ee5e4d866ac2ff44cda8591d3"
+    },
+    {
+      "legacy": "img/patterns/line-in-motion.svg",
+      "destination": "public/img/patterns/line-in-motion.svg",
+      "sha256": "1adbbd7dbc8142677fbdf973f4db89fd747689f9e369d0b3a41f163925aec90b"
+    },
+    {
+      "legacy": "img/patterns/lips.svg",
+      "destination": "public/img/patterns/lips.svg",
+      "sha256": "7c3d3b309ff5bf82918510b288afbc31c2b15f05cd35c95afeb74965c3aca442"
+    },
+    {
+      "legacy": "img/patterns/lisbon.svg",
+      "destination": "public/img/patterns/lisbon.svg",
+      "sha256": "9104cb40161e9e38fcb8526c656289d5f6c515e911b2e09977a8ba4ec9a40b55"
+    },
+    {
+      "legacy": "img/patterns/melt.svg",
+      "destination": "public/img/patterns/melt.svg",
+      "sha256": "3187ad7116eae8196959248e75fcc8ca8998e4a8fb833a59d9ed39513815a285"
+    },
+    {
+      "legacy": "img/patterns/moroccan.svg",
+      "destination": "public/img/patterns/moroccan.svg",
+      "sha256": "93939a736410fade64da59909505e18f6be6cf72873598cf9b59e60860caa240"
+    },
+    {
+      "legacy": "img/patterns/morphing-diamonds.svg",
+      "destination": "public/img/patterns/morphing-diamonds.svg",
+      "sha256": "47a0e56abdcb112f5ba3f0aaf0991df7fda69fe8484c45cfb8fda9c92361aa12"
+    },
+    {
+      "legacy": "img/patterns/overcast.svg",
+      "destination": "public/img/patterns/overcast.svg",
+      "sha256": "142c105adabe711f57f53020c47a6e547c822157800fc92284d143dce1db4de7"
+    },
+    {
+      "legacy": "img/patterns/overlapping-circles.svg",
+      "destination": "public/img/patterns/overlapping-circles.svg",
+      "sha256": "255069be6d57a707c93aeb0bb94ab55c377caa9fc2a76f4d007abd7c59b8d9a5"
+    },
+    {
+      "legacy": "img/patterns/overlapping-diamonds.svg",
+      "destination": "public/img/patterns/overlapping-diamonds.svg",
+      "sha256": "34953eca4bc610ddcc3a435ffad928da6493deafcf0f7b02002bf0ad4a96a15d"
+    },
+    {
+      "legacy": "img/patterns/overlapping-hexagons.svg",
+      "destination": "public/img/patterns/overlapping-hexagons.svg",
+      "sha256": "31db2ff563ecc6877076071b4ecdd8bfe926a9b7a3876e84b277c52621919891"
+    },
+    {
+      "legacy": "img/patterns/parkay-floor.svg",
+      "destination": "public/img/patterns/parkay-floor.svg",
+      "sha256": "88195492c351aa98810a29188612a5559f544877c90c5574859bf21b11b22075"
+    },
+    {
+      "legacy": "img/patterns/piano-man.svg",
+      "destination": "public/img/patterns/piano-man.svg",
+      "sha256": "8f9e9e0cdf37c069b6c65013e8ebf1ad432111a4d4eb75d0ba5f395ad4634502"
+    },
+    {
+      "legacy": "img/patterns/pie-factory.svg",
+      "destination": "public/img/patterns/pie-factory.svg",
+      "sha256": "7cb6bed0fc4a9532897ed62e29b617025a22f4500d4ec5b4d3c5e40a06210291"
+    },
+    {
+      "legacy": "img/patterns/pixel-dots.svg",
+      "destination": "public/img/patterns/pixel-dots.svg",
+      "sha256": "33dba7e8a05a2ae5b9b090cbeb97667112e1ea687cdf7d2b47aa49f20947e17f"
+    },
+    {
+      "legacy": "img/patterns/plus.svg",
+      "destination": "public/img/patterns/plus.svg",
+      "sha256": "d38cbe92ede6b2ef0405c2aedaf449ad20afe2fe7d2b3f5c3a15d96e4fc96d17"
+    },
+    {
+      "legacy": "img/patterns/polka-dots.svg",
+      "destination": "public/img/patterns/polka-dots.svg",
+      "sha256": "f68eaca24c894de861bd33344849fe93ef7df17f050cc46488f99f5de47f2fa2"
+    },
+    {
+      "legacy": "img/patterns/rails.svg",
+      "destination": "public/img/patterns/rails.svg",
+      "sha256": "e03f4481de7ba6178832dfb3ae469dd6cbeeb39998969d3d643648517d81e47c"
+    },
+    {
+      "legacy": "img/patterns/rain.svg",
+      "destination": "public/img/patterns/rain.svg",
+      "sha256": "6345f29732f7b2e28dd7476fcd73ad2bf5eb93288b10cba6ddaa648c47772b6b"
+    },
+    {
+      "legacy": "img/patterns/random-shapes.svg",
+      "destination": "public/img/patterns/random-shapes.svg",
+      "sha256": "71b854dd1a9143537a73f1521d62f30d3850580ac581e658055dd40076da639f"
+    },
+    {
+      "legacy": "img/patterns/rounded-plus-connected.svg",
+      "destination": "public/img/patterns/rounded-plus-connected.svg",
+      "sha256": "39bd3560a1d3c0edab93dd1147e2d656ab5ac9e084276b18d0cf737f42b87dae"
+    },
+    {
+      "legacy": "img/patterns/signal.svg",
+      "destination": "public/img/patterns/signal.svg",
+      "sha256": "ad0b70e3c34ca890fc0fced822deedf2664cc50898f143d00313bd473be37bdd"
+    },
+    {
+      "legacy": "img/patterns/skulls.svg",
+      "destination": "public/img/patterns/skulls.svg",
+      "sha256": "f1ef9dceb5d00cc0df7af0a083734da03bfd0d72312297abe38a62672c5b8382"
+    },
+    {
+      "legacy": "img/patterns/slanted-stars.svg",
+      "destination": "public/img/patterns/slanted-stars.svg",
+      "sha256": "2d1c47a0ca55e1535369e8c8d068d7ac074883add57cd9f3ae6ca9cf7204c084"
+    },
+    {
+      "legacy": "img/patterns/squares-in-squares.svg",
+      "destination": "public/img/patterns/squares-in-squares.svg",
+      "sha256": "db2110b66a68489f36ecae6d56a1c1864a62880690ec9b9e968b10795120af93"
+    },
+    {
+      "legacy": "img/patterns/squares.svg",
+      "destination": "public/img/patterns/squares.svg",
+      "sha256": "1be2c3e932be6817d54472c754b6db965b6ec29428bf61d33c1578789644313f"
+    },
+    {
+      "legacy": "img/patterns/stamp-collection.svg",
+      "destination": "public/img/patterns/stamp-collection.svg",
+      "sha256": "69045c94449140d7e31d80e95894f329fc8ebfdcb826f7215c9fd6e87d6fb97b"
+    },
+    {
+      "legacy": "img/patterns/steel-beams.svg",
+      "destination": "public/img/patterns/steel-beams.svg",
+      "sha256": "d7e04b1eb069d3f91a628cd95097d57358f751943d0763e06ff65bbada071b31"
+    },
+    {
+      "legacy": "img/patterns/stripes.svg",
+      "destination": "public/img/patterns/stripes.svg",
+      "sha256": "520be6635586c3f863f08c2fe10be4f05d05e96fae761e159fb58beb8b1e29cd"
+    },
+    {
+      "legacy": "img/patterns/temple.svg",
+      "destination": "public/img/patterns/temple.svg",
+      "sha256": "9a1e6403d39b62ec6d9a40262cd0067b237bd4b9e58573061b73c9c103dfdceb"
+    },
+    {
+      "legacy": "img/patterns/texture.svg",
+      "destination": "public/img/patterns/texture.svg",
+      "sha256": "ee19df6d3582b6dc9777802294ddc5487807803e1c58bea8a0d427879bd3b1f8"
+    },
+    {
+      "legacy": "img/patterns/tic-tac-toe.svg",
+      "destination": "public/img/patterns/tic-tac-toe.svg",
+      "sha256": "e62d8e7143299d51d5fc0eef617e4e42ef3ac0bf8fffa4f1b470d8d00486e9b5"
+    },
+    {
+      "legacy": "img/patterns/tiny-checkers.svg",
+      "destination": "public/img/patterns/tiny-checkers.svg",
+      "sha256": "4584d7c8fbac313c940bebf8bd537749ab579081bfe2ab5acb9745cfe7c7f255"
+    },
+    {
+      "legacy": "img/patterns/topography.svg",
+      "destination": "public/img/patterns/topography.svg",
+      "sha256": "af6475a72ad851b872a47162edcc838fb2bef3d2fc7651932f7d61dca28f37db"
+    },
+    {
+      "legacy": "img/patterns/volcano-lamp.svg",
+      "destination": "public/img/patterns/volcano-lamp.svg",
+      "sha256": "12a9239fde81f77a4b2f2ed5834823acd2b17c02e61150c0390a8e274cf7cb13"
+    },
+    {
+      "legacy": "img/patterns/wallpaper.svg",
+      "destination": "public/img/patterns/wallpaper.svg",
+      "sha256": "c372c2d36022063561916c0125800117d51ee59c08869b42acfb6d20e7d7bca5"
+    },
+    {
+      "legacy": "img/patterns/wiggle.svg",
+      "destination": "public/img/patterns/wiggle.svg",
+      "sha256": "aaef422fad63a423c8e30293aa2fc3ef27857147a4e77f0f1ad0e871156e42f0"
+    },
+    {
+      "legacy": "img/patterns/x-equals.svg",
+      "destination": "public/img/patterns/x-equals.svg",
+      "sha256": "53671783183c868493484c9124e51eb31772ca0aeec7c6cf66d38ea3ac62a57a"
+    },
+    {
+      "legacy": "img/patterns/yyy.svg",
+      "destination": "public/img/patterns/yyy.svg",
+      "sha256": "e20a37644ec5daee71045f995b537a5c1a6eadfa9356e8140fb82c6411d365a1"
+    },
+    {
+      "legacy": "img/patterns/zig-zag.svg",
+      "destination": "public/img/patterns/zig-zag.svg",
+      "sha256": "86a94f31a204e892143e611d0f8a0cb7a2c8ba6146296606348a07e0ce38ead8"
+    },
+    {
+      "legacy": "img/pepper.svg",
+      "destination": "public/img/pepper.svg",
+      "sha256": "a0b4d031a0da8c03df552b85560b7e439e290d58c5f22340dc1d8d0fad4a7cda"
+    }
+  ],
+  "providers": [
+    {
+      "file": "public/img/providers/Clover_ideTbBPrxt_0-icon.svg",
+      "sha256": "78c1b169ea9ce0458215947f1c1721e0f1e941c8e27bf1dfc9a43e0e037dced0"
+    },
+    {
+      "file": "public/img/providers/Clover_idscfTrYLO_0-fullmark.svg",
+      "sha256": "53f4ba8a135eacfed39a4c50e73e8433fed766b743ddab2793501b4313284ebd"
+    },
+    {
+      "file": "public/img/providers/DoorDash_idcbr0jK8U_0.svg",
+      "sha256": "6685ad0be9e6bf5905a18b3ca8693d608eb165d72a1fbf45a1c30492bd44e4e9"
+    },
+    {
+      "file": "public/img/providers/DoorDash_idkbRlvChI_0-fullmark-red.svg",
+      "sha256": "0a59a1c1baf806871c7eef2a34379921d142a6a96c5a00f313d4de00dc4621de"
+    },
+    {
+      "file": "public/img/providers/DoorDash_ido-BYMLha_0-fullmark-white.svg",
+      "sha256": "2855cceb5985d10662c2f4f8c2708c46d52dc15d1b0d9b670e3b0994f59f2f0b"
+    },
+    {
+      "file": "public/img/providers/DoorDash_ido3qrTJUG_0.svg",
+      "sha256": "e124413b3f1c12bd8ffe413c43575f803171a9410b9649a5b0d095b909b7893e"
+    },
+    {
+      "file": "public/img/providers/Grubhub_idAwNcLQdh_2-fullmark.svg",
+      "sha256": "083fc1075c3ba230acff2416588ccf57687662944dffef5f40a5e6ef8c1cc5c2"
+    },
+    {
+      "file": "public/img/providers/Grubhub_idV67dEb89_0-fullmark-white.svg",
+      "sha256": "810e481899bebdcb6624f86cbf8008875e97d7de9b69eb46ace6163457eefadf"
+    },
+    {
+      "file": "public/img/providers/Square_Logo_2025_Black-fullmark.svg",
+      "sha256": "645252c865cb981bce85265ffa79869ce07fde96a0e0857f055e428bc7d094dd"
+    },
+    {
+      "file": "public/img/providers/Square_Logo_2025_White-fullmark.svg",
+      "sha256": "82c1a213b5c76d4152512e7774774b9382f66c14e00e255bfd411f4d52ff90da"
+    },
+    {
+      "file": "public/img/providers/Uber_Eats_Logo_2.svg",
+      "sha256": "31a5775788de4ff8e81977999a1f80438858e79a87b0f8b83953f318c887c8f4"
+    },
+    {
+      "file": "public/img/providers/Uber_Eats_Symbol_4.svg",
+      "sha256": "ec78913379951cc050efb28ae02e69fd861af6838df9abf9e748183c6fc387b4"
+    },
+    {
+      "file": "public/img/providers/Uber_Eats_fullmark-dualcolor_1.svg",
+      "sha256": "29192cdf62a14b72740ff7f81c77e194f6cdb3c5d122131c33c2aac4188a5b21"
+    },
+    {
+      "file": "public/img/providers/Uber_Eats_fullmark_black_Logo_6.svg",
+      "sha256": "e6fdd2357cbaa9008f2b77b03f1f495115554b13b7cc298124824b5bc9bb184a"
+    },
+    {
+      "file": "public/img/providers/Uber_Eats_fullmark_white_Logo_8.svg",
+      "sha256": "56da1157908c4f2c844b524caabc63ebe7c29c0d19d9194d05e5b30cdd4f97ac"
+    },
+    {
+      "file": "public/img/providers/Uber_Eats_squaremark_black_Logo_10.svg",
+      "sha256": "09fbe044b17cf4d5acf0b4bffbb255d29ac03148398a3efd814ff85f6f9fb0af"
+    },
+    {
+      "file": "public/img/providers/toast-fullmark-logo_color.svg",
+      "sha256": "547321221e63ff14f7e3a4cf644d06dd3a17a1e12f6d99000772bc0f1f8d5341"
+    },
+    {
+      "file": "public/img/providers/toast-fullmark-logo_white.svg",
+      "sha256": "b6af13cdd356ae7df0aa53b9af97394bf83d5812bd27554fa73adc4f2ba8af1a"
+    },
+    {
+      "file": "public/img/providers/toast-slice-icon_color.svg",
+      "sha256": "190ba97bcaa56ab7e2d62be745b132afff710969aa723cea3eeaac9dc5e6d649"
+    }
+  ]
+}

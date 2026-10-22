@@ -2,7 +2,7 @@ type ReviewEnvironment = Readonly<Partial<Record<"NODE_ENV" | "VERCEL_ENV" | "ME
 
 // Publication changes require a separate owner review. No URL/query bypass.
 export const marketingBusinessPages = {
-  cancellation: { href: "/cancellation", label: "Cancellation & data handoff", published: false },
+  cancellation: { href: "/cancellation", label: "Cancellation & data handoff", published: true },
   about: { href: "/about", label: "About Menu Man", published: false },
 } as const;
 

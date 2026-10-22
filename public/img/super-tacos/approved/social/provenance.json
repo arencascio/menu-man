@@ -1,6 +1,5 @@
 {
   "collection": "Owner-supplied social brand icons",
-  "sourceDirectory": "C:/menu-man/img/icons",
   "rights": "Brand marks retain their respective ownership. Supplied artwork used without claiming endorsement.",
   "images": [
     {
@@ -27,5 +26,6 @@
       "sha256": "feb756ea6235bfe267480f3c6a6d2b647a5e9355c3d54a2209d109b453e82102",
       "processing": "Owner-supplied SVG rasterized at 96px, preserving colors and proportions; original source file unchanged."
     }
-  ]
+  ],
+  "sourceNote": "Owner-supplied SVG originals were sourced from the former local icon directory; that directory has been retired."
 }
