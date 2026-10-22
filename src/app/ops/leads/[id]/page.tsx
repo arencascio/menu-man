@@ -5,6 +5,7 @@ import { statusLabels } from "@/lib/ops/contracts";
 import { NotificationState, OpsHeader, opsDate } from "../../Presentation";
 import LeadActions from "./LeadActions";
 import styles from "../../ops.module.css";
+import { createLeadEmailLinks } from "@/lib/ops/email-links";
 
 export default async function LeadPage({ params, searchParams }: {
   params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -14,6 +15,7 @@ export default async function LeadPage({ params, searchParams }: {
   if (!z.uuid().safeParse(id).success) notFound();
   const lead = await getOpsLead(client, id);
   if (!lead) notFound();
+  const emailLinks = createLeadEmailLinks(lead.details.email);
   const result = (await searchParams).result;
   const fields = [
     ["Restaurant", lead.details.restaurantName], ["Contact name", lead.details.name], ["Email", lead.details.email],
@@ -31,7 +33,7 @@ export default async function LeadPage({ params, searchParams }: {
       <div className={styles.stack}>
         <section className={styles.panel}><h2>{lead.details.restaurantName}</h2><p><span className={styles.badge}>{statusLabels[lead.status]}</span></p>
           <dl className={styles.details}>{fields.map(([label, value]) => <div key={label} style={{ display: "contents" }}><dt>{label}</dt><dd>{value || "Not supplied"}</dd></div>)}</dl>
-          <div className={styles.actions}><a className={styles.button} href={`mailto:${lead.details.email}`}>Email contact</a>{lead.details.phone.replace(/[^+\d]/g, "") && <a className={styles.button} href={`tel:${lead.details.phone.replace(/[^+\d]/g, "")}`}>Call contact</a>}</div>
+          <div className={styles.actions}><a className={styles.button} href={emailLinks.gmail} target="_blank" rel="noopener noreferrer">Email contact</a><a className={styles.button} href={emailLinks.mailto}>Use default email app</a>{lead.details.phone.replace(/[^+\d]/g, "") && <a className={styles.button} href={`tel:${lead.details.phone.replace(/[^+\d]/g, "")}`}>Call contact</a>}</div>
         </section>
         <section className={styles.panel}><h2>Submission and attribution</h2><dl className={styles.details}>
           <dt>Form</dt><dd>{lead.type === "website" ? "Build My Website" : "Free Website Review"}</dd>
