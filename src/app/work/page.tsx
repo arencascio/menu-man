@@ -20,7 +20,7 @@ export default function WorkPage() {
           <h1>A closer look at the product.</h1>
           <p>Explore Super Tacos, a fictional restaurant demonstration of bold branding, thoughtful menu browsing, and clear restaurant information.</p>
           <div className={styles.actionRow}>
-            <PrimaryLink ctaId="site_like_this" placement="hero">↗ {CTA_LABELS.showcase}</PrimaryLink>
+            <PrimaryLink href="/r/super-tacos" ctaId="site_like_this" placement="hero">↗ {CTA_LABELS.showcase}</PrimaryLink>
           </div>
         </div>
         <div className={styles.workHeroVisual}><Image className={styles.brandArtwork} src="/brand/MenuManPhone.svg" alt="Menu Man's phone and chef-hat illustration" width={469.387} height={923.785} loading="eager" /></div>
@@ -36,7 +36,7 @@ export default function WorkPage() {
       <section className={styles.galleryCta}>
         <MarketingIcon name="sparkles" size={36} />
         <p>Want this kind of clarity for your restaurant?</p>
-        <PrimaryLink ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
+        <PrimaryLink href="/r/super-tacos" ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
       </section>
 
       <FinalCta />

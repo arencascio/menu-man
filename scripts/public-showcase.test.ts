@@ -35,7 +35,15 @@ test("browse-only items retain local cart interaction only with the explicit pre
   assert.equal(getCardAddMode(item), "full");
   assert.equal(getCardAddMode(item, true), "direct");
   assert.equal(createDirectCartLine(item, { id: "sample", name: "Samples", description: null, sort_order: 0, items: [item] }, "local-line").basePriceCents, 350);
-  assert.ok(restaurantShowcases.every((showcase) => !showcase.published && getShowcaseHref(showcase) === null));
+  assert.deepEqual(restaurantShowcases.map((showcase) => ({ slug: showcase.slug, published: showcase.published, href: getShowcaseHref(showcase) })), [
+    { slug: "super-tacos", published: true, href: "/r/super-tacos" },
+  ]);
+  const home = readFileSync("src/app/page.tsx", "utf8");
+  const work = readFileSync("src/app/work/page.tsx", "utf8");
+  assert.match(home, /<PrimaryLink href="\/r\/super-tacos" ctaId="site_like_this">/);
+  assert.match(work, /<PrimaryLink href="\/r\/super-tacos" ctaId="site_like_this" placement="hero">/);
+  assert.match(work, /<PrimaryLink href="\/r\/super-tacos" ctaId="site_like_this">/);
+  assert.equal(restaurantShowcases[0].disclosure, "Fictional restaurant demo");
   for (const routeEnabled of [false, true]) {
     for (const published of [false, true]) {
       assert.equal(getShowcaseHref({ slug: "super-tacos", routeEnabled, published }), routeEnabled && published ? "/r/super-tacos" : null);

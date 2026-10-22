@@ -4,7 +4,7 @@ import { SUPER_TACOS_ID } from "./demo/policy";
 // unauthenticated hosted QA. Neither switch grants commerce permissions.
 export const restaurantShowcases = [
   {
-    slug: "super-tacos", name: "Super Tacos", routeEnabled: true, published: false,
+    slug: "super-tacos", name: "Super Tacos", routeEnabled: true, published: true,
     eyebrow: "Bold food. A brand to match.",
     description: "A photo-led experience with menu customization, distinctive branding, and a thoughtful catering presentation.",
     image: "/img/super-tacos/approved/loaded-nachos.webp", imageAlt: "Loaded nachos from the approved Super Tacos photo collection",

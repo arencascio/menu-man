@@ -132,8 +132,8 @@ test("Production opens Super Tacos independently of marketing, Armando's and man
   process.env.MENU_MAN_ENV = "staging";
   try {
     assert.equal(restaurantShowcases[0].routeEnabled, true);
-    assert.equal(restaurantShowcases[0].published, false);
-    assert.equal(getShowcaseHref(restaurantShowcases[0]), null);
+    assert.equal(restaurantShowcases[0].published, true);
+    assert.equal(getShowcaseHref(restaurantShowcases[0]), "/r/super-tacos");
     const paths = ["armandos"].flatMap((slug) => [
       `/r/${slug}`, `/r/${slug}/menu`, `/r/${slug}/location`,
       `/r/${slug}/checkout`, `/r/${slug}/order/demo/payment`,
