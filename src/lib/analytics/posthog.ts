@@ -31,6 +31,7 @@ function sanitizeOutbound<T extends { event: string; properties: Record<string, 
 }
 
 export function initializePostHog(): Promise<void> {
+  if (typeof window !== "undefined" && /^\/ops(?:\/|$)/.test(window.location.pathname)) return Promise.resolve();
   if (!posthogKey || !posthogHost) return Promise.resolve();
   return initialization ??= (async () => {
     if (!await analyticsEligibility.check() || posthog.__loaded) return;

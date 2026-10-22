@@ -72,6 +72,6 @@ export type LeadFailureCategory = "validation" | "network" | "rate_limit" | "pro
 export type MarketingEvent =
   | { name: "$pageview" }
   | { name: "marketing_cta_clicked"; cta_id: MarketingCta; placement: MarketingPlacement; destination_type: "page" | "modal" }
-  | { name: "marketing_form_opened" | "marketing_form_started" | "marketing_lead_accepted"; form_type: MarketingForm }
+  | { name: "marketing_form_opened" | "marketing_form_started" | "marketing_lead_accepted" | "marketing_lead_recorded"; form_type: MarketingForm }
   | { name: "marketing_lead_failed"; form_type: MarketingForm; failure_category: LeadFailureCategory }
   | { name: "marketing_email_clicked"; placement: MarketingPlacement; form_type?: MarketingForm };

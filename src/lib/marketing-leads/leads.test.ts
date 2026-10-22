@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { createLeadHandler, createLeadLimiter } from "./handler";
+import { createLeadHandler as handler, createLeadLimiter } from "./handler";
+import { memoryLeadStore } from "./test-store";
 import { createLeadSubmitter, initialLeadState, leadFallback, leadFormReducer } from "./client";
 import { normalizeWebsite } from "./website";
-import { leadSchema } from "./contracts";
+import { leadSchema, leadSubject } from "./contracts";
 
 const id = "20000000-0000-4000-8000-000000000999";
+const createLeadHandler = (options: Parameters<typeof handler>[0]) => handler({ store: memoryLeadStore().store, ...options });
 const inquiry = { type: "website", submissionId: id, restaurantName: "Tacos <&>", email: "owner@example.com", help: "Build my first website", notes: "<script>sample</script>" };
 const request = (body: unknown = inquiry, headers: Record<string, string> = {}) => new Request("https://getmenuman.com/api/marketing/leads", {
   method: "POST", headers: { origin: "https://getmenuman.com", "Content-Type": "application/json", ...headers }, body: JSON.stringify(body),
@@ -44,7 +46,7 @@ test("shared website rules normalize ordinary domains and preserve explicit HTTP
 
 test("malformed, incomplete and unsupported website addresses fail on both client and server", async () => {
   let calls = 0;
-  const submit = createLeadSubmitter(async () => { calls++; return Response.json({ accepted: true }); }, () => id);
+  const submit = createLeadSubmitter(async () => { calls++; return Response.json({ accepted: true, recorded: true }); }, () => id);
   const send = createLeadHandler({ apiKey: "mock-secret", from: "verified@example.com", allow: () => true,
     fetcher: async () => { calls++; return Response.json({ id: "unexpected" }); } });
   for (const website of invalidWebsites) {
@@ -75,6 +77,7 @@ test("both form types normalize before sending and retain raw website values aft
 
 test("server independently normalizes website addresses in delivered emails for both request types", async () => {
   const websites: string[] = [];
+  let sequence = 0;
   const send = createLeadHandler({ apiKey: "mock-secret", from: "verified@example.com", allow: () => true,
     fetcher: async (_url, init) => {
       const message = JSON.parse(init!.body as string);
@@ -85,7 +88,7 @@ test("server independently normalizes website addresses in delivered emails for 
     } });
   for (const type of ["website", "review"] as const) {
     for (const website of ["restaurant.com/menu", "http://restaurant.com/menu"]) {
-      assert.equal((await send(request({ ...inquiry, type, website }))).status, 200);
+      assert.equal((await send(request({ ...inquiry, type, website, submissionId: `20000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}` }))).status, 200);
     }
   }
   assert.deepEqual(websites, ["https://restaurant.com/menu", "http://restaurant.com/menu", "https://restaurant.com/menu", "http://restaurant.com/menu"]);
@@ -102,7 +105,8 @@ test("both submission types use customer Reply-To, the fixed recipient, escaped 
     assert.ok(message.text.includes("owner@example.com"));
     assert.match(message.html, /&lt;script&gt;sample&lt;\/script&gt;/);
     assert.doesNotMatch(message.html, /<script>/);
-    assert.match(message.subject, /Build My Website inquiry|Free Website Review request/);
+    assert.match(message.subject, /^\[MM-[0-9a-f-]{36}\] (Website inquiry|Free website review) — Tacos <&>$/);
+    assert.deepEqual(message.headers, { "X-Entity-Ref-ID": `MM-${subjects.length === 1 ? "review" : "website"}-${subjects.length === 1 ? "20000000-0000-4000-8000-000000000998" : id}` });
     subjects.push(message.subject);
     keys.push(new Headers(init!.headers).get("Idempotency-Key")!);
     return Response.json({ id: "mock-message" });
@@ -110,18 +114,46 @@ test("both submission types use customer Reply-To, the fixed recipient, escaped 
   for (const body of [inquiry, inquiry, { ...inquiry, submissionId: "20000000-0000-4000-8000-000000000998", type: "review", noWebsite: true }]) {
     const response = await send(request(body));
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { accepted: true });
+    assert.deepEqual(await response.json(), { accepted: true, recorded: true });
   }
-  assert.equal(keys[0], keys[1]);
-  assert.notEqual(keys[0], keys[2]);
-  assert.deepEqual(subjects, ["Menu Man: Build My Website inquiry", "Menu Man: Build My Website inquiry", "Menu Man: Free Website Review request"]);
+  assert.equal(keys.length, 2, "An accepted retry does not send again");
+  assert.notEqual(keys[0], keys[1]);
+  assert.notEqual(subjects[0], subjects[1]);
 });
 
-test("missing configuration and provider/network/malformed failures never report acceptance", async () => {
+test("independent inquiries for the same restaurant have different subjects and Gmail references", async () => {
+  const messages: Array<{ subject: string; headers: Record<string, string> }> = [];
+  const send = createLeadHandler({ apiKey: "mock-secret", from: "Menu Man <hello@getmenuman.com>", allow: () => true,
+    fetcher: async (_url, init) => { messages.push(JSON.parse(init!.body as string)); return Response.json({ id: "mock-message" }); } });
+  for (const type of ["website", "review"] as const) {
+    for (const submissionId of type === "website" ? [id, "20000000-0000-4000-8000-000000000998"] : ["20000000-0000-4000-8000-000000000997", "20000000-0000-4000-8000-000000000996"]) {
+      assert.equal((await send(request({ ...inquiry, type, submissionId, noWebsite: true }))).status, 200);
+    }
+  }
+  assert.equal(new Set(messages.map(message => message.subject)).size, 4);
+  assert.equal(new Set(messages.map(message => message.headers["X-Entity-Ref-ID"])).size, 4);
+  for (const message of messages) {
+    assert.deepEqual(Object.keys(message.headers), ["X-Entity-Ref-ID"], "New inquiries do not supply reply-thread headers or override Message-ID");
+    assert.doesNotMatch(message.subject, /owner@example\.com|<script>/);
+  }
+});
+
+test("subject context removes header controls and omits pasted contact data", () => {
+  const lead = leadSchema.parse(inquiry);
+  assert.equal(leadSubject({ ...lead, restaurantName: "  Tacos\r\nKitchen\t  " }), `[MM-${id}] Website inquiry — Tacos Kitchen`);
+  for (const restaurantName of ["Tacos owner@example.com", "Call +1 (555) 123-4567", "Tacos https://restaurant.com/private?email=owner@example.com"]) {
+    assert.equal(leadSubject({ ...lead, restaurantName }), `[MM-${id}] Website inquiry — Restaurant`);
+  }
+  const subject = leadSubject({ ...lead, restaurantName: "x".repeat(160), name: "Private name", phone: "5551234567", notes: "Private notes" });
+  assert.ok(subject.length < 160);
+  assert.doesNotMatch(subject, /Private|5551234567|owner@example\.com|[\r\n]/);
+});
+
+test("missing email configuration and provider failures retain recorded success", async () => {
   for (const configuration of [{}, { apiKey: "secret" }, { from: "verified@example.com" }]) {
     let called = false;
     const missing = createLeadHandler({ ...configuration, fetcher: async () => { called = true; throw Error("must not send"); } });
-    assert.equal((await missing(request())).status, 503);
+    assert.deepEqual(await (await missing(request())).json(), { accepted: true, recorded: true });
     assert.equal(called, false);
   }
   for (const fetcher of [
@@ -132,9 +164,10 @@ test("missing configuration and provider/network/malformed failures never report
   ]) {
     const send = createLeadHandler({ apiKey: "secret", from: "verified@example.com", fetcher });
     const response = await send(request());
-    assert.equal(response.status, 502);
+    assert.equal(response.status, 200);
     const text = await response.text();
-    assert.doesNotMatch(text, /accepted|private|secret/);
+    assert.doesNotMatch(text, /private|secret/);
+    assert.equal(JSON.parse(text).recorded, true);
   }
 });
 
@@ -169,7 +202,7 @@ test("client prevents concurrent duplicates and reuses retry identity for unchan
   const submit = createLeadSubmitter(async (_url, init) => {
     bodies.push(JSON.parse(init!.body as string));
     if (bodies.length === 1) return new Promise<Response>((resolve) => { release = resolve; });
-    return Response.json({ accepted: true });
+    return Response.json({ accepted: true, recorded: true });
   }, () => id);
   const values = { restaurantName: "Tacos", email: "owner@example.com", help: "Website" };
   const first = submit(values, "website");

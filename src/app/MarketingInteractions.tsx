@@ -12,6 +12,14 @@ import type { MarketingPlacement } from "@/lib/analytics/types";
 
 const REVIEW_EVENT = "menu-man:open-review";
 
+function RequiredMark() {
+  return <span className={styles.requiredMark} aria-hidden="true">*</span>;
+}
+
+function RequiredFieldsNote() {
+  return <p className={styles.requiredNote}>Required fields are marked <span className={styles.requiredMark}>*</span></p>;
+}
+
 export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -234,8 +242,8 @@ export function ReviewModal() {
         {lead.state.accepted ? (
           <div className={styles.formSuccess} role="status">
             <span aria-hidden="true">✓</span>
-            <h2 id={titleId}>Your review request has been sent.</h2>
-            <p>Our email provider accepted your request. We will follow up at the email address you provided.</p>
+            <h2 id={titleId}>Your review request has been received.</h2>
+            <p>Your request has been saved. We will follow up at the email address you provided.</p>
             <a href={lead.emailHref} data-marketing-email="website_review" data-marketing-placement="form">Email hello@getmenuman.com</a>
             <button type="button" onClick={lead.resetSuccess}>Back to the form</button>
           </div>
@@ -245,13 +253,14 @@ export function ReviewModal() {
             <h2 id={titleId}>See how your restaurant looks online.</h2>
             <p className={styles.modalLead}>Share the basics. We will look for the clearest ways to make your restaurant easier to choose.</p>
             <form className={styles.form} onSubmit={lead.submit} onChange={(event) => lead.capture(event.currentTarget)} aria-busy={lead.state.pending}>
+              <RequiredFieldsNote />
               <fieldset className={styles.leadFields} disabled={lead.state.pending}>
               <label>
-                Restaurant name
+                Restaurant name<RequiredMark />
                 <input name="restaurantName" maxLength={160} required autoComplete="organization" />
               </label>
               <label>
-                Website URL
+                Website URL{!noWebsite && <RequiredMark />}
                 <input name="website" maxLength={500} type="text" inputMode="url" disabled={noWebsite} required={!noWebsite} placeholder="restaurant.com" />
               </label>
               <label className={styles.checkboxLabel}>
@@ -264,7 +273,7 @@ export function ReviewModal() {
                 <span>I don&apos;t have a website</span>
               </label>
               <label>
-                Email
+                Email<RequiredMark />
                 <input name="email" maxLength={254} type="email" required autoComplete="email" />
               </label>
               <button className={styles.formSubmit} type="submit">
@@ -291,8 +300,8 @@ export function BuildWebsiteForm() {
     return (
       <div className={`${styles.formSuccess} ${styles.leadFormSuccess}`} role="status">
         <span aria-hidden="true">✓</span>
-        <h2>Your inquiry has been sent.</h2>
-        <p>Our email provider accepted your inquiry. We will follow up at the email address you provided.</p>
+        <h2>Your inquiry has been received.</h2>
+        <p>Your inquiry has been saved. We will follow up at the email address you provided.</p>
         <a href={lead.emailHref} data-marketing-email="website_inquiry" data-marketing-placement="form">Email hello@getmenuman.com</a>
         <button type="button" onClick={lead.resetSuccess}>Back to the form</button>
       </div>
@@ -301,17 +310,18 @@ export function BuildWebsiteForm() {
 
   return (
     <form className={`${styles.form} ${styles.leadForm}`} onSubmit={lead.submit} onChange={(event) => lead.capture(event.currentTarget)} aria-busy={lead.state.pending}>
+      <RequiredFieldsNote />
       <fieldset className={styles.leadFields} disabled={lead.state.pending}>
       <div className={styles.fieldGrid}>
-        <label>Restaurant name<input name="restaurantName" maxLength={160} required autoComplete="organization" /></label>
-        <label>Your name<input name="name" maxLength={160} required autoComplete="name" /></label>
-        <label>Email<input name="email" maxLength={254} type="email" required autoComplete="email" /></label>
+        <label>Restaurant name<RequiredMark /><input name="restaurantName" maxLength={160} required autoComplete="organization" /></label>
+        <label>Your name<RequiredMark /><input name="name" maxLength={160} required autoComplete="name" /></label>
+        <label>Email<RequiredMark /><input name="email" maxLength={254} type="email" required autoComplete="email" /></label>
         <label>Phone (optional)<input name="phone" maxLength={50} type="tel" autoComplete="tel" /></label>
-        <label>City<input name="city" maxLength={160} required autoComplete="address-level2" /></label>
+        <label>City<RequiredMark /><input name="city" maxLength={160} required autoComplete="address-level2" /></label>
         <label>Current website<input name="website" maxLength={500} type="text" inputMode="url" placeholder="restaurant.com (optional)" /></label>
       </div>
       <fieldset>
-        <legend>Do you currently offer online ordering?</legend>
+        <legend>Do you currently offer online ordering?<RequiredMark /></legend>
         <div className={styles.choiceRow}>
           <label><input type="radio" name="onlineOrdering" value="yes" required /> Yes</label>
           <label><input type="radio" name="onlineOrdering" value="no" /> No</label>
@@ -320,7 +330,7 @@ export function BuildWebsiteForm() {
       </fieldset>
       <label>Current ordering provider(s)<input name="orderingProviders" maxLength={300} placeholder="Clover, Square, Toast, DoorDash..." /></label>
       <label>
-        What do you need help with?
+        What do you need help with?<RequiredMark />
         <select name="help" required defaultValue="">
           <option value="" disabled>Choose one</option>
           <option>Build my first website</option>

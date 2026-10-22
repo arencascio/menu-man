@@ -2,6 +2,7 @@ export type ResendEmail = {
   from: string;
   to: string;
   reply_to?: string;
+  headers?: Readonly<Record<string, string>>;
   subject: string;
   html: string;
   text: string;
@@ -39,6 +40,7 @@ export async function sendResendEmail(
         from: email.from,
         to: [email.to],
         ...(email.reply_to === undefined ? {} : { reply_to: email.reply_to }),
+        ...(email.headers === undefined ? {} : { headers: email.headers }),
         subject: email.subject,
         html: email.html,
         text: email.text,

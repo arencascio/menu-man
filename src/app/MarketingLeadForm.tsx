@@ -15,7 +15,10 @@ export function useMarketingLead(type: MarketingLead["type"]) {
   useEffect(() => { if (type === "website") open(); }, [type, open]);
   const [state, dispatch] = useReducer(leadFormReducer, initialLeadState);
   const sender = useRef<ReturnType<typeof createLeadSubmitter> | null>(null);
-  const resetSuccess = useCallback(() => dispatch({ type: "failed", error: "" }), []);
+  const resetSuccess = useCallback(() => {
+    if (state.accepted) sender.current = null; // An explicit new inquiry gets a new UUID.
+    dispatch({ type: "failed", error: "" });
+  }, [state.accepted]);
   function capture(form: HTMLFormElement) {
     const values = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
     dispatch({ type: "edit", values });
@@ -27,7 +30,7 @@ export function useMarketingLead(type: MarketingLead["type"]) {
     if (state.pending) return;
     const values = capture(event.currentTarget);
     sender.current ??= createLeadSubmitter(undefined, undefined, (outcome) => {
-      if (outcome.status === "accepted") trackMarketing({ name: "marketing_lead_accepted", form_type });
+      if (outcome.status === "accepted") trackMarketing({ name: "marketing_lead_recorded", form_type });
       else trackMarketing({ name: "marketing_lead_failed", form_type, failure_category: outcome.category });
     });
     dispatch({ type: "start" });

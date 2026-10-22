@@ -32,6 +32,14 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         { key: "X-Robots-Tag", value: "noindex, nofollow" },
       ],
+    }, {
+      source: "/ops/:path*",
+      headers: [
+        { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        { key: "Referrer-Policy", value: "same-origin" },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Robots-Tag", value: "noindex, nofollow" },
+      ],
     }];
   },
   allowedDevOrigins: ["192.168.1.145"],

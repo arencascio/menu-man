@@ -47,6 +47,8 @@ import "../src/app/r/[slug]/RestaurantDeliveryProviderIcon.test";
 import "../src/app/r/[slug]/order/[orderId]/confirmation/CustomerEmailLine.test";
 import "./staging-safety.test";
 import "../src/lib/marketing-leads/leads.test";
+import "../src/lib/marketing-leads/persistence.test";
+import "../src/lib/ops/ops.test";
 import "../src/lib/analytics/marketing.test";
 import "../src/lib/analytics/eligibility.test";
 import "../src/lib/analytics/restaurant-identity.test";

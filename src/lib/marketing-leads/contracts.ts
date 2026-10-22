@@ -37,6 +37,15 @@ export type MarketingLead = z.infer<typeof leadSchema>;
 export const leadRecipient = "hello@getmenuman.com";
 export const leadTitles = { website: "Build My Website inquiry", review: "Free Website Review request" };
 
+export function leadSubject(lead: MarketingLead) {
+  const name = lead.restaurantName.replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, " ").replace(/\s+/g, " ").trim();
+  // Subject context is only a restaurant label. Keep contact details in the body,
+  // even if someone pasted an email, URL, or phone number into that field.
+  const restaurant = /@|https?:\/\/|www\.|\d[\d\s().+-]{6,}\d/i.test(name) ? "Restaurant" : name.slice(0, 80) || "Restaurant";
+  const title = lead.type === "website" ? "Website inquiry" : "Free website review";
+  return `[MM-${lead.submissionId.toLowerCase()}] ${title} — ${restaurant}`;
+}
+
 export function leadText(lead: MarketingLead) {
   return [
     leadTitles[lead.type],
