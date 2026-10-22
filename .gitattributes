@@ -28,3 +28,7 @@
 /public/img/providers/DoorDash_idkbRlvChI_0-fullmark-red.svg whitespace=-blank-at-eol
 /public/img/providers/DoorDash_ido-BYMLha_0-fullmark-white.svg whitespace=-blank-at-eol
 /public/img/providers/DoorDash_ido3qrTJUG_0.svg whitespace=-blank-at-eol
+
+# Preserve the approved Operations V1 migration SHA-256 values on every platform.
+/supabase/migrations/20261022070256_marketing_lead_capture_v1.sql text eol=lf
+/supabase/migrations/20261022073652_ops_owner_lead_inbox_v1.sql text eol=lf
