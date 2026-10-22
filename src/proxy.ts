@@ -5,6 +5,10 @@ import { isManagementOnlyPath, isProductionManagementDisabled } from "./lib/prod
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const operations = /^\/ops(?:\/|$)/.test(pathname);
+  if (operations && process.env.MENU_MAN_OPS_ENABLED !== "true") {
+    return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } });
+  }
   if (isProductionManagementDisabled() && isManagementOnlyPath(pathname)) {
     return new NextResponse("Not found", {
       status: 404,
@@ -39,10 +43,14 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getClaims();
+  if (operations) {
+    await supabase.auth.getUser();
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  } else await supabase.auth.getClaims();
   return response;
 }
 
 export const config = {
-  matcher: ["/manage/:path*", "/auth/:path*", "/api/manage/:path*", "/r/:path*", "/api/restaurants/:path*"],
+  matcher: ["/manage/:path*", "/auth/:path*", "/api/manage/:path*", "/r/:path*", "/api/restaurants/:path*", "/ops/:path*"],
 };

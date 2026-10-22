@@ -76,7 +76,7 @@ test("only confirmed acceptance emits success, unchanged retries are deduped wit
   let ids = 0;
   const submit = createLeadSubmitter(async (_url, init) => {
     bodies.push(JSON.parse(init!.body as string));
-    return accepted ? Response.json({ accepted: true }) : Response.json({ error: "private provider details" }, { status: 502 });
+    return accepted ? Response.json({ accepted: true, recorded: true }) : Response.json({ error: "private provider details" }, { status: 502 });
   }, () => `test-${++ids}`, (outcome) => outcomes.push(outcome));
   const values = { restaurantName: "Private restaurant", email: "owner@example.com", help: "Website", notes: "private notes" };
   assert.ok("error" in await submit(values, "website"));
@@ -108,12 +108,12 @@ test("lead failures emit bounded safe categories, not response text; unavailable
   }
   let calls = 0;
   const outcomes: LeadOutcome[] = [];
-  const invalid = createLeadSubmitter(async () => { calls++; return Response.json({ accepted: true }); }, () => "id", (value) => outcomes.push(value));
+  const invalid = createLeadSubmitter(async () => { calls++; return Response.json({ accepted: true, recorded: true }); }, () => "id", (value) => outcomes.push(value));
   await invalid({ website: "restaurant" }, "review");
   assert.equal(calls, 0);
   assert.deepEqual(outcomes, [{ status: "failed", category: "validation" }]);
   const throwingObserver = () => { throw Error("analytics unavailable"); };
-  assert.deepEqual(await createLeadSubmitter(async () => Response.json({ accepted: true }), () => "id", throwingObserver)({}, "website"), { accepted: true });
+  assert.deepEqual(await createLeadSubmitter(async () => Response.json({ accepted: true, recorded: true }), () => "id", throwingObserver)({}, "website"), { accepted: true });
   assert.ok("error" in await createLeadSubmitter(async () => { throw Error("network"); }, () => "id", throwingObserver)({}, "website"));
 });
 
@@ -124,7 +124,7 @@ test("pending duplicate submissions cannot emit acceptance before confirmation o
   const first = submit({}, "review");
   assert.deepEqual(await submit({}, "review"), { busy: true });
   assert.equal(outcomes.length, 0);
-  release(Response.json({ accepted: true })); await first;
+  release(Response.json({ accepted: true, recorded: true })); await first;
   assert.deepEqual(outcomes, [{ status: "accepted" }]);
 });
 

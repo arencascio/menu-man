@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { leadRecipient, leadSchema, leadText, leadTitles } from "./contracts";
-import { sendResendEmail } from "../notifications/resend";
+import { leadSchema } from "./contracts";
+import { LeadConflict, leadContextSchema, type LeadStore } from "./persistence";
+import { deliverLeadClaim } from "./delivery";
 
 // Per-process abuse mitigation, not a distributed quota. Never store raw IPs or lead data.
 export function createLeadLimiter() {
@@ -18,16 +19,13 @@ export function createLeadLimiter() {
   };
 }
 
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (char) => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-})[char]!);
-
 export function createLeadHandler(options: {
   apiKey?: string;
   from?: string;
   fetcher?: typeof fetch;
   allow?: ReturnType<typeof createLeadLimiter>;
   vercel?: boolean;
+  store?: LeadStore;
 }) {
   const allow = options.allow ?? createLeadLimiter();
   return async (request: Request) => {
@@ -63,22 +61,33 @@ export function createLeadHandler(options: {
     } catch { return respond(400, { error: "We could not read the request. Please retry." }); }
     let input: unknown;
     try { input = JSON.parse(raw); } catch { return respond(400, { error: "Invalid request. Please retry." }); }
-    const parsed = leadSchema.safeParse(input);
-    if (!parsed.success) return respond(400, { error: "Check the required fields, email, website address, and text lengths." });
+    const { context: rawContext, ...payload } = input && typeof input === "object" && !Array.isArray(input)
+      ? input as Record<string, unknown> : { context: undefined };
+    const context = leadContextSchema.safeParse(rawContext ?? { attribution: {} });
+    const parsed = leadSchema.safeParse(payload);
+    if (!parsed.success || !context.success) return respond(400, { error: "Check the required fields, email, website address, and text lengths." });
     const lead = parsed.data;
     // Reject traps rather than displaying a false successful submission.
     if (lead.companyFax) return respond(400, { error: "Unable to accept this request. Please email us directly." });
-    if (!options.apiKey || !options.from || /[\r\n]/.test(options.from)) {
-      return respond(503, { error: "Online inquiries are temporarily unavailable. Please email us using the link below." });
+    let leadId: string;
+    try {
+      if (!options.store) throw new Error("Storage unavailable");
+      const from = options.from && options.from.length <= 320 && !/[\r\n]/.test(options.from) ? options.from : undefined;
+      leadId = await options.store.persist(lead, context.data, from);
+    } catch (error) {
+      if (error instanceof LeadConflict) return respond(409, { error: "These details do not match this submission. Start a new inquiry or email us." });
+      return respond(503, { error: "We could not save your inquiry. Your details are still here. Please retry or email us below." });
     }
-    const text = leadText(lead);
-    const result = await sendResendEmail(options.apiKey, {
-      from: options.from, to: leadRecipient, subject: `Menu Man: ${leadTitles[lead.type]}`,
-      reply_to: lead.email,
-      text, html: `<pre style="white-space:pre-wrap">${escapeHtml(text)}</pre>`,
-      idempotencyKey: `marketing-lead/${lead.submissionId}`,
-    }, options.fetcher ?? ((url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(10_000) })));
-    if (!result.succeeded || !result.providerMessageId?.trim()) return respond(502, { error: "We could not confirm delivery. Retry unchanged details, or email us below." });
-    return respond(200, { accepted: true });
+    // The lead/outbox transaction has committed. Email or completion failures must
+    // never turn a durable lead into a failed visitor submission. Await all work;
+    // no unguaranteed background tasks and no contact/provider details in logs.
+    try {
+      const claim = await options.store!.claim(leadId);
+      if (claim) {
+        const outcome = await deliverLeadClaim(claim, options.apiKey, options.fetcher);
+        await options.store!.complete(claim, outcome);
+      }
+    } catch { /* Durable queued/leased record remains recoverable; never log PII. */ }
+    return respond(200, { accepted: true, recorded: true });
   };
 }

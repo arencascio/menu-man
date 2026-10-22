@@ -1,6 +1,7 @@
 import { leadRecipient, leadText, leadTitles, type MarketingLead } from "./contracts";
 import { normalizeWebsite, websiteError } from "./website";
 import type { LeadFailureCategory } from "../analytics/types";
+import { currentLeadContext } from "./context";
 
 export type LeadOutcome = { status: "accepted" } | { status: "failed"; category: LeadFailureCategory };
 
@@ -40,11 +41,11 @@ export function createLeadSubmitter(fetcher: typeof fetch = fetch, newId = () =>
       if (fingerprint !== previous) { previous = fingerprint; submissionId = newId(); }
       const response = await fetcher("/api/marketing/leads", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, submissionId }), signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify({ ...payload, submissionId, context: currentLeadContext() }), signal: AbortSignal.timeout(25_000),
       });
       receivedResponse = true;
       const body = await response.json();
-      if (!response.ok || body?.accepted !== true) {
+      if (!response.ok || body?.recorded !== true || body?.accepted !== true) {
         const category: LeadFailureCategory = response.status === 429 ? "rate_limit"
           : response.status === 503 ? "configuration" : response.status === 502 ? "provider_failure"
           : [400, 403, 413, 415].includes(response.status) ? "validation" : "unconfirmed";

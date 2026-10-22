@@ -410,6 +410,8 @@
 .form select:focus { border-color: var(--paprika); box-shadow: 0 0 0 2px var(--pale-paprika); }
 .form input:disabled { opacity: .55; }
 .leadFields { display: grid; gap: 17px; border: 0; min-width: 0; }
+.requiredMark { margin-left: .2em; color: #b42318; font-weight: 700; }
+.requiredNote { margin-bottom: 10px; color: var(--charcoal); font-size: .75rem; line-height: 1.4; }
 .leadTrap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .checkboxLabel { display: flex; align-items: center; gap: 9px; width: fit-content; cursor: pointer; }
 .checkboxLabel input { width: 18px; height: 18px; accent-color: var(--paprika); }
