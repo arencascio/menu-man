@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { FinalCta, MarketingPage, PrimaryLink } from "../MarketingComponents";
-import { ProductGallery } from "../MarketingInteractions";
+import { FinalCta, MarketingPage, PrimaryLink, WorkingProductIntro } from "../MarketingComponents";
+import MarketingFeaturettes from "../MarketingFeaturettes";
+import MarketingPhoneShowcase from "../MarketingPhoneShowcase";
 import RestaurantShowcases from "../RestaurantShowcases";
 import { CTA_LABELS } from "../marketing-content";
 import styles from "../page.module.css";
@@ -20,23 +20,24 @@ export default function WorkPage() {
           <h1>A closer look at the product.</h1>
           <p>Explore Super Tacos, a fictional restaurant demonstration of bold branding, thoughtful menu browsing, and clear restaurant information.</p>
           <div className={styles.actionRow}>
-            <PrimaryLink href="/r/super-tacos" ctaId="site_like_this" placement="hero">↗ {CTA_LABELS.showcase}</PrimaryLink>
+            <PrimaryLink href="/build-my-website" ctaId="build_website" placement="hero">{CTA_LABELS.showcase}</PrimaryLink>
           </div>
         </div>
-        <div className={styles.workHeroVisual}><Image className={styles.brandArtwork} src="/brand/MenuManPhone.svg" alt="Menu Man's phone and chef-hat illustration" width={469.387} height={923.785} loading="eager" /></div>
+        <div className={styles.workHeroVisual}><MarketingPhoneShowcase /></div>
       </section>
 
-      <section className={styles.gallerySection}>
-        <RestaurantShowcases />
-        <div className={styles.workCapabilities}>
-          <ProductGallery />
+      <section className={`${styles.gallerySection} ${styles.homeWorkSection}`}>
+        <WorkingProductIntro />
+        <RestaurantShowcases eager />
+        <div className={styles.workCapabilities} data-work-features>
+          <MarketingFeaturettes />
         </div>
       </section>
 
-      <section className={styles.galleryCta}>
+      <section className={styles.galleryCta} data-work-conversion>
         <MarketingIcon name="sparkles" size={36} />
-        <p>Want this kind of clarity for your restaurant?</p>
-        <PrimaryLink href="/r/super-tacos" ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
+        <h2>Want this kind of clarity for your restaurant?</h2>
+        <PrimaryLink href="/build-my-website" ctaId="build_website">{CTA_LABELS.showcase}</PrimaryLink>
       </section>
 
       <FinalCta />

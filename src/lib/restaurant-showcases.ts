@@ -5,9 +5,9 @@ import { SUPER_TACOS_ID } from "./demo/policy";
 export const restaurantShowcases = [
   {
     slug: "super-tacos", name: "Super Tacos", routeEnabled: true, published: true,
-    eyebrow: "Bold food. A brand to match.",
-    description: "A photo-led experience with menu customization, distinctive branding, and a thoughtful catering presentation.",
-    image: "/img/super-tacos/approved/loaded-nachos.webp", imageAlt: "Loaded nachos from the approved Super Tacos photo collection",
+    eyebrow: "BOLD FOOD. A BRAND TO MATCH.",
+    description: "A custom restaurant website with a searchable menu, item customization, simulated checkout, and a catering request form.",
+    image: "/img/super-tacos/approved/carnitas-tacos.webp", imageAlt: "The approved Super Tacos homepage hero photograph of freshly prepared tacos",
     disclosure: "Fictional restaurant demo",
   },
 ] as const;

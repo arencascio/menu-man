@@ -20,6 +20,26 @@
 /* Keep the viewport-fixed header aligned with the locked body's preserved width. */
 :global(html:has([data-restaurant-header])) { scrollbar-gutter: stable; }
 .navigationSlot { display: contents; }
+.menuManReturn {
+  position: relative;
+  z-index: 41;
+  display: block;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
+  margin: .45rem auto;
+  padding: .3rem .55rem;
+  border-radius: 4px;
+  color: #45413a;
+  background: #fffdf7;
+  font-size: .75rem;
+  line-height: 1.25;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.menuManReturn:focus-visible { outline: 2px solid #a92b1b; outline-offset: 2px; }
+.menuManReturn:hover { color: #741d13; }
+.menuManReturnAfterOverlay { margin-top: 6rem; }
+@media (max-width: 1100px) { .menuManReturnAfterOverlay { margin-top: 5.2rem; } }
 .siteHeader[data-variant] .brandName[data-wordmark-font="custom"] { font-synthesis: none; font-weight: 400; letter-spacing: 0; }
 
 .siteHeader {

@@ -1,0 +1,85 @@
+{
+  "provenance": "Unretouched viewport crops from owner-approved product recordings; timestamps in seconds; crop is x/y/width/height in source pixels. No UI was generated.",
+  "frames": [
+    {
+      "id": "reel-poster",
+      "clip": "home",
+      "time": 1,
+      "crop": [
+        0,
+        0,
+        700,
+        1516
+      ],
+      "source": "public/brand/previews/super-tacos-home.mp4",
+      "sourceSha256": "083270b9be60100b088ea799d3effc362913fc861db0bb1770a39783e2f1ee5d",
+      "file": "reel-poster.webp",
+      "bytes": 90288,
+      "sha256": "9b7f0f1c9536305a6427152cb0fa26728652554a7f5096866664c33d78cc2a7a"
+    },
+    {
+      "id": "mobile",
+      "clip": "home",
+      "time": 1,
+      "crop": [
+        0,
+        0,
+        700,
+        1390
+      ],
+      "source": "public/brand/previews/super-tacos-home.mp4",
+      "sourceSha256": "083270b9be60100b088ea799d3effc362913fc861db0bb1770a39783e2f1ee5d",
+      "file": "mobile.webp",
+      "bytes": 85080,
+      "sha256": "c6564c4bd307857a3f23508d267381b675a7a699513600a11b1a51318d354d26"
+    },
+    {
+      "id": "search",
+      "clip": "ordering",
+      "time": 20,
+      "crop": [
+        0,
+        110,
+        700,
+        770
+      ],
+      "source": "public/brand/previews/super-tacos-ordering.mp4",
+      "sourceSha256": "48ca203aa4cfe535173c171390c54202a7626fe84c251e115844b95034a8c4aa",
+      "file": "search.webp",
+      "bytes": 40038,
+      "sha256": "f7cc88c2472dbc4132175f4d304f9f19452a9de2baf996f6b3f68963b2360760"
+    },
+    {
+      "id": "ordering",
+      "clip": "home",
+      "time": 1,
+      "crop": [
+        20,
+        1070,
+        660,
+        290
+      ],
+      "source": "public/brand/previews/super-tacos-home.mp4",
+      "sourceSha256": "083270b9be60100b088ea799d3effc362913fc861db0bb1770a39783e2f1ee5d",
+      "file": "ordering.webp",
+      "bytes": 9192,
+      "sha256": "321eaf03f3960aed36569cb12fb158062559e53516c900952909f7bdc010ab60"
+    },
+    {
+      "id": "information",
+      "clip": "home",
+      "time": 29,
+      "crop": [
+        20,
+        435,
+        660,
+        1030
+      ],
+      "source": "public/brand/previews/super-tacos-home.mp4",
+      "sourceSha256": "083270b9be60100b088ea799d3effc362913fc861db0bb1770a39783e2f1ee5d",
+      "file": "information.webp",
+      "bytes": 38658,
+      "sha256": "e7db0a4a24b022d1f933ade8c7493f9dd272007a7af20be749c2caa50226afe4"
+    }
+  ]
+}

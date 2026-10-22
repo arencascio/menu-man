@@ -2,23 +2,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { getShowcaseHref, restaurantShowcases } from "@/lib/restaurant-showcases";
 import styles from "./restaurant-showcases.module.css";
+import { DemoIcon } from "./MarketingComponents";
 
-export default function RestaurantShowcases({ compact = false }: { compact?: boolean }) {
-  return <div className={styles.grid} data-compact={compact} data-single={restaurantShowcases.length === 1} role="region" aria-label="Restaurant website showcase">
-    {restaurantShowcases.map((showcase) => <article className={styles.card} key={showcase.slug} data-restaurant={showcase.slug}>
+export default function RestaurantShowcases({ compact = false, eager = false }: { compact?: boolean; eager?: boolean }) {
+  return <div className={styles.section} data-compact={compact} data-single={restaurantShowcases.length === 1} data-restaurant-showcases>
+    <div className={styles.grid} role="region" aria-label="Restaurant website showcase">
+    {restaurantShowcases.map((showcase, index) => <article className={styles.card} key={showcase.slug} data-restaurant={showcase.slug}>
       <div className={styles.photo}>
-        <Image src={showcase.image} alt={showcase.imageAlt} fill sizes={compact ? "(max-width: 900px) 100vw, 28vw" : "(max-width: 700px) 100vw, 50vw"} />
-        <span>{showcase.name}</span>
+        <Image src={showcase.image} alt={showcase.imageAlt} fill loading={eager && index === 0 ? "eager" : "lazy"}
+          sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 700px) 92vw, 420px" />
+        <div className={styles.imageCaption}><h3>{showcase.name}</h3><p>{showcase.eyebrow}</p></div>
       </div>
       <div className={styles.body}>
-        <p className={styles.eyebrow}>{showcase.eyebrow}</p>
-        <h3>{showcase.name}</h3>
         <p>{showcase.description}</p>
-        <small>{showcase.disclosure}</small>
         {getShowcaseHref(showcase)
-          ? <Link className={styles.action} href={getShowcaseHref(showcase)!}>Explore Live Demo <span aria-hidden="true">↗</span></Link>
+          ? <Link className={styles.action} href={getShowcaseHref(showcase)!}>Explore live demo <DemoIcon /></Link>
           : <span className={styles.pending}>Live demo coming soon</span>}
       </div>
     </article>)}
+    </div>
+    <p className={styles.disclosure}>Restaurant showcases are fictional demonstrations.</p>
   </div>;
 }

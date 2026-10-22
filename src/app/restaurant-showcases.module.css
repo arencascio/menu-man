@@ -1,24 +1,27 @@
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; min-width: 0; }
-.grid[data-single="true"] { grid-template-columns: minmax(0, 1fr); max-width: 980px; margin-inline: auto; }
-.card { overflow: hidden; min-width: 0; border: 1px solid var(--warm-gray, #ded9ce); border-radius: 16px; background: #fffdf8; }
-.photo { position: relative; isolation: isolate; aspect-ratio: 16 / 10; background: #763f27; }
-.photo img { object-fit: cover; }
-.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, #000b); z-index: 1; }
-.photo span { position: absolute; z-index: 2; inset: auto 20px 18px; color: white; font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 800; line-height: 1.1; }
-.card[data-restaurant="super-tacos"] .photo { background: #163b32; }
-.card[data-restaurant="super-tacos"] .photo span { color: #fff8e8; }
-.card[data-restaurant="super-tacos"] .eyebrow { color: #a33817; }
-.body { padding: 22px; display: grid; gap: 12px; }
-.body h3 { font-size: clamp(1.3rem, 2vw, 1.7rem); line-height: 1.2; }
-.body > p:not(.eyebrow) { font-size: 1rem; line-height: 1.65; }
-.eyebrow { color: #665542; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.body small { color: #625b50; font-size: .76rem; line-height: 1.5; }
-.action, .pending { display: block; padding-block: 10px; font-size: .85rem; font-weight: 700; }
-.action { width: fit-content; text-underline-offset: 4px; }
-.action:focus-visible { outline: 3px solid #b53f1a; outline-offset: 4px; }
-.pending { color: #686157; }
-.grid[data-compact="true"] { gap: 16px; }
-.grid[data-compact="true"] .body { padding: 16px; }
-.grid[data-compact="true"] .photo { aspect-ratio: 4 / 3; }
-.grid[data-compact="true"] .photo span { font-size: 1.3rem; inset-inline: 16px; }
-@media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+﻿.section { min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; min-width: 0; }
+.section[data-single="true"] .grid { grid-template-columns: minmax(0, 1fr); max-width: 420px; }
+.card { overflow: hidden; min-width: 0; border: 1px solid var(--warm-gray, #ded9ce); border-radius: 13px; background: #fffdf8; }
+.photo { position: relative; isolation: isolate; aspect-ratio: 16 / 10; background: #163b32; }
+.photo img { object-fit: cover; object-position: 50% 55%; }
+.photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 30%, #081c16dd); z-index: 1; }
+.imageCaption { position: absolute; z-index: 2; right: 18px; bottom: 18px; left: 18px; color: #fff8e8; }
+.imageCaption h3 { font-size: 1.7rem; line-height: 1.1; }
+.imageCaption p { margin-top: 7px; font-size: .65rem; font-weight: 750; letter-spacing: .09em; line-height: 1.4; }
+.body { display: grid; gap: 14px; padding: 16px; }
+.body > p { font-size: .82rem; line-height: 1.5; color: #5b5752; }
+.action { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 14px; border-radius: 7px; background: #163b32; color: #fff8e8; font-size: .85rem; font-weight: 750; transition: background 250ms ease; }
+.action:hover { background: #b93624; }
+.action:focus-visible { outline: 3px solid #e94b35; outline-offset: 3px; }
+.pending { color: #686157; font-size: .85rem; }
+.disclosure { margin: 12px 0 0; color: #625b50; font-size: .7rem; line-height: 1.5; }
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+ .grid { grid-template-columns: minmax(0, 1fr); }
+ .section[data-single="true"] .grid { max-width: none; }
+ .photo { aspect-ratio: 16 / 9; }
+ .imageCaption { inset: auto 15px 15px; }
+ .imageCaption h3 { font-size: 1.5rem; }
+ .body { padding: 14px; gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .action { transition: none; } }

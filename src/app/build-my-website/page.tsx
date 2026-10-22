@@ -15,7 +15,7 @@ export default function BuildMyWebsitePage() {
       <section className={styles.leadPage}>
         <div className={styles.leadIntro}>
           <h1>Tell us about your restaurant.</h1>
-          <p>Share what you have, what is not working, and where customers order today. Plain English is perfect.</p>
+          <p>Share what you have, what is not working, and where customers order today.</p>
           <div className={styles.leadPrice}>
             <strong>{PUBLIC_PRICING.monthly}</strong>
             <p>Plus a {PUBLIC_PRICING.startupFee} one-time startup fee</p>

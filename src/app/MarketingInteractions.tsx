@@ -3,23 +3,28 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState } from "react";
-import smartphoneIcon from "../../img/icons/smartphone.svg";
-import searchIcon from "../../img/icons/search.svg";
-import linkIcon from "../../img/icons/link-2.svg";
-import locationIcon from "../../img/icons/map-pinned.svg";
-import { productFeatures, CTA_LABELS } from "./marketing-content";
+import menuIcon from "../../img/icons/menu.svg";
+import { CTA_LABELS, PUBLIC_PRICING } from "./marketing-content";
+import MarketingFeaturettes from "./MarketingFeaturettes";
 import styles from "./page.module.css";
 import { LeadFormFeedback, useMarketingLead } from "./MarketingLeadForm";
 import { marketingCta } from "@/lib/analytics/marketing";
 import type { MarketingPlacement } from "@/lib/analytics/types";
-import MarketingIcon from "./MarketingIcon";
 
 const REVIEW_EVENT = "menu-man:open-review";
 
 export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const rendered = open || closing;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const navigationRef = useRef<HTMLElement>(null);
+  const close = useCallback(() => {
+    setClosing(window.matchMedia("(max-width: 820px)").matches);
+    setOpen(false);
+    menuButtonRef.current?.focus();
+  }, []);
 
   useLayoutEffect(() => {
     const header = headerRef.current;
@@ -35,24 +40,51 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === "Escape" && open) {
-        setOpen(false);
-        menuButtonRef.current?.focus();
+        close();
       }
     }
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open, close]);
+
+  useEffect(() => {
+    if (!rendered) return;
+    // Separate from the review dialog's body lock so the two can hand off safely.
+    const previousOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => { document.documentElement.style.overflow = previousOverflow; };
+  }, [rendered]);
+
+  useEffect(() => {
+    if (!open) return;
+    navigationRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const controls = [menuButtonRef.current, ...Array.from(navigationRef.current?.querySelectorAll<HTMLElement>("a, button") ?? [])].filter((node): node is HTMLElement => !!node);
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", trapFocus);
+    return () => {
+      document.removeEventListener("keydown", trapFocus);
+    };
   }, [open]);
 
   useEffect(() => {
+    if (!closing) return;
+    const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600;
+    const timer = window.setTimeout(() => setClosing(false), delay);
+    return () => window.clearTimeout(timer);
+  }, [closing]);
+
+  useEffect(() => {
     const desktop = window.matchMedia("(min-width: 821px)");
-    const reset = () => { if (desktop.matches) setOpen(false); };
+    const reset = () => { if (desktop.matches) { setOpen(false); setClosing(false); } };
     desktop.addEventListener("change", reset);
     return () => desktop.removeEventListener("change", reset);
   }, []);
-
-  function close() {
-    setOpen(false);
-  }
 
   return (
     <header ref={headerRef} className={styles.header}>
@@ -62,14 +94,20 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
         className={styles.menuButton}
         type="button"
         aria-expanded={open}
+        aria-label={open ? "Close navigation" : "Open navigation"}
         aria-controls="marketing-navigation"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => { if (open) close(); else { setClosing(false); setOpen(true); } }}
       >
-        <span>{open ? "Close" : "Menu"}</span>
-        <i aria-hidden="true" />
+        {open ? <span>Close</span> : <Image src={menuIcon} alt="" width={24} height={24} />}
       </button>
+      {rendered && <button type="button" className={styles.menuBackdrop} data-closing={!open} tabIndex={-1} aria-label="Close navigation backdrop" onClick={close} />}
       <nav
-        className={`${styles.nav} ${open ? styles.navOpen : ""}`}
+        ref={navigationRef}
+        className={`${styles.nav} ${open ? styles.navOpen : closing ? styles.navClosing : ""}`}
+        inert={closing || undefined}
+        aria-hidden={closing || undefined}
+        data-menu-state={open ? "open" : closing ? "closing" : "closed"}
+        onTransitionEnd={(event) => { if (!open && event.target === event.currentTarget && event.propertyName === "transform") setClosing(false); }}
         id="marketing-navigation"
         aria-label="Main navigation"
         onBlur={(event) => {
@@ -243,56 +281,8 @@ export function ReviewModal() {
   );
 }
 
-const productIcons = { mobile: smartphoneIcon, search: searchIcon, order: linkIcon, details: locationIcon };
-
 export function ProductGallery() {
-  const [active, setActive] = useState<(typeof productFeatures)[number]["id"]>("mobile");
-  const activeFeature = productFeatures.find((feature) => feature.id === active) ?? productFeatures[0];
-  const galleryId = useId();
-
-  return (
-    <div className={styles.gallery}>
-      <div className={styles.galleryTabs} role="tablist" aria-label="Restaurant website features">
-        {productFeatures.map((feature, index) => (
-          <button
-            key={feature.id}
-            type="button"
-            role="tab"
-            id={`${galleryId}-${feature.id}`}
-            aria-controls={`${galleryId}-panel`}
-            aria-selected={active === feature.id}
-            tabIndex={active === feature.id ? 0 : -1}
-            onClick={() => setActive(feature.id)}
-            onKeyDown={(event) => {
-              const direction = ["ArrowRight", "ArrowDown"].includes(event.key) ? 1 : ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 0;
-              if (!direction && event.key !== "Home" && event.key !== "End") return;
-              event.preventDefault();
-              const next = event.key === "Home" ? 0 : event.key === "End" ? productFeatures.length - 1 : (index + direction + productFeatures.length) % productFeatures.length;
-              setActive(productFeatures[next].id);
-              document.getElementById(`${galleryId}-${productFeatures[next].id}`)?.focus();
-            }}
-          >
-            <MarketingIcon name={feature.id === "mobile" ? "phone" : feature.id === "search" ? "menu" : feature.id === "order" ? "check" : "map"} size={24} />
-            <strong>{feature.title}</strong>
-            <span className={styles.tabIndicator} aria-hidden="true">{active === feature.id ? "Viewing" : "Explore"} <MarketingIcon name="chevron" size={16} /></span>
-          </button>
-        ))}
-      </div>
-      <div className={styles.galleryDisplay} data-feature={active} role="tabpanel" tabIndex={0} id={`${galleryId}-panel`} aria-labelledby={`${galleryId}-${active}`}>
-        <div>
-          {active === "order" ? <MarketingIcon name="check" size={72} className={styles.productIcon} /> : <Image className={styles.productIcon} src={productIcons[active]} alt="" width={72} height={72} />}
-          <div className={styles.galleryCaption}>
-            <h3>{activeFeature.title}</h3>
-            <p>{activeFeature.copy}</p>
-          </div>
-        </div>
-        {active === "mobile" ? <figure className={styles.mobilePreview}>
-          <div className={styles.mobilePreviewScreen}><Image src="/brand/previews/super-tacos-mobile.png" alt="Super Tacos demonstration website on a phone-sized screen" width={412} height={900} sizes="220px" /></div>
-          <figcaption>Super Tacos · fictional demonstration</figcaption>
-        </figure> : null}
-      </div>
-    </div>
-  );
+  return <MarketingFeaturettes />;
 }
 
 export function BuildWebsiteForm() {
@@ -343,6 +333,10 @@ export function BuildWebsiteForm() {
         </select>
       </label>
       <label>Anything else we should know?<textarea name="notes" maxLength={2000} rows={4} /></label>
+      <div className={styles.formPrice}>
+        <strong>{PUBLIC_PRICING.monthly}</strong>
+        <p>Plus a {PUBLIC_PRICING.startupFee} one-time startup fee</p>
+      </div>
       <button className={styles.formSubmit} type="submit">{lead.state.pending ? "Sending..." : CTA_LABELS.primary} <span aria-hidden="true">&rarr;</span></button>
       </fieldset>
       <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} formType="website_inquiry" />

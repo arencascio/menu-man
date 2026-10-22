@@ -82,6 +82,7 @@ export default async function RestaurantShell({ children, restaurant, smoothScro
           brandLockup={restaurant.brandLockup}
           name={restaurant.name}
         />
+        {showcase ? <a className={`${styles.menuManReturn} ${navigationVariant === "transparent" ? styles.menuManReturnAfterOverlay : ""}`} href="https://getmenuman.com/">← Back to Menu Man</a> : null}
         <DemoNotice restaurantId={restaurant.id} />
         {children}
       </RestaurantDeliveryChooser>

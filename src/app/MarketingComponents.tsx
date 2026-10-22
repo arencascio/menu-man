@@ -8,13 +8,33 @@ import type { MarketingCta, MarketingPlacement } from "@/lib/analytics/types";
 import MarketingIcon from "./MarketingIcon";
 import MarketingReveal from "./MarketingReveal";
 import { getBusinessPageHref } from "@/lib/marketing-business-pages";
+import squarePlay from "../../img/icons/square-play.svg";
+
+export function DemoIcon() {
+  return <Image src={squarePlay} alt="" aria-hidden="true" width={22} height={22} className={styles.demoIcon} />;
+}
+
+export function WorkingProductIntro() {
+  return <div className={styles.homeWorkCopy} data-working-product>
+    <p className={styles.eyebrow}>Working product</p>
+    <h2>See Menu Man in action</h2>
+    <p>This is a working restaurant demo, not a mockup. Go ahead, click around.</p>
+    <div className={styles.actionRow}>
+      <PrimaryLink href="/r/super-tacos" ctaId="site_like_this" icon={<DemoIcon />}>EXPLORE LIVE DEMO</PrimaryLink>
+      <Link className={styles.secondaryLink} href="/build-my-website" {...marketingCta("build_website", "section")}>I WANT A SITE LIKE THIS</Link>
+    </div>
+  </div>;
+}
 
 export function BrandLockup({ placement = "navigation" }: { placement?: "navigation" | "footer" }) {
   const navigation = placement === "navigation";
   return (
     <Link className={styles.brand} href="/" aria-label="Menu Man home">
       <span className={`${styles.logoFrame} ${navigation ? "" : styles.logoFrameLarge}`}>
-        <Image src={navigation ? "/brand/MenuManPhoneSmol.svg" : "/brand/MenuManPhone.svg"} alt="" width={469.387} height={navigation ? 530.246 : 923.785} loading={navigation ? "eager" : "lazy"} />
+        {navigation ? <Image src="/brand/MenuManPhoneSmol.svg" alt="" width={469.387} height={530.246} loading="eager" /> :
+          <MarketingReveal as="span" variant="footer" className={styles.footerLogoMotion} durationMs={1500} turnDegrees={-75}>
+            <span data-reveal-item><Image src="/brand/MenuManPhone.svg" alt="" width={469.387} height={923.785} loading="lazy" /></span>
+          </MarketingReveal>}
       </span>
       <span>
         <strong>MENU MAN</strong>
@@ -61,17 +81,19 @@ export function PrimaryLink({
   light = false,
   ctaId = "build_website",
   placement = "section",
+  icon,
 }: {
   children?: React.ReactNode;
   href?: string;
   light?: boolean;
   ctaId?: MarketingCta;
   placement?: MarketingPlacement;
+  icon?: React.ReactNode;
 }) {
   return (
     <Link className={`${styles.primaryButton} ${light ? styles.primaryButtonLight : ""}`} href={href} {...marketingCta(ctaId, placement)}>
       <span>{children}</span>
-      <span aria-hidden="true">&rarr;</span>
+      {icon ?? <span aria-hidden="true">&rarr;</span>}
     </Link>
   );
 }

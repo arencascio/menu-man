@@ -51,8 +51,8 @@ export const processSteps = [
 export const productFeatures = [
   {
     id: "mobile",
-    title: "Built for the phone in your customer's hand.",
-    copy: "The menu, hours, location, and ordering path stay easy to reach on a small screen.",
+    title: "Websites built for smartphones",
+    copy: "Everything is easy to use - even on a small screen.",
   },
   {
     id: "search",
@@ -61,8 +61,8 @@ export const productFeatures = [
   },
   {
     id: "order",
-    title: "Make ordering obvious.",
-    copy: "A prominent ordering path connects the website to the restaurant's current workflow.",
+    title: "Make ordering easy",
+    copy: "Give customers a clear path to pickup, delivery, and everything else you do.",
   },
   {
     id: "details",

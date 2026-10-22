@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import {
   FinalCta,
   MarketingPage,
   PrimaryLink,
+  WorkingProductIntro,
   SectionHeading,
 } from "./MarketingComponents";
 import { ReviewButton } from "./MarketingInteractions";
@@ -21,6 +21,7 @@ import { marketingCta } from "@/lib/analytics/marketing";
 import MarketingIcon, { type MarketingIconName } from "./MarketingIcon";
 import MarketingReveal from "./MarketingReveal";
 import MarketingCapabilities from "./MarketingCapabilities";
+import MarketingPhoneShowcase from "./MarketingPhoneShowcase";
 
 const questionIcons: MarketingIconName[] = ["utensils", "dollar", "moon", "map", "cart"];
 const processIcons: MarketingIconName[] = ["message", "globe", "history"];
@@ -47,17 +48,14 @@ export default function Home() {
           <p className={styles.heroNote}>No website dashboard to learn. No new system for your staff to run.</p>
         </div>
         <div className={styles.heroVisual}>
-          <Image className={styles.brandArtwork} src="/brand/MenuManPhone.svg" alt="Menu Man's phone and chef-hat illustration" width={469.387} height={923.785} loading="eager" />
-          <span className={`${styles.productCallout} ${styles.calloutMenu}`}>Searchable menu</span>
-          <span className={`${styles.productCallout} ${styles.calloutOrder}`}>Clear ordering path</span>
-          <span className={`${styles.productCallout} ${styles.calloutDetails}`}>Hours &amp; location</span>
+          <MarketingPhoneShowcase />
         </div>
       </section>
 
       <section className={styles.evidenceSection}>
         <div className={styles.evidenceCopy}>
-          <h2>Your next customer is looking you up.</h2>
-          <p>A strong restaurant can still lose the decision when its menu, hours, or website is hard to use.</p>
+          <h2>Customers look online before they choose.</h2>
+          <p>A great restaurant can still lose a customer when its menu, hours, or ordering options are hard to find.</p>
         </div>
         <MarketingReveal className={styles.stats}>
           <div data-reveal-item><span className={styles.statNumber}>01</span><strong>{DINER_RESEARCH.menu}</strong><span>look at the menu online before choosing a new restaurant.</span></div>
@@ -70,7 +68,7 @@ export default function Home() {
 
       <section className={styles.questionsSection}>
         <SectionHeading
-          title="Hungry customers are looking for a few simple answers."
+          title="Give customers what they're looking for."
           copy="Your website should answer them before someone taps back to search."
         />
         <div className={styles.questionBoard}>
@@ -88,10 +86,10 @@ export default function Home() {
 
       <section className={styles.processSection} id="how-it-works">
         <SectionHeading title="You run the restaurant. We'll handle the website." />
-        <MarketingReveal as="ol" className={styles.processGrid}>
+        <MarketingReveal as="ol" className={styles.processGrid} variant="process">
           {processSteps.map((step, index) => (
-            <li key={step.title}>
-              <div className={styles.processTop}><span>{String(index + 1).padStart(2, "0")}</span><span data-reveal-item><MarketingIcon name={processIcons[index]} size={36} /></span></div>
+            <li key={step.title} data-reveal-item>
+              <div className={styles.processTop}><span>{String(index + 1).padStart(2, "0")}</span><span><MarketingIcon name={processIcons[index]} size={36} /></span></div>
               <h3>{step.title}</h3>
               <p>{step.copy}</p>
             </li>
@@ -101,18 +99,9 @@ export default function Home() {
       </section>
 
       <section className={styles.homeWorkSection}>
-        <div className={styles.homeWorkCopy}>
-          <p className={styles.eyebrow}>Working product</p>
-          <h2>A restaurant website built around your customers.</h2>
-          <p>A large menu becomes fast to search, easy to browse, and ready for a clear ordering path on any screen.</p>
-          <p>Explore a fictional, photo-led restaurant demonstration with a searchable menu and interactive customization.</p>
-          <div className={styles.actionRow}>
-            <PrimaryLink href="/r/super-tacos" ctaId="site_like_this">↗ {CTA_LABELS.showcase}</PrimaryLink>
-            <Link className={styles.secondaryLink} href="/work" {...marketingCta("explore_product", "section")}>Explore the product</Link>
-          </div>
-        </div>
-        <MarketingCapabilities />
+        <WorkingProductIntro />
         <RestaurantShowcases compact />
+        <MarketingCapabilities />
       </section>
 
       <section className={styles.reviewSection}>

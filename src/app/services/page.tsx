@@ -50,15 +50,14 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <section className={styles.orderingSection}>
+      <section className={styles.orderingSection} data-ordering-ecosystem>
         <div>
-          <h2>Your ordering system does not have to change.</h2>
-          <p>Menu Man can be the customer-facing website while Clover, Square, Toast, DoorDash, Uber Eats, or another provider keeps processing orders.</p>
-          <p>You can keep your existing ordering provider with no Menu Man per-order fee.</p>
+          <h2>Your ordering setup does not have to change.</h2>
+          <p>Keep Square and the other tools you already use. Menu Man becomes the customer-facing website while your current ordering workflow stays in place.</p>
         </div>
-        <div className={styles.orderingPath} aria-label="Website connects customers to the restaurant's current ordering system">
-          <span>Hungry customer</span><b aria-hidden="true">&rarr;</b><span>Menu Man website</span><b aria-hidden="true">&rarr;</b><span>Your ordering system</span>
-        </div>
+        <ul className={styles.providerStrip} tabIndex={0} aria-label="Examples of existing restaurant ordering providers">
+          {["Square", "Clover", "Toast", "DoorDash", "Uber Eats", "Grubhub"].map((provider) => <li key={provider} data-featured={provider === "Square"}>{provider}</li>)}
+        </ul>
       </section>
 
       <section className={styles.scopeSection}>
