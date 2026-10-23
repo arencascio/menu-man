@@ -32,6 +32,9 @@ const manrope = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(resolveSiteOrigin()),
+  icons: {
+    icon: [{ url: "/brand/MenuManVerySmol.svg?v=1.3", type: "image/svg+xml" }],
+  },
   robots: isProductionSite() ? undefined : { index: false, follow: false },
   title: {
     default: "Menu Man | Restaurant Websites Built & Managed for You",

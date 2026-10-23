@@ -60,10 +60,10 @@ export default function SuperTacosDemoCheckout() {
     cart.clearAfterOrderCreated();
   }
 
-  if (!cart.hydrated) return <main className={styles.page} aria-busy="true"><a className={styles.menuManReturn} href="https://getmenuman.com/">← Back to Menu Man</a><p className={styles.loading}>Preparing your sample order…</p></main>;
+  if (!cart.hydrated) return <main className={styles.page} aria-busy="true"><Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link><p className={styles.loading}>Preparing your sample order…</p></main>;
 
   if (receipt) return <main className={styles.page}>
-    <a className={styles.menuManReturn} href="https://getmenuman.com/">← Back to Menu Man</a>
+    <Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link>
     <section className={styles.receipt} aria-labelledby="demo-receipt-title">
       <div className={styles.receiptMark} aria-hidden="true">✓</div>
       <p className={styles.eyebrow}>Super Tacos · Order preview</p>
@@ -80,12 +80,12 @@ export default function SuperTacosDemoCheckout() {
   </main>;
 
   if (cart.lines.length === 0) return <main className={styles.page}>
-    <a className={styles.menuManReturn} href="https://getmenuman.com/">← Back to Menu Man</a>
+    <Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link>
     <section className={styles.empty} aria-labelledby="empty-title"><p className={styles.eyebrow}>Super Tacos · Sample checkout</p><h1 id="empty-title">Your sample cart is empty.</h1><p>Choose a few favorites from the menu to see how a complete order could feel.</p><Link className={styles.primaryButton} href={`/r/${SUPER_TACOS_SLUG}/menu`}>Browse the menu</Link></section>
   </main>;
 
   return <main className={styles.page}>
-    <a className={styles.menuManReturn} href="https://getmenuman.com/">← Back to Menu Man</a>
+    <Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link>
     <div className={styles.checkout}>
       <section className={styles.order} aria-labelledby="sample-order-title">
         <Link className={styles.textLink} href={`/r/${SUPER_TACOS_SLUG}/menu`}>← Back to menu</Link>

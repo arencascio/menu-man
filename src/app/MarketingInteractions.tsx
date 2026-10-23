@@ -249,9 +249,9 @@ export function ReviewModal() {
           </div>
         ) : (
           <>
-            <p className={styles.eyebrow}>Free restaurant website review</p>
+            <p className={styles.eyebrow}>Free Website Review</p>
             <h2 id={titleId}>See how your restaurant looks online.</h2>
-            <p className={styles.modalLead}>Share the basics. We will look for the clearest ways to make your restaurant easier to choose.</p>
+            <p className={styles.modalLead}>We&apos;ll take a look at how customers find your restaurant online, including your website, menu, hours, location, and ordering options. Then we&apos;ll show you where there&apos;s room to improve.</p>
             <form className={styles.form} onSubmit={lead.submit} onChange={(event) => lead.capture(event.currentTarget)} aria-busy={lead.state.pending}>
               <RequiredFieldsNote />
               <fieldset className={styles.leadFields} disabled={lead.state.pending}>
@@ -277,7 +277,7 @@ export function ReviewModal() {
                 <input name="email" maxLength={254} type="email" required autoComplete="email" />
               </label>
               <button className={styles.formSubmit} type="submit">
-                {lead.state.pending ? "Sending..." : CTA_LABELS.review} <span aria-hidden="true">&rarr;</span>
+                {lead.state.pending ? "Sending..." : CTA_LABELS.reviewSubmit} <span aria-hidden="true">&rarr;</span>
               </button>
               </fieldset>
               <LeadFormFeedback error={lead.state.error} emailHref={lead.emailHref} formType="website_review" />

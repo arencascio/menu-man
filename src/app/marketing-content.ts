@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
+import Link from "next/link";
 
 export const CTA_LABELS = {
   primary: "BUILD MY WEBSITE",
-  review: "GET MY FREE WEBSITE REVIEW",
+  review: "Free Website Review",
+  reviewSubmit: "GET MY FREE WEBSITE REVIEW",
   showcase: "I WANT A SITE LIKE THIS",
 } as const;
 
@@ -134,6 +136,10 @@ export const faqs: readonly Faq[] = [
     question: "Do I pay a fee to keep my current ordering provider?",
     answer:
       "No. Links to your existing ordering provider are included in the managed website, with no Menu Man per-order fee. Optional Menu Man pickup ordering is available only where supported and launch-ready; payment processing fees are separate.",
+  },
+  {
+    question: "What happens if I cancel?",
+    answer: createElement(Link, { href: "/cancellation" }, "Read the cancellation and data handoff details."),
   },
   {
     question: "Can you redesign my current site?",

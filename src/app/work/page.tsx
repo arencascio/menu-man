@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { FinalCta, MarketingPage, PrimaryLink, WorkingProductIntro } from "../MarketingComponents";
+import Link from "next/link";
+import { DemoIcon, FinalCta, MarketingPage, PrimaryLink, WorkingProductIntro } from "../MarketingComponents";
+import { marketingCta } from "@/lib/analytics/marketing";
 import MarketingFeaturettes from "../MarketingFeaturettes";
 import MarketingPhoneShowcase from "../MarketingPhoneShowcase";
 import RestaurantShowcases from "../RestaurantShowcases";
@@ -17,11 +19,13 @@ export default function WorkPage() {
     <MarketingPage>
       <section className={`${styles.subpageHero} ${styles.workHero}`}>
         <div>
-          <h1>A closer look at the product.</h1>
-          <p>Explore Super Tacos, a fictional restaurant demonstration of bold branding, thoughtful menu browsing, and clear restaurant information.</p>
+          <h1>See Menu Man in action.</h1>
+          <p>Explore Super Tacos, our interactive restaurant website demo. Browse the menu, try the ordering experience, and see what your customers could have at their fingertips.</p>
           <div className={styles.actionRow}>
-            <PrimaryLink href="/build-my-website" ctaId="build_website" placement="hero">{CTA_LABELS.showcase}</PrimaryLink>
+            <PrimaryLink href="/r/super-tacos" ctaId="explore_product" placement="hero" icon={<DemoIcon />}>EXPLORE SUPER TACOS</PrimaryLink>
+            <Link className={styles.secondaryLink} href="/build-my-website" {...marketingCta("build_website", "hero")}>{CTA_LABELS.showcase}</Link>
           </div>
+          <p>Super Tacos is a fictional restaurant demo with simulated checkout.</p>
         </div>
         <div className={styles.workHeroVisual}><MarketingPhoneShowcase /></div>
       </section>
