@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { CTA_LABELS, PUBLIC_PRICING } from "./marketing-content";
@@ -21,6 +22,7 @@ function RequiredFieldsNote() {
 }
 
 export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const rendered = open || closing;
@@ -28,7 +30,7 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
   const headerRef = useRef<HTMLElement>(null);
   const navigationRef = useRef<HTMLElement>(null);
   const close = useCallback(() => {
-    setClosing(window.matchMedia("(max-width: 820px)").matches);
+    setClosing(window.matchMedia("(max-width: 1000px)").matches);
     setOpen(false);
     menuButtonRef.current?.focus();
   }, []);
@@ -87,7 +89,7 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
   }, [closing]);
 
   useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 821px)");
+    const desktop = window.matchMedia("(min-width: 1001px)");
     const reset = () => { if (desktop.matches) { setOpen(false); setClosing(false); } };
     desktop.addEventListener("change", reset);
     return () => desktop.removeEventListener("change", reset);
@@ -122,11 +124,11 @@ export function MarketingHeader({ brand }: { brand: React.ReactNode }) {
           if (next instanceof Node && !headerRef.current?.contains(next)) close();
         }}
       >
-        <Link href="/#how-it-works" onClick={close}>How It Works</Link>
-        <Link href="/services" onClick={close} {...marketingCta("services_pricing", "navigation")}>Services &amp; Pricing</Link>
-        <Link href="/work" onClick={close} {...marketingCta("explore_product", "navigation")}>Work</Link>
+        <Link href="/#how-it-works" onClick={close}>How We Help</Link>
+        <Link href="/services" aria-current={pathname === "/services" ? "page" : undefined} onClick={close} {...marketingCta("services_pricing", "navigation")}>Services &amp; Pricing</Link>
+        <Link href="/work" aria-current={pathname === "/work" ? "page" : undefined} onClick={close} {...marketingCta("explore_product", "navigation")}>See It Live</Link>
         <ReviewButton placement="navigation" className={styles.navReview} onOpen={close}>Free Website Review</ReviewButton>
-        <Link className={styles.navCta} href="/build-my-website" onClick={close} {...marketingCta("build_website", "navigation")}>
+        <Link className={styles.navCta} href="/build-my-website" aria-current={pathname === "/build-my-website" ? "page" : undefined} onClick={close} {...marketingCta("build_website", "navigation")}>
           Build My Website <span aria-hidden="true">&rarr;</span>
         </Link>
       </nav>

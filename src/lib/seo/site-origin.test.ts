@@ -23,15 +23,16 @@ test("hosted origins fail closed instead of emitting localhost or unsafe URLs", 
   assert.throws(() => resolveSiteOrigin({ VERCEL_ENV: "preview", VERCEL_URL: "localhost:3000" }));
 });
 
-test("nonproduction robots disallow crawling and use the deployment origin", () => {
+test("nonproduction robots disallow crawling and advertise the Production sitemap", () => {
   const code = transpileModule(readFileSync("src/app/robots.ts", "utf8"), { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
   for (const production of [false, true]) {
-    const exports: { default?: () => { rules: { allow?: string; disallow?: string }; sitemap: string } } = {};
-    runInNewContext(code, { exports, require: () => ({ siteUrl: "https://qa.example.com", isProductionSite: () => production }) });
+    const exports: { default?: () => { rules: { allow?: string; disallow?: string | string[] }; sitemap: string } } = {};
+    runInNewContext(code, { exports, require: () => ({ marketingOrigin: "https://getmenuman.com", isProductionSite: () => production }) });
     const result = exports.default!();
-    assert.equal(result.sitemap, "https://qa.example.com/sitemap.xml");
+    assert.equal(result.sitemap, "https://getmenuman.com/sitemap.xml");
     assert.equal(production ? result.rules.allow : result.rules.disallow, "/");
-    assert.equal(production ? result.rules.disallow : result.rules.allow, undefined);
+    if (production) assert.equal(JSON.stringify(result.rules.disallow), JSON.stringify(["/ops", "/manage", "/api/"]));
+    else assert.equal(result.rules.allow, undefined);
   }
   assert.equal(isProductionSite({ VERCEL_ENV: "preview", MENU_MAN_ENV: "production" }), false);
   assert.equal(isProductionSite({ VERCEL_ENV: "production", MENU_MAN_ENV: "staging" }), false);

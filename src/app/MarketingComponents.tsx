@@ -1,3 +1,4 @@
+import { marketingOrganization } from "@/lib/seo/marketing-metadata";
 import Image from "next/image";
 import Link from "next/link";
 import { CTA_LABELS, PUBLIC_CONTACT } from "./marketing-content";
@@ -46,6 +47,7 @@ export function BrandLockup({ placement = "navigation" }: { placement?: "navigat
 export function MarketingPage({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.page} data-marketing-page>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(marketingOrganization) }} />
       <MarketingHeader brand={<BrandLockup />} />
       <main>{children}</main>
       <MarketingFooter />

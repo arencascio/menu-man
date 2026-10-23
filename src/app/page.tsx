@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { createMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import Link from "next/link";
 import {
   FinalCta,
@@ -26,11 +26,7 @@ import MarketingPhoneShowcase from "./MarketingPhoneShowcase";
 const questionIcons: MarketingIconName[] = ["utensils", "dollar", "moon", "map", "cart"];
 const processIcons: MarketingIconName[] = ["message", "globe", "history"];
 
-export const metadata: Metadata = {
-  title: "Restaurant Websites That Help You Get Chosen | Menu Man",
-  description:
-    "Menu Man builds and manages restaurant websites with clear menus, ordering paths, hours, location details, and ongoing updates.",
-};
+export const metadata = createMarketingMetadata("/");
 
 export default function Home() {
   return (

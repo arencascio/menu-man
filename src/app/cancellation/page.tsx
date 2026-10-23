@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { createMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarketingPage } from "../MarketingComponents";
@@ -7,10 +7,7 @@ import { cancellationTopics } from "../business-review-content";
 import { isBusinessPageAvailable } from "@/lib/marketing-business-pages";
 import styles from "../business-information.module.css";
 
-export const metadata: Metadata = {
-  title: "Cancellation & Data Handoff",
-  description: "What to expect when ending Menu Man’s managed restaurant website service.",
-};
+export const metadata = createMarketingMetadata("/cancellation");
 
 export default function CancellationPage() {
   if (!isBusinessPageAvailable("cancellation")) notFound();

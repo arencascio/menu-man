@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
+import { createMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import { MarketingPage } from "../MarketingComponents";
 import { BuildWebsiteForm } from "../MarketingInteractions";
 import { PUBLIC_PRICING } from "../marketing-content";
 import styles from "../page.module.css";
 
-export const metadata: Metadata = {
-  title: "Build My Website",
-  description: "Tell Menu Man about your restaurant and the website help you need.",
-};
+export const metadata = createMarketingMetadata("/build-my-website");
 
 export default function BuildMyWebsitePage() {
   return (

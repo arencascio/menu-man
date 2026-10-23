@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { marketingService, createMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import Link from "next/link";
 import { getBusinessPageHref } from "@/lib/marketing-business-pages";
 import {
@@ -14,16 +14,13 @@ import ProviderLogoStrip from "../ProviderLogoStrip";
 
 const serviceIcons: MarketingIconName[] = ["phone", "globe", "store", "menu", "list", "calendar", "cart", "message", "chart", "smile"];
 
-export const metadata: Metadata = {
-  title: "Services & Pricing",
-  description:
-    `Managed restaurant websites for ${PUBLIC_PRICING.monthly} plus a ${PUBLIC_PRICING.startupFee} one-time setup payment. Includes searchable menus, routine updates, and existing ordering links.`,
-};
+export const metadata = createMarketingMetadata("/services");
 
 export default function ServicesPage() {
   const cancellationHref = getBusinessPageHref("cancellation");
   return (
     <MarketingPage>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(marketingService) }} />
       <section className={styles.subpageHero}>
         <div>
           <MarketingIcon name="platter" size={44} />

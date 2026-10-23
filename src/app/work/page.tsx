@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { createMarketingMetadata } from "@/lib/seo/marketing-metadata";
 import Link from "next/link";
 import { DemoIcon, FinalCta, MarketingPage, PrimaryLink, WorkingProductIntro } from "../MarketingComponents";
 import { marketingCta } from "@/lib/analytics/marketing";
@@ -9,10 +9,7 @@ import { CTA_LABELS } from "../marketing-content";
 import styles from "../page.module.css";
 import MarketingIcon from "../MarketingIcon";
 
-export const metadata: Metadata = {
-  title: "Work",
-  description: "Explore Menu Man's restaurant website capabilities: mobile-friendly menus, existing ordering links, hours, and location details. An illustrated product overview.",
-};
+export const metadata = createMarketingMetadata("/work");
 
 export default function WorkPage() {
   return (

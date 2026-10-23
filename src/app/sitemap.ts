@@ -1,15 +1,12 @@
+import { marketingOrigin, marketingPages } from "@/lib/seo/marketing-metadata";
 import type { MetadataRoute } from "next";
 import { supabaseServer } from "@/lib/supabase/server";
 import { siteUrl, isProductionSite } from "@/lib/seo/restaurant-metadata";
 import { isRestaurantPublicationRestricted } from "@/lib/public-restaurant-access";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const marketingRoutes: MetadataRoute.Sitemap = [
-    "",
-    "/services",
-    "/work",
-    "/build-my-website",
-  ].map((path) => ({ url: `${siteUrl.replace(/\/$/, "")}${path}` }));
+  const marketingRoutes: MetadataRoute.Sitemap = Object.keys(marketingPages)
+    .map((path) => ({ url: marketingOrigin + (path === "/" ? "" : path) }));
 
   // Nonproduction must not advertise staging tenants, even if a fixture is indexable.
   if (!isProductionSite()) return marketingRoutes;
@@ -25,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return marketingRoutes;
   }
 
-  return marketingRoutes.concat((restaurants || []).filter((restaurant) => !isRestaurantPublicationRestricted(restaurant.slug)).map((restaurant) => ({
+  return marketingRoutes.concat((restaurants || []).filter((restaurant) => restaurant.slug.toLowerCase() !== "super-tacos" && !isRestaurantPublicationRestricted(restaurant.slug)).map((restaurant) => ({
     url: `${siteUrl.replace(/\/$/, "")}/r/${restaurant.slug}`,
   })));
 }

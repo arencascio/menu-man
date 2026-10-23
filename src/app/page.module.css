@@ -177,7 +177,7 @@
   line-height: .89;
 }
 
-.hero h1 { max-width: 820px; }
+.hero h1 { max-width: 1000px; }
 
 .heroLead {
   max-width: 650px;
@@ -524,7 +524,7 @@
 
 @media (max-width: 1100px) {
   .nav { gap: 16px; }
-  .navReview { display: none; }
+  .nav { gap: 12px; font-size: .75rem; }
   .hero { grid-template-columns: 1fr; }
   .heroCopy { max-width: 880px; }
   .heroVisual { width: min(880px, 100%); margin: 0 auto; }
@@ -539,7 +539,7 @@
   .leadPage { gap: 50px; }
 }
 
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
   .page { --marketing-header-height: 72px; }
   .header { height: 72px; }
   .menuButton { display: inline-flex; min-height: 44px; align-items: center; gap: 9px; border: 0; padding: 8px; background: transparent; color: var(--ink); cursor: pointer; font-size: .75rem; font-weight: 800; text-transform: uppercase; }
@@ -576,7 +576,7 @@
 }
 
 @media (max-width: 600px) {
-  .brand small { display: none; }
+  .brand small { display: block; }
   .header .logoFrame { width: auto; height: 56px; }
   .hero h1,
   .subpageHero h1,
@@ -698,7 +698,7 @@
 .mobilePreviewScreen img { display: block; width: 100%; height: auto; }
 .mobilePreview figcaption { margin-top: 12px; color: var(--charcoal); font-size: .66rem; line-height: 1.5; text-align: center; }
 .galleryCta { display: grid; justify-items: center; text-align: center; gap: 20px; }
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
   .capabilityGrid { grid-template-columns: 1fr; }
   .capabilityCard summary { padding: 22px; }
   .processGrid li { min-height: 0; }
@@ -748,7 +748,7 @@
   .hero { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .heroCopy { max-width: 760px; }
 }
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
   .hero { padding: 18px 22px 26px; gap: 14px; }
   .hero h1 { font-size: clamp(2rem, 6vw, 3.4rem); max-width: 760px; }
   .heroLead { margin: 12px 0 14px; font-size: .94rem; line-height: 1.5; }
@@ -822,7 +822,7 @@
 .galleryCta[data-work-conversion] > p { width: min(100%, 700px); }
 .footerLogoMotion { display: block; width: 100%; height: 100%; }
 @media (max-width: 1100px) { .workHero { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
  .menuButton { width: 44px; min-width: 44px; padding: 0; }
  .menuButton > img { filter: invert(1); }
  .menuButton > span { font-size: .64rem; letter-spacing: .015em; }
@@ -857,7 +857,7 @@
  .footerContact a, .footerContact button { font-size: .7rem; }
 }
 
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
   .galleryCta[data-work-conversion] { align-items: center; }
 }
 @media (prefers-reduced-motion: reduce) { .nav, .menuBackdrop { transition: none; } }
@@ -870,7 +870,7 @@
 .faqList { margin-top: 20px; }
 .faqList summary { min-height: 52px; gap: 10px; padding-block: 9px; }
 .faqList details > p { padding-bottom: 16px; line-height: 1.6; }
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
   .reviewSection { padding-block: 36px; gap: 20px; }
   .faqSection { padding-block: 36px; }
 }
@@ -883,7 +883,7 @@
   .faqList details > p { padding: 0 22px 14px 42px; }
 }
 .galleryCta > h2 { max-width: 700px; margin-inline: auto; font-size: clamp(1.5rem, 3vw, 2.4rem); line-height: 1.2; }
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
  .nav { left: clamp(22px, 5vw, 78px); right: clamp(22px, 5vw, 78px); transform: translateY(-56px); clip-path: inset(0 0 calc(100% - 44px) calc(100% - 44px) round 6px); transition: transform 520ms cubic-bezier(.22,.7,.2,1), clip-path 520ms cubic-bezier(.22,.7,.2,1), opacity 450ms ease; }
  .navOpen { transform: translateY(0); clip-path: inset(0 round 9px); }
  .navClosing { transform: translateY(-56px); clip-path: inset(0 0 calc(100% - 44px) calc(100% - 44px) round 6px); }
@@ -906,7 +906,7 @@
 .providerStrip li[data-featured="true"] { border-color: var(--cream); background: var(--cream); color: var(--menu-man-forest); font-size: 1.6rem; }
 .providerStrip li[data-featured="true"] .providerLogo { width: min(100%, 176px); height: 46px; }
 .providerStrip:focus-visible { outline: 2px solid var(--paprika); outline-offset: 5px; }
-@media (max-width: 820px) {
+@media (max-width: 1000px) {
   .orderingSection { padding-block: 28px; gap: 20px; }
   .providerStrip { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; }
   .providerStrip li { flex: 0 0 130px; min-height: 80px; }
@@ -929,4 +929,20 @@
   .leadPage { padding: 20px 16px 30px; gap: 16px; }
   .leadForm { padding: 14px; }
   .leadIntro ul { grid-template-columns: 1fr; gap: 4px; margin-top: 10px; }
+}
+
+/* V1.4: approved secondary CTA and quiet current-page indicator. */
+.navReview { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 12px; border: 1px solid currentColor; font: inherit; white-space: nowrap; }
+.navReview::after { content: none; }
+.nav > a[aria-current="page"]:not(.navCta)::after { right: 0; }
+.navCta[aria-current="page"] { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (min-width: 1001px) and (max-width: 1100px) {
+  .header { padding-inline: 22px; gap: 16px; }
+  .nav { gap: 10px; }
+  .navCta { padding-inline: 10px; gap: 8px; font-size: .68rem; }
+  .navReview { padding-inline: 8px; }
+  .header .brand { gap: 7px; }
+}
+@media (max-width: 1000px) {
+  .nav .navReview { border: 1px solid currentColor; margin-top: 8px; padding: 10px 12px; justify-content: center; }
 }

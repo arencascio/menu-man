@@ -7,6 +7,7 @@ import "../src/lib/catering/catering.test";
 import "../src/lib/catering/server.test";
 import "../src/lib/catering/deletion.test";
 import "../src/lib/seo/site-origin.test";
+import "../src/lib/seo/marketing-metadata.test";
 import "../src/lib/checkout/contracts.test";
 import "../src/lib/checkout/source.test";
 import "../src/lib/checkout/replay.test";
