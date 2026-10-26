@@ -4,6 +4,7 @@
 .skip:not(:focus) { clip-path:inset(50%); width:1px; height:1px; padding:0; overflow:hidden; white-space:nowrap; }
 .header { display:flex; align-items:center; justify-content:space-between; gap:28px; padding:24px max(28px,calc((100vw - 1280px)/2)); color:#fff5df; background:repeating-linear-gradient(2deg,#fff7dd03 0 1px,transparent 1px 7px),linear-gradient(105deg,#593b2c,#805a3e 48%,#61412f); border-block:1px solid #b9956270; box-shadow:inset 0 5px 0 #36241935,inset 0 -6px 0 #36241950,inset 0 -7px 0 #b9956250; }
 .wordmark { display:block; width:320px; flex:0 1 320px; text-align:center; }
+.previewBrand { display:block; color:#fff5df; font:700 30px/1 Georgia,serif; letter-spacing:.03em; text-align:center; }
 .wordmark img { display:block; width:100%; height:auto; filter:drop-shadow(0 3px 2px #24190f40); }
 .wordmark > span { display:block; margin-top:10px; color:#f0dfc1; font:9px/1.5 Arial,sans-serif; letter-spacing:.23em; }
 .header nav { display:flex; align-items:center; gap:20px; font-size:13px; font-weight:bold; }
@@ -168,7 +169,7 @@
 .footer > span { border-top-color:#d5c7a350; }
 .footerSocial { display:flex; gap:18px; margin-top:10px; font-size:11px; }
 .footerSocial a { margin-top:0; }
-.site :is(h1,h2,h3) { font-family:var(--font-upper-crust-stoke),Georgia,serif; font-weight:300; }
+.site :is(h1,h2,h3) { font-family:Georgia,serif; font-weight:300; }
 .menuHeading .visuallyHidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @font-face { font-family:"Upper Crust Broadway"; src:url('/fonts/broadway/Broadway-Regular.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
 .menuDisclaimer { max-width:650px; margin:0 auto 4px; padding:10px 14px; background:#fffaf0; border:1px solid #c5b79e; border-left:3px solid #96764b; font-size:11px; line-height:1.55; }
@@ -202,6 +203,9 @@
 /* Homepage client piece: one row sizes both outer cards, with bounded image slots. */
 /* Upper Crust client piece: keep the approved brick scale independent of page height. */
 .homeMain,.siteMasonry { background:#d5c6ab url('/img/upper-crust/brickwall2.webp') center top / max(100vw,1680px) auto repeat-y; }
+.site[data-protected-preview="true"] .homeMain,.site[data-protected-preview="true"] .siteMasonry,.site[data-protected-preview="true"] .brickWall { background-image:none; background-color:#d5c6ab; }
+.previewMediaPlaceholder { width:100%; height:100%; min-height:220px; background:linear-gradient(145deg,#e4d6bb,#c7ae83 52%,#dfcfad); }
+.aboutGridPreview,.cateringPanelPreview { grid-template-columns:minmax(0,1fr); }
 .storefrontHero {
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));

@@ -2,11 +2,27 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isRestaurantPublicationRestricted } from "./lib/public-restaurant-access";
 import { isManagementOnlyPath, isProductionManagementDisabled } from "./lib/production-management-gate";
-import { isUpperCrustConceptPage, upperCrustLocalAllowed } from "./lib/upper-crust/access";
+import {
+  isUpperCrustConceptPage, isUpperCrustUnapprovedMediaPath, upperCrustLocalAllowed,
+  upperCrustPreviewAllowed,
+} from "./lib/upper-crust/access";
 import { isUpperCrustReferencePath } from "./lib/upper-crust/reference-media";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const unapprovedMediaPath = isUpperCrustUnapprovedMediaPath(pathname)
+    || (pathname === "/_next/image" && (() => {
+      const source = request.nextUrl.searchParams.get("url");
+      if (!source) return false;
+      try { return isUpperCrustUnapprovedMediaPath(new URL(source, request.nextUrl.origin).pathname); }
+      catch { return false; }
+    })());
+  if (unapprovedMediaPath && (process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV))) {
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive" },
+    });
+  }
   const operations = /^\/ops(?:\/|$)/.test(pathname);
   if (operations && process.env.MENU_MAN_OPS_ENABLED !== "true") {
     return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } });
@@ -23,10 +39,16 @@ export async function proxy(request: NextRequest) {
     try { slug = decodeURIComponent(slug); } catch { /* Invalid slugs reveal no restaurant. */ }
     if (slug === "upper-crust") {
       const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive", "Referrer-Policy": "no-referrer" };
-      // No concept API access, even on the explicitly enabled loopback server.
-      const conceptPage = isUpperCrustConceptPage(pathname)
-        || (["GET", "HEAD"].includes(request.method) && isUpperCrustReferencePath(pathname));
-      if (!conceptPage || !upperCrustLocalAllowed(process.env, request.headers.get("host") || "")) {
+      const host = request.headers.get("host") || "";
+      const allowedPage = isUpperCrustConceptPage(pathname)
+        && ["GET", "HEAD"].includes(request.method)
+        && (upperCrustLocalAllowed(process.env, host) || upperCrustPreviewAllowed(process.env, host));
+      // Reference photos remain local-only until publication rights are recorded.
+      const allowedLocalMedia = ["GET", "HEAD"].includes(request.method)
+        && isUpperCrustReferencePath(pathname)
+        && upperCrustLocalAllowed(process.env, host);
+      // No concept API access, including order and availability endpoints.
+      if (!allowedPage && !allowedLocalMedia) {
         return new NextResponse("Not found", { status: 404, headers });
       }
       const response = NextResponse.next({ request });
@@ -66,5 +88,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/manage/:path*", "/auth/:path*", "/api/manage/:path*", "/r/:path*", "/api/restaurants/:path*", "/ops/:path*"],
+  matcher: ["/manage/:path*", "/auth/:path*", "/api/manage/:path*", "/r/:path*", "/api/restaurants/:path*", "/ops/:path*", "/img/:path*", "/_next/image"],
 };

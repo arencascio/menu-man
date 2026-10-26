@@ -5,9 +5,13 @@ Reviewed 2026-10-26 against RC `7647988`, using the
 [source packaging report](./upper-crust-v1-source-package.md). No branch inventory
 or commerce/dependency investigation was repeated.
 
-**Gate remains open.** The tracing defect is corrected, but publication permission
-and protected-hosted access decisions remain outstanding. No media bytes were
-copied into the RC, and no local-only restriction was weakened.
+**Media publication gate remains open.** The tracing defect is corrected, but
+publication rights for the required photo, logo, storefront and brand assets are
+still unconfirmed. No media bytes were copied into the RC, and no local-only
+media restriction was weakened. A separate protected Preview implementation now
+allows only the approved Upper Crust pages on its branch-scoped Preview while
+continuing to deny all reference-media and unapproved-media requests; see
+[Protected Preview V1](./upper-crust-protected-preview-v1.md).
 
 ## Exact manifest and reconciliation
 
@@ -67,10 +71,10 @@ new storage infrastructure:
    and read them using a deployment-relative `process.cwd()` path. Verify the
    generated trace contains exactly those approved media bytes and no local-review
    directory. Keep the existing environment-selected root for local review only.
-4. Apply reviewed protected-preview authorization before allowing hosted requests,
-   covering pages, media routes, public assets and optimized-image endpoints. The
-   current layout/proxy/route still reject Vercel and non-loopback requests. This
-   task does not implement that access-policy change or authorize deployment.
+4. Keep server-side protected-preview authorization on the five approved pages.
+   Reference-media routes remain local-only, and unapproved public assets and
+   optimized-image sources remain denied on Vercel. The protected page gate does
+   not authorize publication or deployment of any photo or third-party artwork.
 
 Vercel documents [bundling and reading files in functions](https://vercel.com/kb/guide/how-can-i-use-files-in-serverless-functions).
 The installed Next.js guide documents route-scoped `outputFileTracingIncludes`.
@@ -79,7 +83,8 @@ new dependency or external image host. A protected object store is an alternativ
 only if future owner-managed uploads justify its extra service/access work.
 
 For the 23 essential public-file references, the proposed destinations preserve
-current URLs; publication and protection must cover those static assets too.
+current URLs; any future publication must verify rights and protection for those
+static assets too.
 Google reviewer avatars, Maps and Yelp widgets remain separate external runtime
 dependencies. Their service/display permissions and privacy behavior still need
 review; this task neither mirrors nor licenses their remote content.
@@ -119,7 +124,7 @@ not make images available on Vercel.
 
 Obtain publication authorization covering the exact selected 30 essential assets
 (or an explicitly approved scope reduction), settle brand-mark reproduction rights,
-and approve protected hosted access plus the scoped seven-file bundle. Keep
+and approve the scoped seven-file media bundle. Keep
 Broadway excluded unless a redistribution license is supplied; it is unnecessary
 to the current rendered design. The optional pause-image path can remain excluded
 or receive a separately reviewed cleanup. Do not treat this report as authorization
