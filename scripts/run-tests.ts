@@ -3,6 +3,8 @@ import "../src/lib/demo/demo.test";
 import "../src/lib/demo/menu-imagery.test";
 import "../src/lib/demo/catalog.test";
 import "../src/lib/demo/server.integration.test";
+import "../src/lib/cart/conditional-modifiers.test";
+import "./conditional-modifiers-contract.test";
 import "../src/lib/catering/catering.test";
 import "../src/lib/catering/server.test";
 import "../src/lib/catering/deletion.test";

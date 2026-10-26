@@ -1,9 +1,11 @@
 import { formatPrice, shouldShowMaxSelectionGuidance } from "@/lib/cart/cart";
+import { Fragment } from "react";
 import type { MenuModifierGroup } from "@/lib/cart/types";
 import styles from "./menu-browser.module.css";
 
 type ModifierGroupFieldsetProps = {
   group: MenuModifierGroup;
+  dependentGroups?: readonly MenuModifierGroup[];
   currency: string;
   selectedOptionIds: ReadonlySet<string>;
   onChange: (selectedOptionIds: Set<string>) => void;
@@ -11,6 +13,7 @@ type ModifierGroupFieldsetProps = {
 
 export default function ModifierGroupFieldset({
   group,
+  dependentGroups = [],
   currency,
   selectedOptionIds,
   onChange,
@@ -58,7 +61,8 @@ export default function ModifierGroupFieldset({
         const selected = selectedOptionIds.has(option.id);
         const multiple = group.maxSelections > 1;
         return (
-          <label className={styles.modifierOption} key={option.id}>
+          <Fragment key={option.id}>
+            <label className={styles.modifierOption}>
             <input
               type={multiple ? "checkbox" : "radio"}
               name={`modifier-${group.id}`}
@@ -71,7 +75,13 @@ export default function ModifierGroupFieldset({
             />
             <span>{option.name}</span>
             <strong>{option.priceAdjustmentCents > 0 ? `+${formatPrice(option.priceAdjustmentCents, currency)}` : "Included"}</strong>
-          </label>
+            </label>
+            {selected && dependentGroups.filter((child) => child.visibleWhen?.optionId === option.id).map((child) => (
+              <div className={styles.dependentModifierGroup} key={child.id}>
+                <ModifierGroupFieldset group={child} currency={currency} selectedOptionIds={selectedOptionIds} onChange={onChange} />
+              </div>
+            ))}
+          </Fragment>
         );
       })}
     </fieldset>

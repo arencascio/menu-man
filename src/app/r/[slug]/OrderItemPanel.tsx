@@ -9,6 +9,7 @@ import {
   MAX_SPECIAL_INSTRUCTIONS_LENGTH,
 } from "@/lib/cart/cart";
 import type { CartLine } from "@/lib/cart/types";
+import { transitionModifierOptionIds } from "@/lib/cart/conditional-modifiers";
 import type { MenuItem } from "./MenuBrowser";
 import { createMenuCartLine, type MenuItemDraft } from "./menu-card-ordering";
 import ModifierGroupFieldset from "./ModifierGroupFieldset";
@@ -118,13 +119,14 @@ export default function OrderItemPanel({
         {item.description && <p className={styles.expandedDescription}>{item.description}</p>}
         {customizable ? (
           <fieldset disabled={saving} className={styles.detailOrderFields}>
-            {item.modifierGroups.map((group) => (
+            {item.modifierGroups.filter((group) => !group.visibleWhen).map((group) => (
               <ModifierGroupFieldset
                 key={group.id}
                 group={group}
+                dependentGroups={item.modifierGroups.filter((child) => child.visibleWhen?.groupId === group.id)}
                 currency={currency}
                 selectedOptionIds={draft.selectedOptionIds}
-                onChange={(selectedOptionIds) => onDraftChange({ ...draft, selectedOptionIds })}
+                onChange={(selectedOptionIds) => onDraftChange({ ...draft, selectedOptionIds: transitionModifierOptionIds(item.modifierGroups, draft.selectedOptionIds, selectedOptionIds) })}
               />
             ))}
             <div className={styles.orderFields}>

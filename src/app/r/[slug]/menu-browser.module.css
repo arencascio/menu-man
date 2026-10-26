@@ -498,3 +498,9 @@
 @media (min-width: 761px) { .cartSheet[data-closing="true"] { animation: detail-reveal-out 180ms ease-in forwards; } .cartHeader .closeButton { min-height: 44px; padding: 10px 14px; } }
 
 @media (prefers-reduced-motion: reduce) { .cartSheet, .cartSheet[data-closing="true"] { animation: none; } }
+.dependentModifierGroup {
+  margin-inline-start: 1rem;
+  padding-inline-start: 0.5rem;
+  border-inline-start: 2px solid currentColor;
+  min-width: 0;
+}

@@ -8,6 +8,8 @@ export type MenuModifierOption = {
 
 export type MenuModifierGroup = {
   id: string;
+  /** One level only. Missing/null keeps existing unconditional behavior. */
+  visibleWhen?: { groupId: string; optionId: string } | null;
   name: string;
   description: string | null;
   minSelections: number;
@@ -17,6 +19,8 @@ export type MenuModifierGroup = {
 };
 
 export type CartModifierSelection = {
+  /** Display/storage hint only; the server reloads the canonical relationship. */
+  visibleWhen?: { groupId: string; optionId: string } | null;
   modifierGroupId: string;
   modifierGroupName: string;
   modifierOptionId: string;

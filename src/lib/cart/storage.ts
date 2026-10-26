@@ -41,7 +41,10 @@ function isCartLine(value: unknown): value is CartLine {
       && isNonEmptyString(selection.modifierGroupName)
       && isNonEmptyString(selection.modifierOptionId)
       && isNonEmptyString(selection.modifierOptionName)
-      && isNonNegativeInteger(selection.priceAdjustmentCents),
+      && isNonNegativeInteger(selection.priceAdjustmentCents)
+      && (!selection.visibleWhen || (
+        isNonEmptyString(selection.visibleWhen.groupId) && isNonEmptyString(selection.visibleWhen.optionId)
+      )),
     ));
 }
 

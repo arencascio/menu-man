@@ -74,7 +74,7 @@ export async function getRestaurantMenuSections(restaurantId: string, menuId: st
         .select("id, modifier_group_id, name, default_price_adjustment_cents, sort_order, is_default, is_active")
         .eq("restaurant_id", restaurantId).order("id", { ascending: true }).range(from, to)),
       loadPaginatedModifierQuery((from, to) => supabaseServer.from("menu_item_modifier_groups")
-        .select("menu_item_id, modifier_group_id, min_selections, max_selections, sort_order, is_active")
+        .select("menu_item_id, modifier_group_id, min_selections, max_selections, sort_order, is_active, parent_modifier_group_id, parent_modifier_option_id")
         .eq("restaurant_id", restaurantId)
         .order("menu_item_id", { ascending: true }).order("modifier_group_id", { ascending: true })
         .range(from, to)),

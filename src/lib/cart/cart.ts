@@ -5,6 +5,7 @@ import type {
   CartState,
   MenuModifierGroup,
 } from "./types";
+import { activeCartModifiers, activeModifierOptionIds, assertModifierConditions, isModifierGroupActive } from "./conditional-modifiers";
 
 export const MAX_CART_QUANTITY = 99;
 export const MAX_SPECIAL_INSTRUCTIONS_LENGTH = 500;
@@ -41,7 +42,7 @@ export function clampQuantity(quantity: number) {
 }
 
 export function calculateUnitPriceCents(line: Pick<CartLine, "basePriceCents" | "selectedModifiers">) {
-  return line.basePriceCents + line.selectedModifiers.reduce(
+  return line.basePriceCents + activeCartModifiers(line.selectedModifiers).reduce(
     (total, modifier) => total + modifier.priceAdjustmentCents,
     0,
   );
@@ -60,9 +61,14 @@ export function getModifierValidationErrors(
   selectedOptionIds: ReadonlySet<string>,
 ) {
   const errors = new Map<string, string>();
+  assertModifierConditions(groups);
 
   for (const group of groups) {
     const selectedCount = group.options.filter((option) => selectedOptionIds.has(option.id)).length;
+    if (!isModifierGroupActive(group, selectedOptionIds)) {
+      if (selectedCount > 0) errors.set(group.id, "This selection requires its parent option.");
+      continue;
+    }
     if (group.minSelections === group.maxSelections && selectedCount !== group.minSelections) {
       errors.set(group.id, `Select exactly ${group.minSelections}.`);
     } else if (selectedCount < group.minSelections) {
@@ -80,8 +86,11 @@ export function getModifierValidationErrors(
 
 export function getDefaultModifierOptionIds(groups: readonly MenuModifierGroup[]) {
   const selectedOptionIds = new Set<string>();
+  assertModifierConditions(groups);
 
-  for (const group of groups) {
+  // Roots first, even when a child's sort order precedes its parent.
+  for (const group of [...groups.filter((group) => !group.visibleWhen), ...groups.filter((group) => group.visibleWhen)]) {
+    if (!isModifierGroupActive(group, selectedOptionIds)) continue;
     const defaults = group.options.filter((option) => option.isDefault);
     const defaultsAreValid = defaults.length >= group.minSelections
       && defaults.length <= group.maxSelections;
@@ -102,6 +111,7 @@ export function createModifierSelections(
   groups: readonly MenuModifierGroup[],
   selectedOptionIds: ReadonlySet<string>,
 ): CartModifierSelection[] {
+  selectedOptionIds = activeModifierOptionIds(groups, selectedOptionIds);
   return groups.flatMap((group) =>
     group.options
       .filter((option) => selectedOptionIds.has(option.id))
@@ -110,6 +120,7 @@ export function createModifierSelections(
         modifierGroupName: group.name,
         modifierOptionId: option.id,
         modifierOptionName: option.name,
+        ...(group.visibleWhen ? { visibleWhen: group.visibleWhen } : {}),
         priceAdjustmentCents: option.priceAdjustmentCents,
       })),
   );
@@ -127,6 +138,7 @@ export function getCartLineSignature(line: CartLine) {
     selection.modifierGroupId,
     selection.modifierOptionId,
     selection.priceAdjustmentCents,
+    ...(selection.visibleWhen ? [selection.visibleWhen.groupId, selection.visibleWhen.optionId] : []),
   ]).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
   return JSON.stringify([
     line.menuItemId,
@@ -162,29 +174,31 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
     return {
       restaurantId: action.cart.restaurantId,
       currency: action.cart.currency,
-      lines: action.cart.lines,
+      lines: action.cart.lines.map((line) => ({ ...line, selectedModifiers: activeCartModifiers(line.selectedModifiers) })),
       hydrated: true,
     };
   }
 
   if (action.type === "add") {
-    const signature = getCartLineSignature(action.line);
+    const cleanLine = { ...action.line, selectedModifiers: activeCartModifiers(action.line.selectedModifiers) };
+    const signature = getCartLineSignature(cleanLine);
     const matching = state.lines.findIndex((line) => getCartLineSignature(line) === signature && line.quantity < MAX_CART_QUANTITY);
     const equivalentExists = state.lines.some((line) => getCartLineSignature(line) === signature);
     const lines = matching >= 0
       ? state.lines.map((line, index) => index === matching
-        ? { ...line, quantity: clampQuantity(line.quantity + clampQuantity(action.line.quantity)) }
+        ? { ...line, quantity: clampQuantity(line.quantity + clampQuantity(cleanLine.quantity)) }
         : line)
-      : equivalentExists ? state.lines : [...state.lines, { ...action.line, quantity: clampQuantity(action.line.quantity) }];
+      : equivalentExists ? state.lines : [...state.lines, { ...cleanLine, quantity: clampQuantity(cleanLine.quantity) }];
     return { ...state, lines: consolidateCartLines(lines) };
   }
 
   if (action.type === "replace") {
-    if (!state.lines.some((line) => line.lineId === action.line.lineId)) return state;
+    const cleanLine = { ...action.line, selectedModifiers: activeCartModifiers(action.line.selectedModifiers) };
+    if (!state.lines.some((line) => line.lineId === cleanLine.lineId)) return state;
     return {
       ...state,
-      lines: consolidateCartLines(state.lines.map((line) => (line.lineId === action.line.lineId
-        ? { ...action.line, quantity: clampQuantity(action.line.quantity) }
+      lines: consolidateCartLines(state.lines.map((line) => (line.lineId === cleanLine.lineId
+        ? { ...cleanLine, quantity: clampQuantity(cleanLine.quantity) }
         : line))),
     };
   }

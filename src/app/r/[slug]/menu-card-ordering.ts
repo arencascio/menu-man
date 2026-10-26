@@ -1,5 +1,6 @@
 import { createModifierSelections, getCartLineSignature, getDefaultModifierOptionIds, getModifierValidationErrors } from "@/lib/cart/cart";
 import type { CartLine } from "@/lib/cart/types";
+import { activeModifierOptionIds } from "@/lib/cart/conditional-modifiers";
 import type { MenuItem, MenuSection } from "./MenuBrowser";
 import { canCustomizeMenuItem } from "@/lib/restaurant-showcases";
 
@@ -22,7 +23,7 @@ export type MenuItemDraft = {
 export function createMenuItemDraft(item: MenuItem, line?: CartLine | null): MenuItemDraft {
   return {
     selectedOptionIds: line
-      ? new Set(line.selectedModifiers.map((modifier) => modifier.modifierOptionId))
+      ? activeModifierOptionIds(item.modifierGroups, new Set(line.selectedModifiers.map((modifier) => modifier.modifierOptionId)))
       : getDefaultModifierOptionIds(item.modifierGroups),
     quantity: line?.quantity ?? 1,
     specialInstructions: line?.specialInstructions ?? "",
@@ -30,6 +31,7 @@ export function createMenuItemDraft(item: MenuItem, line?: CartLine | null): Men
 }
 
 export function getCardAddMode(item: MenuItem, cartPreview = false): "direct" | "quick" | "full" {
+  if (item.modifierGroups.some((group) => group.visibleWhen)) return "full";
   if (canAddMenuItemDirectly(item, cartPreview)) return "direct";
   const required = item.modifierGroups.filter((group) => group.minSelections > 0);
   const optionCount = required.reduce((count, group) => count + group.options.length, 0);

@@ -1,5 +1,6 @@
 import { isMenuModifierOptionAvailable, resolveModifierPriceCents } from "@/lib/cart/cart";
 import type { MenuModifierGroup } from "@/lib/cart/types";
+import { assertModifierConditions } from "@/lib/cart/conditional-modifiers";
 
 export type MenuModifierGroupRow = {
   id: string;
@@ -19,6 +20,8 @@ export type MenuModifierOptionRow = {
 };
 
 export type MenuModifierAttachmentRow = {
+  parent_modifier_group_id?: string | null;
+  parent_modifier_option_id?: string | null;
   menu_item_id: string;
   modifier_group_id: string;
   min_selections: number;
@@ -149,14 +152,26 @@ export function createMenuModifierGroupResolver(
     attachmentsByItemId.set(attachment.menu_item_id, itemAttachments);
   }
 
-  return (menuItemId) =>
-    (attachmentsByItemId.get(menuItemId) || [])
+  return (menuItemId) => {
+    const itemAttachments = attachmentsByItemId.get(menuItemId) || [];
+    for (const attachment of itemAttachments) {
+      if (!attachment.is_active || !attachment.parent_modifier_group_id) continue;
+      const parent = itemAttachments.find((candidate) => candidate.modifier_group_id === attachment.parent_modifier_group_id);
+      if (!parent || parent.parent_modifier_group_id || parent === attachment
+        || !(optionsByGroupId.get(parent.modifier_group_id) || []).some((option) => option.id === attachment.parent_modifier_option_id)) {
+        throw new MenuModifierLoadError([], "A conditional modifier relationship is invalid.");
+      }
+    }
+    const resolved = (attachmentsByItemId.get(menuItemId) || [])
       .flatMap((attachment) => {
         const group = groupsById.get(attachment.modifier_group_id);
         if (!group) {
           throw new MenuModifierLoadError([], "An active menu item modifier attachment references a missing group.");
         }
         if (!group.is_active || !attachment.is_active) return [];
+        if (Boolean(attachment.parent_modifier_group_id) !== Boolean(attachment.parent_modifier_option_id)) {
+          throw new MenuModifierLoadError([], "A conditional modifier relationship is incomplete.");
+        }
 
         const effectiveOptions = (optionsByGroupId.get(group.id) || [])
           .flatMap((option) => {
@@ -187,6 +202,8 @@ export function createMenuModifierGroupResolver(
 
         return [{
           id: group.id,
+          ...(attachment.parent_modifier_group_id && attachment.parent_modifier_option_id
+            ? { visibleWhen: { groupId: attachment.parent_modifier_group_id, optionId: attachment.parent_modifier_option_id } } : {}),
           name: group.name,
           description: group.description,
           minSelections: attachment.min_selections,
@@ -196,4 +213,14 @@ export function createMenuModifierGroupResolver(
         }];
       })
       .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
+    // Disabled parent paths hide their children, without disabling unrelated root choices.
+    const available = resolved.filter((group) => {
+      const condition = group.visibleWhen;
+      return !condition || resolved.some((parent) => parent.id === condition.groupId
+        && parent.options.some((option) => option.id === condition.optionId));
+    });
+    try { assertModifierConditions(available); }
+    catch { throw new MenuModifierLoadError([], "A conditional modifier has no available root option on this item."); }
+    return available;
+  };
 }
