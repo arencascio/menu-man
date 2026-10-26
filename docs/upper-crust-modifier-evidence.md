@@ -90,8 +90,7 @@ separately documented recommendation blocks and initial-default gaps.
 
 | Item | Delivery base | Configured item groups | Evidence / remaining gap |
 | --- | ---: | --- | --- |
-| Italian Sub for one | $14.95 | Specialty toppings; Single side; Single extras | E2. Carrot Sticks says Includes customization; nested inventory not opened for this item. |
-| Italian Sub for one | $14.95 | Specialty toppings; Single side; Single extras; conditional Ranch | E2/E8. Carrot Sticks reveals optional, unchecked Ranch, 0..1, $0. Other topping defaults remain unconfirmed. |
+| Italian Sub for one | $14.95 | Specialty toppings; Single side; Single extras; conditional Ranch | E2/E8. Carrot Sticks says Includes customization; nested inventory was not opened for this item. It reveals optional, unchecked Ranch, 0..1, $0. Other topping defaults remain unconfirmed. |
 | Hawaiian | $14.95 | Single side; Hawaiian Topping Choices 0..4: Lettuce, Mayo, Pineapple, Swiss Cheese ($0); Single extras; conditional Ranch | E2/E8. Carrot Sticks reveals optional, unchecked Ranch, 0..1, $0. Initial Hawaiian topping defaults remain unconfirmed. |
 | Grinder for one | $14.95 | Specialty toppings; Meat; Single side; Single extras; conditional Ranch | E2/E8. Carrot Sticks reveals optional, unchecked Ranch, 0..1, $0. |
 | French Dip | $14.95 | Single side; French Dip Other Toppings 0..1: Onions ($0); French Dip Cheese Choices 0..1: Cheddar, Swiss, Provolone ($0); conditional Ranch | E2/E8. Carrot Sticks reveals optional, unchecked Ranch, 0..1, $0. |
@@ -184,7 +183,7 @@ verified configuration. Recommendation-flow parity remains incomplete.
   the first side is Carrot Sticks. Changing that side hides Ranch while the
   second Carrot Sticks selection remains. No overflow, browser errors, or
   non-GET requests. The previously noted Upper Crust logo 404 persists.
-- Implementation remains **uncommitted** per the task's explicit instruction.
+- Implementation is committed as `0089f53` on `feature/upper-crust-full-menu-v1`.
 
 ## Final fixture reconciliation
 
