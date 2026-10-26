@@ -108,7 +108,8 @@ test("effective new-order call chain retains replay, pickup lock/recheck, custom
 });
 
 test("migration follows its dependencies and cannot overwrite later helpers, triggers or checkout wrappers", () => {
-  assert.equal(migrations.at(-1)!.file, pendingMigration);
+  assert.ok(migrations.some(({ file }) => file === pendingMigration));
+  assert.equal(migrations.at(-1)!.file, "20261026175758_conditional_modifier_write_isolation.sql");
   const before = migrations.filter(({ file }) => file < pendingMigration).map(({ sql }) => sql).join("\n");
   assert.match(before, /create schema if not exists private/);
   assert.match(before, /unique \(restaurant_id, menu_item_id, modifier_group_id\)/);
