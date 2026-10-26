@@ -8,7 +8,8 @@ import { SUPER_TACOS_ID, SUPER_TACOS_SLUG } from "@/lib/demo/policy";
 import useRestaurantCart from "./useRestaurantCart";
 import styles from "./super-tacos-demo-checkout.module.css";
 
-const receiptStorageKey = `menu-man:demo-receipt:v1:${SUPER_TACOS_ID}`;
+type DemoCheckoutBrand = { id: string; slug: string; name: string; receiptPrefix: string; returnHref: string; returnLabel: string };
+const defaultBrand: DemoCheckoutBrand = { id: SUPER_TACOS_ID, slug: SUPER_TACOS_SLUG, name: "Super Tacos", receiptPrefix: "ST", returnHref: "/", returnLabel: "Back to Menu Man" };
 type DemoReceipt = { number: string; createdAt: string; lines: CartLine[]; subtotalCents: number };
 
 function subscribeReceipt(callback: () => void) {
@@ -20,7 +21,7 @@ function subscribeReceipt(callback: () => void) {
   };
 }
 
-function readReceiptSnapshot() {
+function readReceiptSnapshot(receiptStorageKey: string) {
   try { return window.localStorage.getItem(receiptStorageKey); }
   catch { return null; }
 }
@@ -35,9 +36,10 @@ function parseReceipt(snapshot: string | null): DemoReceipt | null {
   } catch { return null; }
 }
 
-export default function SuperTacosDemoCheckout() {
-  const cart = useRestaurantCart(SUPER_TACOS_ID, "USD");
-  const receiptSnapshot = useSyncExternalStore(subscribeReceipt, readReceiptSnapshot, () => null);
+export default function SuperTacosDemoCheckout({ brand = defaultBrand }: { brand?: DemoCheckoutBrand } = {}) {
+  const receiptStorageKey = `menu-man:demo-receipt:v1:${brand.id}`;
+  const cart = useRestaurantCart(brand.id, "USD");
+  const receiptSnapshot = useSyncExternalStore(subscribeReceipt, () => readReceiptSnapshot(receiptStorageKey), () => null);
   const receipt = parseReceipt(receiptSnapshot);
   const [step, setStep] = useState<"review" | "payment">("review");
 
@@ -50,7 +52,7 @@ export default function SuperTacosDemoCheckout() {
   function simulatePayment() {
     if (!cart.hydrated || cart.lines.length === 0) return;
     const order: DemoReceipt = {
-      number: `ST-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+      number: `${brand.receiptPrefix}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
       createdAt: new Date().toISOString(),
       lines: cart.lines,
       subtotalCents: cart.subtotalCents,
@@ -60,13 +62,13 @@ export default function SuperTacosDemoCheckout() {
     cart.clearAfterOrderCreated();
   }
 
-  if (!cart.hydrated) return <main className={styles.page} aria-busy="true"><Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link><p className={styles.loading}>Preparing your sample order…</p></main>;
+  if (!cart.hydrated) return <main className={styles.page} aria-busy="true"><Link className={styles.menuManReturn} href={brand.returnHref}>← {brand.returnLabel}</Link><p className={styles.loading}>Preparing your sample order…</p></main>;
 
   if (receipt) return <main className={styles.page}>
-    <Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link>
+    <Link className={styles.menuManReturn} href={brand.returnHref}>← {brand.returnLabel}</Link>
     <section className={styles.receipt} aria-labelledby="demo-receipt-title">
       <div className={styles.receiptMark} aria-hidden="true">✓</div>
-      <p className={styles.eyebrow}>Super Tacos · Order preview</p>
+      <p className={styles.eyebrow}>{brand.name} · Order preview</p>
       <h1 id="demo-receipt-title">That’s a delicious-looking order.</h1>
       <p className={styles.lede}>Your sample receipt is ready. This order exists only in this browser.</p>
       <div className={styles.receiptNotice}><strong>No payment was taken.</strong><span>No order was sent to a restaurant, and nothing will be prepared.</span></div>
@@ -74,22 +76,22 @@ export default function SuperTacosDemoCheckout() {
       <ul className={styles.receiptLines}>{receipt.lines.map((line) => <li key={line.lineId}><span><b>{line.quantity} × {line.itemName}</b>{line.selectedModifiers.length > 0 && <small>{line.selectedModifiers.map((item) => item.modifierOptionName).join(" · ")}</small>}</span><strong>{formatPrice(calculateLineTotalCents(line), "USD")}</strong></li>)}</ul>
       <div className={styles.total}><span>Estimated total</span><strong>{formatPrice(receipt.subtotalCents, "USD")}</strong></div>
       <p className={styles.estimate}>Illustrative estimate only · no tax or charge collected</p>
-      <Link className={styles.primaryButton} href={`/r/${SUPER_TACOS_SLUG}/menu`} onClick={startAnotherOrder}>Start another sample order</Link>
-      <Link className={styles.textLink} href={`/r/${SUPER_TACOS_SLUG}/menu`}>Back to the menu</Link>
+      <Link className={styles.primaryButton} href={`/r/${brand.slug}/menu`} onClick={startAnotherOrder}>Start another sample order</Link>
+      <Link className={styles.textLink} href={`/r/${brand.slug}/menu`}>Back to the menu</Link>
     </section>
   </main>;
 
   if (cart.lines.length === 0) return <main className={styles.page}>
-    <Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link>
-    <section className={styles.empty} aria-labelledby="empty-title"><p className={styles.eyebrow}>Super Tacos · Sample checkout</p><h1 id="empty-title">Your sample cart is empty.</h1><p>Choose a few favorites from the menu to see how a complete order could feel.</p><Link className={styles.primaryButton} href={`/r/${SUPER_TACOS_SLUG}/menu`}>Browse the menu</Link></section>
+    <Link className={styles.menuManReturn} href={brand.returnHref}>← {brand.returnLabel}</Link>
+    <section className={styles.empty} aria-labelledby="empty-title"><p className={styles.eyebrow}>{brand.name} · Sample checkout</p><h1 id="empty-title">Your sample cart is empty.</h1><p>Choose a few favorites from the menu to see how a complete order could feel.</p><Link className={styles.primaryButton} href={`/r/${brand.slug}/menu`}>Browse the menu</Link></section>
   </main>;
 
   return <main className={styles.page}>
-    <Link className={styles.menuManReturn} href="/">← Back to Menu Man</Link>
+    <Link className={styles.menuManReturn} href={brand.returnHref}>← {brand.returnLabel}</Link>
     <div className={styles.checkout}>
       <section className={styles.order} aria-labelledby="sample-order-title">
-        <Link className={styles.textLink} href={`/r/${SUPER_TACOS_SLUG}/menu`}>← Back to menu</Link>
-        <p className={styles.eyebrow}>Super Tacos · Sample checkout</p>
+        <Link className={styles.textLink} href={`/r/${brand.slug}/menu`}>← Back to menu</Link>
+        <p className={styles.eyebrow}>{brand.name} · Sample checkout</p>
         <h1 id="sample-order-title">{step === "review" ? "Your order, your way." : "A simple, simulated payment."}</h1>
         <p className={styles.lede}>{step === "review" ? "Review your picks, then see the final step of a sample checkout." : "This visual preview uses no card details and contacts no payment service."}</p>
         {step === "review" ? <div className={styles.lines}>{cart.lines.map((line) => <article className={styles.line} key={line.lineId}>

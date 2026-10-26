@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/client";
 import { menuSearchMetrics } from "@/lib/analytics/restaurant";
@@ -56,6 +56,8 @@ export type MenuSection = {
 
 type MenuBrowserProps = {
   cartPreview?: boolean;
+  displayStyle?: "upper-crust";
+  controlsNote?: ReactNode;
   restaurantId: string;
   restaurantSlug: string;
   currency: string | null;
@@ -72,6 +74,8 @@ type MenuBrowserProps = {
 
 export default function MenuBrowser({
   cartPreview = false,
+  displayStyle,
+  controlsNote,
   restaurantId,
   restaurantSlug,
   currency,
@@ -786,7 +790,7 @@ export default function MenuBrowser({
   useEffect(() => () => unlockSectionDialogScroll(), []);
 
   return (
-    <main className={styles.page} aria-label={ariaLabel} style={{
+    <main className={styles.page} data-restaurant-style={displayStyle} aria-label={ariaLabel} style={{
       "--menu-header-height": `${headerHeight}px`,
       "--menu-controls-height": `${controlsHeight}px`,
     } as CSSProperties}>
@@ -883,6 +887,7 @@ export default function MenuBrowser({
         <span className={styles.visuallyHidden} role="status">{addFeedback ? `Cart updated. ${cart.totalQuantity} ${cart.totalQuantity === 1 ? "item" : "items"} in cart.` : ""}</span>
         {showResultCount && <p className={styles.resultCount} aria-live="polite">{visibleItemCount === 0 ? "No results" : `${visibleItemCount} ${visibleItemCount === 1 ? "result" : "results"}`}</p>}
       </div>
+      {controlsNote}
 
       <dialog
         ref={sectionDialogRef}

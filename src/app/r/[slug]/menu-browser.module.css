@@ -34,6 +34,10 @@
   background: var(--card-bg);
   box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 7%, transparent);
 }
+.page[data-restaurant-style="upper-crust"] .controls { top: 0; margin-bottom: 8px; }
+.page[data-restaurant-style="upper-crust"] .controls button { font-family: "Upper Crust Boogaloo", Arial, sans-serif; font-weight: 400; }
+.page[data-restaurant-style="upper-crust"] .controls input { font-family: var(--font-upper-crust-stoke), Georgia, serif; font-weight: 300; }
+.page[data-restaurant-style="upper-crust"] .controls .cartButton { font-family: var(--font-upper-crust-stoke), Georgia, serif; font-weight: 300; }
 .categoryNav { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-column: 1 / -1; align-items: stretch; gap: 7px; min-width: 0; }
 .categoryStrip { position: relative; min-width: 0; align-self: center; }
 .categories { display: flex; flex-wrap: nowrap; gap: 7px; min-width: 0; }
@@ -93,9 +97,12 @@
 .sectionList .sectionListActive { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)); }
 
 .menu { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: var(--theme-content-width, 1280px); margin: 0 auto; align-items: stretch; scroll-margin-top: var(--menu-section-offset); }
+.page[data-restaurant-style="upper-crust"] .menu { row-gap: 10px; }
 .section { display: contents; }
 .sectionHeading { grid-column: 1 / -1; margin-top: 10px; padding: 12px 2px 11px; border-bottom: 1px solid var(--line); scroll-margin-top: var(--menu-section-offset); }
+.page[data-restaurant-style="upper-crust"] .sectionHeading { margin-top: 4px; padding-top: 6px; padding-bottom: 7px; }
 .sectionHeading h2 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: clamp(22px, 2vw, 28px); letter-spacing: -.025em; line-height: 1.12; }
+.page[data-restaurant-style="upper-crust"] .sectionHeading h2 { font-family: var(--font-upper-crust-stoke), Georgia, serif; font-weight: 300; letter-spacing: -.015em; }
 .sectionHeading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
 .sectionHeadingFeatured, .sectionHeadingFavorites { margin-top: 2px; padding: 13px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 6%, var(--card-bg)); }
 .sectionHeadingFavorites { border-left-color: color-mix(in srgb, var(--accent) 50%, var(--ink)); background: color-mix(in srgb, var(--ink) 3%, var(--card-bg)); }
@@ -125,8 +132,10 @@
 .image img { display: block; width: 100%; height: 100%; min-width: 0; object-fit: cover; object-position: var(--menu-card-image-position, center); }
 .placeholder { display: grid; width: 100%; height: 100%; place-items: center; color: color-mix(in srgb, var(--accent) 45%, var(--muted)); font-family: var(--theme-heading-font, inherit); font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 700; }
 .itemInfo { --card-text-line: 20px; --description-lines: 3; box-sizing: border-box; display: grid; flex: 1; align-content: start; gap: 4px; min-height: 134px; padding: 11px 13px 13px; }
-.itemName { font-size: 16px; line-height: var(--card-text-line); font-weight: 800; overflow-wrap: anywhere; }
+.itemName { font-size: var(--menu-item-title-size, 16px); line-height: var(--card-text-line); font-weight: var(--menu-item-title-weight, 800); overflow-wrap: anywhere; }
+.itemName, .cartLineIdentity h3 { font-family: var(--menu-item-title-font, inherit); }
 .price { color: var(--accent); font-size: 15px; font-weight: 800; }
+.page[data-restaurant-style="upper-crust"] .price { font-family: var(--font-upper-crust-stoke), Georgia, serif; font-size: 17px; font-weight: 300; }
 .itemDescription { display: -webkit-box; min-height: 0; max-height: calc(var(--description-lines) * var(--card-text-line)); overflow: hidden; color: var(--muted); font-size: 13px; line-height: var(--card-text-line); -webkit-box-orient: vertical; -webkit-line-clamp: max(1, var(--description-lines)); line-clamp: max(1, var(--description-lines)); }
 .cardAvailability { margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .cardFooter { box-sizing: border-box; display: flex; min-height: 38px; align-items: center; padding: 5px 62px 5px 13px; border-top: 1px solid var(--line); color: transparent; background: color-mix(in srgb, var(--ink) 1.5%, var(--card-bg)); font-size: 12px; font-weight: 800; }
@@ -159,7 +168,7 @@
 
 .expandedItem { display: grid; grid-template-columns: minmax(240px, .75fr) minmax(320px, 1.25fr); min-width: 0; min-height: 0; height: 100%; background: var(--card-bg); }
 .quickChoicePanel { display: grid; gap: 8px; box-sizing: border-box; padding: 0 14px 14px; }
-.quickChoicePanel h3 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: 18px; line-height: 1.15; }
+.quickChoicePanel h3 { margin: 0; font-family: var(--menu-item-title-font, var(--theme-heading-font, inherit)); font-size: 18px; line-height: 1.15; }
 .quickChoicePanel .expandedLabel { margin-bottom: 0; font-size: 10px; }
 .quickChoicePanel .itemPanelPrice { margin: -3px 0 0; font-size: 14px; }
 .quickChoicePanel .detailCartStatus { margin: -3px 0 0; }
@@ -178,10 +187,11 @@
 .expandedPlaceholder { color: var(--theme-surface, #fff); font-size: 5rem; }
 .orderForm { display: flex; min-height: 0; max-height: 100%; flex-direction: column; gap: 14px; padding: 22px 24px; overflow-y: auto; overscroll-behavior: contain; }
 .orderFormHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-.orderFormHeader h3 { margin: 0; font-family: var(--theme-heading-font, inherit); font-size: clamp(23px, 2.5vw, 30px); letter-spacing: -.025em; line-height: 1.08; }
+.orderFormHeader h3 { margin: 0; font-family: var(--menu-item-title-font, var(--theme-heading-font, inherit)); font-size: clamp(23px, 2.5vw, 30px); letter-spacing: -.025em; line-height: 1.08; }
 .expandedLabel { margin: 0 0 6px; color: var(--theme-accent, var(--accent)); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .expandedDescription { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .itemPanelPrice { margin: 7px 0 0; font-size: 16px; font-weight: 700; }
+.page[data-restaurant-style="upper-crust"] .itemPanelPrice { font-family: var(--font-upper-crust-stoke), Georgia, serif; font-weight: 300; }
 .closeButton { border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; color: var(--ink); background: var(--card-bg); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
 .closeButton:hover { border-color: var(--accent); color: var(--accent); }
 .closeButton:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -379,7 +389,7 @@
   .image { position: relative; width: 100%; flex: 0 0 auto; aspect-ratio: 8 / 5; }
   .image img { position: absolute; inset: 0; }
   .itemInfo { --card-text-line: 17px; --description-lines: 2; min-height: 90px; gap: 3px; padding: 8px; }
-  .itemName { font-size: 13px; }
+  .itemName { font-size: var(--menu-item-title-size, 13px); }
   .price { font-size: 13px; }
   .itemDescription { font-size: 12px; }
   .cardAvailability { font-size: 10px; }
@@ -441,6 +451,10 @@
   .confirmationStatus { grid-template-columns: 1fr; }
   .checkoutFieldset label:has(select) { grid-template-columns: auto 1fr; }
   .checkoutFieldset label:has(select) select { grid-column: 1 / -1; }
+}
+
+@media (max-width: 1100px) {
+  .page[data-restaurant-style="upper-crust"] .controls { top: var(--menu-header-height, 84px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

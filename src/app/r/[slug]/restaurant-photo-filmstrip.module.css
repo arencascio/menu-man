@@ -11,4 +11,42 @@
 .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .controls span { margin-right: auto; font-size: 13px; }
 .controls button { min-width: 44px; min-height: 44px; border: 1px solid currentColor; border-radius: 99px; padding: 4px 12px; background: transparent; color: inherit; font: inherit; cursor: pointer; font-size: 13px; }
+.richPhoto { background: var(--theme-surface); color: var(--theme-text); border: 1px solid color-mix(in srgb,var(--theme-text) 20%,transparent); align-self: stretch; }
+.richPhoto img { height: 250px; aspect-ratio: auto; }
+.photoDetails { padding: 18px; font-size: 12px; line-height: 1.6; }
+.photoDetails blockquote { margin: 12px 0; font-size: 15px; }
+.photoDetails a { display: inline-block; margin-top: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.itemName { display: block; font: 24px/1.15 var(--menu-item-title-font,inherit); }
 @media (max-width: 600px) { .photo { width: 62vw; } .controls span { flex: 1 0 100%; } }
+.filmstrip[data-controls-placement="sides"] { margin-top: 0; }
+.filmstrip[data-controls-placement="sides"] > .controls { display: none; }
+.carouselFrame { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; column-gap: 12px; }
+.sideControls { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; }
+.rightControls { grid-column: 3; grid-row: 1; }
+.sideArrow,.iconControl { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid color-mix(in srgb,var(--theme-text,var(--theme-primary)) 30%,transparent); border-radius: 50%; background: var(--theme-background); color: var(--theme-primary); font: 20px/1 Arial,sans-serif; cursor: pointer; }
+.sideArrow:hover,.iconControl:hover { color: var(--theme-surface); background: var(--theme-primary); }
+.iconControl:disabled { cursor: default; opacity: .55; }
+.iconControl span { width: 18px; height: 18px; background: currentColor; mask: url("/img/icons/pause.svg") center / contain no-repeat; -webkit-mask: url("/img/icons/pause.svg") center / contain no-repeat; }
+.iconControl.playControl span { mask-image: url("/img/icons/play.svg"); -webkit-mask-image: url("/img/icons/play.svg"); }
+.sideArrow:focus-visible,.iconControl:focus-visible,.viewer button:focus-visible,.viewerTrigger:focus-visible { outline: 3px solid var(--theme-accent); outline-offset: 3px; }
+.viewerTrigger { cursor: zoom-in; pointer-events: auto !important; }
+.viewer { width: min(92vw,900px); max-width: min(92vw,900px); max-height: 92svh; margin: auto; padding: clamp(12px,2vw,24px); overflow: auto; border: 1px solid #b49a70; border-radius: 8px; color: #302c25; background: #fff9ec; }
+.viewer::backdrop { background: rgb(18 16 13 / .82); }
+.viewerToolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.viewerToolbar h2 { margin: 0; font: 20px/1.2 Georgia,serif; }
+.viewerToolbar button,.viewerNavigation button { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 1px solid #a88e65; border-radius: 50%; color: #28574c; background: #fffdf8; cursor: pointer; font: 22px/1 Arial,sans-serif; }
+.viewer figure { margin: 0; text-align: center; }
+.viewer figure img { display: block; width: auto; max-width: 100%; height: auto; max-height: 72svh; margin: auto; object-fit: contain; }
+.viewer figcaption { margin-top: .75rem; color: #514732; font-size: .9rem; line-height: 1.5; }
+.viewerNavigation { display: flex; justify-content: center; gap: .75rem; margin-top: .75rem; }
+.filmstrip[data-controls-placement="sides"] .photo { width: clamp(220px,24vw,340px); }
+@media (max-width: 600px) {
+  .carouselFrame { grid-template-columns: 40px minmax(0,1fr) 40px; column-gap: 6px; }
+  .sideArrow,.iconControl { width: 40px; height: 40px; flex-basis: 40px; }
+  .filmstrip[data-controls-placement="sides"] .photo { width: 62vw; }
+  .viewer { width: calc(100vw - 24px); max-width: calc(100vw - 24px); max-height: 94svh; padding: 12px; }
+  .viewer figure img { max-height: 70svh; }
+}
+.sideArrow svg,.viewerToolbar button svg,.viewerNavigation button svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.iconControl:not(.playControl) span { background:linear-gradient(to right,currentColor 0 36%,transparent 36% 64%,currentColor 64% 100%); mask:none; -webkit-mask:none; }
+@media (min-width:601px) { .sideArrow svg { width:24px; height:24px; } }
