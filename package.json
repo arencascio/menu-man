@@ -44,5 +44,8 @@
     "pg": "8.23.1",
     "tsx": "^4.23.13",
     "typescript": "^5"
+  },
+  "overrides": {
+    "follow-redirects": "1.16.1"
   }
 }
