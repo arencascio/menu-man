@@ -13,7 +13,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ asse
   const mediaRoot = process.env.MENU_MAN_UPPER_CRUST_MEDIA_ROOT || join(process.cwd(), ".local-reference-media", "upper-crust");
   if (!isUpperCrustReferenceAsset(asset) || !mediaRoot || !isAbsolute(mediaRoot)) return new Response("Not found", { status: 404, headers });
   try {
-    const bytes = await readFile(join(mediaRoot, asset));
+    // Runtime-only local review files must never be pulled into deployment traces.
+    const bytes = await readFile(/* turbopackIgnore: true */ join(/* turbopackIgnore: true */ mediaRoot, asset));
     return new Response(new Uint8Array(bytes), { headers: { ...headers, "Content-Type": "image/jpeg" } });
   } catch { return new Response("Not found", { status: 404, headers }); }
 }

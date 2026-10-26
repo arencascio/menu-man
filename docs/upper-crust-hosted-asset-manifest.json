@@ -1,0 +1,1515 @@
+{
+  "reviewed": "2026-10-26",
+  "baseline": "7647988",
+  "roots": {
+    "main": "C:/menu-man",
+    "source": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo",
+    "rc": "C:/menu-man/.worktrees/staging-release-candidate"
+  },
+  "scope": "25 absent public references, seven local-reference routes, and licensed Boogaloo control. Existing unrelated RC assets are unchanged. Destination proposals do not authorize copying or hosting.",
+  "totals": {
+    "publicMissing": 25,
+    "localOnly": 7,
+    "alreadyLicensedControl": 1,
+    "essentialMissing": 30,
+    "selectedLocalPhotoBytes": 1136166
+  },
+  "assets": [
+    {
+      "id": "img/icons/Google_Symbol_0.svg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/icons/Google_Symbol_0.svg",
+      "proposedDestination": "public/img/icons/Google_Symbol_0.svg",
+      "usage": "About page social/review platform mark",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Existing supplied platform artwork; SVG metadata contains no publication license",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/icons/Google_Symbol_0.svg",
+            "exists": true,
+            "bytes": 9806,
+            "sha256": "4b16f5c6b68908d895f187ff4d13a6877b779b75f77482fee1b937adac334062"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/Google_Symbol_0.svg",
+            "exists": true,
+            "bytes": 9806,
+            "sha256": "4b16f5c6b68908d895f187ff4d13a6877b779b75f77482fee1b937adac334062"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/icons/Google_Symbol_0.svg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/Google_Symbol_0.svg",
+      "preferredSha256": "4b16f5c6b68908d895f187ff4d13a6877b779b75f77482fee1b937adac334062",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/icons/yelp icon.svg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/icons/yelp icon.svg",
+      "proposedDestination": "public/img/icons/yelp icon.svg",
+      "usage": "About page social/review platform mark",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Existing supplied platform artwork; SVG metadata contains no publication license",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/icons/yelp icon.svg",
+            "exists": true,
+            "bytes": 3830,
+            "sha256": "21bd0e0ac01e15b7acedd01ba4ec948b9a8a6373e3b12495a72fcc94e039a052"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/yelp icon.svg",
+            "exists": true,
+            "bytes": 3830,
+            "sha256": "21bd0e0ac01e15b7acedd01ba4ec948b9a8a6373e3b12495a72fcc94e039a052"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/icons/yelp icon.svg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/yelp icon.svg",
+      "preferredSha256": "21bd0e0ac01e15b7acedd01ba4ec948b9a8a6373e3b12495a72fcc94e039a052",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/icons/tripadvisor wordmark.svg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/icons/tripadvisor wordmark.svg",
+      "proposedDestination": "public/img/icons/tripadvisor wordmark.svg",
+      "usage": "About page social/review platform mark",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Existing supplied platform artwork; SVG metadata contains no publication license",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/icons/tripadvisor wordmark.svg",
+            "exists": true,
+            "bytes": 4944,
+            "sha256": "2b7f272219b30b491c516d1a79459449e5f20ff9ca26600c6625af7a9e10bd77"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/tripadvisor wordmark.svg",
+            "exists": true,
+            "bytes": 4944,
+            "sha256": "2b7f272219b30b491c516d1a79459449e5f20ff9ca26600c6625af7a9e10bd77"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/icons/tripadvisor wordmark.svg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/tripadvisor wordmark.svg",
+      "preferredSha256": "2b7f272219b30b491c516d1a79459449e5f20ff9ca26600c6625af7a9e10bd77",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/upper-crust/upper-crust.png",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/upper-crust/upper-crust.png",
+      "proposedDestination": "public/img/upper-crust/upper-crust.png",
+      "usage": "Header and footer sign/logo",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Supplied PNG branding; identified in historical page pass, without publication-rights record",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/upper-crust/upper-crust.png",
+            "exists": false
+          },
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/upper-crust.png",
+            "exists": true,
+            "bytes": 29982,
+            "sha256": "6efc378f2eb84c39ee9d7b708cf973fab2e1560ffb1cdd9fb05e2a029767d5fc"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/upper-crust/upper-crust.png",
+            "exists": true,
+            "bytes": 29982,
+            "sha256": "6efc378f2eb84c39ee9d7b708cf973fab2e1560ffb1cdd9fb05e2a029767d5fc"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/upper-crust/upper-crust.png",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper-crust.png",
+          "exists": true,
+          "bytes": 29982,
+          "sha256": "6efc378f2eb84c39ee9d7b708cf973fab2e1560ffb1cdd9fb05e2a029767d5fc"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/upper-crust/upper-crust.png",
+      "preferredSha256": "6efc378f2eb84c39ee9d7b708cf973fab2e1560ffb1cdd9fb05e2a029767d5fc",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/storefront-crop.png",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/storefront-crop.png",
+      "proposedDestination": "public/img/sandwich-shop/storefront-crop.png",
+      "usage": "Homepage left storefront panel",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Existing storefront crop; parent photo and crop match alone do not establish permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/storefront-crop.png",
+            "exists": true,
+            "bytes": 795770,
+            "sha256": "6606f975f9035775b7cc5ebea87522e5ca761d7296bb9d4fbb5764c64dbe8cea"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/storefront-crop.png",
+            "exists": true,
+            "bytes": 795770,
+            "sha256": "6606f975f9035775b7cc5ebea87522e5ca761d7296bb9d4fbb5764c64dbe8cea"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/storefront-crop.png",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/storefront-crop.png",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/storefront-crop.png",
+      "preferredSha256": "6606f975f9035775b7cc5ebea87522e5ca761d7296bb9d4fbb5764c64dbe8cea",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/upper-crust/brickwall2.webp",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/upper-crust/brickwall2.webp",
+      "proposedDestination": "public/img/upper-crust/brickwall2.webp",
+      "usage": "Full-page and transition brick background",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Existing selected brick texture; source/crop permission not established",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/upper-crust/brickwall2.webp",
+            "exists": false
+          },
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/brickwall2.webp",
+            "exists": true,
+            "bytes": 1396490,
+            "sha256": "083216706e08ddf28cf918b1f5bf3e3b2f2589b4abadb7f9b01487c5d37819b2"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/upper-crust/brickwall2.webp",
+            "exists": true,
+            "bytes": 1396490,
+            "sha256": "083216706e08ddf28cf918b1f5bf3e3b2f2589b4abadb7f9b01487c5d37819b2"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/upper-crust/brickwall2.webp",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/weathered_brick_wall_v5_2560x2048.webp",
+          "exists": true,
+          "bytes": 1396490,
+          "sha256": "083216706e08ddf28cf918b1f5bf3e3b2f2589b4abadb7f9b01487c5d37819b2"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/upper-crust/brickwall2.webp",
+      "preferredSha256": "083216706e08ddf28cf918b1f5bf3e3b2f2589b4abadb7f9b01487c5d37819b2",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "fonts/broadway/Broadway-Regular.ttf",
+      "kind": "missing-public-reference",
+      "currentUrl": "/fonts/broadway/Broadway-Regular.ttf",
+      "proposedDestination": "public/fonts/broadway/Broadway-Regular.ttf",
+      "usage": "Unused CSS @font-face declaration; no active font-family use",
+      "essentialForApprovedVisual": false,
+      "permission": "Proprietary redistribution not established; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Embedded Microsoft/Monotype/URW copyright, no web redistribution license",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/fonts/broadway/Broadway-Regular.ttf",
+            "exists": false
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/fonts/broadway/Broadway-Regular.ttf",
+            "exists": true,
+            "bytes": 60372,
+            "sha256": "a252b1e5d460f1e0e4781146186393e5b217ab379db237c7bcb8d7c353943edc"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/fonts/broadway/Broadway-Regular.ttf",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/fonts/broadway/Broadway-Regular.ttf",
+      "preferredSha256": "a252b1e5d460f1e0e4781146186393e5b217ab379db237c7bcb8d7c353943edc",
+      "decision": "Keep excluded; optional unused reference can be removed in a separately approved cleanup"
+    },
+    {
+      "id": "img/icons/google-g.png",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/icons/google-g.png",
+      "proposedDestination": "public/img/icons/google-g.png",
+      "usage": "Google attribution mark in shared review cards",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Source .tmp/google-asset.cjs records download from Google favicon endpoint; endpoint availability does not establish republication rights",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/icons/google-g.png",
+            "exists": false
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/google-g.png",
+            "exists": true,
+            "bytes": 1063,
+            "sha256": "a3c4d0d2afcd35129a5bf49002b8a0de4a23fdbf2bf20a77bc448d14c7a20404"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/icons/google-g.png",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/google-g.png",
+      "preferredSha256": "a3c4d0d2afcd35129a5bf49002b8a0de4a23fdbf2bf20a77bc448d14c7a20404",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/icons/pause.svg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/icons/pause.svg",
+      "proposedDestination": "public/img/icons/pause.svg",
+      "usage": "Optional non-SVG carousel-control CSS path; Upper Crust uses inline SVG controls",
+      "essentialForApprovedVisual": false,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Local SVG carries lucide class; no accompanying license/provenance record verified for these bytes",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/icons/pause.svg",
+            "exists": true,
+            "bytes": 325,
+            "sha256": "ec9d4db759c286b05e06c2aef211ed986f1e06816d6e8a82cd0ae77e60528327"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/pause.svg",
+            "exists": true,
+            "bytes": 325,
+            "sha256": "ec9d4db759c286b05e06c2aef211ed986f1e06816d6e8a82cd0ae77e60528327"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/icons/pause.svg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/icons/pause.svg",
+      "preferredSha256": "ec9d4db759c286b05e06c2aef211ed986f1e06816d6e8a82cd0ae77e60528327",
+      "decision": "Keep excluded; optional unused reference can be removed in a separately approved cleanup"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/blt.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/blt.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/blt.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/blt.jpg",
+            "exists": true,
+            "bytes": 176635,
+            "sha256": "7b5a217ee3852334e27b1f16d4f3626a7fedeef7567d13c14254eb22dad7115e"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/blt.jpg",
+            "exists": true,
+            "bytes": 176635,
+            "sha256": "7b5a217ee3852334e27b1f16d4f3626a7fedeef7567d13c14254eb22dad7115e"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/blt.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/blt.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/blt.jpg",
+      "preferredSha256": "7b5a217ee3852334e27b1f16d4f3626a7fedeef7567d13c14254eb22dad7115e",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/brownie.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/brownie.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/brownie.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/brownie.jpg",
+            "exists": true,
+            "bytes": 101398,
+            "sha256": "bc6ae58cd82b0a08d8463d1e35a97758b83ba3f74de675beeba34d47d0d2d798"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/brownie.jpg",
+            "exists": true,
+            "bytes": 101398,
+            "sha256": "bc6ae58cd82b0a08d8463d1e35a97758b83ba3f74de675beeba34d47d0d2d798"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/brownie.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/brownie.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/brownie.jpg",
+      "preferredSha256": "bc6ae58cd82b0a08d8463d1e35a97758b83ba3f74de675beeba34d47d0d2d798",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/chicken salad.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/chicken salad.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/chicken salad.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/chicken salad.jpg",
+            "exists": true,
+            "bytes": 137868,
+            "sha256": "9f9996b56811791dea2b884f454d946c7f7e7fdb9cbe7869412ff4e846104c8a"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/chicken salad.jpg",
+            "exists": true,
+            "bytes": 137868,
+            "sha256": "9f9996b56811791dea2b884f454d946c7f7e7fdb9cbe7869412ff4e846104c8a"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/chicken salad.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/chicken salad.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/chicken salad.jpg",
+      "preferredSha256": "9f9996b56811791dea2b884f454d946c7f7e7fdb9cbe7869412ff4e846104c8a",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/cobb salad.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/cobb salad.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/cobb salad.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/cobb salad.jpg",
+            "exists": true,
+            "bytes": 138780,
+            "sha256": "d2c31c7960f081640921d2a9c8b81a3cf271174889617aab9e090c10ea52b18f"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/cobb salad.jpg",
+            "exists": true,
+            "bytes": 138780,
+            "sha256": "d2c31c7960f081640921d2a9c8b81a3cf271174889617aab9e090c10ea52b18f"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/cobb salad.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/cobb salad.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/cobb salad.jpg",
+      "preferredSha256": "d2c31c7960f081640921d2a9c8b81a3cf271174889617aab9e090c10ea52b18f",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/corned beef.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/corned beef.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/corned beef.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/corned beef.jpg",
+            "exists": true,
+            "bytes": 154078,
+            "sha256": "2888eddbaea451a9454d96743fe19bd342cdb5b1a0674d5f36023bcad2ef9ac9"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/corned beef.jpg",
+            "exists": true,
+            "bytes": 154078,
+            "sha256": "2888eddbaea451a9454d96743fe19bd342cdb5b1a0674d5f36023bcad2ef9ac9"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/corned beef.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/corned beef.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/corned beef.jpg",
+      "preferredSha256": "2888eddbaea451a9454d96743fe19bd342cdb5b1a0674d5f36023bcad2ef9ac9",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+            "exists": true,
+            "bytes": 169128,
+            "sha256": "d5f40359ec877a2b85c8ed02d74fcd2683c46cf4895b9736c9021ed990a52526"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+            "exists": true,
+            "bytes": 169128,
+            "sha256": "d5f40359ec877a2b85c8ed02d74fcd2683c46cf4895b9736c9021ed990a52526"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/hawaiian sandwich.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/hawaiian sandwich.jpg",
+      "preferredSha256": "d5f40359ec877a2b85c8ed02d74fcd2683c46cf4895b9736c9021ed990a52526",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/italian sub.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/italian sub.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/italian sub.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/italian sub.jpg",
+            "exists": true,
+            "bytes": 121026,
+            "sha256": "4d94e2c1fd94ceb5a1060a8271698307b36113f5500e623960576652fdfc704a"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/italian sub.jpg",
+            "exists": true,
+            "bytes": 121026,
+            "sha256": "4d94e2c1fd94ceb5a1060a8271698307b36113f5500e623960576652fdfc704a"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/italian sub.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/italian sub.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/italian sub.jpg",
+      "preferredSha256": "4d94e2c1fd94ceb5a1060a8271698307b36113f5500e623960576652fdfc704a",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+            "exists": true,
+            "bytes": 176453,
+            "sha256": "9e92042f772414ecab65a557b32c9dc84be504470253d9286a975c923bb17ae1"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+            "exists": true,
+            "bytes": 176453,
+            "sha256": "9e92042f772414ecab65a557b32c9dc84be504470253d9286a975c923bb17ae1"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/pastrami and corned beef.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami and corned beef.jpg",
+      "preferredSha256": "9e92042f772414ecab65a557b32c9dc84be504470253d9286a975c923bb17ae1",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+            "exists": true,
+            "bytes": 140235,
+            "sha256": "dc32fb680961861b51e163e7a2da4886cedd3bf6d336935c766cf00d4d91884a"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+            "exists": true,
+            "bytes": 140235,
+            "sha256": "dc32fb680961861b51e163e7a2da4886cedd3bf6d336935c766cf00d4d91884a"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/pastrami and roast beef.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami and roast beef.jpg",
+      "preferredSha256": "dc32fb680961861b51e163e7a2da4886cedd3bf6d336935c766cf00d4d91884a",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+            "exists": true,
+            "bytes": 147597,
+            "sha256": "e24e80ea19bfb8bfdb37e691899ea188dfebab1b5532c8961ab5118219817665"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+            "exists": true,
+            "bytes": 147597,
+            "sha256": "e24e80ea19bfb8bfdb37e691899ea188dfebab1b5532c8961ab5118219817665"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/pastrami on sourdough with potato salad.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami on sourdough with potato salad.jpg",
+      "preferredSha256": "e24e80ea19bfb8bfdb37e691899ea188dfebab1b5532c8961ab5118219817665",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/pastrami.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/pastrami.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/pastrami.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/pastrami.jpg",
+            "exists": true,
+            "bytes": 97461,
+            "sha256": "47e0315b81ae66688a8d5871eb3dcba768b2eb2aa6480629516b210a48d50efe"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami.jpg",
+            "exists": true,
+            "bytes": 97461,
+            "sha256": "47e0315b81ae66688a8d5871eb3dcba768b2eb2aa6480629516b210a48d50efe"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/pastrami.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/pastrami.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/pastrami.jpg",
+      "preferredSha256": "47e0315b81ae66688a8d5871eb3dcba768b2eb2aa6480629516b210a48d50efe",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+            "exists": true,
+            "bytes": 132533,
+            "sha256": "47e84a9473ec22376f273f12876357fa22633c08e8fd30faa577300218a6fb8c"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+            "exists": true,
+            "bytes": 132533,
+            "sha256": "47e84a9473ec22376f273f12876357fa22633c08e8fd30faa577300218a6fb8c"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/tuna on wheat with clam chowder.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/tuna on wheat with clam chowder.jpg",
+      "preferredSha256": "47e84a9473ec22376f273f12876357fa22633c08e8fd30faa577300218a6fb8c",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+            "exists": true,
+            "bytes": 89525,
+            "sha256": "e86ce89e02bc5defce79d1719530a7cc4525db15bd77591705a8f467a7e5c055"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+            "exists": true,
+            "bytes": 89525,
+            "sha256": "e86ce89e02bc5defce79d1719530a7cc4525db15bd77591705a8f467a7e5c055"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/turkey and ham on a crossaint with poblano soup.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/turkey and ham on a crossaint with poblano soup.jpg",
+      "preferredSha256": "e86ce89e02bc5defce79d1719530a7cc4525db15bd77591705a8f467a7e5c055",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+            "exists": true,
+            "bytes": 155707,
+            "sha256": "b3f72e5441b9d5d939710cdbf80b096d3f4f243fb4454ec0e4f26253ade644dc"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+            "exists": true,
+            "bytes": 155707,
+            "sha256": "b3f72e5441b9d5d939710cdbf80b096d3f4f243fb4454ec0e4f26253ade644dc"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/Veggie sandwich and tomato florentine soup.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/Veggie sandwich and tomato florentine soup.jpg",
+      "preferredSha256": "b3f72e5441b9d5d939710cdbf80b096d3f4f243fb4454ec0e4f26253ade644dc",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+            "exists": true,
+            "bytes": 112103,
+            "sha256": "1d9b87475c87fccc7b443647a24875a2b2faae95e7bf82d0e83f6cb3a5461723"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+            "exists": true,
+            "bytes": 112103,
+            "sha256": "1d9b87475c87fccc7b443647a24875a2b2faae95e7bf82d0e83f6cb3a5461723"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/veggie sandwich with turkey.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/veggie sandwich with turkey.jpg",
+      "preferredSha256": "1d9b87475c87fccc7b443647a24875a2b2faae95e7bf82d0e83f6cb3a5461723",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+      "kind": "missing-public-reference",
+      "currentUrl": "/img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+      "proposedDestination": "public/img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+      "usage": "Homepage R3 awning carousel; original photo and caption, one of 16",
+      "essentialForApprovedVisual": true,
+      "permission": "Unconfirmed publication rights; do not import",
+      "permissionEvidence": "docs/upper-crust-v1-source-package.md#assets-and-exclusions",
+      "provenance": "Selected existing gallery photo; filename/selection is not publication permission",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+            "exists": true,
+            "bytes": 181757,
+            "sha256": "e5552d5ef24b7714b1a2bda54df6b35404095141a900aa307ab5fa603e500fc7"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+            "exists": true,
+            "bytes": 181757,
+            "sha256": "e5552d5ef24b7714b1a2bda54df6b35404095141a900aa307ab5fa603e500fc7"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/veggie sandwich.jpg",
+          "exists": false
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/img/sandwich-shop/awning-carousel/veggie sandwich.jpg",
+      "preferredSha256": "e5552d5ef24b7714b1a2bda54df6b35404095141a900aa307ab5fa603e500fc7",
+      "decision": "Confirm publication rights for exact selected bytes before copying"
+    },
+    {
+      "id": "reference-media/front.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/front.jpg",
+      "proposedDestination": "media/upper-crust/approved/front.jpg",
+      "usage": "About storefront and Homepage filmstrip",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/front.jpg",
+      "declaredDimensions": {
+        "width": 750,
+        "height": 1000
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/front.jpg",
+            "exists": true,
+            "bytes": 221718,
+            "sha256": "2cc7953bd1105a15e6d295152022ad3e2a0bd717c965913c2ae98103597bb85b"
+          },
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/storefront.jpg",
+            "exists": true,
+            "bytes": 153050,
+            "sha256": "f9d86279571c20cf658413a585753cc31ded739240c8a1aab4099b66cb50d814"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/front.jpg",
+            "exists": true,
+            "bytes": 153050,
+            "sha256": "f9d86279571c20cf658413a585753cc31ded739240c8a1aab4099b66cb50d814"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/front.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/front.jpg",
+          "exists": true,
+          "bytes": 153050,
+          "sha256": "f9d86279571c20cf658413a585753cc31ded739240c8a1aab4099b66cb50d814"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/front.jpg",
+      "preferredSha256": "f9d86279571c20cf658413a585753cc31ded739240c8a1aab4099b66cb50d814",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "reference-media/front-door.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/front-door.jpg",
+      "proposedDestination": "media/upper-crust/approved/front-door.jpg",
+      "usage": "Homepage photo filmstrip and informational Catering photo",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/front door.jpg",
+      "declaredDimensions": {
+        "width": 750,
+        "height": 1000
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/front door.jpg",
+            "exists": true,
+            "bytes": 152373,
+            "sha256": "bb7bc90566b7a0652b84e1d0c80b16b9dd18710b972355ea001521955dc93fc3"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/front-door.jpg",
+            "exists": true,
+            "bytes": 152373,
+            "sha256": "bb7bc90566b7a0652b84e1d0c80b16b9dd18710b972355ea001521955dc93fc3"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/front-door.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/front door.jpg",
+          "exists": true,
+          "bytes": 152373,
+          "sha256": "bb7bc90566b7a0652b84e1d0c80b16b9dd18710b972355ea001521955dc93fc3"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/front-door.jpg",
+      "preferredSha256": "bb7bc90566b7a0652b84e1d0c80b16b9dd18710b972355ea001521955dc93fc3",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "reference-media/hanging-sign.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/hanging-sign.jpg",
+      "proposedDestination": "media/upper-crust/approved/hanging-sign.jpg",
+      "usage": "Homepage photo filmstrip",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/hanging sign.jpg",
+      "declaredDimensions": {
+        "width": 750,
+        "height": 1000
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/hanging sign.jpg",
+            "exists": true,
+            "bytes": 195541,
+            "sha256": "b8da430e621c92859ab6e093fb83815b2077017c281aa3c5d9993fdd632545d2"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/hanging-sign.jpg",
+            "exists": true,
+            "bytes": 195541,
+            "sha256": "b8da430e621c92859ab6e093fb83815b2077017c281aa3c5d9993fdd632545d2"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/hanging-sign.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/hanging sign.jpg",
+          "exists": true,
+          "bytes": 195541,
+          "sha256": "b8da430e621c92859ab6e093fb83815b2077017c281aa3c5d9993fdd632545d2"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/hanging-sign.jpg",
+      "preferredSha256": "b8da430e621c92859ab6e093fb83815b2077017c281aa3c5d9993fdd632545d2",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "reference-media/patio.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/patio.jpg",
+      "proposedDestination": "media/upper-crust/approved/patio.jpg",
+      "usage": "Homepage photo filmstrip",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/o.jpg",
+      "declaredDimensions": {
+        "width": 750,
+        "height": 1000
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/o.jpg",
+            "exists": true,
+            "bytes": 193672,
+            "sha256": "4c8029d44efe7abf7c6ae0205921b00abd4a05282381011049a1f183136dae04"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/patio.jpg",
+            "exists": true,
+            "bytes": 193672,
+            "sha256": "4c8029d44efe7abf7c6ae0205921b00abd4a05282381011049a1f183136dae04"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/patio.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/o.jpg",
+          "exists": true,
+          "bytes": 193672,
+          "sha256": "4c8029d44efe7abf7c6ae0205921b00abd4a05282381011049a1f183136dae04"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/patio.jpg",
+      "preferredSha256": "4c8029d44efe7abf7c6ae0205921b00abd4a05282381011049a1f183136dae04",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "reference-media/dining.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/dining.jpg",
+      "proposedDestination": "media/upper-crust/approved/dining.jpg",
+      "usage": "Homepage photo filmstrip",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/curtains.jpg",
+      "declaredDimensions": {
+        "width": 1000,
+        "height": 750
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/curtains.jpg",
+            "exists": true,
+            "bytes": 196452,
+            "sha256": "816a50dc0a3e12a51a22d4df6331c2a49d29ace28d5ca757ea44f28caa9e9aee"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/dining.jpg",
+            "exists": true,
+            "bytes": 196452,
+            "sha256": "816a50dc0a3e12a51a22d4df6331c2a49d29ace28d5ca757ea44f28caa9e9aee"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/dining.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/curtains.jpg",
+          "exists": true,
+          "bytes": 196452,
+          "sha256": "816a50dc0a3e12a51a22d4df6331c2a49d29ace28d5ca757ea44f28caa9e9aee"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/dining.jpg",
+      "preferredSha256": "816a50dc0a3e12a51a22d4df6331c2a49d29ace28d5ca757ea44f28caa9e9aee",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "reference-media/takeaway.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/takeaway.jpg",
+      "proposedDestination": "media/upper-crust/approved/takeaway.jpg",
+      "usage": "Homepage photo filmstrip",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/takeaway.jpg",
+      "declaredDimensions": {
+        "width": 575,
+        "height": 1000
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/takeaway.jpg",
+            "exists": true,
+            "bytes": 94054,
+            "sha256": "117fed483319a6689cd74a564def7c799fd241cd580ad82111e424cb8f252d5c"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/takeaway.jpg",
+            "exists": true,
+            "bytes": 94054,
+            "sha256": "117fed483319a6689cd74a564def7c799fd241cd580ad82111e424cb8f252d5c"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/takeaway.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/takeaway.jpg",
+          "exists": true,
+          "bytes": 94054,
+          "sha256": "117fed483319a6689cd74a564def7c799fd241cd580ad82111e424cb8f252d5c"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/takeaway.jpg",
+      "preferredSha256": "117fed483319a6689cd74a564def7c799fd241cd580ad82111e424cb8f252d5c",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "reference-media/desserts.jpg",
+      "kind": "local-only-photo",
+      "currentUrl": "/r/upper-crust/reference-media/desserts.jpg",
+      "proposedDestination": "media/upper-crust/approved/desserts.jpg",
+      "usage": "Homepage photo filmstrip",
+      "essentialForApprovedVisual": true,
+      "permission": "Local concept review only; hosted publication permission required",
+      "permissionEvidence": [
+        "src/lib/upper-crust/reference-media.ts",
+        "docs/upper-crust-v1-source-package.md#assets-and-exclusions"
+      ],
+      "provenance": "Owner-provided: _logo and branding/sandwich shop/upper crust vibe/o (3).jpg",
+      "declaredDimensions": {
+        "width": 750,
+        "height": 1000
+      },
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/img/sandwich-shop/o (3).jpg",
+            "exists": true,
+            "bytes": 151024,
+            "sha256": "591b19eb24c891ef85f30205efd7655b66323b06a6eb90f2dd029edda4f5824b"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/desserts.jpg",
+            "exists": true,
+            "bytes": 151024,
+            "sha256": "591b19eb24c891ef85f30205efd7655b66323b06a6eb90f2dd029edda4f5824b"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/.local-reference-media/upper-crust/desserts.jpg",
+            "exists": false
+          }
+        ]
+      },
+      "ownerCandidates": [
+        {
+          "path": "C:/Users/cowbe/OneDrive/Documents/Menu Man/_logo and branding/sandwich shop/upper crust vibe/o (3).jpg",
+          "exists": true,
+          "bytes": 151024,
+          "sha256": "591b19eb24c891ef85f30205efd7655b66323b06a6eb90f2dd029edda4f5824b"
+        }
+      ],
+      "preferredSource": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/.local-reference-media/upper-crust/desserts.jpg",
+      "preferredSha256": "591b19eb24c891ef85f30205efd7655b66323b06a6eb90f2dd029edda4f5824b",
+      "decision": "Confirm permission for selected hash; retain exact route URL and original JPEG bytes"
+    },
+    {
+      "id": "fonts/boogaloo/Boogaloo-Regular.ttf",
+      "kind": "already-licensed-present-control",
+      "currentUrl": "/fonts/boogaloo/Boogaloo-Regular.ttf",
+      "proposedDestination": "public/fonts/boogaloo/Boogaloo-Regular.ttf",
+      "usage": "Menu and item typography, awning captions",
+      "essentialForApprovedVisual": true,
+      "permission": "Redistribution supported by OFL 1.1; already packaged",
+      "permissionEvidence": [
+        "public/fonts/boogaloo/OFL.txt",
+        "public/fonts/boogaloo/provenance.json"
+      ],
+      "provenance": "Font metadata identifies John Vargas Beltran; copyright and OFL packaged",
+      "locations": {
+        "main": [
+          {
+            "path": "C:/menu-man/public/fonts/boogaloo/Boogaloo-Regular.ttf",
+            "exists": true,
+            "bytes": 31776,
+            "sha256": "6aa7c9f7096b090a6783e31278abf907ec84a4bd98f280c925ab033d1fe91eb7"
+          }
+        ],
+        "source": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo/public/fonts/boogaloo/Boogaloo-Regular.ttf",
+            "exists": true,
+            "bytes": 31776,
+            "sha256": "6aa7c9f7096b090a6783e31278abf907ec84a4bd98f280c925ab033d1fe91eb7"
+          }
+        ],
+        "rc": [
+          {
+            "path": "C:/menu-man/.worktrees/staging-release-candidate/public/fonts/boogaloo/Boogaloo-Regular.ttf",
+            "exists": true,
+            "bytes": 31776,
+            "sha256": "6aa7c9f7096b090a6783e31278abf907ec84a4bd98f280c925ab033d1fe91eb7"
+          }
+        ]
+      },
+      "decision": "No correction needed"
+    }
+  ]
+}
