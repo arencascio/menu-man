@@ -1,0 +1,111 @@
+.section { color: #2f281f; background: #f5f0e7; }
+.inner { width: min(100% - 2.5rem, 1160px); margin: 0 auto; padding: clamp(3rem, 7vw, 6rem) 0; }
+.eyebrow { margin: 0 0 .65rem; color: #805a3f; font-size: .74rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.inner h2 { max-width: 18ch; margin: 0; font: 300 clamp(2rem, 4vw, 3.5rem)/1.08 var(--font-upper-crust-stoke), Georgia, serif; letter-spacing: -.025em; }
+.amenities { display: flex; flex-wrap: wrap; gap: .4rem .45rem; margin: .75rem 0 0; padding: 0; list-style: none; }
+.amenities li { display: inline-flex; min-height: 2.35rem; align-items: center; gap: .4rem; border: 1px solid #ddd1be; border-radius: 999px; padding: .3rem .65rem; background: #fffdf8; font-size: .9rem; }
+.amenities img { object-fit: contain; opacity: .78; }
+.ratings { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+.ratings a { display: grid; min-width: min(100%, 210px); gap: .25rem; border: 1px solid #ddd1be; border-radius: .75rem; padding: 1rem 1.2rem; color: inherit; background: #fffdf8; text-decoration: none; }
+.ratings a:focus-visible, .directions:focus-visible, .quotes a:focus-visible { outline: 3px solid #9c5737; outline-offset: 3px; }
+.ratings a > span { color: #715a47; font-size: .82rem; font-weight: 700; }
+.ratings strong { font-size: 1.5rem; font-weight: 700; }
+.ratings strong span { color: #a96c24; font-size: .85rem; letter-spacing: .08em; }
+.ratings small { color: #6c6259; }
+.disclosure { max-width: 72ch; margin: .75rem 0 0; color: #6c6259; font-size: .82rem; line-height: 1.5; }
+.yelpReviews { min-width: 0; margin-top: 1.5rem; }
+.googleReviews { display: contents; }
+.googleReviews :global(h2), .visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.googleReviews :global(section) { padding-bottom: 0; }
+.section:has(.yelpReviews) .inner { padding-top: 32px; }
+.section:has(.yelpReviews) .yelpReviews { margin-top: 0; }
+.googleReviews :global(section) {
+  padding: 2.5rem clamp(1.25rem, 4vw, 4rem) .75rem;
+  color: #30343b;
+  background: #f5f0e7;
+}
+.googleReviews :global(section) > div > div:first-child { margin-bottom: .9rem; }
+.googleReviews :global(article) {
+  align-self: flex-start;
+  padding: 1.25rem;
+  border: 1px solid #e4e1db;
+  border-radius: .75rem;
+  background: #fffefa;
+  box-shadow: 0 3px 12px rgb(42 36 29 / 7%);
+}
+.googleReviews :global(article) figure {
+  position: relative;
+  display: grid;
+  height: auto;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: initial;
+  gap: .7rem;
+  padding-bottom: 1.4rem;
+}
+.googleReviews :global(article) figcaption {
+  grid-row: 1;
+  justify-content: flex-start;
+  color: #30343b;
+  font-size: .95rem;
+  font-weight: 700;
+}
+.googleReviews :global(article) figure > p {
+  grid-row: 2;
+  margin: 0;
+  color: #f4b400;
+  font-size: 1.15rem;
+  letter-spacing: .08em;
+  line-height: 1;
+}
+.googleReviews :global(article) blockquote {
+  grid-row: 3;
+  color: #30343b;
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+.googleReviews :global(article) figcaption > span:last-child > span {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  font-size: .75rem;
+  line-height: 1.2;
+}
+.googleReviews :global(article) figcaption > span:last-child > span { display: flex; align-items: center; gap: .4rem; }
+.googleReviews :global(article) figcaption > span:last-child > span a {
+  color: #315e8a;
+  font-weight: 600;
+  text-underline-offset: .15em;
+}
+.section:has(.yelpReviews) .inner { padding-top: 16px; }
+.location { color: #fffaf1; background: #573925; }
+.location .inner { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(0, 1.3fr); align-items: center; gap: clamp(1.5rem, 4vw, 4rem); }
+.location .eyebrow { color: #e6c9a7; }
+.location h2 { color: inherit; }
+.location iframe { display: block; width: 100%; min-height: 330px; border: 0; border-radius: .75rem; }
+.directions { display: inline-flex; min-height: 44px; align-items: center; gap: .6rem; margin-top: 1rem; color: #fffaf1; font-weight: 700; text-underline-offset: .2em; }
+@media (max-width: 800px) {
+}
+@media (max-width: 520px) {
+  .googleReviews :global(section) { padding-top: 1.5rem; }
+  .section:has(.yelpReviews) .inner { padding-top: 12px; }
+  .inner { width: min(100% - 2rem, 1160px); padding: 2.75rem 0; }
+  .location .inner { grid-template-columns: minmax(0, 1fr); }
+  .location iframe { min-height: 280px; }
+}
+.socialStrip { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
+.socialStrip > a,.socialPlaceholder { display:flex; min-width:0; min-height:72px; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #ddd1be; border-radius:8px; padding:7px; color:#302c25; background:#fffaf0; text-decoration:none; }
+.socialStrip img { display:block; width:32px; height:32px; object-fit:contain; }
+.socialStrip > a:hover { text-decoration:underline; }
+.socialStrip > a { flex-direction:row; text-align:center; }
+.socialStrip .reviewLink { display:flex; justify-content:center; gap:8px; text-align:left; }
+.socialStrip .reviewLink > span { min-width:0; }
+.socialStrip .reviewLink small { display:block; }
+.socialStrip .tripadvisorMark { width:108px; height:32px; }
+.socialStrip strong { font-size:1.25rem; }
+.socialStrip strong span { color:#a96c24; font-size:.75rem; }
+.socialStrip small { color:#6c6259; font-size:.75rem; }
+.socialPlaceholder { color:#736b60; border-style:dashed; }
+.socialDisclosure { margin:10px 0 0; color:#6c6259; font-size:.75rem; line-height:1.5; }
+@media(max-width:520px) { .socialStrip { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:10px; } }
+@media(max-width:340px) { .socialStrip { gap:6px; padding:8px; } .socialStrip strong { font-size:1.1rem; } .socialStrip .reviewLink { gap:4px; padding:5px; } .socialStrip .reviewLink > img { width:24px; height:24px; } .socialStrip strong span { font-size:.62rem; } }

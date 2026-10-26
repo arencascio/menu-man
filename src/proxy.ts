@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isRestaurantPublicationRestricted } from "./lib/public-restaurant-access";
 import { isManagementOnlyPath, isProductionManagementDisabled } from "./lib/production-management-gate";
+import { isUpperCrustConceptPage, upperCrustLocalAllowed } from "./lib/upper-crust/access";
+import { isUpperCrustReferencePath } from "./lib/upper-crust/reference-media";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -19,6 +21,18 @@ export async function proxy(request: NextRequest) {
   if (restaurantPath) {
     let slug = restaurantPath[1];
     try { slug = decodeURIComponent(slug); } catch { /* Invalid slugs reveal no restaurant. */ }
+    if (slug === "upper-crust") {
+      const headers = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive", "Referrer-Policy": "no-referrer" };
+      // No concept API access, even on the explicitly enabled loopback server.
+      const conceptPage = isUpperCrustConceptPage(pathname)
+        || (["GET", "HEAD"].includes(request.method) && isUpperCrustReferencePath(pathname));
+      if (!conceptPage || !upperCrustLocalAllowed(process.env, request.headers.get("host") || "")) {
+        return new NextResponse("Not found", { status: 404, headers });
+      }
+      const response = NextResponse.next({ request });
+      for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
+      return response;
+    }
     if (isRestaurantPublicationRestricted(slug)) {
       return new NextResponse("Not found", {
         status: 404,
