@@ -37,9 +37,9 @@ test("verified custom sandwich choices include the conditional Carrot Sticks ran
   const half = custom.find(({ id }) => id === "uc-half-custom")!;
   assert.deepEqual(
     half.modifierGroups.map(({ id }) => id),
-    whole.modifierGroups.filter(({ id }) => id !== "uc-custom-carrot-ranch").map(({ id }) => id),
+    whole.modifierGroups.map(({ id }) => id),
   );
-  assert.equal(half.modifierGroups.some(({ name }) => name === "Ranch"), false);
+  assert.equal(half.modifierGroups.some(({ name }) => name === "Ranch"), true);
 
   const side = whole.modifierGroups.find(({ name }) => name === "Side Choice")!;
   const soup = side.options.find(({ name }) => name === "Soup of the Day")!;

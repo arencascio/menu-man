@@ -90,7 +90,7 @@ const customSandwichGroups = [
   customSandwichExtras,
 ];
 
-const wholeCustomSandwichGroups = [...customSandwichGroups, customSandwichRanch];
+const verifiedCustomSandwichGroups = [...customSandwichGroups, customSandwichRanch];
 
 const grinderMeat = group("uc-grinder-two-meat", "Choice of Meat", [
   { name: "Pastrami" }, { name: "Mesquite Turkey" }, { name: "Corned Beef" },
@@ -120,12 +120,61 @@ const grinderExtras = group("uc-grinder-two-extras", "Add Extras", [
   { name: "Avocado", priceCents: 400 }, { name: "Bacon", priceCents: 400 },
 ], 0, 9, 4);
 
-const grinderForTwoGroups = [grinderMeat, grinderToppings, grinderFirstSide, grinderSecondSide, grinderExtras];
+function carrotRanch(id: string, side: MenuModifierGroup, sortOrder: number) {
+  return group(id, "Ranch", [{ name: "Ranch" }], 0, 1, sortOrder,
+    { groupId: side.id, optionId: optionId(side.id, "Carrot Sticks") });
+}
+
+const grinderFirstSideRanch = carrotRanch("uc-grinder-two-carrot-ranch-a", grinderFirstSide, 5);
+
+const grinderForTwoGroups = [
+  grinderMeat, grinderToppings, grinderFirstSide, grinderSecondSide, grinderExtras,
+  grinderFirstSideRanch,
+  carrotRanch("uc-grinder-two-carrot-ranch-b", grinderSecondSide, 6),
+];
+
+const hawaiianToppings = group("uc-hawaiian-toppings", "Hawaiian Topping Choices", [
+  { name: "Lettuce" }, { name: "Mayo" }, { name: "Pineapple" }, { name: "Swiss Cheese" },
+], 0, 4, 1);
+
+const frenchDipOnions = group("uc-french-dip-onions", "French Dip Other Toppings", [
+  { name: "Onions" },
+], 0, 1, 1);
+const frenchDipCheese = group("uc-french-dip-cheese", "French Dip Cheese Choices", [
+  { name: "Cheddar" }, { name: "Swiss" }, { name: "Provolone" },
+], 0, 1, 2);
+const bbqOnions = group("uc-bbq-onions", "BBQ Other Toppings", [{ name: "Onions" }], 0, 1, 1);
+const bbqCheese = group("uc-bbq-cheese", "BBQ Cheese Choices", [
+  { name: "Cheddar" }, { name: "Provolone" }, { name: "Swiss" },
+], 0, 1, 2);
+const bltToppings = group("uc-blt-toppings", "BLT Toppings", [
+  { name: "Bacon" }, { name: "Iceburg Lettuce" }, { name: "Mayo" }, { name: "Tomatos" },
+], 0, 4, 2);
 
 const soupBread = group("uc-soup-bread", "Bread or Crackers", [
   { name: "Crackers" }, { name: "Rye" }, { name: "Indian Grain" }, { name: "Sourdough" },
   { name: "French Roll" }, { name: "Whole Wheat" },
 ], 0, 1, 0);
+
+// "Select at least 1" uses checkboxes with no smaller displayed maximum.
+// Preserve the full eight-option selection range, rather than forcing one.
+const saladDressing = group("uc-salad-dressing", "Dressing Choice", [
+  { name: "Caesar" }, { name: "Italian" }, { name: "Rasberry Vinegarette" },
+  { name: "Thousand Island" }, { name: "Vidalia Onion Vinegarette" },
+  { name: "Balsamic Vinegarette" }, { name: "Ranch" }, { name: "Blue Chesse" },
+], 1, 8, 0);
+const additionalSide = group("uc-additional-side", "Additional Side Order", [
+  { name: "Potato Salad" }, { name: "Pasta Salad" }, { name: "Macaroni Salad" },
+  { name: "Fresh Fruit (Seasonal)" }, { name: "Cole Slaw" }, { name: "Carrot Sticks w/Ranch" },
+], 1, 1, 0);
+const cookieSelection = group("uc-cookies", "Cookie Selection", [
+  { name: "2 Reese's Peanut Butter Cookies" }, { name: "2 Chocolate Chip Cookies" },
+  { name: "1 Reese’s Peanut Butter Cookie and 1 Chocolate Chip Cookie" },
+], 1, 1, 0);
+const drinkChoices = group("uc-drink-choices", "Drink Choices", [
+  { name: "Coke" }, { name: "Diet Coke" }, { name: "Sprite" }, { name: "Dr. Pepper" },
+  { name: "Lemonade" }, { name: "Raspberry Tea" }, { name: "Unsweetened Tea" },
+], 1, 1, 0);
 
 function item(id: string, name: string, priceCents: number, modifierGroups: MenuModifierGroup[] = []) {
   return {
@@ -135,50 +184,51 @@ function item(id: string, name: string, priceCents: number, modifierGroups: Menu
     price_cents: priceCents,
     image_url: null,
     is_orderable: false,
-    modifierGroups,
+    modifierGroups: modifierGroups.map((modifierGroup, sortOrder) => ({ ...modifierGroup, sortOrder })),
   };
 }
 
 // Item names/prices below are transcribed from the signed-out DoorDash Delivery
 // menu capture dated 2026-10-26. Description and image reuse rights were not
-// established; uninspected modifier dialogs intentionally have no invented data.
+// established. Verified item groups and remaining source gaps are recorded in
+// docs/upper-crust-modifier-evidence.md; no defaults or missing branches are inferred.
 export const upperCrustSections: MenuSection[] = [
   { id: "uc-specialty", name: "Specialty Sandwiches", description: null, sort_order: 0, items: [
-    item("italian-sub-one", "Italian Sub for one", 1495),
-    item("hawaiian", "Hawaiian", 1495),
-    item("grinder-one", "Grinder for one", 1495),
-    item("french-dip", "French Dip", 1495),
-    item("bbq-beef", "BBQ Beef", 1395),
-    item("blt", "BLT", 1395),
+    item("italian-sub-one", "Italian Sub for one", 1495, [grinderToppings, customSandwichSides, customSandwichExtras, customSandwichRanch]),
+    item("hawaiian", "Hawaiian", 1495, [customSandwichSides, hawaiianToppings, customSandwichExtras, customSandwichRanch]),
+    item("grinder-one", "Grinder for one", 1495, [grinderToppings, grinderMeat, customSandwichSides, customSandwichExtras, customSandwichRanch]),
+    item("french-dip", "French Dip", 1495, [customSandwichSides, frenchDipOnions, frenchDipCheese, customSandwichRanch]),
+    item("bbq-beef", "BBQ Beef", 1395, [customSandwichSides, bbqOnions, bbqCheese, customSandwichRanch]),
+    item("blt", "BLT", 1395, [sandwichBread, customSandwichSides, bltToppings, customSandwichExtras, customSandwichRanch]),
     item("grinder-two", "Grinder for Two", 2295, grinderForTwoGroups),
-    item("italian-sub-two", "Italian Sub for Two", 2295),
+    item("italian-sub-two", "Italian Sub for Two", 2295, [grinderToppings, grinderFirstSide, grinderSecondSide, grinderExtras, grinderFirstSideRanch]),
   ] },
   { id: "uc-custom", name: "Custom Sandwiches", description: null, sort_order: 1, items: [
-    item("custom", "Whole Custom Sandwich", 1495, wholeCustomSandwichGroups),
-    item("half-custom", "Half Custom Sandwich", 1395, customSandwichGroups),
+    item("custom", "Whole Custom Sandwich", 1495, verifiedCustomSandwichGroups),
+    item("half-custom", "Half Custom Sandwich", 1395, verifiedCustomSandwichGroups),
   ] },
   { id: "uc-soups", name: "Soups", description: null, sort_order: 2, items: [
     item("soup-bowl", "Soup of the Day (Bowl)", 795, [soupBread]),
-    item("soup-cup", "Soup of the Day (Cup)", 695),
+    item("soup-cup", "Soup of the Day (Cup)", 695, [soupBread]),
   ] },
   { id: "uc-salads", name: "Salads", description: null, sort_order: 3, items: [
-    item("cobb-salad", "Cobb Salad", 1395),
-    item("albacore-tuna-salad", "Albacore Tuna Salad", 1395),
-    item("chef-salad", "Chef Salad", 1395),
+    item("cobb-salad", "Cobb Salad", 1395, [saladDressing]),
+    item("albacore-tuna-salad", "Albacore Tuna Salad", 1395, [saladDressing]),
+    item("chef-salad", "Chef Salad", 1395, [saladDressing]),
     item("caesar-salad", "Caesar Salad", 1395),
-    item("chicken-salad-salad", "Chicken Salad Salad", 1395),
-    item("dinner-salad", "Dinner Salad", 1050),
+    item("chicken-salad-salad", "Chicken Salad Salad", 1395, [saladDressing]),
+    item("dinner-salad", "Dinner Salad", 1050, [saladDressing]),
   ] },
   { id: "uc-extras", name: "Extras", description: null, sort_order: 4, items: [
-    item("side-orders", "Side Orders", 325),
+    item("side-orders", "Side Orders", 325, [additionalSide]),
     item("cheesecake", "Cheesecake", 375),
     item("chips", "Chips", 200),
     item("brownies", "Brownies", 325),
-    item("two-cookies", "2 Cookies", 150),
+    item("two-cookies", "2 Cookies", 150, [cookieSelection]),
   ] },
   { id: "uc-drinks", name: "drinks", description: null, sort_order: 5, items: [
     item("bottled-water", "Bottled Water", 200),
-    item("large-drink", "Large Drink (20 oz)", 325),
-    item("small-drink", "Small Drink (16 oz)", 225),
+    item("large-drink", "Large Drink (20 oz)", 325, [drinkChoices]),
+    item("small-drink", "Small Drink (16 oz)", 225, [drinkChoices]),
   ] },
 ];
