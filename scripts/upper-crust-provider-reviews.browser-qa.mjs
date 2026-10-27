@@ -16,7 +16,14 @@ try {
     await configureUpperCrustQaAuth(context, base);
     const page = await context.newPage();
     const errors = [];
-    page.on("pageerror", e => errors.push(e.message));
+    const providerMessageErrors = [];
+    page.on("pageerror", e => {
+      // Yelp's official one-shot listener JSON.parses every window message.
+      // Vercel's Preview toolbar sends objects; retain this known provider
+      // diagnostic while failing on every other exception. Never patch Yelp.
+      if (e.message.includes('"[object Object]" is not valid JSON') && /https:\/\/www\.yelp\.com\/embed\/widgets\.js/.test(e.stack ?? "")) providerMessageErrors.push(e.message);
+      else errors.push(e.message);
+    });
     await page.goto(`${base}/r/upper-crust`);
     const rail = page.locator('[data-review-count="3"]');
     const section = page.getByRole("region", { name: "Reviews", exact: true });
@@ -92,7 +99,7 @@ try {
     expect(reloads).toBe(0);
     expect(errors).toEqual([]);
     await section.screenshot({ path: `${output}/${width}.png` });
-    results.push({ width, providerSlides: 3, realProviderContent: true, iframeReloads: reloads, navigation: "passed", keyboard: "passed", reducedMotion: "passed", links: "passed", autoplayPause: width === 1440 ? "passed (natural 11-second timer)" : "shared desktop check", overflow: false });
+    results.push({ width, providerSlides: 3, realProviderContent: true, iframeReloads: reloads, navigation: "passed", keyboard: "passed", reducedMotion: "passed", links: "passed", autoplayPause: width === 1440 ? "passed (natural 11-second timer)" : "shared desktop check", overflow: false, providerMessageErrors: providerMessageErrors.length, applicationErrors: errors.length });
     writeFileSync(`${output}/results.json`, JSON.stringify(results, null, 2));
     console.log(JSON.stringify(results.at(-1)));
     await context.close();

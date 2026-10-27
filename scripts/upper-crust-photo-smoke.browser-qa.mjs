@@ -49,9 +49,11 @@ try {
     await page.getByRole("button", { name: "Simulate payment", exact: true }).click();
     await expect(page.getByText("No payment was taken.", { exact: true })).toBeVisible();
     await expect(page.getByText("No order was sent to a restaurant, and nothing will be prepared.", { exact: true })).toBeVisible();
+    const optimizerStatus = await page.evaluate(async () => (await fetch("/_next/image?url=%2Fr%2Fupper-crust%2Fmedia%2Fveggie%2520sandwich.jpg&w=640&q=75")).status);
+    expect([400, 404]).toContain(optimizerStatus);
     expect(writes).toEqual([]);
     expect(errors).toEqual([]);
-    console.log(JSON.stringify({ width, photoIdentities: photos.length, cardDetail: "passed", sampleAddEditCheckout: "passed", writes: 0, errors: 0 }));
+    console.log(JSON.stringify({ width, photoIdentities: photos.length, cardDetail: "passed", sampleAddEditCheckout: "passed", optimizerStatus, writes: 0, errors: 0 }));
     await context.close();
   }
 } finally { await browser.close(); }

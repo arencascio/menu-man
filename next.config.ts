@@ -4,6 +4,19 @@ import type { NextConfig } from "next";
 
 
 const nextConfig: NextConfig = {
+  // The hosted optimizer can run before application proxy checks. Only public
+  // static image roots belong here; protected restaurant route bytes must never
+  // enter its public transformation cache. Existing public image sources remain
+  // supported, including statically imported Next images and root SVG assets.
+  images: {
+    localPatterns: [
+      { pathname: "/brand/**" },
+      { pathname: "/img/**" },
+      { pathname: "/_next/static/media/**" },
+      { pathname: "/*.svg" },
+      { pathname: "/favicon.ico" },
+    ],
+  },
   // Isolate the explicit offline browser test process from an owner's dev server.
   distDir: process.env.MENU_MAN_OFFLINE_DEMO_QA === "true" && process.env.MENU_MAN_PUBLIC_SHOWCASE_QA === "true" ? ".next-public-showcase-qa" : ".next",
   outputFileTracingIncludes: {
