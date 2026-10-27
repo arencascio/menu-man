@@ -37,9 +37,15 @@ export function upperCrustRequestAllowed(env: Record<string, string | undefined>
 }
 
 export function isUpperCrustUnapprovedMediaPath(pathname: string) {
-  let normalized = pathname;
-  try { normalized = decodeURIComponent(normalized); } catch { /* Malformed paths fail to match the media allowlist. */ }
-  normalized = normalized.replaceAll("\\", "/").toLowerCase();
+  let normalized = pathname.replaceAll("\\", "/").toLowerCase();
+  for (let depth = 0; depth < 3; depth++) {
+    try {
+      const decoded = decodeURIComponent(normalized);
+      if (decoded === normalized) break;
+      normalized = decoded;
+    } catch { break; }
+  }
+  normalized = normalized.replaceAll("\\", "/").replace(/\/{2,}/g, "/");
   return normalized.startsWith("/r/upper-crust/reference-media/")
     || normalized.startsWith("/img/sandwich-shop/")
     || normalized.startsWith("/img/upper-crust/")

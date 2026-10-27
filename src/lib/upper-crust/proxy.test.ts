@@ -56,6 +56,7 @@ test("Preview denies every Upper Crust API, reference photo, and unapproved stat
       ["/r/upper-crust/reference-media/front.jpg", "GET"],
       ["/img/upper-crust/brickwall2.webp", "GET"],
       ["/img/sandwich-shop/storefront-crop.png", "GET"],
+      ["/_next/image?url=%252Fimg%252Fupper-crust%252Fupper-crust.png&w=640&q=75", "GET"],
       ["/_next/image?url=%2Fimg%2Fsandwich-shop%2Fstorefront-crop.png&w=640&q=75", "GET"],
       ["/img/icons/Google_Symbol_0.svg", "GET"],
     ]) assert.equal((await request(path, method)).status, 404, `${method} ${path}`);

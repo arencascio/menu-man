@@ -70,6 +70,7 @@ test("unapproved Upper Crust media paths are identified for server-side denial",
   for (const path of [
     "/r/upper-crust/reference-media/front.jpg",
     "/img/sandwich-shop/awning-carousel/blt.jpg", "/img/upper-crust/upper-crust.png",
+    "/%252Fimg%252Fupper-crust%252Fupper-crust.png",
     "/img/icons/Google_Symbol_0.svg", "/img/icons/yelp%20icon.svg",
     "/img/icons/tripadvisor%20wordmark.svg",
   ]) assert.equal(isUpperCrustUnapprovedMediaPath(path), true, path);
