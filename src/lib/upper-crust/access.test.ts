@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isUpperCrustConceptPage, isUpperCrustUnapprovedMediaPath, upperCrustLocalAllowed,
+  upperCrustProtectedMediaRequestAllowed,
   upperCrustPreviewAllowed, upperCrustPreviewPresentation,
 } from "./access";
 import { isUpperCrustReferenceAsset, isUpperCrustReferencePath } from "./reference-media";
+import { getUpperCrustProtectedMedia, isUpperCrustProtectedMediaPath } from "./protected-media";
 
 test("private prospect concept fails closed outside an opted-in staging loopback process", () => {
   const env = { MENU_MAN_UPPER_CRUST_LOCAL: "true", MENU_MAN_ENV: "staging", NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co" };
@@ -45,7 +47,7 @@ test("hosted feature Preview requires its branch flag and exact deployment host"
   ] as const) {
     assert.equal(upperCrustPreviewAllowed({ ...env, ...patch }, requestHost), false);
   }
-  // The opt-in flag selects a media-safe presentation, never grants access.
+  // The opt-in flag selects a presentation, never grants access.
   assert.equal(upperCrustPreviewAllowed({ MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true" }, host), false);
 });
 
@@ -69,6 +71,20 @@ test("canonical staging requires Preview, its branch-scoped flag, staging databa
     [{ VERCEL_URL: "menu-staging-456.vercel.app.evil.test" }, host],
     [{}, "menu-staging-alias.vercel.app"],
   ] as const) assert.equal(upperCrustPreviewAllowed({ ...env, ...patch }, requestHost), false);
+});
+
+test("original-media feature branch is allowlisted without changing the staging guard", () => {
+  const host = "menu-media-123.vercel.app";
+  const env = {
+    MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true",
+    VERCEL: "1",
+    VERCEL_ENV: "preview",
+    VERCEL_GIT_COMMIT_REF: "feature/upper-crust-original-media-v1",
+    VERCEL_URL: host,
+    NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co",
+  };
+  assert.equal(upperCrustPreviewAllowed(env, host), true);
+  assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/unapproved" }, host), false);
 });
 
 test("only implemented private concept pages pass the route allowlist", () => {
@@ -100,5 +116,51 @@ test("unapproved Upper Crust media paths are identified for server-side denial",
   }
   for (const path of ["/img/super-tacos/approved/social/facebook.png", "/img/super-tacos/approved/social/instagram.png"]) {
     assert.equal(isUpperCrustUnapprovedMediaPath(path), false, path);
+  }
+});
+
+test("protected media has a finite asset allowlist and rejects path tricks", () => {
+  for (const path of [
+    "/r/upper-crust/media/upper-crust.png",
+    "/r/upper-crust/media/storefront-crop.png",
+    "/r/upper-crust/media/blt.jpg",
+    "/r/upper-crust/media/front-door.jpg",
+  ]) assert.equal(isUpperCrustProtectedMediaPath(path), true, path);
+  for (const path of [
+    "/r/upper-crust/media/not-approved.jpg",
+    "/r/upper-crust/media/%2e%2e%2f.env",
+    "/r/upper-crust/media/%252e%252e%252f.env",
+    "/r/upper-crust/media/front.jpg/extra",
+    "/r/upper-crust/reference-media/front.jpg",
+    "/img/upper-crust/brickwall2.webp",
+  ]) assert.equal(isUpperCrustProtectedMediaPath(path), false, path);
+  assert.equal(getUpperCrustProtectedMedia("upper-crust.png")?.contentType, "image/png");
+  assert.equal(getUpperCrustProtectedMedia("../.env"), undefined);
+});
+
+test("protected media requires the same exact local or Preview guard and GET/HEAD", () => {
+  const host = "menu-staging-456.vercel.app";
+  const env = {
+    MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true",
+    VERCEL: "1",
+    VERCEL_ENV: "preview",
+    VERCEL_GIT_COMMIT_REF: "staging",
+    VERCEL_URL: host,
+    NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co",
+  };
+  const path = "/r/upper-crust/media/upper-crust.png";
+  assert.equal(upperCrustProtectedMediaRequestAllowed(env, host, path, "GET"), true);
+  assert.equal(upperCrustProtectedMediaRequestAllowed(env, host, path, "HEAD"), true);
+  for (const [patch, requestHost, method, requestPath] of [
+    [{ VERCEL_ENV: "production" }, host, "GET", path],
+    [{ VERCEL_GIT_COMMIT_REF: "feature/unapproved" }, host, "GET", path],
+    [{ NEXT_PUBLIC_SUPABASE_URL: "https://fullaiodvmilkdxyxnln.supabase.co" }, host, "GET", path],
+    [{ MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: undefined }, host, "GET", path],
+    [{}, "menu-staging-alias.vercel.app", "GET", path],
+    [{}, host, "POST", path],
+    [{}, host, "OPTIONS", path],
+    [{}, host, "GET", "/r/upper-crust/media/not-approved.jpg"],
+  ] as const) {
+    assert.equal(upperCrustProtectedMediaRequestAllowed({ ...env, ...patch }, requestHost, requestPath, method), false);
   }
 });

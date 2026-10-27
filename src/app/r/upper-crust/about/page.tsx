@@ -22,13 +22,13 @@ export default function UpperCrustAbout() {
     </div>}
     <div className={`${styles.aboutGrid} ${previewPresentation ? styles.aboutGridPreview : ""}`}>
       <div className={styles.aboutLeftColumn}>
-        {previewPresentation && <section className={`${styles.neighborhoodCard} ${styles.aboutPhoto}`} aria-label="Storefront concept illustration">
-          <div className={`${styles.previewStorefront} ${styles.previewStorefrontAbout}`} role="img" aria-label="Illustration of a storefront with a green awning"><span className={styles.previewStorefrontAwning}/><span className={styles.previewStorefrontWindow}/><span className={styles.previewStorefrontDoor}/></div>
+        {previewPresentation && <section className={`${styles.neighborhoodCard} ${styles.aboutPhoto}`} aria-label="Storefront photograph">
+          <figure><Image src={upperCrustStorefrontPhoto.src} alt={upperCrustStorefrontPhoto.alt} width={upperCrustStorefrontPhoto.width} height={upperCrustStorefrontPhoto.height} unoptimized loading="eager"/></figure>
         </section>}
       {!previewPresentation && <>
         <div className={styles.aboutMap}><UpperCrustLocationSection /></div>
         <section className={`${styles.neighborhoodCard} ${styles.aboutPhoto}`} aria-label="Storefront photograph">
-          <figure><Image src={upperCrustStorefrontPhoto.src} alt={upperCrustStorefrontPhoto.alt} width={upperCrustStorefrontPhoto.width} height={upperCrustStorefrontPhoto.height} unoptimized/></figure>
+          <figure><Image src={upperCrustStorefrontPhoto.src} alt={upperCrustStorefrontPhoto.alt} width={upperCrustStorefrontPhoto.width} height={upperCrustStorefrontPhoto.height} unoptimized loading="eager"/></figure>
         </section>
       </>}
       </div>

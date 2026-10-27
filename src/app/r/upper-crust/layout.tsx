@@ -41,12 +41,12 @@ export default async function UpperCrustLayout({ children }: { children: ReactNo
     <BrickWall id="site-bricks" className={styles.siteMasonry}/>
     <a className={styles.skip} href="#main-content">Skip to content</a>
     <header className={styles.header}>
-      <Link href="/r/upper-crust" className={styles.wordmark} aria-label={`${upperCrust.name} concept home`}>{previewPresentation ? <strong className={styles.previewBrand}>{upperCrust.name}</strong> : <Image src="/img/upper-crust/upper-crust.png" alt="The Upper Crust" width={1797} height={230} priority/>}<span>SANDWICH SHOPPE · DOWNTOWN RIVERSIDE</span></Link>
+      <Link href="/r/upper-crust" className={styles.wordmark} aria-label={`${upperCrust.name} concept home`}><Image src="/r/upper-crust/media/upper-crust.png" alt="The Upper Crust" width={1797} height={230} unoptimized loading="eager"/><span>SANDWICH SHOPPE · DOWNTOWN RIVERSIDE</span></Link>
       <SiteNavigation/>
     </header>
     {children}
     <footer className={styles.footer}>
-      <div className={styles.footerBrand}><Link href="/r/upper-crust" aria-label="Upper Crust home">{previewPresentation ? <strong className={styles.previewBrand}>{upperCrust.name}</strong> : <Image src="/img/upper-crust/upper-crust.png" alt="The Upper Crust" width={1797} height={230}/>}</Link></div>
+      <div className={styles.footerBrand}><Link href="/r/upper-crust" aria-label="Upper Crust home"><Image src="/r/upper-crust/media/upper-crust.png" alt="The Upper Crust" width={1797} height={230} unoptimized/></Link></div>
       <nav aria-label="Footer navigation"><SiteLinks/></nav>
       <div className={styles.footerContact}><p>{upperCrust.address}<br/>{upperCrust.locality}</p><a href={upperCrustLinks.phone}>{upperCrust.phone}</a><div className={styles.footerSocial}><a href={upperCrustLinks.facebook} target="_blank" rel="noopener noreferrer nofollow">Facebook ↗</a><a href={upperCrustLinks.instagram} target="_blank" rel="noopener noreferrer nofollow">Instagram ↗</a></div></div>
       <span>{upperCrust.disclosure}<br/>Private prospect concept · Menu Man</span>

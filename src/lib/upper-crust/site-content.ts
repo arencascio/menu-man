@@ -1,4 +1,6 @@
 // Private presentation content only. No availability, ordering or payment authority.
+import { upperCrustProtectedMediaUrl } from "./protected-media";
+
 export const upperCrustLinks = {
   directions: "https://www.google.com/maps/dir/?api=1&destination=3573+Main+St%2C+Riverside%2C+CA+92501",
   google: "https://www.google.com/maps/search/?api=1&query=The+Upper+Crust+Sandwich+Shoppe%2C+3573+Main+St%2C+Riverside%2C+CA",
@@ -27,20 +29,19 @@ export function upperCrustToday(date = new Date()) {
 }
 
 export type UpperCrustPhoto = { src: string; alt: string; caption: string; width: number; height: number; sourceUrl?: string; sandwichName?: string };
-const localPhoto = "/r/upper-crust/reference-media/";
-// These photos come from the owner's supplied photo folder. The route is local-only.
+// Owner-attested imagery is served only through the protected media route.
 export const upperCrustPhotos: UpperCrustPhoto[] = [
-  { src: `${localPhoto}front-door.jpg`, alt: "The Upper Crust entrance and storefront sign", caption: "Front door", width: 750, height: 1000 },
-  { src: `${localPhoto}hanging-sign.jpg`, alt: "The Upper Crust hanging sign and outdoor seating", caption: "Hanging sign", width: 750, height: 1000 },
-  { src: `${localPhoto}patio.jpg`, alt: "Outdoor tables and the Upper Crust entrance", caption: "Outdoor seating", width: 750, height: 1000 },
-  { src: `${localPhoto}dining.jpg`, alt: "Sandwiches on a table inside the restaurant", caption: "Sandwiches", width: 1000, height: 750 },
-  { src: `${localPhoto}takeaway.jpg`, alt: "A sandwich and side on an outdoor table", caption: "Sandwich and side", width: 575, height: 1000 },
-  { src: `${localPhoto}desserts.jpg`, alt: "Cookies and brownies in the display case", caption: "Cookies and brownies", width: 750, height: 1000 },
+  { src: upperCrustProtectedMediaUrl("front-door.jpg"), alt: "The Upper Crust entrance and storefront sign", caption: "Front door", width: 750, height: 1000 },
+  { src: upperCrustProtectedMediaUrl("hanging-sign.jpg"), alt: "The Upper Crust hanging sign and outdoor seating", caption: "Hanging sign", width: 750, height: 1000 },
+  { src: upperCrustProtectedMediaUrl("patio.jpg"), alt: "Outdoor tables and the Upper Crust entrance", caption: "Outdoor seating", width: 750, height: 1000 },
+  { src: upperCrustProtectedMediaUrl("dining.jpg"), alt: "Sandwiches on a table inside the restaurant", caption: "Sandwiches", width: 1000, height: 750 },
+  { src: upperCrustProtectedMediaUrl("takeaway.jpg"), alt: "A sandwich and side on an outdoor table", caption: "Sandwich and side", width: 575, height: 1000 },
+  { src: upperCrustProtectedMediaUrl("desserts.jpg"), alt: "Cookies and brownies in the display case", caption: "Desserts", width: 750, height: 1000 },
 ];
-export const upperCrustStorefrontPhoto: UpperCrustPhoto = { src: `${localPhoto}front.jpg`, alt: "The Upper Crust storefront with green awning and seasonal lights", caption: "Storefront photograph", width: 750, height: 1000 };
+export const upperCrustStorefrontPhoto: UpperCrustPhoto = { src: upperCrustProtectedMediaUrl("front.jpg"), alt: "The Upper Crust storefront with green awning and seasonal lights", caption: "Storefront photograph", width: 750, height: 1000 };
 
 const awningCarouselPhoto = (filename: string, label: string, width: number, height: number): UpperCrustPhoto => ({
-  src: `/img/sandwich-shop/awning-carousel/${encodeURIComponent(filename)}`,
+  src: upperCrustProtectedMediaUrl(filename),
   alt: label,
   caption: label,
   width,

@@ -23,7 +23,7 @@ async function request(path: string, method = "GET", host = previewEnv.VERCEL_UR
   return proxy(new NextRequest(url, { method, headers: { host } }));
 }
 
-test("protected Preview permits only the allowlisted Upper Crust pages on its exact deployment host", async () => {
+test("protected Preview permits allowlisted pages and media on its exact deployment host", async () => {
   setEnv(previewEnv);
   try {
     for (const path of ["/r/upper-crust", "/r/upper-crust/menu", "/r/upper-crust/checkout", "/r/upper-crust/about", "/r/upper-crust/catering"]) {
@@ -31,6 +31,12 @@ test("protected Preview permits only the allowlisted Upper Crust pages on its ex
       assert.equal((await request(path, "HEAD")).headers.get("x-middleware-next"), "1", path);
       assert.equal((await request(path, "POST")).status, 404, `${path} POST`);
     }
+    for (const path of ["/r/upper-crust/media/upper-crust.png", "/r/upper-crust/media/blt.jpg"]) {
+      assert.equal((await request(path)).headers.get("x-middleware-next"), "1", path);
+      assert.equal((await request(path, "HEAD")).headers.get("x-middleware-next"), "1", `HEAD ${path}`);
+      assert.equal((await request(path, "POST")).status, 404, `POST ${path}`);
+    }
+    assert.equal((await request("/r/upper-crust/media/not-approved.jpg")).status, 404);
     for (const patch of [
       { VERCEL_ENV: "production" },
       { VERCEL_GIT_COMMIT_REF: "feature/unapproved" },
@@ -45,7 +51,7 @@ test("protected Preview permits only the allowlisted Upper Crust pages on its ex
   } finally { setEnv(originalEnv); }
 });
 
-test("canonical staging permits only the five Upper Crust pages for GET and HEAD", async () => {
+test("canonical staging permits only five pages and exact protected media for GET and HEAD", async () => {
   const host = "menu-staging-456.vercel.app";
   setEnv({ ...previewEnv, VERCEL_GIT_COMMIT_REF: "staging", VERCEL_URL: host });
   try {
@@ -54,12 +60,19 @@ test("canonical staging permits only the five Upper Crust pages for GET and HEAD
       assert.equal((await request(path, "HEAD", host)).headers.get("x-middleware-next"), "1", `HEAD ${path}`);
       assert.equal((await request(path, "POST", host)).status, 404, `POST ${path}`);
     }
+    for (const path of ["/r/upper-crust/media/upper-crust.png", "/r/upper-crust/media/front-door.jpg"]) {
+      assert.equal((await request(path, "GET", host)).headers.get("x-middleware-next"), "1", `GET ${path}`);
+      assert.equal((await request(path, "HEAD", host)).headers.get("x-middleware-next"), "1", `HEAD ${path}`);
+      assert.equal((await request(path, "POST", host)).status, 404, `POST ${path}`);
+    }
+    assert.equal((await request("/r/upper-crust/media/not-approved.jpg", "GET", host)).status, 404);
     for (const path of [
       "/api/restaurants/upper-crust/orders",
       "/api/restaurants/upper-crust/pickup-availability",
       "/r/upper-crust/reference-media/front.jpg",
       "/img/upper-crust/brickwall2.webp",
       "/_next/image?url=%252Fimg%252Fupper-crust%252Fupper-crust.png&w=640&q=75",
+      "/_next/image?url=%2Fr%2Fupper-crust%2Fmedia%2Fupper-crust.png&w=640&q=75",
     ]) assert.equal((await request(path, "GET", host)).status, 404, `GET ${path}`);
   } finally { setEnv(originalEnv); }
 });
@@ -77,6 +90,8 @@ test("Preview denies every Upper Crust API, reference photo, and unapproved stat
       ["/img/sandwich-shop/storefront-crop.png", "GET"],
       ["/_next/image?url=%252Fimg%252Fupper-crust%252Fupper-crust.png&w=640&q=75", "GET"],
       ["/_next/image?url=%2Fimg%2Fsandwich-shop%2Fstorefront-crop.png&w=640&q=75", "GET"],
+      ["/_next/image?url=%2Fr%2Fupper-crust%2Fmedia%2Fupper-crust.png&w=640&q=75", "GET"],
+      ["/r/upper-crust/media/not-approved.jpg", "GET"],
       ["/img/icons/Google_Symbol_0.svg", "GET"],
     ]) assert.equal((await request(path, method)).status, 404, `${method} ${path}`);
   } finally { setEnv(originalEnv); }

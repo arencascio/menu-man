@@ -8,10 +8,11 @@ import BrickWall from "./BrickWall";
 import styles from "./upper-crust.module.css";
 import UpperCrustDetails from "./UpperCrustDetails";
 import { isUpperCrustPreviewPresentation } from "@/lib/upper-crust/preview-presentation";
+import { upperCrustProtectedMediaUrl } from "@/lib/upper-crust/protected-media";
 
 export default function UpperCrustHome() {
   const previewPresentation = isUpperCrustPreviewPresentation();
-  const communityPhotos = previewPresentation ? [] : [...upperCrustPhotos, upperCrustStorefrontPhoto].map((photo) => ({
+  const communityPhotos = [...upperCrustPhotos, upperCrustStorefrontPhoto].map((photo) => ({
     src: photo.src, alt: photo.alt, caption: null, itemName: photo.caption,
   }));
   return <main id="main-content" className={styles.homeMain}>
@@ -20,18 +21,18 @@ export default function UpperCrustHome() {
         <div className={styles.welcomePanel}>
           <h1 id="welcome-heading">Serving sandwiches to Downtown Riverside for over 20 years</h1>
           <div className={styles.todayHours}><span>Monday–Saturday</span><strong>10 AM–5 PM</strong><span>Sunday</span><strong>11 AM–4 PM</strong></div>
-          <div className={`${styles.storefrontFrame} ${previewPresentation ? styles.storefrontFramePreview : ""}`}>{previewPresentation ? <div className={styles.previewStorefront} role="img" aria-label="Illustration of a storefront with a green awning"><span className={styles.previewStorefrontAwning}/><span className={styles.previewStorefrontWindow}/><span className={styles.previewStorefrontDoor}/></div> : <Image className={styles.storefrontImage} src="/img/sandwich-shop/storefront-crop.png" alt="The Upper Crust storefront" width={700} height={700} unoptimized priority/>}<div className={styles.heroActions}><Link className={styles.button} href="/r/upper-crust/menu"><Image src="/img/icons/utensils.svg" alt="" width={18} height={18} unoptimized/>View Menu</Link><a className={styles.textLink} href="https://maps.google.com/?q=3573+Main+Street,+Riverside,+CA+92501" target="_blank" rel="noopener noreferrer nofollow"><Image src="/img/icons/map-pin.svg" alt="" width={18} height={18} unoptimized/>{upperCrust.address}, Riverside</a></div></div>
+          <div className={styles.storefrontFrame}><Image className={styles.storefrontImage} src={upperCrustProtectedMediaUrl("storefront-crop.png")} alt="The Upper Crust storefront" width={700} height={700} unoptimized loading="eager"/><div className={styles.heroActions}><Link className={styles.button} href="/r/upper-crust/menu"><Image src="/img/icons/utensils.svg" alt="" width={18} height={18} unoptimized/>View Menu</Link><a className={styles.textLink} href="https://maps.google.com/?q=3573+Main+Street,+Riverside,+CA+92501" target="_blank" rel="noopener noreferrer nofollow"><Image src="/img/icons/map-pin.svg" alt="" width={18} height={18} unoptimized/>{upperCrust.address}, Riverside</a></div></div>
         </div>
       </div>
-      <ShopWindow photos={previewPresentation ? [] : upperCrustAwningCarouselPhotos}/>
+      <ShopWindow photos={upperCrustAwningCarouselPhotos}/>
     </section>
     <BrickWall id="hero-transition" className={styles.brickTransition}/>
     <nav className={styles.ribbon} aria-label="Explore menu sections">
       <Link href="/r/upper-crust/menu#restaurant-menu-section-uc-specialty">Specialty sandwiches</Link><i aria-hidden="true">&#10035;</i><Link href="/r/upper-crust/menu#restaurant-menu-section-uc-custom">Custom sandwiches</Link><i aria-hidden="true">&#10035;</i><Link href="/r/upper-crust/menu#restaurant-menu-section-uc-soups">Soups & salads</Link><i aria-hidden="true">&#10035;</i><Link href="/r/upper-crust/menu#restaurant-menu-section-uc-extras">Sides & sweets</Link>
     </nav>
-      {!previewPresentation && <section className={styles.community} aria-label="Photos">
+      <section className={styles.community} aria-label="Photos">
       <RestaurantPhotoFilmstrip photos={communityPhotos} controlsLabel={null} controlsPlacement="sides" svgControls enableViewer viewportLabel="Restaurant photos. Drag or use left and right arrow keys to browse."/>
-      </section>}
+      </section>
     {previewPresentation ? <section className={styles.previewReviews} aria-labelledby="preview-reviews-heading">
       <div className={styles.previewReviewsInner}>
         <h2 id="preview-reviews-heading">Reviews</h2>

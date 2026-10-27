@@ -4,9 +4,10 @@ import { isRestaurantPublicationRestricted } from "./lib/public-restaurant-acces
 import { isManagementOnlyPath, isProductionManagementDisabled } from "./lib/production-management-gate";
 import {
   isUpperCrustConceptPage, isUpperCrustUnapprovedMediaPath, upperCrustLocalAllowed,
-  upperCrustPreviewAllowed,
+  upperCrustPreviewAllowed, upperCrustProtectedMediaRequestAllowed,
 } from "./lib/upper-crust/access";
 import { isUpperCrustReferencePath } from "./lib/upper-crust/reference-media";
+import { isUpperCrustProtectedMediaPath } from "./lib/upper-crust/protected-media";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -17,7 +18,13 @@ export async function proxy(request: NextRequest) {
       try { return isUpperCrustUnapprovedMediaPath(new URL(source, request.nextUrl.origin).pathname); }
       catch { return false; }
     })());
-  if (unapprovedMediaPath && (process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV))) {
+  const optimizedProtectedMediaPath = pathname === "/_next/image" && (() => {
+    const source = request.nextUrl.searchParams.get("url");
+    if (!source) return false;
+    try { return isUpperCrustProtectedMediaPath(new URL(source, request.nextUrl.origin).pathname); }
+    catch { return false; }
+  })();
+  if (optimizedProtectedMediaPath || (unapprovedMediaPath && (process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV)))) {
     return new NextResponse("Not found", {
       status: 404,
       headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive" },
@@ -47,8 +54,9 @@ export async function proxy(request: NextRequest) {
       const allowedLocalMedia = ["GET", "HEAD"].includes(request.method)
         && isUpperCrustReferencePath(pathname)
         && upperCrustLocalAllowed(process.env, host);
+      const allowedProtectedMedia = upperCrustProtectedMediaRequestAllowed(process.env, host, pathname, request.method);
       // No concept API access, including order and availability endpoints.
-      if (!allowedPage && !allowedLocalMedia) {
+      if (!allowedPage && !allowedLocalMedia && !allowedProtectedMedia) {
         return new NextResponse("Not found", { status: 404, headers });
       }
       const response = NextResponse.next({ request });

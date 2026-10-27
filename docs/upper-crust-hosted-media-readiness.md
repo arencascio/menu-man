@@ -1,17 +1,24 @@
 # Upper Crust hosted media readiness
 
-Reviewed 2026-10-26 against RC `7647988`, using the
+Initial readiness was reviewed 2026-10-26 against RC `7647988`, using the
 [integration report](./upper-crust-staging-rc-integration.md) and
-[source packaging report](./upper-crust-v1-source-package.md). No branch inventory
-or commerce/dependency investigation was repeated.
+[source packaging report](./upper-crust-v1-source-package.md). The project owner
+added the following authorization on 2026-10-26.
 
-**Media publication gate remains open.** The tracing defect is corrected, but
-publication rights for the required photo, logo, storefront and brand assets are
-still unconfirmed. No media bytes were copied into the RC, and no local-only
-media restriction was weakened. A separate protected Preview implementation now
-allows only the approved Upper Crust pages on its branch-scoped Preview while
-continuing to deny all reference-media and unapproved-media requests; see
-[Protected Preview V1](./upper-crust-protected-preview-v1.md).
+## Owner attestation
+
+The project owner explicitly attests that the rights holder authorized the
+original Upper Crust imagery selected in the manifest, and that the Upper Crust
+logo was created by the project owner. This approval covers the exact **26
+manifest-listed image bytes** used only in the SSO-protected staging Preview:
+the logo, storefront crop, brick texture, 16 awning-carousel photographs and
+seven local-reference photographs. Their SHA-256 values and protected route
+names are recorded in the [asset manifest](./upper-crust-hosted-asset-manifest.json).
+
+This attestation does not authorize production or public release. It does not
+cover Google, Yelp or Tripadvisor marks, reviewer quotations/attributions,
+reviewer avatars, third-party scripts or embeds, or unrelated content. Those
+assets remain excluded; the homepage keeps its Google/Yelp source links.
 
 ## Exact manifest and reconciliation
 
@@ -23,20 +30,20 @@ main/source/RC file presence, byte size, SHA-256, available owner-folder candida
 provenance evidence and required permission decision. Destination proposals are
 not authorization to copy or publish.
 
-| Group | Missing | Essential to preserve approved visuals | Permission disposition |
-| --- | ---: | ---: | --- |
-| Awning/gallery photographs | 16 | 16 | Publication rights unconfirmed |
-| PNG logo, storefront crop, brick texture | 3 | 3 | Supplied/selected, without publication-rights record |
-| Google marks (2), Yelp and Tripadvisor marks | 4 | 4 | Third-party brand artwork; reproduction permission/terms unverified |
-| Pause SVG | 1 | 0 | Optional non-SVG control path; existing file has Lucide class but no verified license/provenance for its bytes |
-| Broadway font | 1 | 0 | Proprietary redistribution not established; CSS declaration has no active font-family use |
-| Local-reference JPEGs | 7 | 7 | Explicitly authorized only for local concept review |
-| Boogaloo control, already present | 0 | 1 | OFL license and provenance already committed; no correction needed |
+| Group | Files | Current decision |
+| --- | ---: | --- |
+| Awning/gallery photographs | 16 | Owner-attested for the protected staging Preview; exact hashes are in the manifest |
+| PNG logo, storefront crop, brick texture | 3 | Logo owner-created; imagery owner-attested for the protected staging Preview |
+| Local-reference JPEGs | 7 | Owner-attested for the protected staging Preview; exact hashes are in the manifest |
+| Google marks (2), Yelp and Tripadvisor marks | 4 | Third-party artwork; terms remain unverified and files remain excluded |
+| Pause SVG | 1 | Optional path; provenance remains unverified and file remains excluded |
+| Broadway font | 1 | Proprietary redistribution is not established; file remains excluded and font is unused |
+| Boogaloo control, already present | 1 | OFL license and provenance are committed |
 
-All 32 missing references have actual candidate bytes in the source worktree.
-Thirty have byte-identical candidates in the main repository. The source-only
-exceptions are the Google review-card favicon and Broadway. The current RC has
-none of those 32 files. Existing RC social/navigation icons remain unchanged.
+The 26 owner-attested files are bundled byte-for-byte outside `public/`. The six
+remaining absent references are the four unapproved brand marks, optional pause
+icon and unused proprietary Broadway font. No third-party artwork or font is
+bundled.
 
 The main repository's `public/img/sandwich-shop/front.jpg` is **not** the selected
 route image: 221,718 bytes versus 153,050 bytes. Its `storefront.jpg` matches the
@@ -44,37 +51,36 @@ source's local-reference `front.jpg`, SHA-256
 `f9d86279571c20cf658413a585753cc31ded739240c8a1aab4099b66cb50d814`.
 The manifest retains both candidates and hashes to prevent a filename-based swap.
 
-The main repository also keeps the matching logo and brick texture under
-`public/img/sandwich-shop/`, whereas active RC URLs point to `img/upper-crust/`.
-That path mismatch can be corrected by a byte-identical copy only after permission
-is established; it is not evidence of permission itself.
+The restored logo, storefront, brick texture and photographs are not copied into
+`public/`. Their original public URLs were replaced with `/r/upper-crust/media/`
+routes backed by the server-only bundle. The exact source and destination for each
+approved file are recorded in the manifest; byte identity is checked by SHA-256.
 
 The Google review-card mark was downloaded from Google's favicon endpoint by the
 source's local helper. Availability at that endpoint is provenance, not proof of
 republication permission. No blanket permission was inferred from owner-supplied
 labels, local public folders, prior visual selection, or existing Git history.
 
-## Proposed hosted delivery, not implemented
+## Protected Preview delivery
 
-For these seven fixed photographs, prefer a small **read-only server bundle** over
-new storage infrastructure:
+The protected Preview uses a read-only server bundle; no storage service or public
+media path was added:
 
-1. After rights approval, retain the selected original JPEGs, dimensions, alt text
-   and filenames in `media/upper-crust/approved/`, outside `public/`. Together they
-   are 1,136,166 bytes. No recompression, generated replacement or image swap is needed.
-2. Keep the existing `/r/upper-crust/reference-media/<name>.jpg` URLs. Continue using
-   the finite seven-name allowlist, JPEG content type, nosniff, private/no-store,
-   noindex and existing unoptimized image rendering. Preserve missing/unknown-file
-   404 behavior. Static files outside `public/` avoid an unguarded alternate URL.
-3. In a separately approved implementation, explicitly include only these seven
-   paths in the media route's function bundle via scoped file tracing/includes,
-   and read them using a deployment-relative `process.cwd()` path. Verify the
-   generated trace contains exactly those approved media bytes and no local-review
-   directory. Keep the existing environment-selected root for local review only.
-4. Keep server-side protected-preview authorization on the five approved pages.
-   Reference-media routes remain local-only, and unapproved public assets and
-   optimized-image sources remain denied on Vercel. The protected page gate does
-   not authorize publication or deployment of any photo or third-party artwork.
+1. The exact 26 files live under `media/upper-crust/approved/`, outside `public/`.
+   Original bytes, dimensions, alt text and filenames are retained; no recompression,
+   generated replacement or image swap is used.
+2. The server-only route `/r/upper-crust/media/<allowlisted-name>` serves only the
+   finite manifest-backed map. It accepts GET/HEAD and returns the correct image
+   type with nosniff, same-origin resource policy, no-referrer, private/no-store
+   and noindex headers. Unknown names, invalid paths and missing files return 404.
+3. `outputFileTracingIncludes` includes only the approved media directory for that
+   route. Build-trace validation checks that the generated trace contains the 26
+   approved files and excludes local-review folders and unrelated assets.
+4. The route repeats the existing local or protected Preview authorization:
+   Preview mode, explicit branch-scoped enablement, the staging Supabase URL, and
+   the exact deployment hostname. Vercel SSO remains the outer access control.
+   The old `/reference-media/` route stays local-only. Original `/img/...` paths
+   and optimized-image requests do not provide alternate access.
 
 Vercel documents [bundling and reading files in functions](https://vercel.com/kb/guide/how-can-i-use-files-in-serverless-functions).
 The installed Next.js guide documents route-scoped `outputFileTracingIncludes`.
@@ -82,50 +88,31 @@ This architecture needs no database, writable persistent filesystem, credentials
 new dependency or external image host. A protected object store is an alternative
 only if future owner-managed uploads justify its extra service/access work.
 
-For the 23 essential public-file references, the proposed destinations preserve
-current URLs; any future publication must verify rights and protection for those
-static assets too.
-Google reviewer avatars, Maps and Yelp widgets remain separate external runtime
-dependencies. Their service/display permissions and privacy behavior still need
-review; this task neither mirrors nor licenses their remote content.
+The six remaining references are the four Google/Yelp/Tripadvisor marks, optional
+pause icon and unused proprietary Broadway font. They are not bundled or requested
+by the protected Preview. Google reviewer avatars, Maps and Yelp review widgets
+are also not rendered or loaded there. Their display permissions and provider terms
+remain unresolved; the page keeps only outbound Google/Yelp source links.
 
-## Safe correction and validation
+## Current focused validation
 
-The local-only media handler now marks **both** its runtime-only `readFile` and
-dynamic `join` argument with `turbopackIgnore`. The installed compiler diagnostics
-specifically recommend these per-call annotations. Ignoring only the read removes
-one warning but leaves path analysis tracing the project; both are necessary.
-These are compiler hints, not a runtime bypass or a global trace exclusion.
-
-The change retains the exact path expression, allowlist, environment/host gates,
-filesystem override, response bytes and headers. Reference files are intentionally
-not deployment dependencies while their authorization remains local-only. The
-future approved hosted bundle must be included explicitly; this fix alone does
-not make images available on Vercel.
-
-- Standard Next.js 16.4.2 Turbopack production build, including TypeScript: passed,
-  with no tracing warnings after the correction. Build used process-only loopback
-  placeholders; no environment file or deployment configuration changed.
-- Media route trace: **121 entries**, down from **1,097** in the integrated baseline.
-  No source/public/docs/local-media/environment/browser-artifact entries remain.
-- Direct route checks: all seven existing source JPEGs served byte-for-byte with
-  unchanged JPEG/private/no-store/robots headers. Read-only source access only.
-- Twelve cases rejected with 404: missing opt-in, production mode, Vercel markers,
-  wrong project URL, public Host, invalid filenames/traversal/prototype keys,
-  relative media root and missing file.
-- Four existing access/allowlist/hours tests, targeted ESLint and diff checks pass.
-  Existing visual/Chrome evidence is reused: no visual component or media bytes
-  changed, so no broad regression or repeated Chrome pass was needed.
-- No dependency, commerce, checkout, migration, Supabase, other-worktree,
-  deployment or push changes. Ignored raw validation output is under
-  `.playwright/upper-crust-media-readiness/`.
-
-## Director decisions before closure
-
-Obtain publication authorization covering the exact selected 30 essential assets
-(or an explicitly approved scope reduction), settle brand-mark reproduction rights,
-and approve the scoped seven-file media bundle. Keep
-Broadway excluded unless a redistribution license is supplied; it is unnecessary
-to the current rendered design. The optional pause-image path can remain excluded
-or receive a separately reviewed cleanup. Do not treat this report as authorization
-to publish the local-reference photographs.
+- The source manifest's 26 owner-attested assets match their recorded SHA-256
+  values in the protected bundle; the total bundle is 5,590,692 bytes.
+- The route trace contains **26 approved image files** in 148 total trace entries.
+  It contains no `.local-reference-media` files or duplicate `public/img` copies.
+- All 26 route GETs returned the expected JPEG/PNG/WebP content type, private/no-store
+  and noindex headers, and byte hashes matching the manifest. The logo HEAD check
+  passed. Unknown media, old local-only routes, public static paths, optimized image
+  requests, and Upper Crust order/pickup APIs returned 404.
+- Focused access/media/proxy tests pass **15/15**. Targeted ESLint and the Next.js
+  16.4.2 Turbopack production build (including TypeScript) pass. Build-time Supabase
+  configuration used the exact staging URL and process-only placeholder keys; no
+  database operation occurred.
+- Google Chrome responsive QA passed **20 route/viewport combinations** across
+  320, 390, 768 and 1440px. Homepage, About and Catering photographs and the shop
+  window/carousel and filmstrip were visually checked locally. Image advance and
+  filmstrip viewer navigation worked. The existing simulated-commerce QA remains
+  reused because menu and checkout code are unchanged.
+- No external review script, iframe, reviewer avatar, platform mark, public media
+  URL or production/database setting was added. Review-specific display remains
+  limited to text-only Google/Yelp source links pending separate permission.

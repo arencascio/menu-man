@@ -1,29 +1,41 @@
-# Upper Crust protected Preview V1
+# Upper Crust protected Preview access
 
-This branch's Upper Crust pages are available only on the single Vercel Preview
-deployment created from `feature/upper-crust-protected-preview-v1`. App-level
-authorization requires all of the following on each request:
+Upper Crust pages and approved media are available only on deployment-specific
+Vercel Previews from these branches: `feature/upper-crust-protected-preview-v1`,
+`feature/upper-crust-original-media-v1` and canonical `staging`. App-level
+authorization requires all of the following on each page or media request:
 
 - `MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED=true`, scoped to this branch's Preview
   environment.
 - `VERCEL=1` and `VERCEL_ENV=preview`.
-- `VERCEL_GIT_COMMIT_REF=feature/upper-crust-protected-preview-v1`.
+- `VERCEL_GIT_COMMIT_REF` exactly matches an allowlisted branch above.
 - `NEXT_PUBLIC_SUPABASE_URL=https://jjvongzvtnzlvwdfcnjk.supabase.co`.
 - The request Host exactly matches the deployment's `VERCEL_URL`, which must be
   a `.vercel.app` hostname.
 - Vercel Deployment Protection must authenticate the visitor through the
   existing project SSO policy. Do not create a shareable protection-bypass URL.
 
-The feature flag only selects a media-safe rendering; it is not an access
+The feature flag selects the Preview presentation; it is not an access
 credential. Local access continues to require the existing explicit staging
-loopback opt-in. Production, other branches, host aliases, non-GET/HEAD page
-methods, Upper Crust APIs, and reference-media routes remain denied.
+loopback opt-in. Production, other branches, host aliases and non-GET/HEAD
+requests remain denied. Upper Crust order and availability APIs remain denied.
 
-Vercel project `menu-man` has branch-scoped Preview variables for this branch:
-`MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED=true` and
-`NEXT_PUBLIC_SUPABASE_URL=https://jjvongzvtnzlvwdfcnjk.supabase.co`. Its existing
-Deployment Protection remains SSO-enabled for all except custom domains; no
+Vercel project `menu-man` uses branch-scoped Preview variables for the media
+feature branch and canonical staging: `MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED=true`
+and `NEXT_PUBLIC_SUPABASE_URL=https://jjvongzvtnzlvwdfcnjk.supabase.co`. The
+original protected-preview feature branch keeps its existing settings.
+Deployment Protection remains SSO-enabled for all except custom domains. No
 protection or bypass settings were changed, and no bypass URL was created.
+
+The 26 owner-attested logo, storefront, brick and photo assets are stored in the
+server-only `media/upper-crust/approved/` bundle and served through the finite
+`/r/upper-crust/media/<asset>` route. Only exact allowlisted GET/HEAD requests
+pass the same Preview branch/database/host guard. Responses are private/no-store,
+noindex, same-origin and nosniff. No copies are placed in `public/`, and
+Next.js image optimization requests for these assets are denied. The separate
+`/reference-media/` handler stays local-only. Google/Yelp/Tripadvisor marks,
+review text/attribution, reviewer avatars and third-party embeds are not part of
+this authorization; the hosted homepage retains only text source links.
 
 Upper Crust menu items remain non-orderable fixture data. Checkout uses the
 existing client-side sample receipt and cannot create a persisted order or
@@ -37,7 +49,7 @@ were not established.
 Focused tests:
 
 ```sh
-node --import=tsx --test src/lib/upper-crust/access.test.ts src/lib/upper-crust/proxy.test.ts src/lib/upper-crust/config.test.ts
+node --import=tsx --test src/lib/upper-crust/access.test.ts src/lib/upper-crust/proxy.test.ts src/lib/upper-crust/protected-media.test.ts src/lib/upper-crust/config.test.ts
 ```
 
 Responsive browser QA uses Google Chrome via:

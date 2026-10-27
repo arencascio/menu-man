@@ -1,5 +1,7 @@
+import { isUpperCrustProtectedMediaPath } from "./protected-media";
+
 const STAGING_SUPABASE_URL = "https://jjvongzvtnzlvwdfcnjk.supabase.co";
-const PREVIEW_BRANCHES = new Set(["feature/upper-crust-protected-preview-v1", "staging"]);
+const PREVIEW_BRANCHES = new Set(["feature/upper-crust-protected-preview-v1", "feature/upper-crust-original-media-v1", "staging"]);
 
 export function isUpperCrustConceptPage(pathname: string) {
   return ["/r/upper-crust", "/r/upper-crust/menu", "/r/upper-crust/checkout", "/r/upper-crust/about", "/r/upper-crust/catering"].includes(pathname);
@@ -13,9 +15,9 @@ export function upperCrustLocalAllowed(env: Record<string, string | undefined>, 
     && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
 }
 
-// This flag only enables a presentation with unlicensed media omitted. It does
-// not grant access. Hosted access also requires Vercel's protected Preview,
-// this exact feature branch, staging Supabase, and its exact deployment host.
+// This flag selects the owner-attested protected Preview presentation. It does
+// not grant access. Hosted access still requires Vercel Preview, an allowlisted
+// branch, staging Supabase, and the exact deployment host.
 export function upperCrustPreviewPresentation(env: Record<string, string | undefined>) {
   return env.MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED === "true";
 }
@@ -34,6 +36,17 @@ export function upperCrustPreviewAllowed(env: Record<string, string | undefined>
 
 export function upperCrustRequestAllowed(env: Record<string, string | undefined>, host: string) {
   return upperCrustLocalAllowed(env, host) || upperCrustPreviewAllowed(env, host);
+}
+
+export function upperCrustProtectedMediaRequestAllowed(
+  env: Record<string, string | undefined>,
+  host: string,
+  pathname: string,
+  method: string,
+) {
+  return ["GET", "HEAD"].includes(method)
+    && isUpperCrustProtectedMediaPath(pathname)
+    && upperCrustRequestAllowed(env, host);
 }
 
 export function isUpperCrustUnapprovedMediaPath(pathname: string) {
