@@ -34,12 +34,18 @@ test("Upper Crust fixture matches the captured DoorDash item and price inventory
   assert.ok(items.find(({ id }) => id === "uc-custom")?.description?.includes("filling"));
   const matchedImages = Object.fromEntries(items.filter(({ image_url }) => image_url).map(({ id, image_url }) => [id, image_url]));
   assert.deepEqual(matchedImages, {
-    "uc-italian-sub-one": "/r/upper-crust/media/italian%20sub.jpg",
+    "uc-italian-sub-one": "/r/upper-crust/media/menu-italian-sub-for-one.jpg",
     "uc-hawaiian": "/r/upper-crust/media/hawaiian%20sandwich.jpg",
-    "uc-blt": "/r/upper-crust/media/blt.jpg",
+    "uc-grinder-one": "/r/upper-crust/media/menu-grinder-for-one.png",
+    "uc-french-dip": "/r/upper-crust/media/menu-french-dip.jpg",
+    "uc-bbq-beef": "/r/upper-crust/media/menu-bbq-beef.jpg",
+    "uc-blt": "/r/upper-crust/media/menu-blt.jpg",
+    "uc-grinder-two": "/r/upper-crust/media/menu-grinder-for-two.png",
     "uc-cobb-salad": "/r/upper-crust/media/cobb%20salad.jpg",
     "uc-brownies": "/r/upper-crust/media/brownie.jpg",
     "uc-custom": "/r/upper-crust/media/veggie%20sandwich.jpg",
+    "uc-half-custom": "/r/upper-crust/media/menu-half-custom-sandwich.jpg",
+    "uc-dinner-salad": "/r/upper-crust/media/menu-dinner-salad.jpg",
   });
   assert.equal(items.filter(({ description }) => description).length, 22);
   for (const menuItem of items) assertModifierConditions(menuItem.modifierGroups);

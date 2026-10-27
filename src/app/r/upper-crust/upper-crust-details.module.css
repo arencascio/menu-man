@@ -7,7 +7,7 @@
 .amenities img { object-fit: contain; opacity: .78; }
 .ratings { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
 .ratings a { display: grid; min-width: min(100%, 210px); gap: .25rem; border: 1px solid #ddd1be; border-radius: .75rem; padding: 1rem 1.2rem; color: inherit; background: #fffdf8; text-decoration: none; }
-.ratings a:focus-visible, .directions:focus-visible, .quotes a:focus-visible { outline: 3px solid #9c5737; outline-offset: 3px; }
+.ratings a:focus-visible, .quotes a:focus-visible { outline: 3px solid #9c5737; outline-offset: 3px; }
 .ratings a > span { color: #715a47; font-size: .82rem; font-weight: 700; }
 .ratings strong { font-size: 1.5rem; font-weight: 700; }
 .ratings strong span { color: #a96c24; font-size: .85rem; letter-spacing: .08em; }
@@ -83,7 +83,6 @@
 .location .eyebrow { color: #e6c9a7; }
 .location h2 { color: inherit; }
 .location iframe { display: block; width: 100%; min-height: 330px; border: 0; border-radius: .75rem; }
-.directions { display: inline-flex; grid-column: 1 / -1; min-height: 44px; align-items: center; gap: .6rem; margin-top: 1rem; color: #fffaf1; font-weight: 700; text-underline-offset: .2em; }
 @media (max-width: 800px) {
 }
 @media (max-width: 520px) {
@@ -95,17 +94,18 @@
 }
 .socialStrip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
 .socialStrip > a,.socialPlaceholder { display:flex; min-width:0; min-height:72px; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #ddd1be; border-radius:8px; padding:7px; color:#302c25; background:#fffaf0; text-decoration:none; }
-.socialStrip img { display:block; width:32px; height:32px; object-fit:contain; }
+.socialStrip img { display:block; flex:none; object-fit:contain; }
 .socialStrip > a:hover { text-decoration:underline; }
 .socialStrip > a { flex-direction:row; text-align:center; }
 .socialStrip .reviewLink { display:flex; justify-content:center; gap:8px; text-align:left; }
 .socialStrip .reviewLink > span { min-width:0; }
 .socialStrip .reviewLink small { display:block; }
 .socialStrip .tripadvisorMark { width:108px; height:32px; }
-.socialStrip strong { font-size:1.25rem; }
-.socialStrip strong span { color:#a96c24; font-size:.75rem; }
+.socialStrip strong { font-size:1.25rem; white-space:nowrap; }
 .socialStrip small { color:#6c6259; font-size:.75rem; }
+.socialStrip .googleLink > img { width:36px; height:36px; }
+.socialStrip .facebookMark { width:116px; height:28px; }
 .socialPlaceholder { color:#736b60; border-style:dashed; }
 .socialDisclosure { margin:10px 0 0; color:#6c6259; font-size:.75rem; line-height:1.5; }
 @media(max-width:520px) { .socialStrip { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:10px; } }
-@media(max-width:340px) { .socialStrip { gap:6px; padding:8px; } .socialStrip strong { font-size:1.1rem; } .socialStrip .reviewLink { gap:4px; padding:5px; } .socialStrip .reviewLink > img { width:24px; height:24px; } .socialStrip strong span { font-size:.62rem; } }
+@media(max-width:340px) { .socialStrip { gap:6px; padding:8px; } .socialStrip strong { font-size:1.1rem; } .socialStrip .reviewLink { gap:4px; padding:5px; } .socialStrip .reviewLink > img { width:24px; height:24px; } .socialStrip .googleLink > img { width:30px; height:30px; } .socialStrip .facebookMark { width:88px; height:20px; } }

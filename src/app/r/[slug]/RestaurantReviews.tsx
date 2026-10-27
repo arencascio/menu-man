@@ -11,7 +11,7 @@ export type RestaurantReview = {
   attribution: string;
   avatarUrl?: string;
   stars?: 1 | 2 | 3 | 4 | 5;
-  source?: { label: string; href?: string; icon?: "google" };
+  source?: { label: string; href?: string; icon?: "google"; iconUrl?: string };
 };
 
 export default function RestaurantReviews({ title, items, disclosure, autoAdvance = false, autoAdvanceInterval = 11000, controlsPlacement = "heading", yelpEmbeds = [], svgControls = false }: {
@@ -203,7 +203,7 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
                 if (image?.complete && image.naturalWidth === 0) image.hidden = true;
               }} onError={(event) => { event.currentTarget.hidden = true; }} />
             ) : review.attribution.split(" ").map((part) => part[0]).join("")}</span><span>{review.attribution}
-              {review.source ? <span className={styles.source}>{review.source.icon === "google" ? <Image className={styles.sourceIcon} src="/img/icons/google-g.png" alt="Google" width={18} height={18} unoptimized /> : null}{review.source.href ? <a href={review.source.href} target="_blank" rel="noreferrer">{review.source.label}</a> : review.source.label}</span> : null}
+              {review.source ? <span className={styles.source}>{review.source.icon === "google" ? <Image className={styles.sourceIcon} src={review.source.iconUrl ?? "/img/icons/google-g.png"} alt="Google" width={18} height={18} unoptimized /> : null}{review.source.href ? <a href={review.source.href} target="_blank" rel="noreferrer">{review.source.label}</a> : review.source.label}</span> : null}
             </span></figcaption>
           </figure>
           </article>] : [];

@@ -8,6 +8,7 @@ import BrickWall from "./BrickWall";
 import styles from "./upper-crust.module.css";
 import { upperCrustProtectedMediaUrl } from "@/lib/upper-crust/protected-media";
 import UpperCrustReviews from "./UpperCrustReviews";
+import UpperCrustSocialBar from "./UpperCrustSocialBar";
 
 export default function UpperCrustHome() {
   const communityPhotos = [...upperCrustPhotos, upperCrustStorefrontPhoto].map((photo) => ({
@@ -31,6 +32,7 @@ export default function UpperCrustHome() {
       <section className={styles.community} aria-label="Photos">
       <RestaurantPhotoFilmstrip photos={communityPhotos} controlsLabel={null} controlsPlacement="sides" svgControls enableViewer viewportLabel="Restaurant photos. Drag or use left and right arrow keys to browse."/>
       </section>
+    <section className={styles.homeSocialBar} aria-label="Social and review links"><UpperCrustSocialBar /></section>
     <UpperCrustReviews />
 
   </main>;

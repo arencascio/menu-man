@@ -6,19 +6,32 @@
     "source": "C:/menu-man/.worktrees/staging-catering-v1/.worktrees/upper-crust-demo",
     "rc": "C:/menu-man/.worktrees/staging-release-candidate"
   },
-  "scope": "26 exact original image assets are owner-attested for the SSO-protected Preview and bundled outside public/. Six third-party or proprietary references remain excluded; their presence in the source tree is not authorization.",
+  "scope": "26 original image assets remain covered by the 2026-10-26 owner attestation. Eight additional local item photos and three supplied social marks are included only in this SSO-protected feature Preview under the current owner instruction; that instruction does not authorize public or production use. Six unrelated third-party or proprietary references remain excluded.",
   "ownerAttestation": {
     "date": "2026-10-26",
     "scope": "The project owner attests that the rights holder authorized the exact selected original Upper Crust imagery and that the logo was created by the project owner. Approval is limited to the SSO-protected staging Preview and covers only the 26 records updated below. It does not authorize production/public release, third-party marks, review text, reviewer avatars, external embeds/scripts, or unrelated content.",
     "evidence": "Project owner authorization recorded in docs/upper-crust-hosted-media-readiness.md#owner-attestation"
   },
+  "supplementalPreviewAssets": [
+    { "key": "menu-bbq-beef.jpg", "file": "menu-items/bbq-beef.jpg", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/bbq-beef-882844155.jpg", "bytes": 93232, "sha256": "C38050ECCC7E5707C81D83E8315E6C8DFAA78D909F18A1D741F20ADA1D6EA771", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-blt.jpg", "file": "menu-items/blt.jpg", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/blt-882844154.jpg", "bytes": 91166, "sha256": "7D14C7751EC30863D230CA40098790178E5EF533BE5E6FE3DD6A0F09C6D1A32A", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-dinner-salad.jpg", "file": "menu-items/dinner-salad.jpg", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/dinner-salad-882844164.jpg", "bytes": 92196, "sha256": "24BA505D01DF967C5ED53B9A73C2C873B65B924A89E0E07106CC0C1AA49EB299", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-french-dip.jpg", "file": "menu-items/french-dip.jpg", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/french-dip-882844150.jpg", "bytes": 86899, "sha256": "2EE80E3F6BF587F6817D7E41F8F27A9F678375E52B4A8196BFCAB04FAF7E5240", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-grinder-for-one.png", "file": "menu-items/grinder-for-one.png", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/grinder-for-one-882844149.png", "bytes": 357087, "sha256": "61D2F5F67287A78F7DE69B8E45E7F287E0CFDA0242A7A364E43D136A597CC4B0", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-grinder-for-two.png", "file": "menu-items/grinder-for-two.png", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/grinder-for-two-882844148.png", "bytes": 468373, "sha256": "5E403681F06D03E199DDDEBCBE1A7EDA5E23AB77714E3D6D71D3EA2C6B2E8621", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-half-custom-sandwich.jpg", "file": "menu-items/half-custom-sandwich.jpg", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/half-custom-sandwich-882844170.jpg", "bytes": 44557, "sha256": "5D722D80D28C0F9412AD241878A6DC5EF511E6AEED6AFBA08920FAB91018EF5E", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "menu-italian-sub-for-one.jpg", "file": "menu-items/italian-sub-for-one.jpg", "source": "C:/menu-man/public/img/sandwich-shop/menu-items/italian-sub-for-one-882844153.jpg", "bytes": 52830, "sha256": "7E4A09C9BC5125A8E67A0EF70A5F82B625A89A773EBFD53293B3B360963052AB", "permission": "Owner instruction scopes this local item photo to the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "google-symbol.svg", "file": "provider-branding/google-symbol.svg", "source": "C:/menu-man/public/img/icons/Google_Symbol_0.svg", "bytes": 9806, "sha256": "4B16F5C6B68908D895F187FF4D13A6877B779B75F77482FEE1B937ADAC334062", "permission": "Supplied locally for the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "facebook-wordmark.svg", "file": "provider-branding/facebook-wordmark.svg", "source": "C:/menu-man/public/img/icons/Facebook wordmark logo.svg", "bytes": 2102, "sha256": "FF51E11D2DC1544AFAF7562AF869F1FF3577A398614B2F194BECAEE37F211D37", "permission": "Supplied locally for the SSO-protected feature Preview; no public or production release is authorized." },
+    { "key": "instagram-2022.svg", "file": "provider-branding/instagram-2022.svg", "source": "C:/menu-man/public/img/icons/Instagram 2022 logo.svg", "bytes": 772084, "sha256": "8D40E5A4971B27C910848A5A6B277BA978044709D32F118BDDC8FE65558B0D22", "permission": "Supplied locally for the SSO-protected feature Preview; no public or production release is authorized." }
+  ],
   "totals": {
     "publicMissing": 6,
     "localOnly": 0,
     "alreadyLicensedControl": 1,
     "essentialMissing": 0,
-    "selectedLocalPhotoBytes": 1136166,
-    "protectedPreviewAssets": 26,
+    "selectedLocalPhotoBytes": 2422506,
+    "protectedPreviewAssets": 39,
     "remainingUnapprovedReferences": 6
   },
   "assets": [

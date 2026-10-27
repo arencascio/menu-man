@@ -17,6 +17,28 @@
       "download": "https://s3-media0.fl.yelpcdn.com/assets/public/yelp_favicon.yji-e98e6b1eb9ab3660.svg",
       "permission": "Yelp Brand Center limited royalty-free asset license; favicon used as a quick shortcut to the business page, not a standalone business logo or fabricated provider rating badge.",
       "sha256": "c908477fd00f412128c05c208021f1eccaf9ff50b16c33a3400b4a4c6bfe052f"
+    },
+    {
+      "key": "google-symbol.svg",
+      "file": "provider-branding/google-symbol.svg",
+      "source": "C:/menu-man/public/img/icons/Google_Symbol_0.svg",
+      "permission": "Supplied local Google G used only to link to the business's Google reviews in SSO-protected Preview. No stars appear beside the logo; no public/production use authorized.",
+      "guidelines": "https://partnermarketinghub.withgoogle.com/brands/google/use-cases/customer-reviews/",
+      "sha256": "4b16f5c6b68908d895f187ff4d13a6877b779b75f77482fee1b937adac334062"
+    },
+    {
+      "key": "facebook-wordmark.svg",
+      "file": "provider-branding/facebook-wordmark.svg",
+      "source": "C:/menu-man/public/img/icons/Facebook wordmark logo.svg",
+      "permission": "Supplied local artwork; this feature keeps it inside the SSO-protected Preview media route. Public/production rights are not established.",
+      "sha256": "ff51e11d2dc1544afaf7562af869f1ff3577a398614b2f194becaee37f211d37"
+    },
+    {
+      "key": "instagram-2022.svg",
+      "file": "provider-branding/instagram-2022.svg",
+      "source": "C:/menu-man/public/img/icons/Instagram 2022 logo.svg",
+      "permission": "Supplied local artwork; this feature keeps it inside the SSO-protected Preview media route. Public/production rights are not established.",
+      "sha256": "8d40e5a4971b27c910848a5a6b277ba978044709d32f118bddc8fe65558b0d22"
     }
   ],
   "summaries": [
@@ -39,13 +61,25 @@
     "source": "https://github.com/lucide-icons/lucide/tree/main/icons",
     "icons": [
       "bird",
+      "face-slightly-smiling",
       "paw-print",
       "baby",
-      "users-round",
-      "umbrella",
+      "user-round-group",
+      "parasol",
       "vegan"
     ],
-    "license": "ISC; full upstream license distributed at public/img/icons/LUCIDE-LICENSE.txt",
-    "note": "Replace improvised SVGs with the named original-design subjects in the existing Lucide visual language. Existing smile asset retained. No exact historical files for the five formerly improvised subjects were available."
+    "license": "Lucide ISC license text included at public/img/icons/LUCIDE-LICENSE.txt",
+    "note": "About amenities use the supplied SVG files at their original 24px viewBox and rendered 20px size. Existing smile asset retained."
+  },
+  "excludedArtwork": [
+    {
+      "asset": "C:/menu-man/public/img/icons/yelp icon.svg",
+      "decision": "Inspected but not used. Yelp's current brand guidance limits standalone logos and static average-rating star imagery; the permitted Yelp favicon remains the link shortcut."
+    }
+  ],
+  "ratingDisplay": {
+    "checked": "2026-10-27",
+    "google": "Numeric 4.7/5 and 401 count; no star glyph beside the Google logo.",
+    "yelp": "Numeric 4.5/5 and 881 count; no static Yelp star imagery outside dynamic review badges."
   }
 }

@@ -195,18 +195,18 @@ function item(id: string, name: string, priceCents: number, modifierGroups: Menu
 // Food images are omitted unless an authorized protected photo clearly matches an item.
 export const upperCrustSections: MenuSection[] = [
   { id: "uc-specialty", name: "Specialty Sandwiches", description: null, sort_order: 0, items: [
-    item("italian-sub-one", "Italian Sub for one", 1495, [grinderToppings, customSandwichSides, customSandwichExtras, customSandwichRanch], "Italian sub with customizable toppings and a choice of side.", upperCrustProtectedMediaUrl("italian sub.jpg")),
+    item("italian-sub-one", "Italian Sub for one", 1495, [grinderToppings, customSandwichSides, customSandwichExtras, customSandwichRanch], "Italian sub with customizable toppings and a choice of side.", upperCrustProtectedMediaUrl("menu-italian-sub-for-one.jpg")),
     item("hawaiian", "Hawaiian", 1495, [customSandwichSides, hawaiianToppings, customSandwichExtras, customSandwichRanch], "Lettuce, mayo, pineapple, and Swiss cheese, with a choice of side.", upperCrustProtectedMediaUrl("hawaiian sandwich.jpg")),
-    item("grinder-one", "Grinder for one", 1495, [grinderToppings, grinderMeat, customSandwichSides, customSandwichExtras, customSandwichRanch], "Choose two meats, customize the toppings, and select a side."),
-    item("french-dip", "French Dip", 1495, [customSandwichSides, frenchDipOnions, frenchDipCheese, customSandwichRanch], "Includes onions; choose an optional cheese and a side."),
-    item("bbq-beef", "BBQ Beef", 1395, [customSandwichSides, bbqOnions, bbqCheese, customSandwichRanch], "BBQ beef with included onions; choose an optional cheese and a side."),
-    item("blt", "BLT", 1395, [sandwichBread, customSandwichSides, bltToppings, customSandwichExtras, customSandwichRanch], "Bacon, lettuce, tomato, and mayo; choose bread and a side.", upperCrustProtectedMediaUrl("blt.jpg")),
-    item("grinder-two", "Grinder for Two", 2295, grinderForTwoGroups, "Choose two meats, customize the toppings, and select a side for each."),
+    item("grinder-one", "Grinder for one", 1495, [grinderToppings, grinderMeat, customSandwichSides, customSandwichExtras, customSandwichRanch], "Choose two meats, customize the toppings, and select a side.", upperCrustProtectedMediaUrl("menu-grinder-for-one.png")),
+    item("french-dip", "French Dip", 1495, [customSandwichSides, frenchDipOnions, frenchDipCheese, customSandwichRanch], "Includes onions; choose an optional cheese and a side.", upperCrustProtectedMediaUrl("menu-french-dip.jpg")),
+    item("bbq-beef", "BBQ Beef", 1395, [customSandwichSides, bbqOnions, bbqCheese, customSandwichRanch], "BBQ beef with included onions; choose an optional cheese and a side.", upperCrustProtectedMediaUrl("menu-bbq-beef.jpg")),
+    item("blt", "BLT", 1395, [sandwichBread, customSandwichSides, bltToppings, customSandwichExtras, customSandwichRanch], "Bacon, lettuce, tomato, and mayo; choose bread and a side.", upperCrustProtectedMediaUrl("menu-blt.jpg")),
+    item("grinder-two", "Grinder for Two", 2295, grinderForTwoGroups, "Choose two meats, customize the toppings, and select a side for each.", upperCrustProtectedMediaUrl("menu-grinder-for-two.png")),
     item("italian-sub-two", "Italian Sub for Two", 2295, [grinderToppings, grinderFirstSide, grinderSecondSide, grinderExtras, grinderFirstSideRanch], "Italian subs with customizable toppings and a side for each."),
   ] },
   { id: "uc-custom", name: "Custom Sandwiches", description: null, sort_order: 1, items: [
     item("custom", "Whole Custom Sandwich", 1495, verifiedCustomSandwichGroups, "Choose a filling, bread, toppings, and side.", upperCrustProtectedMediaUrl("veggie sandwich.jpg")),
-    item("half-custom", "Half Custom Sandwich", 1395, verifiedCustomSandwichGroups, "Choose a filling, bread, toppings, and side."),
+    item("half-custom", "Half Custom Sandwich", 1395, verifiedCustomSandwichGroups, "Choose a filling, bread, toppings, and side.", upperCrustProtectedMediaUrl("menu-half-custom-sandwich.jpg")),
   ] },
   { id: "uc-soups", name: "Soups", description: null, sort_order: 2, items: [
     item("soup-bowl", "Soup of the Day (Bowl)", 795, [soupBread], "Served with optional bread or crackers."),
@@ -218,7 +218,7 @@ export const upperCrustSections: MenuSection[] = [
     item("chef-salad", "Chef Salad", 1395, [saladDressing], "Chef salad with your choice of dressings."),
     item("caesar-salad", "Caesar Salad", 1395),
     item("chicken-salad-salad", "Chicken Salad Salad", 1395, [saladDressing], "Chicken salad with your choice of dressings."),
-    item("dinner-salad", "Dinner Salad", 1050, [saladDressing], "Dinner salad with your choice of dressings."),
+    item("dinner-salad", "Dinner Salad", 1050, [saladDressing], "Dinner salad with your choice of dressings.", upperCrustProtectedMediaUrl("menu-dinner-salad.jpg")),
   ] },
   { id: "uc-extras", name: "Extras", description: null, sort_order: 4, items: [
     item("side-orders", "Side Orders", 325, [additionalSide], "Choose potato salad, pasta salad, macaroni salad, seasonal fruit, cole slaw, or carrot sticks with ranch."),

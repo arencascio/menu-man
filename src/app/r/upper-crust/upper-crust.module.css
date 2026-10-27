@@ -246,6 +246,7 @@
 .ribbon a:hover { text-decoration:underline; }
 .ribbon i { color:#7b8059; font:12px Georgia,serif; }
 .community { max-width:1440px; margin:20px auto 0; padding:16px clamp(12px,3vw,42px) 52px; background:none; }
+.homeSocialBar { max-width:1280px; margin:0 auto; padding-inline:42px; }
 
 /* Opt-in presentation hooks keep other restaurants' carousel controls unchanged. */
 .homeMain :global([data-carousel-frame]) { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:center; column-gap:12px; }
@@ -281,6 +282,7 @@
   .ribbon a { justify-content:center; text-align:center; min-height:36px; }
   .ribbon i { display:none; }
   .community { margin-top:12px; padding:12px 14px 52px; }
+  .homeSocialBar { padding-inline:14px; }
   .homeMain :global([data-carousel-frame]) { column-gap:6px; }
   .homeMain :global([data-carousel-control] svg) { width:21px; height:21px; }
 }

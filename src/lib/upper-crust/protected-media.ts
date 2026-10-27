@@ -1,8 +1,11 @@
-// Only manifest-selected owner imagery and documented provider-licensed branding.
-// Keep all bytes outside public/ and resolve requests through this finite map.
+// Only manifest-selected menu imagery and supplied marks approved for the private
+// SSO Preview are served here. Keep bytes outside public/ and use this finite map.
 export const upperCrustProtectedMedia = {
   "google-g.png": { file: "provider-branding/google-g.png", contentType: "image/png" },
+  "google-symbol.svg": { file: "provider-branding/google-symbol.svg", contentType: "image/svg+xml" },
   "yelp-favicon.svg": { file: "provider-branding/yelp-favicon.svg", contentType: "image/svg+xml" },
+  "facebook-wordmark.svg": { file: "provider-branding/facebook-wordmark.svg", contentType: "image/svg+xml" },
+  "instagram-2022.svg": { file: "provider-branding/instagram-2022.svg", contentType: "image/svg+xml" },
   "upper-crust.png": { file: "upper-crust.png", contentType: "image/png" },
   "storefront-crop.png": { file: "storefront-crop.png", contentType: "image/png" },
   "brickwall2.webp": { file: "brickwall2.webp", contentType: "image/webp" },
@@ -29,6 +32,14 @@ export const upperCrustProtectedMedia = {
   "dining.jpg": { file: "reference-media/dining.jpg", contentType: "image/jpeg" },
   "takeaway.jpg": { file: "reference-media/takeaway.jpg", contentType: "image/jpeg" },
   "desserts.jpg": { file: "reference-media/desserts.jpg", contentType: "image/jpeg" },
+  "menu-bbq-beef.jpg": { file: "menu-items/bbq-beef.jpg", contentType: "image/jpeg" },
+  "menu-blt.jpg": { file: "menu-items/blt.jpg", contentType: "image/jpeg" },
+  "menu-dinner-salad.jpg": { file: "menu-items/dinner-salad.jpg", contentType: "image/jpeg" },
+  "menu-french-dip.jpg": { file: "menu-items/french-dip.jpg", contentType: "image/jpeg" },
+  "menu-grinder-for-one.png": { file: "menu-items/grinder-for-one.png", contentType: "image/png" },
+  "menu-grinder-for-two.png": { file: "menu-items/grinder-for-two.png", contentType: "image/png" },
+  "menu-half-custom-sandwich.jpg": { file: "menu-items/half-custom-sandwich.jpg", contentType: "image/jpeg" },
+  "menu-italian-sub-for-one.jpg": { file: "menu-items/italian-sub-for-one.jpg", contentType: "image/jpeg" },
 } as const;
 
 export type UpperCrustProtectedMediaKey = keyof typeof upperCrustProtectedMedia;
