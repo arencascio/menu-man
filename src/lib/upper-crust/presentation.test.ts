@@ -45,6 +45,9 @@ test("the original mixed review content is only rendered for the private Preview
   assert.match(reviews, /Reviewer marketing-use permission is unresolved/);
   assert.match(reviews, /googleusercontent/);
   assert.match(reviews, /View on Google Maps/);
+  assert.match(reviews, /I’ve been visiting The Upper Crust/);
+  assert.match(reviews, /I don’t know which was better/);
+  assert.doesNotMatch(reviews, /â€™/);
 });
 
 test("the dated social bar is shared above homepage reviews and on About", () => {

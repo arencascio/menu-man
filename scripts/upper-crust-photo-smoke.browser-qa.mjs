@@ -3,10 +3,16 @@ import { mkdirSync } from "node:fs";
 import { configureUpperCrustQaAuth } from "./upper-crust-qa-auth.mjs";
 const base = process.env.UPPER_CRUST_QA_URL ?? "http://127.0.0.1:3213";
 const photos = [
-  ["italian-sub-one", "Italian Sub for one", "italian sub.jpg"],
+  ["italian-sub-one", "Italian Sub for one", "menu-italian-sub-for-one.jpg"],
   ["hawaiian", "Hawaiian", "hawaiian sandwich.jpg"],
-  ["blt", "BLT", "blt.jpg"],
+  ["grinder-one", "Grinder for one", "menu-grinder-for-one.png"],
+  ["french-dip", "French Dip", "menu-french-dip.jpg"],
+  ["bbq-beef", "BBQ Beef", "menu-bbq-beef.jpg"],
+  ["blt", "BLT", "menu-blt.jpg"],
+  ["grinder-two", "Grinder for Two", "menu-grinder-for-two.png"],
+  ["half-custom", "Half Custom Sandwich", "menu-half-custom-sandwich.jpg"],
   ["cobb-salad", "Cobb Salad", "cobb salad.jpg"],
+  ["dinner-salad", "Dinner Salad", "menu-dinner-salad.jpg"],
   ["brownies", "Brownies", "brownie.jpg"],
   ["custom", "Whole Custom Sandwich", "veggie sandwich.jpg"],
 ];

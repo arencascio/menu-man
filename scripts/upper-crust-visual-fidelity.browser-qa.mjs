@@ -14,13 +14,19 @@ try {
     const page = await context.newPage();
     await page.goto(`${base}/r/upper-crust`);
     const section = page.getByRole("region", { name: "Reviews", exact: true });
+    const reviewRail = page.locator('[data-review-count="14"]');
+    await expect(reviewRail.locator(":scope > article")).toHaveCount(14);
+    await expect(reviewRail.locator("blockquote")).toHaveCount(11);
     await expect(section.locator("iframe.yelp-review")).toHaveCount(3, { timeout: 30000 });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(1500);
     await page.locator("section").filter({ has: page.getByRole("heading", { level: 1 }) }).first().screenshot({ path: `${output}/hero-${width}.png` });
     await section.locator("..").screenshot({ path: `${output}/reviews-${width}.png` });
     await page.goto(`${base}/r/upper-crust/about`);
-    await expect(page.getByRole("navigation", { name: "Social and review links" }).getByRole("link")).toHaveCount(4);
+    const socialBar = page.locator('[aria-label="Social and review links"]');
+    await expect(socialBar.getByRole("link")).toHaveCount(4);
+    await expect(socialBar.getByText("4.7 / 5")).toBeVisible();
+    await expect(socialBar.getByText("4.5 / 5")).toBeVisible();
     await expect(page.getByRole("list", { name: "Owner-supplied amenities" }).getByRole("listitem")).toHaveCount(7);
     const map = page.getByTitle("Map showing The Upper Crust Sandwich Shoppe in Riverside");
     await map.scrollIntoViewIfNeeded();
@@ -30,10 +36,11 @@ try {
     // provider Maps link still identifies the same source place by CID.
     await expect(mapFrame.getByRole("link", { name: /^(Open in )?Maps \(opens in new tab\)$/ })).toHaveAttribute("href", /cid=11819011477876750802/);
     await map.screenshot({ path: `${output}/map-${width}.png` });
-    await expect(page.getByRole("link", { name: "Open directions in Google Maps" })).toHaveAttribute("href", /google.com\/maps\/dir/);
+    await expect(page.getByRole("link", { name: /3573 Main Street/ })).toHaveAttribute("href", /google.com\/maps\/dir/);
+    await expect(page.getByRole("link", { name: "Open directions in Google Maps" })).toHaveCount(0);
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await page.locator("#main-content").screenshot({ path: `${output}/about-${width}.png` });
-    await page.getByRole("navigation", { name: "Social and review links" }).screenshot({ path: `${output}/about-social-${width}.png` });
+    await socialBar.screenshot({ path: `${output}/about-social-${width}.png` });
     await page.getByRole("list", { name: "Owner-supplied amenities" }).screenshot({ path: `${output}/amenities-${width}.png` });
     await page.goto(`${base}/r/upper-crust/catering`);
     const call = page.getByRole("link", { name: "Call the Restaurant", exact: true });
