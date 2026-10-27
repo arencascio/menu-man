@@ -15,7 +15,7 @@ const expectedMenu = [
     ["Chicken Salad Salad", 1395], ["Dinner Salad", 1050],
   ]],
   ["Extras", [["Side Orders", 325], ["Cheesecake", 375], ["Chips", 200], ["Brownies", 325], ["2 Cookies", 150]]],
-  ["drinks", [["Bottled Water", 200], ["Large Drink (20 oz)", 325], ["Small Drink (16 oz)", 225]]],
+  ["Drinks", [["Bottled Water", 200], ["Large Drink (20 oz)", 325], ["Small Drink (16 oz)", 225]]],
 ] as const;
 
 test("Upper Crust fixture matches the captured DoorDash item and price inventory", () => {
@@ -25,6 +25,9 @@ test("Upper Crust fixture matches the captured DoorDash item and price inventory
   ]), expectedMenu);
   const items = upperCrustSections.flatMap(({ items: sectionItems }) => sectionItems);
   assert.equal(items.length, 26);
+  assert.deepEqual(upperCrustSections.map(({ id, sort_order }) => [id, sort_order]), [
+    ["uc-specialty", 0], ["uc-custom", 1], ["uc-soups", 2], ["uc-salads", 3], ["uc-extras", 4], ["uc-drinks", 5],
+  ]);
   assert.equal(new Set(items.map(({ id }) => id)).size, items.length);
   assert.ok(items.every(({ description, image_url, is_orderable }) =>
     description === null && image_url === null && is_orderable === false));

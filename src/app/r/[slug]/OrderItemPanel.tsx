@@ -22,6 +22,7 @@ import { canCustomizeMenuItem } from "@/lib/restaurant-showcases";
 
 type OrderItemPanelProps = {
   cartPreview?: boolean;
+  showSampleCustomizationLabel?: boolean;
   item: MenuItem;
   sectionId: string;
   sectionName: string;
@@ -43,6 +44,7 @@ type OrderItemPanelProps = {
 
 export default function OrderItemPanel({
   cartPreview = false,
+  showSampleCustomizationLabel = true,
   item,
   sectionId,
   sectionName,
@@ -86,6 +88,9 @@ export default function OrderItemPanel({
     basePriceCents: item.price_cents,
     selectedModifiers,
   });
+  const panelLabel = cartPreview
+    ? (showSampleCustomizationLabel ? "Customize a sample" : null)
+    : item.is_orderable ? "Build your order" : "Menu item";
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,7 +112,7 @@ export default function OrderItemPanel({
       <form className={styles.orderForm} onSubmit={submit} aria-busy={saving}>
         <div className={styles.orderFormHeader}>
           <div>
-            <p className={styles.expandedLabel}>{cartPreview ? "Customize a sample" : item.is_orderable ? "Build your order" : "Menu item"}</p>
+            {panelLabel && <p className={styles.expandedLabel}>{panelLabel}</p>}
             <h3>{item.name}</h3>
             <p className={styles.itemPanelPrice}>{formatPrice(item.price_cents, currency)}</p>
             {inCartQuantity > 0 && <p className={styles.detailCartStatus}>{inCartQuantity} in cart</p>}

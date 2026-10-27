@@ -226,7 +226,7 @@ export const upperCrustSections: MenuSection[] = [
     item("brownies", "Brownies", 325),
     item("two-cookies", "2 Cookies", 150, [cookieSelection]),
   ] },
-  { id: "uc-drinks", name: "drinks", description: null, sort_order: 5, items: [
+  { id: "uc-drinks", name: "Drinks", description: null, sort_order: 5, items: [
     item("bottled-water", "Bottled Water", 200),
     item("large-drink", "Large Drink (20 oz)", 325, [drinkChoices]),
     item("small-drink", "Small Drink (16 oz)", 225, [drinkChoices]),

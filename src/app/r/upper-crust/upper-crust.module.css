@@ -172,8 +172,6 @@
 .site :is(h1,h2,h3) { font-family:Georgia,serif; font-weight:300; }
 .menuHeading .visuallyHidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @font-face { font-family:"Upper Crust Broadway"; src:url('/fonts/broadway/Broadway-Regular.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
-.menuDisclaimer { max-width:650px; margin:0 auto 4px; padding:10px 14px; background:#fffaf0; border:1px solid #c5b79e; border-left:3px solid #96764b; font-size:11px; line-height:1.55; }
-.menuDisclaimer p { margin:0; }
 
 .site:has(> main.homeMain) > .siteMasonry { display:none; }
 
