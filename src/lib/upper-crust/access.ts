@@ -1,5 +1,5 @@
 const STAGING_SUPABASE_URL = "https://jjvongzvtnzlvwdfcnjk.supabase.co";
-const PREVIEW_BRANCH = "feature/upper-crust-protected-preview-v1";
+const PREVIEW_BRANCHES = new Set(["feature/upper-crust-protected-preview-v1", "staging"]);
 
 export function isUpperCrustConceptPage(pathname: string) {
   return ["/r/upper-crust", "/r/upper-crust/menu", "/r/upper-crust/checkout", "/r/upper-crust/about", "/r/upper-crust/catering"].includes(pathname);
@@ -25,7 +25,7 @@ export function upperCrustPreviewAllowed(env: Record<string, string | undefined>
   return upperCrustPreviewPresentation(env)
     && env.VERCEL === "1"
     && env.VERCEL_ENV === "preview"
-    && env.VERCEL_GIT_COMMIT_REF === PREVIEW_BRANCH
+    && PREVIEW_BRANCHES.has(env.VERCEL_GIT_COMMIT_REF ?? "")
     && env.NEXT_PUBLIC_SUPABASE_URL === STAGING_SUPABASE_URL
     && Boolean(deploymentHost)
     && deploymentHost!.endsWith(".vercel.app")

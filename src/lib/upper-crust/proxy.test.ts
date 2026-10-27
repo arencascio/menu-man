@@ -33,7 +33,7 @@ test("protected Preview permits only the allowlisted Upper Crust pages on its ex
     }
     for (const patch of [
       { VERCEL_ENV: "production" },
-      { VERCEL_GIT_COMMIT_REF: "staging" },
+      { VERCEL_GIT_COMMIT_REF: "feature/unapproved" },
       { NEXT_PUBLIC_SUPABASE_URL: "https://fullaiodvmilkdxyxnln.supabase.co" },
       { MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "false" },
     ]) {
@@ -42,6 +42,25 @@ test("protected Preview permits only the allowlisted Upper Crust pages on its ex
     }
     setEnv(previewEnv);
     assert.equal((await request("/r/upper-crust/menu", "GET", "attacker.vercel.app")).status, 404);
+  } finally { setEnv(originalEnv); }
+});
+
+test("canonical staging permits only the five Upper Crust pages for GET and HEAD", async () => {
+  const host = "menu-staging-456.vercel.app";
+  setEnv({ ...previewEnv, VERCEL_GIT_COMMIT_REF: "staging", VERCEL_URL: host });
+  try {
+    for (const path of ["/r/upper-crust", "/r/upper-crust/menu", "/r/upper-crust/checkout", "/r/upper-crust/about", "/r/upper-crust/catering"]) {
+      assert.equal((await request(path, "GET", host)).headers.get("x-middleware-next"), "1", `GET ${path}`);
+      assert.equal((await request(path, "HEAD", host)).headers.get("x-middleware-next"), "1", `HEAD ${path}`);
+      assert.equal((await request(path, "POST", host)).status, 404, `POST ${path}`);
+    }
+    for (const path of [
+      "/api/restaurants/upper-crust/orders",
+      "/api/restaurants/upper-crust/pickup-availability",
+      "/r/upper-crust/reference-media/front.jpg",
+      "/img/upper-crust/brickwall2.webp",
+      "/_next/image?url=%252Fimg%252Fupper-crust%252Fupper-crust.png&w=640&q=75",
+    ]) assert.equal((await request(path, "GET", host)).status, 404, `GET ${path}`);
   } finally { setEnv(originalEnv); }
 });
 

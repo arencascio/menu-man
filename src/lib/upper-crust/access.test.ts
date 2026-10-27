@@ -19,7 +19,7 @@ test("private prospect concept fails closed outside an opted-in staging loopback
   ]) assert.equal(upperCrustLocalAllowed({ ...env, ...patch }, "localhost:3212"), false);
 });
 
-test("hosted access requires the protected feature Preview and exact deployment host", () => {
+test("hosted feature Preview requires its branch flag and exact deployment host", () => {
   const host = "menu-preview-123.vercel.app";
   const env = {
     MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true",
@@ -37,7 +37,6 @@ test("hosted access requires the protected feature Preview and exact deployment 
     [{ VERCEL: undefined }, host],
     [{ VERCEL_ENV: "development" }, host],
     [{ VERCEL_ENV: "production" }, host],
-    [{ VERCEL_GIT_COMMIT_REF: "staging" }, host],
     [{ NEXT_PUBLIC_SUPABASE_URL: "https://fullaiodvmilkdxyxnln.supabase.co" }, host],
     [{ VERCEL_URL: "menu-preview-123.vercel.app.evil.test" }, host],
     [{ VERCEL_URL: "preview.example.com" }, "preview.example.com"],
@@ -48,6 +47,28 @@ test("hosted access requires the protected feature Preview and exact deployment 
   }
   // The opt-in flag selects a media-safe presentation, never grants access.
   assert.equal(upperCrustPreviewAllowed({ MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true" }, host), false);
+});
+
+test("canonical staging requires Preview, its branch-scoped flag, staging database and exact host", () => {
+  const host = "menu-staging-456.vercel.app";
+  const env = {
+    MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true",
+    VERCEL: "1",
+    VERCEL_ENV: "preview",
+    VERCEL_GIT_COMMIT_REF: "staging",
+    VERCEL_URL: host,
+    NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co",
+  };
+  assert.equal(upperCrustPreviewAllowed(env, host), true);
+  for (const [patch, requestHost] of [
+    [{ MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: undefined }, host],
+    [{ MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "false" }, host],
+    [{ VERCEL_ENV: "production" }, host],
+    [{ VERCEL_ENV: "development" }, host],
+    [{ NEXT_PUBLIC_SUPABASE_URL: "https://fullaiodvmilkdxyxnln.supabase.co" }, host],
+    [{ VERCEL_URL: "menu-staging-456.vercel.app.evil.test" }, host],
+    [{}, "menu-staging-alias.vercel.app"],
+  ] as const) assert.equal(upperCrustPreviewAllowed({ ...env, ...patch }, requestHost), false);
 });
 
 test("only implemented private concept pages pass the route allowlist", () => {
