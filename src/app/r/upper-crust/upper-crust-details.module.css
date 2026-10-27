@@ -83,7 +83,7 @@
 .location .eyebrow { color: #e6c9a7; }
 .location h2 { color: inherit; }
 .location iframe { display: block; width: 100%; min-height: 330px; border: 0; border-radius: .75rem; }
-.directions { display: inline-flex; min-height: 44px; align-items: center; gap: .6rem; margin-top: 1rem; color: #fffaf1; font-weight: 700; text-underline-offset: .2em; }
+.directions { display: inline-flex; grid-column: 1 / -1; min-height: 44px; align-items: center; gap: .6rem; margin-top: 1rem; color: #fffaf1; font-weight: 700; text-underline-offset: .2em; }
 @media (max-width: 800px) {
 }
 @media (max-width: 520px) {
@@ -93,7 +93,7 @@
   .location .inner { grid-template-columns: minmax(0, 1fr); }
   .location iframe { min-height: 280px; }
 }
-.socialStrip { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
+.socialStrip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
 .socialStrip > a,.socialPlaceholder { display:flex; min-width:0; min-height:72px; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #ddd1be; border-radius:8px; padding:7px; color:#302c25; background:#fffaf0; text-decoration:none; }
 .socialStrip img { display:block; width:32px; height:32px; object-fit:contain; }
 .socialStrip > a:hover { text-decoration:underline; }

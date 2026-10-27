@@ -225,6 +225,13 @@
 .heroActions .button:hover { background:#193d34; }
 .heroActions .textLink:hover { background:#fff9ec; }
 .heroActions img { flex:none; }
+.cateringActions { display:flex; flex-wrap:wrap; margin:24px 0; }
+.cateringActions .button { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:12px 20px; box-sizing:border-box; border:1px solid #c7aa7c; border-radius:3px; background:var(--uc-brand); color:#fffaf0; font-size:15px; font-weight:700; text-decoration:none; box-shadow:0 2px 8px #24190f40; }
+.cateringActions .button:hover { background:#193d34; }
+.cateringHours { display:grid; grid-template-columns:1fr auto; max-width:440px; gap:8px 20px; margin:0; padding:14px 0; border-block:1px solid #cdbb98; color:var(--uc-brand); }
+.cateringHours div { display:contents; }
+.cateringHours dt { font-weight:700; }
+.cateringHours dd { margin:0; text-align:right; }
 .shopWindow { position:relative; display:flex; padding:12px; background:linear-gradient(90deg,#5b3f2e,#866144 50%,#5b3f2e); box-shadow:0 4px 12px #251c1530; }
 /* The inset R3 top edge meets the pane while its lower edge keeps a modest overhang. */
 .awning { position:absolute; z-index:2; top:-8px; left:50%; transform:translateX(-50%); width:131%; height:clamp(68px,6vw,86px); overflow:visible; pointer-events:none; }
