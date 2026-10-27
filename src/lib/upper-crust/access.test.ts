@@ -85,6 +85,8 @@ test("Upper Crust feature branches are allowlisted without changing the staging 
   };
   assert.equal(upperCrustPreviewAllowed(env, host), true);
   assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/upper-crust-menu-corrections" }, host), true);
+  assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/upper-crust-photography-reviews-v1" }, host), true);
+  assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/upper-crust-photography-reviews-v1", MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: undefined }, host), false);
   assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/unapproved" }, host), false);
 });
 

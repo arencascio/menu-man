@@ -11,7 +11,7 @@ try {
     const aboutMap = new URL(page.url()).pathname === "/r/upper-crust/about" && /google\.com\/maps\/embed/i.test(url.href);
     if (/^\/(?:r\/upper-crust\/reference-media|img\/(?:sandwich-shop|upper-crust)|img\/icons\/(?:google_symbol_0\.svg|yelp(?:%20| )icon\.svg|tripadvisor(?:%20| )wordmark\.svg)|img\/super-tacos\/approved\/social)/i.test(url.pathname)
       || url.pathname === "/_next/image" && /(?:sandwich-shop|upper-crust|reference-media)/i.test(url.searchParams.get("url") ?? "")
-      || /googleusercontent\.com|yelp\.com\/.*(?:review|widget)/i.test(url.href)
+      || /googleusercontent\.com/i.test(url.href)
       || /google\.com\/maps\/embed/i.test(url.href) && !aboutMap) {
       forbiddenRequests.push(url.href);
     }
@@ -24,7 +24,12 @@ try {
       const response = await page.goto(new URL(route, baseUrl).href, { waitUntil: "networkidle" });
       assert.equal(response?.status(), 200, `${width}px ${route}`);
       assert.equal(await page.locator("[data-protected-preview='true']").count(), 1, `${width}px ${route}: preview rendering`);
-      assert.equal(await page.locator("iframe").count(), route === "/r/upper-crust/about" ? 1 : 0, `${width}px ${route}: expected map embed only on About`);
+      if (route === "/r/upper-crust") {
+        await page.locator("iframe.yelp-review").first().waitFor();
+        assert.equal(await page.locator("iframe.yelp-review").count(), 3, `${width}px: official Yelp review embeds`);
+      } else {
+        assert.equal(await page.locator("iframe").count(), route === "/r/upper-crust/about" ? 1 : 0, `${width}px ${route}: map embed only on About`);
+      }
       if (route === "/r/upper-crust") {
         await assert.doesNotReject(() => page.getByRole("heading", { name: "Reviews", exact: true }).waitFor());
         await assert.doesNotReject(() => page.getByRole("link", { name: "Google Reviews" }).waitFor());

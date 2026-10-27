@@ -12,6 +12,7 @@ import { resolveTheme } from "@/lib/themes/resolve-theme";
 import styles from "./upper-crust.module.css";
 import SiteNavigation from "./SiteNavigation";
 import BrickWall from "./BrickWall";
+import UpperCrustReviews from "./UpperCrustReviews";
 
 export const metadata: Metadata = {
   title: { absolute: "Upper Crust · Private Menu Man concept" },
@@ -45,6 +46,7 @@ export default async function UpperCrustLayout({ children }: { children: ReactNo
       <SiteNavigation/>
     </header>
     {children}
+    <UpperCrustReviews />
     <footer className={styles.footer}>
       <div className={styles.footerBrand}><Link href="/r/upper-crust" aria-label="Upper Crust home"><Image src="/r/upper-crust/media/upper-crust.png" alt="The Upper Crust" width={1797} height={230} unoptimized/></Link></div>
       <nav aria-label="Footer navigation"><SiteLinks/></nav>

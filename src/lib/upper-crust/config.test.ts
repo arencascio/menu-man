@@ -39,6 +39,7 @@ test("Upper Crust fixture matches the captured DoorDash item and price inventory
     "uc-blt": "/r/upper-crust/media/blt.jpg",
     "uc-cobb-salad": "/r/upper-crust/media/cobb%20salad.jpg",
     "uc-brownies": "/r/upper-crust/media/brownie.jpg",
+    "uc-custom": "/r/upper-crust/media/veggie%20sandwich.jpg",
   });
   assert.equal(items.filter(({ description }) => description).length, 22);
   for (const menuItem of items) assertModifierConditions(menuItem.modifierGroups);

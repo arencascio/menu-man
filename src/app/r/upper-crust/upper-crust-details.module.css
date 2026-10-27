@@ -1,4 +1,15 @@
 .section { color: #2f281f; background: #f5f0e7; }
+.reviews > section { color:#302c25; background:#f5f0e7; }
+.reviews h2 { color:#28574c; font:300 clamp(1.8rem,3.2vw,2.65rem)/1.1 Georgia,serif; }
+/* Yelp's 320px content minimum also needs its own 24px horizontal padding. */
+.reviews [data-review-provider] { min-width:344px; }
+@media(max-width:600px) {
+  .reviews [data-carousel-frame] { grid-template-columns:1fr 1fr; row-gap:12px; }
+  .reviews [data-review-count] { grid-column:1 / -1; grid-row:1; }
+  .reviews [data-carousel-control="previous"] { grid-column:1; grid-row:2; justify-self:end; }
+  .reviews [data-carousel-side="right"] { grid-column:2; grid-row:2; justify-self:start; flex-direction:row; }
+  .reviews [data-carousel-frame] [data-carousel-control="playback"] { position:static; }
+}
 .inner { width: min(100% - 2.5rem, 1160px); margin: 0 auto; padding: clamp(3rem, 7vw, 6rem) 0; }
 .eyebrow { margin: 0 0 .65rem; color: #805a3f; font-size: .74rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 .inner h2 { max-width: 18ch; margin: 0; font: 300 clamp(2rem, 4vw, 3.5rem)/1.08 var(--font-upper-crust-stoke), Georgia, serif; letter-spacing: -.025em; }

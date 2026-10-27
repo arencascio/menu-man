@@ -205,7 +205,7 @@ export const upperCrustSections: MenuSection[] = [
     item("italian-sub-two", "Italian Sub for Two", 2295, [grinderToppings, grinderFirstSide, grinderSecondSide, grinderExtras, grinderFirstSideRanch], "Italian subs with customizable toppings and a side for each."),
   ] },
   { id: "uc-custom", name: "Custom Sandwiches", description: null, sort_order: 1, items: [
-    item("custom", "Whole Custom Sandwich", 1495, verifiedCustomSandwichGroups, "Choose a filling, bread, toppings, and side."),
+    item("custom", "Whole Custom Sandwich", 1495, verifiedCustomSandwichGroups, "Choose a filling, bread, toppings, and side.", upperCrustProtectedMediaUrl("veggie sandwich.jpg")),
     item("half-custom", "Half Custom Sandwich", 1395, verifiedCustomSandwichGroups, "Choose a filling, bread, toppings, and side."),
   ] },
   { id: "uc-soups", name: "Soups", description: null, sort_order: 2, items: [

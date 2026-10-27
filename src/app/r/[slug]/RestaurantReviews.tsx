@@ -13,10 +13,11 @@ export type RestaurantReview = {
   source?: { label: string; href?: string; icon?: "google" };
 };
 
-export default function RestaurantReviews({ title, items, disclosure, autoAdvance = false, autoAdvanceInterval = 11000, controlsPlacement = "heading", yelpEmbeds = [], svgControls = false }: {
+export default function RestaurantReviews({ title, items, disclosure, autoAdvance = false, autoAdvanceInterval = 11000, controlsPlacement = "heading", yelpEmbeds = [], svgControls = false, sourceLinks = [] }: {
   eyebrow?: string; title: string; items: readonly RestaurantReview[]; disclosure?: string;
   autoAdvance?: boolean; autoAdvanceInterval?: number; controlsPlacement?: "heading" | "sides";
   svgControls?: boolean;
+  sourceLinks?: readonly { label: string; href: string }[];
   yelpEmbeds?: readonly { reviewId: string; userId: string }[];
 }) {
   const headingId = useId();
@@ -30,10 +31,10 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
   // Mixed provider slides stay in their original DOM order. Only their visual
   // positions change; moving an initialized iframe in the DOM can reload it.
   const circular = yelpEmbeds.length > 0;
-  const reviewLabels = items.flatMap((review, index) => [
-    `Review excerpt from ${review.attribution}`,
+  const reviewLabels = Array.from({ length: Math.max(items.length, yelpEmbeds.length) }, (_, index) => [
+    ...(items[index] ? [`Review excerpt from ${items[index].attribution}`] : []),
     ...(yelpEmbeds[index] ? ["Official Yelp review"] : []),
-  ]);
+  ]).flat();
   const reviewCount = reviewLabels.length;
   const [position, setPosition] = useState({ active: 0, previous: 0, animate: false });
   const [visibleCount, setVisibleCount] = useState(3);
@@ -45,13 +46,14 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
     if (!circular || !viewport.current) return;
     const element = viewport.current;
     const measure = () => {
+      if (!element.clientWidth) return;
       setVisibleCount(Number(getComputedStyle(element).getPropertyValue("--review-visible")) || 1);
       // Yelp has a native 320px minimum. Scale our host, never the provider's
       // contents or iframe attributes, to fit narrower mobile carousel slots.
       element.querySelectorAll<HTMLElement>("[data-review-provider]").forEach(host => {
         const card = host.parentElement;
         if (!card) return;
-        const scale = Math.min(1, card.clientWidth / host.offsetWidth);
+        const scale = Math.min(1, card.clientWidth / (host.offsetWidth || 320));
         host.style.transform = `scale(${scale})`;
         card.style.height = `${host.offsetHeight * scale}px`;
       });
@@ -122,7 +124,7 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
 
   useEffect(() => { moveRef.current = move; });
 
-  if (!items.length) return null;
+  if (!reviewCount) return null;
 
   const previousButton = <button className={controlsPlacement === "sides" ? styles.sideArrow : undefined} type="button" data-carousel-control={svgControls ? "previous" : undefined} aria-label="Previous testimonial" aria-controls={viewportId} onClick={() => { setPaused(true); move(-1); }}>{svgControls ? <RestaurantCarouselIcon name="previous"/> : "\u2190"}</button>;
   const nextButton = <button className={controlsPlacement === "sides" ? styles.sideArrow : undefined} type="button" data-carousel-control={svgControls ? "next" : undefined} aria-label="Next testimonial" aria-controls={viewportId} onClick={() => { setPaused(true); move(1); }}>{svgControls ? <RestaurantCarouselIcon name="next"/> : "\u2192"}</button>;
@@ -134,8 +136,9 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
     if (!circular) return {};
     // Keep two slots to the left of the viewport. The one card that wraps
     // between the far right and far left is offscreen at both endpoints.
-    const slot = (index - position.active + reviewCount + 2) % reviewCount - 2;
-    const previousSlot = (index - position.previous + reviewCount + 2) % reviewCount - 2;
+    const leftSlots = Math.min(2, Math.max(0, reviewCount - visibleCount - 1));
+    const slot = (index - position.active + reviewCount + leftSlots) % reviewCount - leftSlots;
+    const previousSlot = (index - position.previous + reviewCount + leftSlots) % reviewCount - leftSlots;
     const visible = slot >= 0 && slot < visibleCount;
     return {
       style: {
@@ -156,9 +159,10 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
         <h2 id={headingId}>{title}</h2>
         {controlsPlacement === "heading" ? <div className={styles.controls}>{previousButton}{nextButton}{pauseButton}</div> : null}
       </div>
+      {sourceLinks.length ? <nav className={styles.sourceLinks} aria-label="Review sources">{sourceLinks.map(link => <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.label} <span aria-hidden="true">↗</span></a>)}</nav> : null}
       <div data-carousel-frame={svgControls ? "standard" : undefined} className={controlsPlacement === "sides" ? styles.sideFrame : undefined} data-auto-advance={autoAdvance && !reducedMotion && !paused && !hovered && !focused ? "on" : "off"}>
         {controlsPlacement === "sides" ? previousButton : null}
-        <div ref={viewport} id={viewportId} className={`${styles.viewport} ${circular ? styles.circularViewport : ""}`} data-active-index={circular ? position.active : undefined} data-review-count={circular ? reviewCount : items.length} tabIndex={0} role="group" aria-label={circular ? `${reviewCount} Google and Yelp reviews. Use left and right arrow keys to browse.` : "Restaurant testimonials. Use left and right arrow keys to browse."}
+        <div ref={viewport} id={viewportId} className={`${styles.viewport} ${circular ? styles.circularViewport : ""}`} data-active-index={circular ? position.active : undefined} data-review-count={circular ? reviewCount : items.length} tabIndex={0} role="group" aria-label={circular ? `${reviewCount} ${items.length ? "restaurant and Yelp" : "Yelp"} reviews. Use left and right arrow keys to browse.` : "Restaurant testimonials. Use left and right arrow keys to browse."}
           onPointerDown={pauseInteraction}
           onPointerEnter={() => setHovered(true)}
           onPointerLeave={() => setHovered(false)}
@@ -170,9 +174,10 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
             setPaused(true);
             move(event.key === "Home" ? "start" : event.key === "End" ? "end" : event.key === "ArrowRight" ? 1 : -1);
           }}>
-          {items.flatMap((review, index) => {
-            const mixedIndex = index + Math.min(index, yelpEmbeds.length);
-            const cards = [<article className={styles.slide} key={`google:${index}`} {...slideProps(mixedIndex)} aria-label={circular ? `Review ${mixedIndex + 1} of ${reviewCount}. Review excerpt attributed to ${review.attribution}` : `Review excerpt attributed to ${review.attribution}`}>
+          {Array.from({ length: Math.max(items.length, yelpEmbeds.length) }, (_, index) => {
+            const review = items[index];
+            const mixedIndex = Math.min(index, items.length) + Math.min(index, yelpEmbeds.length);
+            const cards = review ? [<article className={styles.slide} key={`text:${index}`} {...slideProps(mixedIndex)} aria-label={circular ? `Review ${mixedIndex + 1} of ${reviewCount}. Review excerpt attributed to ${review.attribution}` : `Review excerpt attributed to ${review.attribution}`}>
           <figure>
             {review.stars != null ? <p className={styles.stars}><span role="img" aria-label={`${review.stars} out of 5 stars`}>{"\u2605".repeat(review.stars)}</span></p> : null}
             <blockquote><p>&ldquo;{review.quote}&rdquo;</p></blockquote>
@@ -186,10 +191,11 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
               {review.source ? <span className={styles.source}>{review.source.icon === "google" ? <Image className={styles.sourceIcon} src="/img/icons/google-g.png" alt="Google" width={18} height={18} unoptimized /> : null}{review.source.href ? <a href={review.source.href} target="_blank" rel="noreferrer">{review.source.label}</a> : review.source.label}</span> : null}
             </span></figcaption>
           </figure>
-          </article>];
+          </article>] : [];
             if (yelpEmbeds[index]) {
               const embed = yelpEmbeds[index];
-              cards.push(<article className={`${styles.slide} ${styles.providerSlide}`} key={`yelp:${embed.reviewId}`} {...slideProps(mixedIndex + 1)} aria-label={`Review ${mixedIndex + 2} of ${reviewCount}. Official Yelp review`}><div className={styles.providerContent} data-review-provider="yelp"><span className="yelp-review" data-review-id={embed.reviewId} data-hostname="www.yelp.com" data-business-id="the-upper-crust-sandwich-shoppe-riverside" data-user-id={embed.userId} data-review-languages="en"><a href={`https://www.yelp.com/biz/the-upper-crust-sandwich-shoppe-riverside?hrid=${embed.reviewId}`} target="_blank" rel="noreferrer">View this review on Yelp</a></span></div></article>);
+              const embedIndex = mixedIndex + (review ? 1 : 0);
+              cards.push(<article className={`${styles.slide} ${styles.providerSlide}`} key={`yelp:${embed.reviewId}`} {...slideProps(embedIndex)} aria-label={`Review ${embedIndex + 1} of ${reviewCount}. Official Yelp review`}><div className={styles.providerContent} data-review-provider="yelp"><span className="yelp-review" data-review-id={embed.reviewId} data-hostname="www.yelp.com" data-business-id="the-upper-crust-sandwich-shoppe-riverside" data-user-id={embed.userId} data-review-languages="en"><a href={`https://www.yelp.com/biz/the-upper-crust-sandwich-shoppe-riverside?hrid=${embed.reviewId}`} target="_blank" rel="noreferrer">View this review on Yelp</a></span></div></article>);
             }
             return cards;
           })}

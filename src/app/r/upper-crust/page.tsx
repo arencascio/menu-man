@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { upperCrustAwningCarouselPhotos, upperCrustLinks, upperCrustPhotos, upperCrustStorefrontPhoto } from "@/lib/upper-crust/site-content";
+import { upperCrustAwningCarouselPhotos, upperCrustPhotos, upperCrustStorefrontPhoto } from "@/lib/upper-crust/site-content";
 import { upperCrust } from "@/lib/upper-crust/config";
 import RestaurantPhotoFilmstrip from "../[slug]/RestaurantPhotoFilmstrip";
 import ShopWindow from "./ShopWindow";
@@ -30,11 +30,6 @@ export default function UpperCrustHome() {
       <section className={styles.community} aria-label="Photos">
       <RestaurantPhotoFilmstrip photos={communityPhotos} controlsLabel={null} controlsPlacement="sides" svgControls enableViewer viewportLabel="Restaurant photos. Drag or use left and right arrow keys to browse."/>
       </section>
-    <section className={styles.previewReviews} aria-labelledby="preview-reviews-heading">
-      <div className={styles.previewReviewsInner}>
-        <h2 id="preview-reviews-heading">Reviews</h2>
-        <nav className={styles.previewReviewLinks} aria-label="Review sources"><a href={upperCrustLinks.google} target="_blank" rel="noopener noreferrer nofollow">Google Reviews <span aria-hidden="true">↗</span></a><a href={upperCrustLinks.yelp} target="_blank" rel="noopener noreferrer nofollow">Yelp Reviews <span aria-hidden="true">↗</span></a></nav>
-      </div>
-    </section>
+
   </main>;
 }
