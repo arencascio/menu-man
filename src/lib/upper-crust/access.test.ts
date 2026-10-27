@@ -73,7 +73,7 @@ test("canonical staging requires Preview, its branch-scoped flag, staging databa
   ] as const) assert.equal(upperCrustPreviewAllowed({ ...env, ...patch }, requestHost), false);
 });
 
-test("original-media feature branch is allowlisted without changing the staging guard", () => {
+test("Upper Crust feature branches are allowlisted without changing the staging guard", () => {
   const host = "menu-media-123.vercel.app";
   const env = {
     MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "true",
@@ -84,6 +84,7 @@ test("original-media feature branch is allowlisted without changing the staging 
     NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co",
   };
   assert.equal(upperCrustPreviewAllowed(env, host), true);
+  assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/upper-crust-menu-corrections" }, host), true);
   assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/unapproved" }, host), false);
 });
 

@@ -6,12 +6,9 @@ import RestaurantPhotoFilmstrip from "../[slug]/RestaurantPhotoFilmstrip";
 import ShopWindow from "./ShopWindow";
 import BrickWall from "./BrickWall";
 import styles from "./upper-crust.module.css";
-import UpperCrustDetails from "./UpperCrustDetails";
-import { isUpperCrustPreviewPresentation } from "@/lib/upper-crust/preview-presentation";
 import { upperCrustProtectedMediaUrl } from "@/lib/upper-crust/protected-media";
 
 export default function UpperCrustHome() {
-  const previewPresentation = isUpperCrustPreviewPresentation();
   const communityPhotos = [...upperCrustPhotos, upperCrustStorefrontPhoto].map((photo) => ({
     src: photo.src, alt: photo.alt, caption: null, itemName: photo.caption,
   }));
@@ -33,13 +30,11 @@ export default function UpperCrustHome() {
       <section className={styles.community} aria-label="Photos">
       <RestaurantPhotoFilmstrip photos={communityPhotos} controlsLabel={null} controlsPlacement="sides" svgControls enableViewer viewportLabel="Restaurant photos. Drag or use left and right arrow keys to browse."/>
       </section>
-    {previewPresentation ? <section className={styles.previewReviews} aria-labelledby="preview-reviews-heading">
+    <section className={styles.previewReviews} aria-labelledby="preview-reviews-heading">
       <div className={styles.previewReviewsInner}>
         <h2 id="preview-reviews-heading">Reviews</h2>
-        <div className={styles.previewReviewCard}>
-          <nav aria-label="Review sources"><a href={upperCrustLinks.google} target="_blank" rel="noopener noreferrer nofollow">Google reviews <span aria-hidden="true">↗</span></a><a href={upperCrustLinks.yelp} target="_blank" rel="noopener noreferrer nofollow">Yelp reviews <span aria-hidden="true">↗</span></a></nav>
-        </div>
+        <nav className={styles.previewReviewLinks} aria-label="Review sources"><a href={upperCrustLinks.google} target="_blank" rel="noopener noreferrer nofollow">Google Reviews <span aria-hidden="true">↗</span></a><a href={upperCrustLinks.yelp} target="_blank" rel="noopener noreferrer nofollow">Yelp Reviews <span aria-hidden="true">↗</span></a></nav>
       </div>
-    </section> : <UpperCrustDetails />}
+    </section>
   </main>;
 }

@@ -32,9 +32,11 @@ try {
     await expect(dialog.getByRole("button", { name: /Add to Cart/ })).toBeDisabled();
     await dialog.getByRole("radio", { name: "Turkey Included", exact: true }).check();
     await dialog.getByRole("radio", { name: "Whole Wheat Included", exact: true }).check();
-    const toppings = dialog.getByRole("group", { name: "Topping Choices Required", exact: true });
-    await toppings.getByRole("checkbox", { name: "No Toppings Included", exact: true }).check();
-    await toppings.getByRole("checkbox", { name: "Lettuce Included", exact: true }).check();
+    const toppingNames = ["Lettuce", "Tomatos", "Pickles", "Cheese", "Onions", "Sprouts", "Mayo", "Mustard"];
+    const toppings = dialog.getByRole("group", { name: "Topping Choices Optional", exact: true });
+    for (const name of toppingNames) await expect(toppings.getByRole("checkbox", { name: `${name} Included`, exact: true })).toBeChecked();
+    await expect(toppings.getByRole("checkbox", { name: /No Toppings/ })).toHaveCount(0);
+    for (const name of toppingNames) await toppings.getByRole("checkbox", { name: `${name} Included`, exact: true }).uncheck();
     await dialog.getByRole("radio", { name: "Carrot Sticks Included", exact: true }).check();
     await dialog.getByRole("group", { name: "Ranch Optional", exact: true }).getByRole("radio", { name: "Ranch Included", exact: true }).check();
     await dialog.getByRole("checkbox", { name: "Avocado +$2.00", exact: true }).check();
@@ -43,21 +45,30 @@ try {
     await expect(dialog).not.toBeVisible();
     await page.reload();
     dialog = await edit("Half Custom Sandwich", 1);
-    await expect(dialog.getByRole("checkbox", { name: "No Toppings Included", exact: true })).toBeChecked();
-    await expect(dialog.getByRole("group", { name: "Topping Choices Required", exact: true }).getByRole("checkbox", { name: "Lettuce Included", exact: true })).toBeChecked();
+    const editedToppings = dialog.getByRole("group", { name: "Topping Choices Optional", exact: true });
+    for (const name of toppingNames) await expect(editedToppings.getByRole("checkbox", { name: `${name} Included`, exact: true })).not.toBeChecked();
     await expect(dialog.getByRole("radio", { name: "Ranch Included", exact: true })).toBeChecked();
     await expect(dialog.getByRole("checkbox", { name: "Avocado +$2.00", exact: true })).toBeChecked();
     await dialog.getByRole("radio", { name: "Chips Included", exact: true }).check();
     await expect(dialog.getByRole("group", { name: "Ranch Optional", exact: true })).toHaveCount(0);
     await dialog.getByRole("radio", { name: "Carrot Sticks Included", exact: true }).check();
     await expect(dialog.getByRole("radio", { name: "Ranch Included", exact: true })).not.toBeChecked();
+    await expect(dialog.getByRole("button", { name: /Update Cart.*\$15\.95/ })).toBeEnabled();
+    await dialog.getByRole("button", { name: /Update Cart/ }).click();
+    await expect(dialog).not.toBeVisible();
+    await page.reload();
+    dialog = await edit("Half Custom Sandwich", 1);
+    const reloadedToppings = dialog.getByRole("group", { name: "Topping Choices Optional", exact: true });
+    for (const name of toppingNames) await expect(reloadedToppings.getByRole("checkbox", { name: `${name} Included`, exact: true })).not.toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: "Avocado +$2.00", exact: true })).toBeChecked();
 
     dialog = await open("grinder-two", "Grinder for Two");
     await expect(dialog.getByRole("button", { name: /Add to Cart/ })).toBeDisabled();
     await dialog.getByRole("checkbox", { name: "Pastrami Included", exact: true }).check();
     await dialog.getByRole("checkbox", { name: "Mesquite Turkey Included", exact: true }).check();
     await expect(dialog.getByRole("checkbox", { name: "Roast Beef Included", exact: true })).toBeDisabled();
-    await dialog.getByRole("checkbox", { name: "Iceburg lettuce Included", exact: true }).check();
+    await expect(dialog.getByRole("checkbox", { name: "Iceburg lettuce Included", exact: true })).toBeChecked();
+    await expect(dialog.getByRole("checkbox", { name: "Tomatos Included", exact: true })).toBeChecked();
     let sides = dialog.getByRole("group", { name: "Side Choice Required · Choose 1", exact: true });
     await expect(sides).toHaveCount(2);
     for (const i of [0, 1]) {

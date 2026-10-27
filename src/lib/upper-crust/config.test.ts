@@ -29,8 +29,18 @@ test("Upper Crust fixture matches the captured DoorDash item and price inventory
     ["uc-specialty", 0], ["uc-custom", 1], ["uc-soups", 2], ["uc-salads", 3], ["uc-extras", 4], ["uc-drinks", 5],
   ]);
   assert.equal(new Set(items.map(({ id }) => id)).size, items.length);
-  assert.ok(items.every(({ description, image_url, is_orderable }) =>
-    description === null && image_url === null && is_orderable === false));
+  assert.ok(items.every(({ is_orderable }) => is_orderable === false));
+  assert.ok(items.find(({ id }) => id === "uc-hawaiian")?.description?.includes("pineapple"));
+  assert.ok(items.find(({ id }) => id === "uc-custom")?.description?.includes("filling"));
+  const matchedImages = Object.fromEntries(items.filter(({ image_url }) => image_url).map(({ id, image_url }) => [id, image_url]));
+  assert.deepEqual(matchedImages, {
+    "uc-italian-sub-one": "/r/upper-crust/media/italian%20sub.jpg",
+    "uc-hawaiian": "/r/upper-crust/media/hawaiian%20sandwich.jpg",
+    "uc-blt": "/r/upper-crust/media/blt.jpg",
+    "uc-cobb-salad": "/r/upper-crust/media/cobb%20salad.jpg",
+    "uc-brownies": "/r/upper-crust/media/brownie.jpg",
+  });
+  assert.equal(items.filter(({ description }) => description).length, 22);
   for (const menuItem of items) assertModifierConditions(menuItem.modifierGroups);
 });
 

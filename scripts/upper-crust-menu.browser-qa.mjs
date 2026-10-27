@@ -28,7 +28,20 @@ try {
     ]) {
       await expect(page.getByRole("button", { name: `${name} ${price}`, exact: false }).first()).toBeVisible();
     }
-    await expect(page.getByText(/Prices are transcribed from the DoorDash Delivery menu viewed October 26, 2026/)).toBeVisible();
+    const imagePage = await context.newPage();
+    await imagePage.goto(`${base}/r/upper-crust/menu`);
+    for (const [name, file] of [
+      ["Italian Sub for one", "italian sub.jpg"], ["Hawaiian", "hawaiian sandwich.jpg"],
+      ["BLT", "blt.jpg"], ["Cobb Salad", "cobb salad.jpg"], ["Brownies", "brownie.jpg"],
+    ]) {
+      await imagePage.getByRole("button", { name: new RegExp(name) }).first().scrollIntoViewIfNeeded();
+      const image = imagePage.getByRole("img", { name, exact: true });
+      await expect(image).toBeVisible();
+      await expect(image).toHaveAttribute("src", `/r/upper-crust/media/${encodeURIComponent(file)}`);
+      await expect.poll(() => image.evaluate((element) => element.complete && element.naturalWidth > 0)).toBe(true);
+    }
+    await expect(imagePage.getByText("Lettuce, mayo, pineapple, and Swiss cheese, with a choice of side.", { exact: true })).toBeVisible();
+    await imagePage.close();
     await expect(page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).resolves.toBe(true);
 
     const dialog = page.getByRole("dialog", { name: "Item details: Whole Custom Sandwich" });
@@ -36,7 +49,7 @@ try {
     await expect(dialog.getByRole("button", { name: /Add to Cart/ })).toBeDisabled();
     await dialog.getByRole("radio", { name: "Vegetarian (Includes Avocado) Included" }).check();
     await dialog.getByRole("radio", { name: "French Roll (If Available) Included" }).check();
-    await dialog.getByRole("group", { name: /Topping Choices Required/ }).getByRole("checkbox", { name: "Lettuce Included" }).check();
+    await expect(dialog.getByRole("group", { name: /Topping Choices Optional/ }).getByRole("checkbox", { name: "Lettuce Included" })).toBeChecked();
     await dialog.getByRole("radio", { name: "Soup of the Day +$1.00" }).check();
     await expect(dialog.getByRole("button", { name: /Add to Cart.*\$15\.95/ })).toBeEnabled();
     await dialog.getByRole("checkbox", { name: "Bacon +$2.00" }).check();

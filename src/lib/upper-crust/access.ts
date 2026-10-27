@@ -1,7 +1,7 @@
 import { isUpperCrustProtectedMediaPath } from "./protected-media";
 
 const STAGING_SUPABASE_URL = "https://jjvongzvtnzlvwdfcnjk.supabase.co";
-const PREVIEW_BRANCHES = new Set(["feature/upper-crust-protected-preview-v1", "feature/upper-crust-original-media-v1", "staging"]);
+const PREVIEW_BRANCHES = new Set(["feature/upper-crust-protected-preview-v1", "feature/upper-crust-original-media-v1", "feature/upper-crust-menu-corrections", "staging"]);
 
 export function isUpperCrustConceptPage(pathname: string) {
   return ["/r/upper-crust", "/r/upper-crust/menu", "/r/upper-crust/checkout", "/r/upper-crust/about", "/r/upper-crust/catering"].includes(pathname);

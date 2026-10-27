@@ -93,19 +93,9 @@
   .location .inner { grid-template-columns: minmax(0, 1fr); }
   .location iframe { min-height: 280px; }
 }
-.socialStrip { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
-.socialStrip > a,.socialPlaceholder { display:flex; min-width:0; min-height:72px; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1px solid #ddd1be; border-radius:8px; padding:7px; color:#302c25; background:#fffaf0; text-decoration:none; }
-.socialStrip img { display:block; width:32px; height:32px; object-fit:contain; }
-.socialStrip > a:hover { text-decoration:underline; }
-.socialStrip > a { flex-direction:row; text-align:center; }
-.socialStrip .reviewLink { display:flex; justify-content:center; gap:8px; text-align:left; }
-.socialStrip .reviewLink > span { min-width:0; }
-.socialStrip .reviewLink small { display:block; }
-.socialStrip .tripadvisorMark { width:108px; height:32px; }
-.socialStrip strong { font-size:1.25rem; }
-.socialStrip strong span { color:#a96c24; font-size:.75rem; }
-.socialStrip small { color:#6c6259; font-size:.75rem; }
-.socialPlaceholder { color:#736b60; border-style:dashed; }
-.socialDisclosure { margin:10px 0 0; color:#6c6259; font-size:.75rem; line-height:1.5; }
+.socialStrip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
+.socialStrip > a { display:flex; min-width:0; min-height:56px; align-items:center; justify-content:center; border:1px solid #ddd1be; border-radius:8px; padding:8px; color:#302c25; background:#fffaf0; font-weight:700; text-decoration:none; }
+.socialStrip > a:hover { text-decoration:underline; text-underline-offset:3px; }
+.socialStrip > a:focus-visible { outline:3px solid #9c5737; outline-offset:3px; }
 @media(max-width:520px) { .socialStrip { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:10px; } }
 @media(max-width:340px) { .socialStrip { gap:6px; padding:8px; } .socialStrip strong { font-size:1.1rem; } .socialStrip .reviewLink { gap:4px; padding:5px; } .socialStrip .reviewLink > img { width:24px; height:24px; } .socialStrip strong span { font-size:.62rem; } }

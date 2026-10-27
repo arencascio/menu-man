@@ -2,7 +2,8 @@
 
 Upper Crust pages and approved media are available only on deployment-specific
 Vercel Previews from these branches: `feature/upper-crust-protected-preview-v1`,
-`feature/upper-crust-original-media-v1` and canonical `staging`. App-level
+`feature/upper-crust-original-media-v1`, `feature/upper-crust-menu-corrections`
+and canonical `staging`. App-level
 authorization requires all of the following on each page or media request:
 
 - `MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED=true`, scoped to this branch's Preview

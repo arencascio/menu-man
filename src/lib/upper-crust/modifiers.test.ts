@@ -22,11 +22,11 @@ const line = (id: string, selectedOptionIds = required(id), quantity = 1) => cre
   { selectedOptionIds, quantity, specialInstructions: "No changes beyond selections" },
 );
 
-test("every item gates its verified required groups with no invented defaults", () => {
+test("every item gates required choices and selects only configured defaults", () => {
   const requirements: Record<string, number> = {
-    "italian-sub-one": 2, hawaiian: 1, "grinder-one": 3, "french-dip": 1,
-    "bbq-beef": 1, blt: 2, "grinder-two": 4, "italian-sub-two": 3,
-    custom: 4, "half-custom": 4, "soup-bowl": 0, "soup-cup": 0,
+    "italian-sub-one": 1, hawaiian: 1, "grinder-one": 2, "french-dip": 1,
+    "bbq-beef": 1, blt: 2, "grinder-two": 3, "italian-sub-two": 2,
+    custom: 3, "half-custom": 3, "soup-bowl": 0, "soup-cup": 0,
     "cobb-salad": 1, "albacore-tuna-salad": 1, "chef-salad": 1, "caesar-salad": 0,
     "chicken-salad-salad": 1, "dinner-salad": 1, "side-orders": 1,
     cheesecake: 0, chips: 0, brownies: 0, "two-cookies": 1,
@@ -34,29 +34,39 @@ test("every item gates its verified required groups with no invented defaults", 
   };
   assert.equal(Object.keys(requirements).length, items.length);
   for (const [id, count] of Object.entries(requirements)) {
-    assert.equal(getDefaultModifierOptionIds(groups(id)).size, 0, id);
-    assert.equal(createMenuItemDraft(item(id)).selectedOptionIds.size, 0, id);
+    const defaults = getDefaultModifierOptionIds(groups(id));
+    assert.deepEqual(createMenuItemDraft(item(id)).selectedOptionIds, defaults, id);
     assert.equal(getModifierValidationErrors(groups(id), new Set()).size, count, id);
     assert.equal(canAddMenuItemDirectly(item(id), true), count === 0, id);
     assert.equal(getModifierValidationErrors(groups(id), required(id)).size, 0, id);
     assert.equal(calculateUnitPriceCents(line(id, new Set())), item(id).price_cents, id);
     for (const g of groups(id)) {
-      assert.ok(g.options.every((o) => !o.isDefault), id);
+      assert.ok(g.options.filter((o) => o.isDefault).length <= g.maxSelections, id);
       assert.ok(g.minSelections <= g.maxSelections && g.maxSelections <= g.options.length, id);
       assert.equal(new Set(g.options.map((o) => o.id)).size, g.options.length, id);
     }
   }
 });
 
-test("No Toppings coexists with other custom toppings and dressings permit multiple choices", () => {
+test("standard toppings start selected, can all be removed, and dressings permit multiple choices", () => {
   for (const id of ["custom", "half-custom"]) {
     const toppings = findGroup(id, "Topping Choices");
-    const selected = required(id);
-    selected.add(option(toppings, "No Toppings"));
-    selected.add(option(toppings, "Lettuce"));
+    assert.deepEqual([toppings.minSelections, toppings.maxSelections], [0, 8]);
+    assert.equal(toppings.options.some((o) => o.name === "No Toppings"), false);
+    const defaults = new Set([...required(id), ...getDefaultModifierOptionIds(groups(id))]);
+    const side = findGroup(id, "Side Choice");
+    defaults.delete(option(side, "Soup of the Day"));
+    defaults.add(option(side, "Chips"));
+    assert.deepEqual(new Set(toppings.options.filter((o) => o.isDefault).map((o) => o.id)),
+      new Set(toppings.options.map((o) => o.id)));
+    const selected = new Set(defaults);
+    toppings.options.forEach((o) => selected.delete(o.id));
     assert.equal(getModifierValidationErrors(groups(id), selected).size, 0);
-    const names = line(id, selected).selectedModifiers.map((o) => o.modifierOptionName);
-    assert.ok(names.includes("No Toppings") && names.includes("Lettuce"));
+    assert.equal(calculateUnitPriceCents(line(id, selected)), item(id).price_cents);
+    const added = createMenuCartLine(item(id), { id: "uc-section", name: "Source fixture" }, id,
+      { selectedOptionIds: selected, quantity: 1, specialInstructions: "" });
+    const editing = createMenuItemDraft(item(id), added);
+    assert.deepEqual(editing.selectedOptionIds, selected);
   }
   for (const id of ["cobb-salad", "albacore-tuna-salad", "chef-salad", "chicken-salad-salad", "dinner-salad"]) {
     const dressing = findGroup(id, "Dressing Choice");
@@ -69,6 +79,22 @@ test("No Toppings coexists with other custom toppings and dressings permit multi
     assert.equal(getModifierValidationErrors(groups(id), selected).size, 0);
     assert.equal(calculateUnitPriceCents(line(id, selected)), item(id).price_cents);
   }
+});
+
+test("topping defaults do not select paid extras or exclusive cheese choices", () => {
+  for (const id of ["custom", "half-custom", "italian-sub-one", "italian-sub-two", "grinder-one", "grinder-two", "hawaiian", "french-dip", "bbq-beef", "blt"]) {
+    const defaults = getDefaultModifierOptionIds(groups(id));
+    for (const g of groups(id)) {
+      const selectedDefaults = g.options.filter((o) => defaults.has(o.id));
+      if (g.name === "Add Extras") assert.equal(selectedDefaults.length, 0, id);
+      if (g.name === "French Dip Cheese Choices" || g.name === "BBQ Cheese Choices") assert.equal(selectedDefaults.length, 0, id);
+    }
+  }
+  const extras = findGroup("custom", "Add Extras");
+  const initial = new Set(getDefaultModifierOptionIds(groups("custom")));
+  assert.equal(calculateUnitPriceCents(line("custom", initial)), item("custom").price_cents);
+  initial.add(option(extras, "Avocado"));
+  assert.equal(calculateUnitPriceCents(line("custom", initial)), item("custom").price_cents + 200);
 });
 
 test("Half and Whole custom Ranch activates only for Carrot Sticks without a default", () => {
