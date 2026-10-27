@@ -23,8 +23,7 @@ export default function UpperCrustAbout() {
     <div className={`${styles.aboutGrid} ${previewPresentation ? styles.aboutGridPreview : ""}`}>
       <div className={styles.aboutLeftColumn}>
         {previewPresentation && <section className={`${styles.neighborhoodCard} ${styles.aboutPhoto}`} aria-label="Storefront concept illustration">
-          <div className={`${styles.previewStorefront} ${styles.previewStorefrontAbout}`} role="img" aria-label="Illustrated storefront concept; photography is omitted from this preview"><span className={styles.previewStorefrontAwning}/><span className={styles.previewStorefrontWindow}/><span className={styles.previewStorefrontDoor}/></div>
-          <p className={styles.previewCaption}>Storefront photo area</p>
+          <div className={`${styles.previewStorefront} ${styles.previewStorefrontAbout}`} role="img" aria-label="Illustration of a storefront with a green awning"><span className={styles.previewStorefrontAwning}/><span className={styles.previewStorefrontWindow}/><span className={styles.previewStorefrontDoor}/></div>
         </section>}
       {!previewPresentation && <>
         <div className={styles.aboutMap}><UpperCrustLocationSection /></div>
