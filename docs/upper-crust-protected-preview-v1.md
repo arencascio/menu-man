@@ -19,6 +19,12 @@ credential. Local access continues to require the existing explicit staging
 loopback opt-in. Production, other branches, host aliases, non-GET/HEAD page
 methods, Upper Crust APIs, and reference-media routes remain denied.
 
+Vercel project `menu-man` has branch-scoped Preview variables for this branch:
+`MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED=true` and
+`NEXT_PUBLIC_SUPABASE_URL=https://jjvongzvtnzlvwdfcnjk.supabase.co`. Its existing
+Deployment Protection remains SSO-enabled for all except custom domains; no
+protection or bypass settings were changed, and no bypass URL was created.
+
 Upper Crust menu items remain non-orderable fixture data. Checkout uses the
 existing client-side sample receipt and cannot create a persisted order or
 payment. The preview does not load the owner's local-only photo folder,
