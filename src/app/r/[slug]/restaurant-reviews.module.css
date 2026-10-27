@@ -2,10 +2,6 @@
 .inner { max-width: var(--theme-content-width); margin: auto; min-width: 0; }
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-bottom: 1.5rem; }
 .heading h2 { max-width: 22ch; margin: 0; font: 900 clamp(1.8rem, 3vw, 2.75rem)/1.1 var(--theme-heading-font); letter-spacing: -.035em; text-wrap: balance; }
-.sourceLinks { display:flex; flex-wrap:wrap; gap:10px; margin:-.5rem 0 1.5rem; }
-.sourceLinks a { display:inline-flex; min-height:44px; align-items:center; justify-content:center; gap:8px; padding:9px 16px; border:1px solid color-mix(in srgb, var(--theme-primary) 28%, transparent); border-radius:4px; color:inherit; background:var(--theme-surface); font-size:13px; font-weight:700; text-decoration:none; }
-.sourceLinks a:hover { text-decoration:underline; text-underline-offset:3px; }
-.sourceLinks a:focus-visible { outline:3px solid var(--theme-accent); outline-offset:3px; }
 .controls { display: flex; gap: .5rem; flex-shrink: 0; }
 .controls button { width: 44px; height: 44px; border: 1px solid color-mix(in srgb, var(--theme-primary) 28%, transparent); border-radius: 50%; color: inherit; background: transparent; cursor: pointer; font-size: 1.2rem; }
 .controls button:hover { color: var(--theme-surface); background: var(--theme-primary); }

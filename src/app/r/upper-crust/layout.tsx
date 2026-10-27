@@ -12,7 +12,7 @@ import { resolveTheme } from "@/lib/themes/resolve-theme";
 import styles from "./upper-crust.module.css";
 import SiteNavigation from "./SiteNavigation";
 import BrickWall from "./BrickWall";
-import UpperCrustReviews from "./UpperCrustReviews";
+import { upperCrustStoke } from "./upper-crust-font";
 
 export const metadata: Metadata = {
   title: { absolute: "Upper Crust · Private Menu Man concept" },
@@ -38,7 +38,7 @@ export default async function UpperCrustLayout({ children }: { children: ReactNo
   const previewPresentation = isUpperCrustPreviewPresentation();
   const theme = resolveTheme(null, upperCrust.theme);
   const tokens = Object.fromEntries(Object.entries(theme.colors).map(([key, value]) => [`--theme-${key === "mutedText" ? "muted-text" : key}`, value]));
-  return <div className={styles.site} data-protected-preview={previewPresentation ? "true" : undefined} style={{ ...tokens, "--theme-heading-font": theme.typography.headingFont, "--theme-body-font": theme.typography.bodyFont } as CSSProperties}>
+  return <div className={`${styles.site} ${upperCrustStoke.variable}`} data-protected-preview={previewPresentation ? "true" : undefined} style={{ ...tokens, "--theme-heading-font": theme.typography.headingFont, "--theme-body-font": theme.typography.bodyFont } as CSSProperties}>
     <BrickWall id="site-bricks" className={styles.siteMasonry}/>
     <a className={styles.skip} href="#main-content">Skip to content</a>
     <header className={styles.header}>
@@ -46,7 +46,6 @@ export default async function UpperCrustLayout({ children }: { children: ReactNo
       <SiteNavigation/>
     </header>
     {children}
-    <UpperCrustReviews />
     <footer className={styles.footer}>
       <div className={styles.footerBrand}><Link href="/r/upper-crust" aria-label="Upper Crust home"><Image src="/r/upper-crust/media/upper-crust.png" alt="The Upper Crust" width={1797} height={230} unoptimized/></Link></div>
       <nav aria-label="Footer navigation"><SiteLinks/></nav>

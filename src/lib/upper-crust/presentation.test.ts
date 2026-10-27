@@ -6,7 +6,8 @@ const panel = readFileSync("src/app/r/[slug]/OrderItemPanel.tsx", "utf8");
 const browser = readFileSync("src/app/r/[slug]/MenuBrowser.tsx", "utf8");
 const menuPage = readFileSync("src/app/r/upper-crust/menu/page.tsx", "utf8");
 const reviews = readFileSync("src/app/r/upper-crust/UpperCrustReviews.tsx", "utf8");
-const social = readFileSync("src/app/r/upper-crust/UpperCrustSocialBar.tsx", "utf8");
+const homePage = readFileSync("src/app/r/upper-crust/page.tsx", "utf8");
+const social = readFileSync("src/app/r/upper-crust/about/page.tsx", "utf8");
 const aboutPage = readFileSync("src/app/r/upper-crust/about/page.tsx", "utf8");
 const details = readFileSync("src/app/r/upper-crust/UpperCrustDetails.tsx", "utf8");
 const cateringPage = readFileSync("src/app/r/upper-crust/catering/page.tsx", "utf8");
@@ -24,25 +25,25 @@ test("Upper Crust menu omits the obsolete price caveat and controls note plumbin
   assert.doesNotMatch(browser, /controlsNote/);
 });
 
-test("protected Upper Crust pages expose requested contacts without excluded review content", () => {
+test("protected Upper Crust pages match the original presentation where content rights allow", () => {
   assert.match(aboutPage, /<UpperCrustLocationSection \/>/);
-  assert.match(details, /Open directions in Google Maps/);
+  assert.match(details, /Map showing The Upper Crust Sandwich Shoppe in Riverside/);
   assert.match(social, /upperCrustLinks\.facebook/);
   assert.match(social, /upperCrustLinks\.instagram/);
   assert.match(social, /Google Reviews/);
   assert.match(social, /Yelp Reviews/);
-  assert.doesNotMatch(`${reviews}\n${aboutPage}\n${details}\n${social}`, /googleusercontent|400 reviews|quote:/);
-  assert.match(social, /401 reviews/);
-  assert.match(social, /Checked Oct 27, 2026/);
-  assert.match(aboutPage, /<UpperCrustSocialBar \/>/);
-  assert.match(reviews, /<UpperCrustSocialBar \/>/);
-  assert.match(cateringPage, /Contact the restaurant for current options, quantities, prices, minimums, lead times and policies\./);
-  assert.match(cateringPage, />Call the Restaurant<\/a>/);
-  assert.match(cateringPage, /Monday–Saturday/);
+  assert.doesNotMatch(`${reviews}\n${aboutPage}\n${details}\n${social}`, /googleusercontent|quote:/);
+  assert.match(social, /400 reviews/);
+  assert.match(social, /Checked October 24, 2026/);
+  assert.match(aboutPage, /className=\{detailStyles\.socialStrip\}/);
+  assert.doesNotMatch(reviews, /UpperCrustSocialBar/);
+  assert.match(cateringPage, /Catering is listed in the Riverside Downtown Partnership directory/);
+  assert.match(cateringPage, /Call \{upperCrust\.phone\}/);
+  assert.match(cateringPage, /Hours, Contact & Directions/);
   assert.match(siteContent, /day: "Sunday", hours: "11 AM–4 PM"/);
 });
 
-test("Catering keeps the call action separate from homepage overlay positioning", () => {
-  assert.match(cateringPage, /styles.cateringActions/);
-  assert.doesNotMatch(cateringPage, /styles.heroActions|styles.storefrontActions/);
+test("homepage reviews are mounted in the original main-content sequence", () => {
+  assert.match(homePage, /<UpperCrustReviews \/>/);
+  assert.doesNotMatch(homePage, /UpperCrustSocialBar/);
 });

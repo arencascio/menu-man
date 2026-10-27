@@ -14,11 +14,10 @@ export type RestaurantReview = {
   source?: { label: string; href?: string; icon?: "google" };
 };
 
-export default function RestaurantReviews({ title, items, disclosure, autoAdvance = false, autoAdvanceInterval = 11000, controlsPlacement = "heading", yelpEmbeds = [], svgControls = false, sourceLinks = [] }: {
+export default function RestaurantReviews({ title, items, disclosure, autoAdvance = false, autoAdvanceInterval = 11000, controlsPlacement = "heading", yelpEmbeds = [], svgControls = false }: {
   eyebrow?: string; title: string; items: readonly RestaurantReview[]; disclosure?: string;
   autoAdvance?: boolean; autoAdvanceInterval?: number; controlsPlacement?: "heading" | "sides";
   svgControls?: boolean;
-  sourceLinks?: readonly { label: string; href: string }[];
   yelpEmbeds?: readonly { reviewId: string; userId: string }[];
 }) {
   const headingId = useId();
@@ -176,7 +175,6 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
         <h2 id={headingId}>{title}</h2>
         {controlsPlacement === "heading" ? <div className={styles.controls}>{previousButton}{nextButton}{pauseButton}</div> : null}
       </div>
-      {sourceLinks.length ? <nav className={styles.sourceLinks} aria-label="Review sources">{sourceLinks.map(link => <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.label} <span aria-hidden="true">↗</span></a>)}</nav> : null}
       <div data-carousel-frame={svgControls ? "standard" : undefined} className={controlsPlacement === "sides" ? styles.sideFrame : undefined} data-auto-advance={autoAdvance && !reducedMotion && !paused && !hovered && !focused ? "on" : "off"}>
         {controlsPlacement === "sides" ? previousButton : null}
         <div ref={viewport} id={viewportId} className={`${styles.viewport} ${circular ? styles.circularViewport : ""}`} data-active-index={circular ? position.active : undefined} data-motion-phase={circular ? position.phase : undefined} data-review-count={circular ? reviewCount : items.length} tabIndex={0} role="group" aria-label={circular ? `${reviewCount} ${items.length ? "restaurant and Yelp" : "Yelp"} reviews. Use left and right arrow keys to browse.` : "Restaurant testimonials. Use left and right arrow keys to browse."}

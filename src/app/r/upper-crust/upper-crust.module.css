@@ -84,10 +84,6 @@
 .regularHoursHeading { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 16px; margin-top:14px; }
 .regularHoursHeading small { flex:1 1 220px; font-size:10px; line-height:1.7; color:#68634f; }
 .cateringPanel { display:grid; grid-template-columns:1.1fr 1fr; gap:36px; align-items:center; padding:30px; background:#fff9ec; border:5px solid var(--uc-wood); }
-.cateringHours { margin:24px 0 0; }
-.cateringHours > div { display:flex; justify-content:space-between; gap:18px; padding:8px 0; border-bottom:1px solid #d8ccb5; font-size:14px; }
-.cateringHours dt { font-weight:700; }
-.cateringHours dd { margin:0; text-align:right; }
 .cateringPanel > div > small { display:block; font-size:10px; line-height:1.7; color:#726757; margin-top:20px; }
 .cateringPhoto img { display:block; width:100%; height:auto; }
 .cateringPhoto figcaption { margin-top:8px; font-size:10px; color:#655b49; }
@@ -172,7 +168,7 @@
 .footer > span { border-top-color:#d5c7a350; }
 .footerSocial { display:flex; gap:18px; margin-top:10px; font-size:11px; }
 .footerSocial a { margin-top:0; }
-.site :is(h1,h2,h3) { font-family:Georgia,serif; font-weight:300; }
+.site :is(h1,h2,h3) { font-family:var(--font-upper-crust-stoke),Georgia,serif; font-weight:300; }
 .menuHeading .visuallyHidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @font-face { font-family:"Upper Crust Broadway"; src:url('/fonts/broadway/Broadway-Regular.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
 
@@ -204,11 +200,10 @@
 /* Homepage client piece: one row sizes both outer cards, with bounded image slots. */
 /* Upper Crust client piece: keep the approved brick scale independent of page height. */
 .homeMain,.siteMasonry { background:#d5c6ab url('/r/upper-crust/media/brickwall2.webp') center top / max(100vw,1680px) auto repeat-y; }
-.aboutGridPreview { grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr); }
 .storefrontHero {
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  grid-template-rows:auto;
+  grid-template-rows:clamp(320px,calc(100svh - 236px),520px);
   gap:36px;
   max-width:1600px;
   margin-inline:auto;
@@ -219,17 +214,17 @@
 .heroLeft,.shopWindow,.welcomePanel { min-width:0; min-height:0; box-sizing:border-box; }
 .heroLeft { display:flex; }
 .welcomePanel { display:flex; flex:1; flex-direction:column; padding:12px; border:1px solid #c5ac85; background:#fff9ec; box-shadow:inset 0 0 0 4px #e9ddc4; }
-.welcomePanel h1 { margin:0 0 8px; color:var(--uc-brand); text-align:center; text-wrap:balance; font-size:24px; line-height:1.25; letter-spacing:0; }
+.welcomePanel h1 { margin:0 0 8px; color:var(--uc-brand); text-align:center; text-wrap:balance; font-size:20px; line-height:1.25; letter-spacing:0; }
 .todayHours { display:grid; grid-template-columns:1fr auto; align-items:center; gap:3px 12px; margin-bottom:8px; padding:7px 0; border-block:1px solid #cdbb98; font-size:11px; color:var(--uc-brand); }
 .todayHours strong { font:18px Georgia,serif; white-space:nowrap; }
-.storefrontFrame { position:relative; flex:none; aspect-ratio:1/1; min-width:0; min-height:0; overflow:hidden; }
+.storefrontFrame { position:relative; flex:1; min-width:0; min-height:0; overflow:hidden; }
 .storefrontImage { position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; object-position:center; border:1px solid #b49a70; box-sizing:border-box; }
-.storefrontActions { position:absolute; z-index:3; inset-inline:10px; bottom:10px; display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
-.storefrontActions .button,.storefrontActions .textLink { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:8px 12px; box-sizing:border-box; border:1px solid #c7aa7c; border-radius:3px; background:#fff9eced; color:var(--uc-brand); font-size:12px; font-weight:700; text-decoration:none; box-shadow:0 2px 8px #24190f40; }
-.storefrontActions .button { background:var(--uc-brand); color:#fffaf0; }
-.storefrontActions .button:hover { background:#193d34; }
-.storefrontActions .textLink:hover { background:#fff9ec; }
-.storefrontActions img { flex:none; }
+.heroActions { position:absolute; z-index:3; inset-inline:10px; bottom:10px; display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
+.heroActions .button,.heroActions .textLink { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:8px 12px; box-sizing:border-box; border:1px solid #c7aa7c; border-radius:3px; background:#fff9eced; color:var(--uc-brand); font-size:12px; font-weight:700; text-decoration:none; box-shadow:0 2px 8px #24190f40; }
+.heroActions .button { background:var(--uc-brand); color:#fffaf0; }
+.heroActions .button:hover { background:#193d34; }
+.heroActions .textLink:hover { background:#fff9ec; }
+.heroActions img { flex:none; }
 .shopWindow { position:relative; display:flex; padding:12px; background:linear-gradient(90deg,#5b3f2e,#866144 50%,#5b3f2e); box-shadow:0 4px 12px #251c1530; }
 /* The inset R3 top edge meets the pane while its lower edge keeps a modest overhang. */
 .awning { position:absolute; z-index:2; top:-8px; left:50%; transform:translateX(-50%); width:131%; height:clamp(68px,6vw,86px); overflow:visible; pointer-events:none; }
@@ -272,9 +267,9 @@
   .welcomePanel { padding:12px; }
   .welcomePanel h1 { font-size:22px; }
   .storefrontFrame { flex:none; aspect-ratio:1/1; }
-  .storefrontActions { inset-inline:6px; bottom:8px; gap:6px; }
-  .storefrontActions .button,.storefrontActions .textLink { gap:5px; padding:8px; font-size:11px; }
-  .storefrontActions img { width:16px; height:16px; }
+  .heroActions { inset-inline:6px; bottom:8px; gap:6px; }
+  .heroActions .button,.heroActions .textLink { gap:5px; padding:8px; font-size:11px; }
+  .heroActions img { width:16px; height:16px; }
   .ribbon { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 12px; padding:10px 18px; font-size:14px; }
   .ribbon a { justify-content:center; text-align:center; min-height:36px; }
   .ribbon i { display:none; }
@@ -284,24 +279,3 @@
 }
 @keyframes awningPhotoEnter { from { transform:translateX(5%); opacity:.55; } to { transform:translateX(0); opacity:1; } }
 @media(prefers-reduced-motion:reduce) { .windowPhoto { animation:none; } }
-
-.previewReviews { color:#302c25; background:#f5f0e7; }
-.previewReviewsInner { width:min(100% - 3rem,1160px); margin:auto; padding:36px 0 44px; }
-.previewReviews h2 { margin:0 0 16px; color:#28574c; font:300 clamp(1.8rem,3.2vw,2.65rem)/1.1 Georgia,serif; }
-.previewReviewLinks { display:flex; flex-wrap:wrap; gap:10px; }
-.previewReviewLinks a { display:inline-flex; min-height:44px; align-items:center; justify-content:center; gap:8px; padding:9px 16px; border:1px solid #c5b79e; border-radius:4px; color:#28574c; background:#fffefa; font-size:13px; font-weight:700; text-decoration:none; }
-.previewReviewLinks a:hover { background:#e9e3d1; text-decoration:underline; text-underline-offset:3px; }
-.previewReviewLinks a:focus-visible { outline:3px solid #9c5737; outline-offset:3px; }
-@media(max-width:760px) {
-  .aboutGridPreview { grid-template-columns:minmax(0,1fr); gap:18px; }
-  .aboutGridPreview .aboutLeftColumn,.aboutGridPreview .aboutRightColumn { display:flex; }
-  .aboutGridPreview .aboutLeftColumn { order:1; }
-  .aboutGridPreview .aboutRightColumn { order:0; }
-  .previewReviewsInner { width:min(100% - 2rem,1160px); padding:28px 0 34px; }
-  .previewReviewLinks { width:100%; }
-  .previewReviewLinks a { flex:1 1 180px; }
-}
-
-/* Catering actions stay in the content flow, separate from the storefront overlay. */
-.cateringActions { display:flex; flex-wrap:wrap; margin:24px 0; }
-.cateringActions .button { display:inline-flex; min-height:48px; align-items:center; justify-content:center; padding:12px 20px; }
