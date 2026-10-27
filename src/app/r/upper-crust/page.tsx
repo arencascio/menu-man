@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { upperCrustAwningCarouselPhotos, upperCrustPhotos, upperCrustStorefrontPhoto } from "@/lib/upper-crust/site-content";
+import { upperCrustAwningCarouselPhotos, upperCrustLinks, upperCrustPhotos, upperCrustStorefrontPhoto } from "@/lib/upper-crust/site-content";
 import { upperCrust } from "@/lib/upper-crust/config";
 import RestaurantPhotoFilmstrip from "../[slug]/RestaurantPhotoFilmstrip";
 import ShopWindow from "./ShopWindow";
@@ -20,7 +20,7 @@ export default function UpperCrustHome() {
         <div className={styles.welcomePanel}>
           <h1 id="welcome-heading">Serving sandwiches to Downtown Riverside for over 20 years</h1>
           <div className={styles.todayHours}><span>Monday–Saturday</span><strong>10 AM–5 PM</strong><span>Sunday</span><strong>11 AM–4 PM</strong></div>
-          <div className={styles.storefrontFrame}>{previewPresentation ? <div className={styles.previewMediaPlaceholder} role="img" aria-label="Storefront photo omitted from protected preview"/> : <Image className={styles.storefrontImage} src="/img/sandwich-shop/storefront-crop.png" alt="The Upper Crust storefront" width={700} height={700} unoptimized priority/>}<div className={styles.heroActions}><Link className={styles.button} href="/r/upper-crust/menu"><Image src="/img/icons/utensils.svg" alt="" width={18} height={18} unoptimized/>View Menu</Link><a className={styles.textLink} href="https://maps.google.com/?q=3573+Main+Street,+Riverside,+CA+92501" target="_blank" rel="noopener noreferrer nofollow"><Image src="/img/icons/map-pin.svg" alt="" width={18} height={18} unoptimized/>{upperCrust.address}, Riverside</a></div></div>
+          <div className={`${styles.storefrontFrame} ${previewPresentation ? styles.storefrontFramePreview : ""}`}>{previewPresentation ? <div className={styles.previewStorefront} role="img" aria-label="Illustrated storefront concept; photography is omitted from this preview"><span className={styles.previewStorefrontAwning}/><span className={styles.previewStorefrontWindow}/><span className={styles.previewStorefrontDoor}/></div> : <Image className={styles.storefrontImage} src="/img/sandwich-shop/storefront-crop.png" alt="The Upper Crust storefront" width={700} height={700} unoptimized priority/>}<div className={styles.heroActions}><Link className={styles.button} href="/r/upper-crust/menu"><Image src="/img/icons/utensils.svg" alt="" width={18} height={18} unoptimized/>View Menu</Link><a className={styles.textLink} href="https://maps.google.com/?q=3573+Main+Street,+Riverside,+CA+92501" target="_blank" rel="noopener noreferrer nofollow"><Image src="/img/icons/map-pin.svg" alt="" width={18} height={18} unoptimized/>{upperCrust.address}, Riverside</a></div></div>
         </div>
       </div>
       <ShopWindow photos={previewPresentation ? [] : upperCrustAwningCarouselPhotos}/>
@@ -32,6 +32,14 @@ export default function UpperCrustHome() {
       {!previewPresentation && <section className={styles.community} aria-label="Photos">
       <RestaurantPhotoFilmstrip photos={communityPhotos} controlsLabel={null} controlsPlacement="sides" svgControls enableViewer viewportLabel="Restaurant photos. Drag or use left and right arrow keys to browse."/>
       </section>}
-    {!previewPresentation && <UpperCrustDetails />}
+    {previewPresentation ? <section className={styles.previewReviews} aria-labelledby="preview-reviews-heading">
+      <div className={styles.previewReviewsInner}>
+        <h2 id="preview-reviews-heading">Reviews</h2>
+        <div className={styles.previewReviewCard}>
+          <p>Review content is omitted from this preview.</p>
+          <nav aria-label="Review sources"><a href={upperCrustLinks.google} target="_blank" rel="noopener noreferrer nofollow">Google reviews <span aria-hidden="true">↗</span></a><a href={upperCrustLinks.yelp} target="_blank" rel="noopener noreferrer nofollow">Yelp reviews <span aria-hidden="true">↗</span></a></nav>
+        </div>
+      </div>
+    </section> : <UpperCrustDetails />}
   </main>;
 }

@@ -21,12 +21,18 @@ export default function UpperCrustAbout() {
       <a href="https://www.tripadvisor.com/Restaurant_Review-g32978-d4433384-Reviews-The_Upper_Crust_Sandwich_Shoppe-Riverside_California.html" target="_blank" rel="noopener noreferrer"><Image className={detailStyles.tripadvisorMark} src="/img/icons/tripadvisor%20wordmark.svg" alt="Tripadvisor" width={108} height={32} unoptimized /></a>
     </div>}
     <div className={`${styles.aboutGrid} ${previewPresentation ? styles.aboutGridPreview : ""}`}>
-      {!previewPresentation && <div className={styles.aboutLeftColumn}>
+      <div className={styles.aboutLeftColumn}>
+        {previewPresentation && <section className={`${styles.neighborhoodCard} ${styles.aboutPhoto}`} aria-label="Storefront concept illustration">
+          <div className={`${styles.previewStorefront} ${styles.previewStorefrontAbout}`} role="img" aria-label="Illustrated storefront concept; photography is omitted from this preview"><span className={styles.previewStorefrontAwning}/><span className={styles.previewStorefrontWindow}/><span className={styles.previewStorefrontDoor}/></div>
+          <p className={styles.previewCaption}>Storefront photo area</p>
+        </section>}
+      {!previewPresentation && <>
         <div className={styles.aboutMap}><UpperCrustLocationSection /></div>
         <section className={`${styles.neighborhoodCard} ${styles.aboutPhoto}`} aria-label="Storefront photograph">
           <figure><Image src={upperCrustStorefrontPhoto.src} alt={upperCrustStorefrontPhoto.alt} width={upperCrustStorefrontPhoto.width} height={upperCrustStorefrontPhoto.height} unoptimized/></figure>
         </section>
-      </div>}
+      </>}
+      </div>
       <div className={styles.aboutRightColumn}>
         <section className={styles.hoursCard} aria-labelledby="hours-heading"><h2 id="hours-heading">Contact</h2><address><a className={styles.addressLink} href={upperCrustLinks.directions} target="_blank" rel="noopener noreferrer nofollow"><Image src="/img/icons/map-pinned.svg" alt="" width={18} height={18} />{upperCrust.address}, {upperCrust.locality}</a><a className={styles.phoneLink} href={upperCrustLinks.phone}><Image src="/img/icons/phone-call.svg" alt="" width={18} height={18} />{upperCrust.phone}</a></address><div className={styles.regularHoursHeading}><h3>Open Daily</h3><small>Holidays and exceptions may differ. Call to confirm.</small></div><dl>{upperCrustHours.map(({day,hours}) => <div key={day}><dt>{day}</dt><dd>{hours}</dd></div>)}</dl></section>
         <div className={styles.aboutAmenities}><UpperCrustAboutSection /></div>
