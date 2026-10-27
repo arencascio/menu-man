@@ -18,7 +18,7 @@ const approvedManifestAssets = manifest.assets.filter(({ currentUrl }) =>
 
 test("protected media allowlist matches the 26 owner-approved manifest assets byte-for-byte", () => {
   assert.equal(approvedManifestAssets.length, 26);
-  assert.equal(Object.keys(upperCrustProtectedMedia).length, approvedManifestAssets.length);
+  assert.equal(Object.keys(upperCrustProtectedMedia).length, approvedManifestAssets.length + 2);
 
   for (const asset of approvedManifestAssets) {
     const key = asset.currentUrl.split("/").pop()!;
@@ -36,4 +36,14 @@ test("media URLs are route-scoped and safely encode original filenames", () => {
   assert.equal(upperCrustProtectedMediaUrl("chicken salad.jpg"), "/r/upper-crust/media/chicken%20salad.jpg");
   assert.equal(upperCrustProtectedMediaUrl("Veggie sandwich and tomato florentine soup.jpg"), "/r/upper-crust/media/Veggie%20sandwich%20and%20tomato%20florentine%20soup.jpg");
   assert.throws(() => upperCrustProtectedMediaUrl("../.env"), /Unapproved Upper Crust media key/);
+});
+
+test("provider branding is separately licensed, hash-pinned and protected", () => {
+  const branding = JSON.parse(readFileSync("docs/upper-crust-provider-branding.json", "utf8")) as { assets: {key:string; file:string; sha256:string; permission:string}[] };
+  assert.equal(branding.assets.length, 2);
+  for (const asset of branding.assets) {
+    assert.equal(getUpperCrustProtectedMedia(asset.key)?.file, asset.file);
+    assert.ok(asset.permission);
+    assert.equal(createHash("sha256").update(readFileSync(resolve("media/upper-crust/approved", asset.file))).digest("hex"), asset.sha256);
+  }
 });

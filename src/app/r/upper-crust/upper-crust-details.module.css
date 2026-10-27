@@ -1,9 +1,18 @@
 .section { color: #2f281f; background: #f5f0e7; }
 .reviews > section { color:#302c25; background:#f5f0e7; }
-.reviews h2 { color:#28574c; font:300 clamp(1.8rem,3.2vw,2.65rem)/1.1 Georgia,serif; }
+.reviews h2 { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.reviews { color:#302c25; background:#f5f0e7; padding:24px clamp(1.25rem,4vw,4rem) 0; }
+.reviews > .socialStrip { max-width:var(--theme-content-width); margin-inline:auto; }
+.reviews > section { padding:12px 0 48px; }
+.reviews > section > div > div:first-child { margin:0; }
+/* Three persistent embeds need an offscreen slot to wrap without cloning. */
+.reviews [data-review-count="3"] { --review-visible:2; }
+.reviews [data-review-count="3"] > article { width:calc((100% - 1rem) / 2); }
 /* Yelp's 320px content minimum also needs its own 24px horizontal padding. */
 .reviews [data-review-provider] { min-width:344px; }
 @media(max-width:600px) {
+  .reviews [data-review-count="3"] { --review-visible:1; }
+  .reviews [data-review-count="3"] > article { width:100%; }
   .reviews [data-carousel-frame] { grid-template-columns:1fr 1fr; row-gap:12px; }
   .reviews [data-review-count] { grid-column:1 / -1; grid-row:1; }
   .reviews [data-carousel-control="previous"] { grid-column:1; grid-row:2; justify-self:end; }
@@ -104,9 +113,18 @@
   .location .inner { grid-template-columns: minmax(0, 1fr); }
   .location iframe { min-height: 280px; }
 }
+/* Original compact cream social/rating strip, shared by Home and About. */
 .socialStrip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0 0 12px; padding:10px; border:1px solid #c2ad88; background:#eee5d3; text-align:center; }
-.socialStrip > a { display:flex; min-width:0; min-height:56px; align-items:center; justify-content:center; border:1px solid #ddd1be; border-radius:8px; padding:8px; color:#302c25; background:#fffaf0; font-weight:700; text-decoration:none; }
+.socialStrip > a { display:flex; min-width:0; min-height:72px; align-items:center; justify-content:center; gap:8px; border:1px solid #ddd1be; border-radius:8px; padding:7px; color:#302c25; background:#fffaf0; font-weight:700; text-decoration:none; }
+.socialStrip .reviewLink { text-align:left; }
+.reviewLink > span { min-width:0; }
+.socialStrip img { display:block; object-fit:contain; flex:none; }
+.socialStrip strong { font-size:1.25rem; }
+.socialStrip small { display:block; color:#6c6259; font-size:.7rem; font-weight:400; }
+/* Google's current G needs one G-width clear space on each side. */
+.googleMark img { width:100%; height:100%; }
+.googleMark { display:grid; place-items:center; width:60px; height:60px; flex:none; background:white; }
 .socialStrip > a:hover { text-decoration:underline; text-underline-offset:3px; }
 .socialStrip > a:focus-visible { outline:3px solid #9c5737; outline-offset:3px; }
-@media(max-width:520px) { .socialStrip { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:10px; } }
-@media(max-width:340px) { .socialStrip { gap:6px; padding:8px; } .socialStrip strong { font-size:1.1rem; } .socialStrip .reviewLink { gap:4px; padding:5px; } .socialStrip .reviewLink > img { width:24px; height:24px; } .socialStrip strong span { font-size:.62rem; } }
+@media(max-width:520px) { .socialStrip { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:340px) { .socialStrip { gap:6px; padding:8px; } .socialStrip > a { gap:4px; padding:5px; font-size:14px; } .socialStrip > a > img { width:24px; height:24px; } .socialStrip .reviewLink { gap:4px; padding:5px; } .socialStrip strong { font-size:1.1rem; } .googleMark { width:36px; height:36px; } .socialStrip small { font-size:.62rem; } }

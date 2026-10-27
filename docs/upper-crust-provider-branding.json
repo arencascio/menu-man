@@ -1,0 +1,51 @@
+{
+  "checked": "2026-10-27",
+  "assets": [
+    {
+      "key": "google-g.png",
+      "file": "provider-branding/google-g.png",
+      "source": "https://partnermarketinghub.withgoogle.com/brands/google/branding-guidelines/how-to-show-googles-brand/",
+      "download": "https://storage.googleapis.com/pe-portal-consumer-prod-wagtail-static/original_images/GoogleG_FullColor_RGB.png",
+      "permission": "Google customer-review branding guidance permits official G when referring to business reviews. Unmodified current artwork includes its own one-G-width clear space. No decorative stars beside Google branding.",
+      "guidelines": "https://partnermarketinghub.withgoogle.com/brands/google/use-cases/customer-reviews/",
+      "sha256": "4d5cfbd85af19c003770a74f8de210156ca42c54ac0a4cb0d95572c286c882a6"
+    },
+    {
+      "key": "yelp-favicon.svg",
+      "file": "provider-branding/yelp-favicon.svg",
+      "source": "https://www.yelp.com/brand",
+      "download": "https://s3-media0.fl.yelpcdn.com/assets/public/yelp_favicon.yji-e98e6b1eb9ab3660.svg",
+      "permission": "Yelp Brand Center limited royalty-free asset license; favicon used as a quick shortcut to the business page, not a standalone business logo or fabricated provider rating badge.",
+      "sha256": "c908477fd00f412128c05c208021f1eccaf9ff50b16c33a3400b4a4c6bfe052f"
+    }
+  ],
+  "summaries": [
+    {
+      "provider": "Google",
+      "score": 4.7,
+      "count": 401,
+      "source": "https://www.google.com/maps/search/?api=1&query=The+Upper+Crust+Sandwich+Shoppe%2C+3573+Main+St%2C+Riverside%2C+CA",
+      "evidence": "Normal public Maps business panel; address 3573 Main St and phone 951-784-3149 match."
+    },
+    {
+      "provider": "Yelp",
+      "score": 4.5,
+      "count": 881,
+      "source": "https://www.yelp.com/biz/the-upper-crust-sandwich-shoppe-riverside",
+      "evidence": "Three official hydrated review embeds display 4.5-star business badge and 881 reviews."
+    }
+  ],
+  "amenities": {
+    "source": "https://github.com/lucide-icons/lucide/tree/main/icons",
+    "icons": [
+      "bird",
+      "paw-print",
+      "baby",
+      "users-round",
+      "umbrella",
+      "vegan"
+    ],
+    "license": "ISC; full upstream license distributed at public/img/icons/LUCIDE-LICENSE.txt",
+    "note": "Replace improvised SVGs with the named original-design subjects in the existing Lucide visual language. Existing smile asset retained. No exact historical files for the five formerly improvised subjects were available."
+  }
+}

@@ -1,6 +1,8 @@
-// Only manifest-selected, owner-attested assets belong in this server bundle.
+// Only manifest-selected owner imagery and documented provider-licensed branding.
 // Keep all bytes outside public/ and resolve requests through this finite map.
 export const upperCrustProtectedMedia = {
+  "google-g.png": { file: "provider-branding/google-g.png", contentType: "image/png" },
+  "yelp-favicon.svg": { file: "provider-branding/yelp-favicon.svg", contentType: "image/svg+xml" },
   "upper-crust.png": { file: "upper-crust.png", contentType: "image/png" },
   "storefront-crop.png": { file: "storefront-crop.png", contentType: "image/png" },
   "brickwall2.webp": { file: "brickwall2.webp", contentType: "image/webp" },

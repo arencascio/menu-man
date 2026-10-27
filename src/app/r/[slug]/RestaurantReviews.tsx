@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
 import styles from "./restaurant-reviews.module.css";
 import RestaurantCarouselIcon from "./RestaurantCarouselIcon";
+import { reviewSlot, type ReviewPosition } from "./review-position";
 
 export type RestaurantReview = {
   quote: string;
@@ -36,9 +37,10 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
     ...(yelpEmbeds[index] ? ["Official Yelp review"] : []),
   ]).flat();
   const reviewCount = reviewLabels.length;
-  const [position, setPosition] = useState({ active: 0, previous: 0, animate: false });
+  const [position, setPosition] = useState<ReviewPosition>({ active: 0, previous: 0, direction: 1, phase: "rest" });
   const [visibleCount, setVisibleCount] = useState(3);
   const moving = useRef(false);
+  const movementFrame = useRef<number | null>(null);
   const movementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveRef = useRef<(direction: number | "start" | "end", announce?: boolean) => void>(() => {});
 
@@ -72,6 +74,7 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
 
   useEffect(() => () => {
     if (movementTimer.current) clearTimeout(movementTimer.current);
+    if (movementFrame.current !== null) cancelAnimationFrame(movementFrame.current);
   }, []);
 
   useEffect(() => {
@@ -80,6 +83,8 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
       setReducedMotion(preference.matches);
       if (preference.matches) {
         moving.current = false;
+        setPosition(current => ({ ...current, phase: "rest" }));
+        if (movementFrame.current !== null) cancelAnimationFrame(movementFrame.current);
         if (movementTimer.current) clearTimeout(movementTimer.current);
       }
     };
@@ -101,11 +106,26 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
         ? (position.active + direction + reviewCount) % reviewCount
         : direction === "start" ? 0 : reviewCount - 1;
       const animate = !reducedMotion && typeof direction === "number";
+      const step = direction === -1 ? -1 : 1;
       moving.current = animate;
-      setPosition({ active: next, previous: position.active, animate });
-      if (announce) setAnnouncement(`${reviewLabels[next]}. Review ${next + 1} of ${reviewCount}.`);
       if (movementTimer.current) clearTimeout(movementTimer.current);
-      movementTimer.current = setTimeout(() => { moving.current = false; }, animate ? 450 : 0);
+      if (movementFrame.current !== null) cancelAnimationFrame(movementFrame.current);
+      const nextPosition: ReviewPosition = { active: next, previous: position.active, direction: step, phase: animate ? "prepare" : "rest" };
+      setPosition(nextPosition);
+      if (announce) setAnnouncement(`${reviewLabels[next]}. Review ${next + 1} of ${reviewCount}.`);
+      if (animate) {
+        // Paint the reverse entry card just outside the left edge before moving.
+        // Neither this preparation nor settlement moves/recreates an iframe.
+        movementFrame.current = requestAnimationFrame(() => {
+          movementFrame.current = requestAnimationFrame(() => {
+            setPosition({ ...nextPosition, phase: "moving" });
+            movementTimer.current = setTimeout(() => {
+              setPosition({ ...nextPosition, phase: "rest" });
+              moving.current = false;
+            }, 450);
+          });
+        });
+      }
       return;
     }
     const element = viewport.current;
@@ -134,16 +154,13 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
 
   function slideProps(index: number) {
     if (!circular) return {};
-    // Keep two slots to the left of the viewport. The one card that wraps
-    // between the far right and far left is offscreen at both endpoints.
-    const leftSlots = Math.min(2, Math.max(0, reviewCount - visibleCount - 1));
-    const slot = (index - position.active + reviewCount + leftSlots) % reviewCount - leftSlots;
-    const previousSlot = (index - position.previous + reviewCount + leftSlots) % reviewCount - leftSlots;
-    const visible = slot >= 0 && slot < visibleCount;
+    const slot = reviewSlot(index, reviewCount, position);
+    const finalSlot = (index - position.active + reviewCount) % reviewCount;
+    const visible = finalSlot < visibleCount;
     return {
       style: {
         transform: `translateX(calc(${slot} * (100% + 1rem)))`,
-        transition: position.animate && Math.abs(slot - previousSlot) === 1 ? undefined : "none",
+        transition: position.phase === "moving" ? undefined : "none",
       },
       inert: !visible,
       "aria-hidden": !visible,
@@ -162,7 +179,7 @@ export default function RestaurantReviews({ title, items, disclosure, autoAdvanc
       {sourceLinks.length ? <nav className={styles.sourceLinks} aria-label="Review sources">{sourceLinks.map(link => <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.label} <span aria-hidden="true">↗</span></a>)}</nav> : null}
       <div data-carousel-frame={svgControls ? "standard" : undefined} className={controlsPlacement === "sides" ? styles.sideFrame : undefined} data-auto-advance={autoAdvance && !reducedMotion && !paused && !hovered && !focused ? "on" : "off"}>
         {controlsPlacement === "sides" ? previousButton : null}
-        <div ref={viewport} id={viewportId} className={`${styles.viewport} ${circular ? styles.circularViewport : ""}`} data-active-index={circular ? position.active : undefined} data-review-count={circular ? reviewCount : items.length} tabIndex={0} role="group" aria-label={circular ? `${reviewCount} ${items.length ? "restaurant and Yelp" : "Yelp"} reviews. Use left and right arrow keys to browse.` : "Restaurant testimonials. Use left and right arrow keys to browse."}
+        <div ref={viewport} id={viewportId} className={`${styles.viewport} ${circular ? styles.circularViewport : ""}`} data-active-index={circular ? position.active : undefined} data-motion-phase={circular ? position.phase : undefined} data-review-count={circular ? reviewCount : items.length} tabIndex={0} role="group" aria-label={circular ? `${reviewCount} ${items.length ? "restaurant and Yelp" : "Yelp"} reviews. Use left and right arrow keys to browse.` : "Restaurant testimonials. Use left and right arrow keys to browse."}
           onPointerDown={pauseInteraction}
           onPointerEnter={() => setHovered(true)}
           onPointerLeave={() => setHovered(false)}

@@ -32,6 +32,7 @@ test("hosted feature Preview requires its branch flag and exact deployment host"
     NEXT_PUBLIC_SUPABASE_URL: "https://jjvongzvtnzlvwdfcnjk.supabase.co",
   };
   assert.equal(upperCrustPreviewAllowed(env, host), true);
+  assert.equal(upperCrustPreviewAllowed({ ...env, VERCEL_GIT_COMMIT_REF: "feature/upper-crust-visual-fidelity-v1" }, host), true);
   assert.equal(upperCrustPreviewPresentation(env), true);
   for (const [patch, requestHost] of [
     [{ MENU_MAN_UPPER_CRUST_PREVIEW_ENABLED: "false" }, host],

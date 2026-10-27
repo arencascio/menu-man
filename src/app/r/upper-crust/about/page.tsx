@@ -4,7 +4,7 @@ import { upperCrust } from "@/lib/upper-crust/config";
 import { upperCrustHours, upperCrustLinks, upperCrustStorefrontPhoto } from "@/lib/upper-crust/site-content";
 import styles from "../upper-crust.module.css";
 import { UpperCrustAboutSection, UpperCrustLocationSection } from "../UpperCrustDetails";
-import detailStyles from "../upper-crust-details.module.css";
+import UpperCrustSocialBar from "../UpperCrustSocialBar";
 import { isUpperCrustPreviewPresentation } from "@/lib/upper-crust/preview-presentation";
 
 export const metadata: Metadata = { title: { absolute: "About Us | Upper Crust private concept" } };
@@ -13,12 +13,7 @@ export default function UpperCrustAbout() {
   const previewPresentation = isUpperCrustPreviewPresentation();
   return <main id="main-content" className={styles.interiorPage}>
     <header className={styles.interiorIntro}><h1>About Us</h1></header>
-    <nav className={detailStyles.socialStrip} aria-label="Social and review links">
-      <a href={upperCrustLinks.google} target="_blank" rel="noopener noreferrer nofollow">Google Reviews</a>
-      <a href={upperCrustLinks.yelp} target="_blank" rel="noopener noreferrer nofollow">Yelp Reviews</a>
-      <a href={upperCrustLinks.facebook} target="_blank" rel="noopener noreferrer nofollow">Facebook</a>
-      <a href={upperCrustLinks.instagram} target="_blank" rel="noopener noreferrer nofollow">Instagram</a>
-    </nav>
+    <UpperCrustSocialBar />
     <div className={`${styles.aboutGrid} ${previewPresentation ? styles.aboutGridPreview : ""}`}>
       <div className={styles.aboutLeftColumn}>
         <div className={styles.aboutMap}><UpperCrustLocationSection /></div>
