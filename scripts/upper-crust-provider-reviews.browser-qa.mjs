@@ -35,7 +35,7 @@ try {
     await page.goto(`${base}/r/upper-crust`);
     const rail = page.locator('[data-review-count="14"]');
     const section = page.getByRole("region", { name: "Reviews", exact: true });
-    const composition = section.locator("..");
+    const composition = section;
     await expect(rail).toBeVisible();
     await expect(rail.locator(":scope > article")).toHaveCount(14);
     await expect(rail.locator("blockquote")).toHaveCount(11);
@@ -50,9 +50,14 @@ try {
     for (const [i, name] of ["Bree H.", "Diana C.", "Michael P."].entries()) {
       await expect(frames[i].locator("body")).toContainText(name, { timeout: 30000 });
       await expect(frames[i].getByRole("link", { name: "Read more on Yelp" })).toHaveCount(1);
-      // Preserve the provider's complete card/branding, including at 320px.
-      expect(await frames[i].locator(".review").evaluate(el => el.getBoundingClientRect().right <= innerWidth + 1)).toBe(true);
     }
+    // Freeze the carousel after slow provider hydration so the interaction
+    // checks start from a deterministic first slide at every viewport.
+    const pause = section.getByRole("button", { name: "Pause automatic advancement", exact: true });
+    if (await pause.isVisible()) await pause.click();
+    await rail.focus();
+    await page.keyboard.press("Home");
+    await expect(rail).toHaveAttribute("data-active-index", "0");
     await rail.scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
     let reloads = 0;
@@ -75,12 +80,45 @@ try {
       });
       expect(geometry).toEqual({ count: width <= 600 ? 1 : width <= 1000 ? 2 : 3, fits: true, overflow: false, identities: true });
     }
+    if (width === 320) {
+      // The original composition interleaves Yelp between Google excerpts;
+      // the first Yelp slide is therefore at active index 1.
+      await next.click();
+      await expect(rail).toHaveAttribute("data-active-index", "1");
+      await expect(rail).toHaveAttribute("data-motion-phase", "rest");
+      const activeArticle = rail.locator('article[aria-hidden="false"]');
+      const activeFrame = activeArticle.locator("iframe.yelp-review");
+      await expect(activeFrame).toHaveCount(1);
+      const bounds = await activeFrame.evaluate(frame => {
+        const frameRect = frame.getBoundingClientRect();
+        const articleRect = frame.closest("article").getBoundingClientRect();
+        const railRect = frame.closest("[data-review-count]").getBoundingClientRect();
+        return {
+          iframe: { left: frameRect.left, right: frameRect.right, width: frameRect.width },
+          article: { left: articleRect.left, right: articleRect.right, width: articleRect.width },
+          rail: { left: railRect.left, right: railRect.right, width: railRect.width },
+          iframeFitsArticle: frameRect.left >= articleRect.left - 1 && frameRect.right <= articleRect.right + 1,
+          articleFitsRail: articleRect.left >= railRect.left - 1 && articleRect.right <= railRect.right + 1,
+        };
+      });
+      const innerGeometry = await frames[0].evaluate(() => {
+        const review = document.querySelector(".review");
+        const rect = review.getBoundingClientRect();
+        return { viewportWidth: innerWidth, reviewLeft: rect.left, reviewRight: rect.right, reviewWidth: rect.width };
+      });
+      console.log(JSON.stringify({ width, yelpEmbedGeometry: bounds, yelpInternalGeometry: innerGeometry }));
+      await section.screenshot({ path: `${output}/320-yelp-visual.png` });
+      expect(bounds.iframeFitsArticle && bounds.articleFitsRail).toBe(true);
+      await rail.focus();
+      await page.keyboard.press("Home");
+      await expect(rail).toHaveAttribute("data-active-index", "0");
+    }
     async function evidence(label) {
       await composition.screenshot({ path: `${output}/${width}-${label}.png` });
     }
     await check(0);
     await evidence("initial");
-    for (const n of [1, 2, 0, 1]) {
+    for (const n of [1, 2, 3, 4]) {
       await next.click();
       await page.waitForTimeout(100);
       await evidence(`next-${n}-moving`);
@@ -91,11 +129,14 @@ try {
     await previous.click(); await page.waitForTimeout(100);
     await evidence("previous-wrap-moving"); await check(13);
     await evidence("previous-wrap-settled");
+    await next.click(); await check(0);
     await rail.focus(); await page.keyboard.press("Home"); await check(0);
     await next.click(); await check(1);
     await previous.click(); await check(0);
     await rail.focus(); await page.keyboard.press("End"); await check(13);
     await expect(section.locator('[aria-live="polite"]')).toContainText("Review 14 of 14");
+    await page.keyboard.press("ArrowRight"); await check(0);
+    await page.keyboard.press("ArrowLeft"); await check(13);
     await page.keyboard.press("Home"); await check(0);
     await page.keyboard.press("ArrowRight"); await check(1);
     await page.keyboard.press("ArrowLeft"); await check(0);

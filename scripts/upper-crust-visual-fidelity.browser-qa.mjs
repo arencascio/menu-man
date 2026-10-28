@@ -21,7 +21,9 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(1500);
     await page.locator("section").filter({ has: page.getByRole("heading", { level: 1 }) }).first().screenshot({ path: `${output}/hero-${width}.png` });
-    await section.locator("..").screenshot({ path: `${output}/reviews-${width}.png` });
+    // The .googleReviews wrapper uses display: contents and has no box to capture.
+    // Screenshot the rendered Reviews landmark itself instead.
+    await section.screenshot({ path: `${output}/reviews-${width}.png` });
     await page.goto(`${base}/r/upper-crust/about`);
     const socialBar = page.locator('[aria-label="Social and review links"]');
     await expect(socialBar.getByRole("link")).toHaveCount(4);
